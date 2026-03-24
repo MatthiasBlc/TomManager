@@ -1,0 +1,97 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "7"
+
+x-healthcheck: &health_http
+  interval: 30s
+  timeout: 10s
+  retries: 5
+  start_period: 30s
+
+services:
+  tommanager-dev-postgres:
+    image: postgres:15
+    container_name: tommanager-dev-postgres
+    hostname: tommanager-dev-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_INITDB_ARGS=--data-checksums
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    networks:
+      - internal-dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+
+  tommanager-dev-backend:
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-tommanager}/backend:${TAG:-latest}
+    container_name: tommanager-dev-backend
+    hostname: tommanager-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@tommanager-dev-postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=20&pool_timeout=30
+      - SESSION_SECRET=${SESSION_SECRET}
+      - TRUST_PROXY=1
+      - NODE_OPTIONS=--max-old-space-size=1024
+    volumes:
+      - backend-logs-dev:/app/logs
+    networks:
+      internal-dev:
+        aliases:
+          - tommanager-backend
+    depends_on:
+      tommanager-dev-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      <<: *health_http
+    logging: *default-logging
+
+  tommanager-dev-frontend:
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-tommanager}/frontend:${TAG:-latest}
+    container_name: tommanager-dev-frontend
+    hostname: tommanager-dev-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - internal-dev
+      - proxy
+    depends_on:
+      tommanager-dev-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
+      <<: *health_http
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tommanager-dev-web.rule=Host(`preprod-tommanager.matthias-bouloc.fr`)"
+      - "traefik.http.routers.tommanager-dev-web.entrypoints=https"
+      - "traefik.http.routers.tommanager-dev-web.tls.certresolver=cloudflare"
+      - "traefik.http.services.tommanager-dev-web.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+    logging: *default-logging
+
+networks:
+  internal-dev:
+    driver: bridge
+    name: tommanager_internal_dev
+  proxy:
+    external: true
+    name: proxy
+
+volumes:
+  postgres_data_dev:
+  backend-logs-dev:

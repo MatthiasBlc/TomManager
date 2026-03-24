@@ -1,0 +1,54 @@
+# Dependencies
+**/node_modules
+**/.pnp
+**/.pnp.js
+
+# Build outputs
+**/dist
+**/build
+**/.next
+**/out
+
+# Git
+**/.git
+**/.gitignore
+
+# Tests
+**/__tests__
+**/*.test.*
+**/*.spec.*
+**/coverage
+
+# Documentation
+**/README.md
+**/docs
+
+# Environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# IDE
+**/.vscode
+**/.idea
+**/*.swp
+**/*.swo
+
+# Logs
+**/logs
+**/*.log
+**/npm-debug.log*
+
+# OS files
+**/.DS_Store
+**/Thumbs.db
+
+# Docker files (we don't need these in the context)
+**/docker-compose*.yml
+**/Dockerfile*
+**/.dockerignore
+
+# Misc
+**/.eslintcache
+**/.cache
+**/tmp

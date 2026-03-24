@@ -1,0 +1,102 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-healthcheck: &health_http
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 20s
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: tommanager-postgres
+    hostname: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-tommanager}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tommanager_dev}
+      - POSTGRES_DB=${POSTGRES_DB:-tommanager_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tommanager} -d ${POSTGRES_DB:-tommanager_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    logging: *default-logging
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: tommanager-backend
+    hostname: backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+      - "5555:5555"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tommanager}:${POSTGRES_PASSWORD:-tommanager_dev}@postgres:5432/${POSTGRES_DB:-tommanager_db}?schema=public
+      - SESSION_SECRET=${SESSION_SECRET:-dev_session_secret_change_me}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      <<: *health_http
+    command: >
+      sh -c "npm install &&
+             npx prisma generate &&
+             npx prisma migrate deploy &&
+             npm run dev"
+    logging: *default-logging
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: tommanager-frontend
+    hostname: frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_BACKEND_URL=http://localhost:3001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - internal
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      <<: *health_http
+    command: sh -c "npm install && npm run dev"
+    logging: *default-logging
+
+networks:
+  internal:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-tommanager}_internal
+
+volumes:
+  postgres_data:

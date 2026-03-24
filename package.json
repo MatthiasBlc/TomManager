@@ -1,0 +1,48 @@
+{
+  "name": "tommanager",
+  "version": "0.1.0",
+  "description": "TomManager - Full-stack web application",
+  "scripts": {
+    "docker:up": "docker compose up",
+    "docker:up:d": "docker compose up -d",
+    "docker:up:build": "docker compose up -d --build && docker image prune -f",
+    "docker:down": "docker compose down",
+    "docker:build": "docker compose build && docker image prune -f",
+    "docker:logs": "docker compose logs -f",
+    "docker:logs:backend": "docker compose logs -f backend",
+    "docker:logs:frontend": "docker compose logs -f frontend",
+    "docker:restart": "docker compose restart",
+    "docker:clean": "docker compose down -v --remove-orphans",
+    "prisma:studio": "docker compose exec backend npx prisma studio",
+    "prisma:migrate": "docker compose exec backend npx prisma migrate dev",
+    "prisma:generate": "docker compose exec backend npx prisma generate",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "docker compose exec backend npm test",
+    "test:frontend": "docker compose exec frontend npm test",
+    "test:watch:backend": "docker compose exec backend npm run test:watch",
+    "test:watch:frontend": "docker compose exec frontend npm run test:watch",
+    "test:coverage": "npm run test:coverage:backend && npm run test:coverage:frontend",
+    "test:coverage:backend": "docker compose exec backend npm run test:coverage",
+    "test:coverage:frontend": "docker compose exec frontend npm run test:coverage",
+    "format": "npx prettier --write .",
+    "format:check": "npx prettier --check .",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MatthiasBlc/TomManager"
+  },
+  "keywords": [],
+  "author": "Matthias Bouloc",
+  "license": "ISC",
+  "lint-staged": {
+    "*.{ts,tsx,js,json,md,yml,yaml,css}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.8.1"
+  }
+}
