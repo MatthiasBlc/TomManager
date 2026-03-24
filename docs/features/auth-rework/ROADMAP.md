@@ -18,13 +18,13 @@
 
 ## Session 2 : Middleware requireAdmin + Service Event (creation minimale)
 
-- [ ] Ajouter middleware `requireAdmin` dans `middleware/auth.ts`
-- [ ] Creer `services/event.ts` — fonction `createEvent(name, startDateTime, endDateTime, userId)`
-- [ ] Creer `controllers/event.ts` — handler POST
-- [ ] Creer `routes/event.ts` — route `POST /api/events`
-- [ ] Brancher dans `routes/index.ts`
-- [ ] Tests integration : creation event (admin only, validation champs, participation auto)
-- [ ] Mettre a jour `.claude/context/API_MAP.md`
+- [x] Ajouter middleware `requireAdmin` dans `middleware/auth.ts`
+- [x] Creer `services/event.ts` — fonction `createEvent(name, startDateTime, endDateTime, userId)`
+- [x] Creer `controllers/event.ts` — handler POST
+- [x] Creer `routes/event.ts` — route `POST /api/events`
+- [x] Brancher dans `routes/index.ts`
+- [x] Tests integration : creation event (admin only, validation champs, participation auto)
+- [x] Mettre a jour `.claude/context/API_MAP.md`
 
 ---
 

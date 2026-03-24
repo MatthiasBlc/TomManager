@@ -14,3 +14,9 @@
 | POST   | `/login`  | Login with credentials |
 | POST   | `/logout` | Destroy session        |
 | GET    | `/me`     | Get current user       |
+
+## Events (`/api/events`)
+
+| Method | Path | Auth                    | Description  |
+| ------ | ---- | ----------------------- | ------------ |
+| POST   | `/`  | requireAuth + requireAdmin | Create event |
