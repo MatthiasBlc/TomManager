@@ -1,8 +1,13 @@
 # Avancement du projet
 
-## Phase 0 - Setup initial
+## Phase actuelle : Pre-developpement (spec & roadmap)
 
-Boilerplate en place : auth basique, Docker, CI, structure monorepo.
+Boilerplate en place. Spec et roadmap rediges.
+
+- `docs/SPEC.md` : specification technique complete (37 endpoints, 12 entites, tous edge cases)
+- `docs/ROADMAP.md` : roadmap 7 phases (auth -> events -> planning -> boardgames -> realtime -> notifications -> polish)
+
+Prochaine etape : Phase 1 (Auth Rework - inscription par invitation).
 
 ## Resume de reprise
 
