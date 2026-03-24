@@ -24,9 +24,63 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
+
+  createdEvents       Event[]
+  sentInvitations     EventInvitation[]
+  eventParticipations EventParticipation[]
+}
+
+model Event {
+  id            String   @id @default(uuid())
+  name          String
+  startDateTime DateTime
+  endDateTime   DateTime
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  creator        User                @relation(fields: [createdBy], references: [id])
+  invitations    EventInvitation[]
+  participations EventParticipation[]
+}
+
+model EventInvitation {
+  id        String           @id @default(uuid())
+  eventId   String
+  email     String
+  invitedBy String
+  token     String           @unique @default(uuid())
+  expiresAt DateTime
+  status    InvitationStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+
+  event   Event @relation(fields: [eventId], references: [id])
+  inviter User  @relation(fields: [invitedBy], references: [id])
+
+  @@unique([email, eventId])
+}
+
+model EventParticipation {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  status    String   @default("CONFIRMED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
 }
 
 enum Role {
   USER
   ADMIN
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
 }

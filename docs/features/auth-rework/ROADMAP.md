@@ -6,13 +6,13 @@
 
 ## Session 1 : Migration Prisma + Modeles
 
-- [ ] Ajouter enum `InvitationStatus` (PENDING, ACCEPTED, EXPIRED)
-- [ ] Ajouter model `Event` avec relations
-- [ ] Ajouter model `EventInvitation` avec contraintes (unique email+eventId, unique token)
-- [ ] Ajouter model `EventParticipation` avec contrainte unique (eventId+userId)
-- [ ] Ajouter relations sur `User` (createdEvents, sentInvitations, eventParticipations)
-- [ ] Generer et appliquer la migration
-- [ ] Mettre a jour `.claude/context/DB_MODELS.md`
+- [x] Ajouter enum `InvitationStatus` (PENDING, ACCEPTED, EXPIRED)
+- [x] Ajouter model `Event` avec relations
+- [x] Ajouter model `EventInvitation` avec contraintes (unique email+eventId, unique token)
+- [x] Ajouter model `EventParticipation` avec contrainte unique (eventId+userId)
+- [x] Ajouter relations sur `User` (createdEvents, sentInvitations, eventParticipations)
+- [x] Generer et appliquer la migration
+- [x] Mettre a jour `.claude/context/DB_MODELS.md`
 
 ---
 
