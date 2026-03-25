@@ -53,15 +53,21 @@ src/
 ├── vite-env.d.ts          # Vite types
 ├── config/
 │   └── api.ts             # Axios instance
+├── components/
+│   ├── layout/
+│   │   └── Navbar.tsx             # Top navigation bar
+│   └── events/
+│       └── CreateEventModal.tsx   # Modal for creating events
 ├── contexts/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/
 │   ├── HomePage.tsx              # Landing page
 │   ├── LoginPage.tsx             # Login form (identifier, optional token)
 │   ├── SignupPage.tsx            # Signup form (invitation required)
-│   └── InvitationLandingPage.tsx # /invite/:token — validates and redirects
+│   ├── InvitationLandingPage.tsx # /invite/:token — validates and redirects
+│   └── EventListPage.tsx         # /events — event cards grid
 ├── routes/
-│   └── AppRoutes.tsx      # Route definitions (/, /login, /signup, /invite/:token)
+│   └── AppRoutes.tsx      # Route definitions (/, /login, /signup, /invite/:token, /events)
 ├── styles/
 │   └── index.css          # Tailwind directives
 └── __tests__/

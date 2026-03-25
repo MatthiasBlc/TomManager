@@ -50,12 +50,12 @@
 
 ## Session 3 : Frontend — Navbar + EventListPage + CreateEventModal
 
-- [ ] Creer `components/layout/Navbar.tsx` — logo, lien events, logout
-- [ ] Integrer Navbar dans layout (AppRoutes ou App)
-- [ ] Creer `pages/EventListPage.tsx` — grille cards, bouton creation (admin)
-- [ ] Creer `components/events/CreateEventModal.tsx` — formulaire nom/dates
-- [ ] Ajouter route `/events` dans `AppRoutes.tsx`
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md`
+- [x] Creer `components/layout/Navbar.tsx` — logo, lien events, logout
+- [x] Integrer Navbar dans layout (App.tsx)
+- [x] Creer `pages/EventListPage.tsx` — grille cards, bouton creation (admin)
+- [x] Creer `components/events/CreateEventModal.tsx` — formulaire nom/dates
+- [x] Ajouter route `/events` dans `AppRoutes.tsx`
+- [x] Mettre a jour `.claude/context/FILE_MAP.md`
 
 ---
 

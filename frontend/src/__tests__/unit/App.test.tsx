@@ -5,6 +5,6 @@ import App from "../../App";
 describe("App", () => {
   it("renders the home page", () => {
     render(<App />);
-    expect(screen.getByText("TomManager")).toBeInTheDocument();
+    expect(screen.getAllByText("TomManager").length).toBeGreaterThanOrEqual(1);
   });
 });
