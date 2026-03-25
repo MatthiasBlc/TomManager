@@ -61,12 +61,12 @@
 
 ## Session 4 : Frontend — EventDetailPage + EditEventModal + ParticipantList + InvitationManager
 
-- [ ] Creer `pages/EventDetailPage.tsx` — onglets info/participants/invitations
-- [ ] Creer `components/events/EditEventModal.tsx` — modification event
-- [ ] Creer `components/events/ParticipantList.tsx` — liste + actions admin
-- [ ] Creer `components/events/InvitationManager.tsx` — envoi + liste invitations
-- [ ] Ajouter route `/events/:eventId` dans `AppRoutes.tsx`
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md`
+- [x] Creer `pages/EventDetailPage.tsx` — onglets info/participants/invitations
+- [x] Creer `components/events/EditEventModal.tsx` — modification event
+- [x] Creer `components/events/ParticipantList.tsx` — liste + actions admin
+- [x] Creer `components/events/InvitationManager.tsx` — envoi + liste invitations
+- [x] Ajouter route `/events/:eventId` dans `AppRoutes.tsx`
+- [x] Mettre a jour `.claude/context/FILE_MAP.md`
 
 ---
 

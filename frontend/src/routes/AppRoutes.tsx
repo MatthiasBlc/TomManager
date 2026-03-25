@@ -4,6 +4,7 @@ import LoginPage from "../pages/LoginPage";
 import SignupPage from "../pages/SignupPage";
 import InvitationLandingPage from "../pages/InvitationLandingPage";
 import EventListPage from "../pages/EventListPage";
+import EventDetailPage from "../pages/EventDetailPage";
 
 export default function AppRoutes() {
   return (
@@ -13,6 +14,7 @@ export default function AppRoutes() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/invite/:token" element={<InvitationLandingPage />} />
       <Route path="/events" element={<EventListPage />} />
+      <Route path="/events/:eventId" element={<EventDetailPage />} />
     </Routes>
   );
 }

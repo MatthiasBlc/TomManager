@@ -57,7 +57,10 @@ src/
 │   ├── layout/
 │   │   └── Navbar.tsx             # Top navigation bar
 │   └── events/
-│       └── CreateEventModal.tsx   # Modal for creating events
+│       ├── CreateEventModal.tsx   # Modal for creating events
+│       ├── EditEventModal.tsx     # Modal for editing events
+│       ├── ParticipantList.tsx    # Participant table with remove/leave
+│       └── InvitationManager.tsx  # Send + list invitations
 ├── contexts/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/
@@ -65,9 +68,10 @@ src/
 │   ├── LoginPage.tsx             # Login form (identifier, optional token)
 │   ├── SignupPage.tsx            # Signup form (invitation required)
 │   ├── InvitationLandingPage.tsx # /invite/:token — validates and redirects
-│   └── EventListPage.tsx         # /events — event cards grid
+│   ├── EventListPage.tsx         # /events — event cards grid
+│   └── EventDetailPage.tsx      # /events/:eventId — tabs info/participants/invitations
 ├── routes/
-│   └── AppRoutes.tsx      # Route definitions (/, /login, /signup, /invite/:token, /events)
+│   └── AppRoutes.tsx      # Route definitions (/, /login, /signup, /invite/:token, /events, /events/:eventId)
 ├── styles/
 │   └── index.css          # Tailwind directives
 └── __tests__/
