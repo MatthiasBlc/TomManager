@@ -123,6 +123,40 @@ Index: (gameTableId, status)
 onDelete Cascade sur gameTable
 Relations: gameTable (GameTable), user (User)
 
+## BoardGame
+
+| Field          | Type     | Notes                        |
+| -------------- | -------- | ---------------------------- |
+| id             | String   | UUID PK                      |
+| name           | String   | required, indexed             |
+| externalSource | String?  | Ex: "BGG"                    |
+| externalId     | String?  | ID sur la source externe     |
+| yearPublished  | Int?     |                              |
+| minPlayers     | Int?     |                              |
+| maxPlayers     | Int?     |                              |
+| playingTime    | Int?     | En minutes                   |
+| description    | String?  | Peut contenir du HTML        |
+| imageUrl       | String?  | URL de l'image               |
+| createdAt      | DateTime | Auto                         |
+
+Contrainte unique: (externalSource, externalId) — NULLs traites comme distincts par PostgreSQL
+Index: (name)
+Relations: eventBoardGames (EventBoardGame[])
+
+## EventBoardGame
+
+| Field           | Type     | Notes                |
+| --------------- | -------- | -------------------- |
+| id              | String   | UUID PK              |
+| eventId         | String   | FK -> Event.id       |
+| boardGameId     | String   | FK -> BoardGame.id   |
+| broughtByUserId | String   | FK -> User.id        |
+| createdAt       | DateTime | Auto                 |
+
+Contrainte unique: (eventId, boardGameId, broughtByUserId)
+Index: (eventId)
+Relations: event (Event), boardGame (BoardGame), broughtBy (User)
+
 ## Enum Role
 
 USER | ADMIN

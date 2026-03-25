@@ -30,6 +30,7 @@ model User {
   eventParticipations    EventParticipation[]
   createdGameTables      GameTable[]
   gameTableParticipations GameTableParticipant[]
+  eventBoardGames        EventBoardGame[]
 }
 
 model Event {
@@ -45,6 +46,7 @@ model Event {
   invitations    EventInvitation[]
   participations EventParticipation[]
   gameTables     GameTable[]
+  eventBoardGames EventBoardGame[]
 }
 
 model EventInvitation {
@@ -128,6 +130,40 @@ model GameTableParticipant {
 
   @@unique([gameTableId, userId])
   @@index([gameTableId, status])
+}
+
+model BoardGame {
+  id             String   @id @default(uuid())
+  name           String
+  externalSource String?
+  externalId     String?
+  yearPublished  Int?
+  minPlayers     Int?
+  maxPlayers     Int?
+  playingTime    Int?
+  description    String?
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+
+  eventBoardGames EventBoardGame[]
+
+  @@unique([externalSource, externalId])
+  @@index([name])
+}
+
+model EventBoardGame {
+  id              String   @id @default(uuid())
+  eventId         String
+  boardGameId     String
+  broughtByUserId String
+  createdAt       DateTime @default(now())
+
+  event     Event     @relation(fields: [eventId], references: [id])
+  boardGame BoardGame @relation(fields: [boardGameId], references: [id])
+  broughtBy User     @relation(fields: [broughtByUserId], references: [id])
+
+  @@unique([eventId, boardGameId, broughtByUserId])
+  @@index([eventId])
 }
 
 enum Role {

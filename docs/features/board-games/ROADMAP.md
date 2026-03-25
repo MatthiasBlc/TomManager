@@ -6,13 +6,13 @@
 
 ## Session 1 : Migration Prisma + Modeles DB
 
-- [ ] Ajouter model `BoardGame` avec champs et index sur name
-- [ ] Ajouter model `EventBoardGame` avec relations et contrainte unique
-- [ ] Ajouter contrainte unique partielle `(externalSource, externalId)` sur BoardGame
-- [ ] Ajouter relations sur User et Event
-- [ ] Generer et appliquer la migration
-- [ ] Mettre a jour `.claude/context/DB_MODELS.md`
-- [ ] Mettre a jour globalSetup.ts (cleanup des nouvelles tables)
+- [x] Ajouter model `BoardGame` avec champs et index sur name
+- [x] Ajouter model `EventBoardGame` avec relations et contrainte unique
+- [x] Ajouter contrainte unique partielle `(externalSource, externalId)` sur BoardGame
+- [x] Ajouter relations sur User et Event
+- [x] Generer et appliquer la migration
+- [x] Mettre a jour `.claude/context/DB_MODELS.md`
+- [x] Mettre a jour globalSetup.ts (cleanup des nouvelles tables)
 
 ---
 
