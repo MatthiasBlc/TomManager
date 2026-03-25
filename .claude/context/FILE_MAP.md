@@ -14,7 +14,9 @@ src/
 │   ├── gameTable.ts       # CRUD table + join/leave/kick
 │   ├── invitation.ts      # create, validate, list invitations
 │   ├── participant.ts     # list, remove, leave participants
-│   └── tag.ts             # tag autocomplete search
+│   ├── tag.ts             # tag autocomplete search
+│   ├── boardGame.ts       # search, detail, create, findOrCreateBGG
+│   └── eventBoardGame.ts  # add, list, remove event board games
 ├── middleware/
 │   ├── auth.ts            # requireAuth, requireAdmin, requireEventParticipant, requireEventCreator, requireTableGMOrAdmin
 │   └── errorHandler.ts    # Global error handler
@@ -25,14 +27,19 @@ src/
 │   ├── gameTable.ts       # GameTable routes (CRUD + join/leave/kick)
 │   ├── invitation.ts      # Invitation routes (create, list, validate)
 │   ├── participant.ts     # Participant routes (list, remove, leave)
-│   └── tag.ts             # Tag routes (autocomplete)
+│   ├── tag.ts             # Tag routes (autocomplete)
+│   ├── boardGame.ts       # BoardGame routes (search, detail, create, from-bgg)
+│   └── eventBoardGame.ts  # EventBoardGame routes (add, list, remove)
 ├── services/
 │   ├── auth.ts            # Auth business logic
 │   ├── event.ts           # Event CRUD + cascade to GameTables
 │   ├── gameTable.ts       # GameTable CRUD, join/leave/kick, waitlist
 │   ├── invitation.ts      # Invitation CRUD, token validation
 │   ├── participant.ts     # Participant management + cascade to GameTables
-│   └── tag.ts             # Tag find-or-create, search
+│   ├── tag.ts             # Tag find-or-create, search
+│   ├── bgg.ts             # BGG XML API client (search, thing detail)
+│   ├── boardGame.ts       # BoardGame CRUD, search (local + BGG fallback)
+│   └── eventBoardGame.ts  # EventBoardGame CRUD (add/list/remove per event)
 ├── types/
 │   └── express-session.d.ts  # Session type augmentation
 ├── util/
@@ -48,7 +55,9 @@ src/
         ├── event.test.ts       # Event CRUD tests
         ├── gameTable.test.ts   # GameTable CRUD + join/leave/kick + cascade tests
         ├── invitation.test.ts  # Invitation API tests
-        └── participant.test.ts # Participant + invitation listing tests
+        ├── participant.test.ts # Participant + invitation listing tests
+        ├── boardGame.test.ts      # BoardGame CRUD + BGG search tests
+        └── eventBoardGame.test.ts # EventBoardGame CRUD + cascade tests
 ```
 
 ## Frontend (frontend/src/)
@@ -68,12 +77,19 @@ src/
 │   │   ├── EditEventModal.tsx     # Modal for editing events
 │   │   ├── ParticipantList.tsx    # Participant table with remove/leave
 │   │   └── InvitationManager.tsx  # Send + list invitations
-│   └── planning/
-│       ├── CreateTableModal.tsx   # Modal for creating tables
-│       ├── EditTableModal.tsx     # Modal for editing tables
-│       ├── TableCard.tsx          # Table summary card
-│       ├── TagInput.tsx           # Tag autocomplete multi-select
-│       └── TimelineView.tsx       # Chronological table list grouped by date
+│   ├── planning/
+│   │   ├── CreateTableModal.tsx   # Modal for creating tables
+│   │   ├── EditTableModal.tsx     # Modal for editing tables
+│   │   ├── TableCard.tsx          # Table summary card
+│   │   ├── TagInput.tsx           # Tag autocomplete multi-select
+│   │   └── TimelineView.tsx       # Chronological table list grouped by date
+│   └── boardgames/
+│       ├── BoardGameTab.tsx           # Tab integrating list + add button
+│       ├── BoardGameSearchInput.tsx   # Autocomplete search (local + BGG)
+│       ├── BoardGameCard.tsx          # Game card (image, name, players, who brings it)
+│       ├── BoardGameList.tsx          # List grouped by game
+│       ├── AddBoardGameModal.tsx      # Modal: search + add or create manually
+│       └── ManualBoardGameForm.tsx    # Manual creation form
 ├── contexts/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/
@@ -82,7 +98,7 @@ src/
 │   ├── SignupPage.tsx            # Signup form (invitation required)
 │   ├── InvitationLandingPage.tsx # /invite/:token — validates and redirects
 │   ├── EventListPage.tsx         # /events — event cards grid
-│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info/participants/invitations/planning
+│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info/planning/games/participants/invitations
 │   ├── PlanningPage.tsx          # /events/:eventId/planning — timeline view + create table
 │   └── TableDetailPage.tsx      # /events/:eventId/planning/:tableId — detail + join/leave/kick
 ├── routes/

@@ -61,14 +61,14 @@
 
 ## Session 4 : Frontend — BoardGameTab + recherche + ajout
 
-- [ ] Creer `components/boardgames/BoardGameSearchInput.tsx` — autocomplete avec debounce
-- [ ] Creer `components/boardgames/BoardGameCard.tsx` — carte jeu (image, nom, annee, joueurs)
-- [ ] Creer `components/boardgames/BoardGameList.tsx` — liste groupee par jeu
-- [ ] Creer `components/boardgames/AddBoardGameModal.tsx` — modal recherche + ajout
-- [ ] Creer `components/boardgames/ManualBoardGameForm.tsx` — formulaire creation manuelle
-- [ ] Creer `components/boardgames/BoardGameTab.tsx` — onglet integrant liste + bouton ajout
-- [ ] Ajouter onglet "Jeux" dans EventDetailPage
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md`
+- [x] Creer `components/boardgames/BoardGameSearchInput.tsx` — autocomplete avec debounce
+- [x] Creer `components/boardgames/BoardGameCard.tsx` — carte jeu (image, nom, annee, joueurs)
+- [x] Creer `components/boardgames/BoardGameList.tsx` — liste groupee par jeu
+- [x] Creer `components/boardgames/AddBoardGameModal.tsx` — modal recherche + ajout
+- [x] Creer `components/boardgames/ManualBoardGameForm.tsx` — formulaire creation manuelle
+- [x] Creer `components/boardgames/BoardGameTab.tsx` — onglet integrant liste + bouton ajout
+- [x] Ajouter onglet "Jeux" dans EventDetailPage
+- [x] Mettre a jour `.claude/context/FILE_MAP.md`
 
 ---
 
