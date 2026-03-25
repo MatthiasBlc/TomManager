@@ -20,22 +20,22 @@
 
 ## Session 2 : Middleware + Tag service + Table CRUD backend (create, list, detail)
 
-- [ ] Ajouter middleware `requireTableGMOrAdmin` dans `middleware/auth.ts`
-- [ ] Creer `services/tag.ts` — findOrCreateTags, searchTags
-- [ ] Creer `controllers/tag.ts` + `routes/tag.ts` — GET /api/tags?q=
-- [ ] Creer `services/gameTable.ts` — createTable, listTables, getTable
+- [x] Ajouter middleware `requireTableGMOrAdmin` dans `middleware/auth.ts`
+- [x] Creer `services/tag.ts` — findOrCreateTags, searchTags
+- [x] Creer `controllers/tag.ts` + `routes/tag.ts` — GET /api/tags?q=
+- [x] Creer `services/gameTable.ts` — createTable, listTables, getTable
   - createTable : validation, GM = createdBy, find-or-create tags
   - listTables : avec GM info, tags, confirmed/waitlist counts, currentUserStatus
   - getTable : avec liste participants ordonnee
-- [ ] Creer `controllers/gameTable.ts` — handlers create, list, detail
-- [ ] Creer `routes/gameTable.ts` — POST, GET /, GET /:tableId
-- [ ] Brancher dans `routes/index.ts`
-- [ ] Tests integration :
+- [x] Creer `controllers/gameTable.ts` — handlers create, list, detail
+- [x] Creer `routes/gameTable.ts` — POST, GET /, GET /:tableId
+- [x] Brancher dans `routes/index.ts`
+- [x] Tests integration :
   - Table create (happy path, validation dates, validation fields)
   - Table list (avec counts)
   - Table detail (avec participants)
   - Tag autocomplete
-- [ ] Mettre a jour `.claude/context/API_MAP.md`
+- [x] Mettre a jour `.claude/context/API_MAP.md`
 
 ---
 

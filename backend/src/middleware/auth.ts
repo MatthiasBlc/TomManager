@@ -52,6 +52,40 @@ export async function requireEventParticipant(req: Request, res: Response, next:
   }
 }
 
+export async function requireTableGMOrAdmin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const tableId = req.params.tableId;
+    const userId = req.session.userId!;
+
+    const table = await prisma.gameTable.findUnique({
+      where: { id: tableId },
+    });
+
+    if (!table) {
+      res.status(404).json({ error: { message: "Table not found" } });
+      return;
+    }
+
+    if (table.createdBy === userId) {
+      next();
+      return;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
+
+    if (!user || user.role !== "ADMIN") {
+      res.status(403).json({ error: { message: "Only the table GM or an admin can perform this action" } });
+      return;
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function requireEventCreator(req: Request, res: Response, next: NextFunction) {
   try {
     const eventId = req.params.eventId;

@@ -40,3 +40,17 @@
 | GET    | `/`          | requireAuth + requireEventParticipant | List participants |
 | DELETE | `/me`        | requireAuth + requireEventParticipant | Leave event       |
 | DELETE | `/:userId`   | requireAuth + requireEventCreator | Remove participant   |
+
+## GameTables (`/api/events/:eventId/tables`)
+
+| Method | Path          | Auth                                      | Description        |
+| ------ | ------------- | ----------------------------------------- | ------------------ |
+| POST   | `/`           | requireAuth + requireEventParticipant     | Create table       |
+| GET    | `/`           | requireAuth + requireEventParticipant     | List tables        |
+| GET    | `/:tableId`   | requireAuth + requireEventParticipant     | Table detail       |
+
+## Tags (`/api/tags`)
+
+| Method | Path    | Auth        | Description          |
+| ------ | ------- | ----------- | -------------------- |
+| GET    | `/?q=`  | requireAuth | Tag autocomplete     |
