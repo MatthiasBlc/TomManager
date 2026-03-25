@@ -20,12 +20,12 @@
 
 ## Session 2 : Emit events depuis les services backend
 
-- [ ] Modifier `services/gameTable.ts` — emit table:created, table:updated, table:deleted
-- [ ] Modifier `services/gameTable.ts` — emit table:player:joined, table:player:left, table:player:kicked
-- [ ] Modifier `services/gameTable.ts` — emit table:player:promoted, table:player:demoted
-- [ ] Modifier `services/eventBoardGame.ts` — emit boardgame:added, boardgame:removed
-- [ ] Modifier `services/participant.ts` — emit participant:removed
-- [ ] Tests integration :
+- [x] Modifier `services/gameTable.ts` — emit table:created, table:updated, table:deleted
+- [x] Modifier `services/gameTable.ts` — emit table:player:joined, table:player:left, table:player:kicked
+- [x] Modifier `services/gameTable.ts` — emit table:player:promoted, table:player:demoted
+- [x] Modifier `services/eventBoardGame.ts` — emit boardgame:added, boardgame:removed
+- [x] Modifier `services/participant.ts` — emit participant:removed
+- [x] Tests integration :
   - Reception table:created dans la room quand une table est creee
   - Reception table:player:joined quand un joueur rejoint
 

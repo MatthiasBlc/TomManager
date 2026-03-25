@@ -1,5 +1,6 @@
 import prisma from "../util/db";
 import createError from "http-errors";
+import { emitToEvent } from "../socket/emitter";
 
 export async function addToEvent(eventId: string, boardGameId: string, userId: string) {
   // Verify board game exists
@@ -18,13 +19,17 @@ export async function addToEvent(eventId: string, boardGameId: string, userId: s
     throw createError(409, "You already added this board game to this event");
   }
 
-  return prisma.eventBoardGame.create({
+  const entry = await prisma.eventBoardGame.create({
     data: { eventId, boardGameId, broughtByUserId: userId },
     include: {
       boardGame: true,
       broughtBy: { select: { id: true, username: true } },
     },
   });
+
+  emitToEvent(eventId, "boardgame:added", { entry });
+
+  return entry;
 }
 
 export async function listByEvent(eventId: string) {
@@ -49,4 +54,6 @@ export async function removeFromEvent(id: string, userId: string, userRole: stri
   }
 
   await prisma.eventBoardGame.delete({ where: { id } });
+
+  emitToEvent(entry.eventId, "boardgame:removed", { entryId: id });
 }

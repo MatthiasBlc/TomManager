@@ -1,5 +1,6 @@
 import prisma from "../util/db";
 import createError from "http-errors";
+import { emitToEvent } from "../socket/emitter";
 
 export async function listParticipants(eventId: string) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
@@ -88,6 +89,8 @@ export async function removeParticipant(eventId: string, userId: string) {
     await cascadeRemoveFromTables(eventId, userId, tx);
     await tx.eventParticipation.delete({ where: { id: participation.id } });
   });
+
+  emitToEvent(eventId, "participant:removed", { userId });
 }
 
 export async function leaveEvent(eventId: string, userId: string) {
@@ -112,4 +115,6 @@ export async function leaveEvent(eventId: string, userId: string) {
     await cascadeRemoveFromTables(eventId, userId, tx);
     await tx.eventParticipation.delete({ where: { id: participation.id } });
   });
+
+  emitToEvent(eventId, "participant:removed", { userId });
 }

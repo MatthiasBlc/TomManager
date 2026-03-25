@@ -1,6 +1,7 @@
 import prisma from "../util/db";
 import createError from "http-errors";
 import { findOrCreateTags } from "./tag";
+import { emitToEvent } from "../socket/emitter";
 
 interface UpdateTableData {
   title?: string;
@@ -112,10 +113,14 @@ export async function createTable(
     });
   });
 
-  return {
+  const result = {
     ...table!,
     tags: table!.tags.map((gt) => gt.tag),
   };
+
+  emitToEvent(eventId, "table:created", { table: result });
+
+  return result;
 }
 
 export async function listTables(eventId: string, currentUserId: string) {
@@ -319,10 +324,14 @@ export async function updateTable(tableId: string, data: UpdateTableData) {
     });
   });
 
-  return {
+  const updated = {
     ...result,
     tags: result.tags.map((gt) => gt.tag),
   };
+
+  emitToEvent(existing.eventId, "table:updated", { table: updated });
+
+  return updated;
 }
 
 export async function deleteTable(tableId: string) {
@@ -333,6 +342,8 @@ export async function deleteTable(tableId: string) {
 
   // GameTableTag and GameTableParticipant have onDelete Cascade
   await prisma.gameTable.delete({ where: { id: tableId } });
+
+  emitToEvent(existing.eventId, "table:deleted", { tableId });
 }
 
 export async function joinTable(tableId: string, userId: string) {
@@ -362,13 +373,21 @@ export async function joinTable(tableId: string, userId: string) {
       data: { gameTableId: tableId, userId, status },
     });
 
-    return { participant, status };
+    return { participant, status, eventId: table.eventId };
+  });
+
+  emitToEvent(result.eventId, "table:player:joined", {
+    tableId,
+    participant: result.participant,
   });
 
   return result;
 }
 
 export async function leaveTable(tableId: string, userId: string) {
+  const table = await prisma.gameTable.findUnique({ where: { id: tableId } });
+
+  let promotedUserId: string | null = null;
   await prisma.$transaction(async (tx) => {
     const participant = await tx.gameTableParticipant.findUnique({
       where: { gameTableId_userId: { gameTableId: tableId, userId } },
@@ -391,12 +410,53 @@ export async function leaveTable(tableId: string, userId: string) {
           where: { id: firstWaitlisted.id },
           data: { status: "CONFIRMED" },
         });
+        promotedUserId = firstWaitlisted.userId;
       }
     }
   });
+
+  if (table) {
+    emitToEvent(table.eventId, "table:player:left", { tableId, userId });
+    if (promotedUserId) {
+      emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: promotedUserId });
+    }
+  }
 }
 
 export async function kickPlayer(tableId: string, userId: string) {
-  // Same logic as leave, but called by GM/Admin
-  await leaveTable(tableId, userId);
+  const table = await prisma.gameTable.findUnique({ where: { id: tableId } });
+
+  let promotedUserId: string | null = null;
+  await prisma.$transaction(async (tx) => {
+    const participant = await tx.gameTableParticipant.findUnique({
+      where: { gameTableId_userId: { gameTableId: tableId, userId } },
+    });
+
+    if (!participant) {
+      throw createError(404, "Not a participant of this table");
+    }
+
+    await tx.gameTableParticipant.delete({ where: { id: participant.id } });
+
+    if (participant.status === "CONFIRMED") {
+      const firstWaitlisted = await tx.gameTableParticipant.findFirst({
+        where: { gameTableId: tableId, status: "WAITLIST" },
+        orderBy: { joinedAt: "asc" },
+      });
+      if (firstWaitlisted) {
+        await tx.gameTableParticipant.update({
+          where: { id: firstWaitlisted.id },
+          data: { status: "CONFIRMED" },
+        });
+        promotedUserId = firstWaitlisted.userId;
+      }
+    }
+  });
+
+  if (table) {
+    emitToEvent(table.eventId, "table:player:kicked", { tableId, userId });
+    if (promotedUserId) {
+      emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: promotedUserId });
+    }
+  }
 }
