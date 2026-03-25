@@ -95,12 +95,11 @@
 
 ## Session 6 : Frontend — TableDetailDrawer + EditTableModal + join/leave
 
-- [ ] Creer `components/planning/TableDetailDrawer.tsx` — detail + participants
-- [ ] Creer `components/planning/EditTableModal.tsx` — modification table
-- [ ] Ajouter logique join/leave/kick dans le drawer
-- [ ] Creer `components/planning/WaitlistBadge.tsx`
-- [ ] Creer `components/planning/OverlapWarning.tsx`
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md`
+- [x] Creer `pages/TableDetailPage.tsx` — detail + participants (full page instead of drawer)
+- [x] Creer `components/planning/EditTableModal.tsx` — modification table
+- [x] Ajouter logique join/leave/kick dans la page detail
+- [x] Badges waitlist integres dans TableCard et TableDetailPage
+- [x] Mettre a jour `.claude/context/FILE_MAP.md`
 
 ---
 

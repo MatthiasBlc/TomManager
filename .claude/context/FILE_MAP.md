@@ -70,6 +70,7 @@ src/
 │   │   └── InvitationManager.tsx  # Send + list invitations
 │   └── planning/
 │       ├── CreateTableModal.tsx   # Modal for creating tables
+│       ├── EditTableModal.tsx     # Modal for editing tables
 │       ├── TableCard.tsx          # Table summary card
 │       ├── TagInput.tsx           # Tag autocomplete multi-select
 │       └── TimelineView.tsx       # Chronological table list grouped by date
@@ -82,7 +83,8 @@ src/
 │   ├── InvitationLandingPage.tsx # /invite/:token — validates and redirects
 │   ├── EventListPage.tsx         # /events — event cards grid
 │   ├── EventDetailPage.tsx       # /events/:eventId — tabs info/participants/invitations/planning
-│   └── PlanningPage.tsx          # /events/:eventId/planning — timeline view + create table
+│   ├── PlanningPage.tsx          # /events/:eventId/planning — timeline view + create table
+│   └── TableDetailPage.tsx      # /events/:eventId/planning/:tableId — detail + join/leave/kick
 ├── routes/
 │   └── AppRoutes.tsx      # Route definitions
 ├── styles/
