@@ -37,24 +37,23 @@ if (env.NODE_ENV === "production") {
 }
 
 // Sessions
-app.use(
-  session({
-    name: "connect.sid",
-    secret: env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 60 * 60 * 1000, // 1h
-      httpOnly: true,
-      secure: env.NODE_ENV === "production",
-      sameSite: env.NODE_ENV === "production" ? "strict" : "lax",
-    },
-    store: new PrismaSessionStore(prisma, {
-      checkPeriod: 2 * 60 * 1000,
-      dbRecordIdIsSessionId: true,
-    }),
-  })
-);
+export const sessionMiddleware = session({
+  name: "connect.sid",
+  secret: env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 60 * 60 * 1000, // 1h
+    httpOnly: true,
+    secure: env.NODE_ENV === "production",
+    sameSite: env.NODE_ENV === "production" ? "strict" : "lax",
+  },
+  store: new PrismaSessionStore(prisma, {
+    checkPeriod: 2 * 60 * 1000,
+    dbRecordIdIsSessionId: true,
+  }),
+});
+app.use(sessionMiddleware);
 
 // Health check
 app.get("/health", (_req, res) => {
