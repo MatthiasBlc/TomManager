@@ -41,18 +41,18 @@
 
 ## Session 3 : Table update, delete + join/leave/kick
 
-- [ ] Ajouter `updateTable(tableId, data)` dans `services/gameTable.ts`
+- [x] Ajouter `updateTable(tableId, data)` dans `services/gameTable.ts`
   - Transaction reduction maxPlayers (demotion)
   - Transaction augmentation maxPlayers (promotion)
-- [ ] Ajouter `deleteTable(tableId)` — hard delete cascade
-- [ ] Ajouter `joinTable(tableId, userId)` — transaction serialisable
+- [x] Ajouter `deleteTable(tableId)` — hard delete cascade
+- [x] Ajouter `joinTable(tableId, userId)` — transaction serialisable
   - Lock FOR UPDATE, verif pas GM, verif pas deja participant
   - CONFIRMED si place, sinon WAITLIST
   - Detection overlap (warning)
-- [ ] Ajouter `leaveTable(tableId, userId)` — transaction promotion
-- [ ] Ajouter `kickPlayer(tableId, userId)` — meme logique que leave
-- [ ] Ajouter handlers + routes (PATCH, DELETE, POST join, DELETE leave, DELETE kick)
-- [ ] Tests integration :
+- [x] Ajouter `leaveTable(tableId, userId)` — transaction promotion
+- [x] Ajouter `kickPlayer(tableId, userId)` — meme logique que leave
+- [x] Ajouter handlers + routes (PATCH, DELETE, POST join, DELETE leave, DELETE kick)
+- [x] Tests integration :
   - Update table (GM, non-GM 403)
   - Delete table (GM, non-GM 403, cascade)
   - Join (confirmed, waitlist, already participant 409, GM 400)
@@ -60,7 +60,7 @@
   - Kick (GM OK, non-GM 403)
   - Reduction maxPlayers (demotion)
   - Augmentation maxPlayers (promotion)
-- [ ] Mettre a jour `.claude/context/API_MAP.md`
+- [x] Mettre a jour `.claude/context/API_MAP.md`
 
 ---
 
