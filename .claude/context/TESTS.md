@@ -39,7 +39,7 @@ npx vitest run                    # Tous les tests
 
 ## Inventaire des tests
 
-### Backend (~123 tests)
+### Backend (~127 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me)
@@ -49,6 +49,7 @@ npx vitest run                    # Tous les tests
 - `integration/gameTable.test.ts` - GameTable API (CRUD, join/leave/kick, waitlist, demotion/promotion) + Tag autocomplete
 - `integration/boardGame.test.ts` - BoardGame API (CRUD, search local + BGG fallback, lazy fetch, from-bgg) + BGG XML parsing
 - `integration/eventBoardGame.test.ts` - EventBoardGame API (add, list, remove, duplicate, non-participant, cascade)
+- `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 
 ### Frontend (~1 test)
 
