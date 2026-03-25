@@ -48,19 +48,19 @@
 
 ## Session 4 : Auth Rework (signup + login avec token)
 
-- [ ] Ajouter `acceptInvitation(token, userId)` dans `services/invitation.ts`
-- [ ] Modifier `services/auth.ts` :
+- [x] Ajouter `acceptInvitation(token, userId)` dans `services/invitation.ts` (fait en Session 3)
+- [x] Modifier `services/auth.ts` :
   - `signup()` : exiger invitationToken, valider token, verifier email match, creer user, accepter invitation, creer participation
   - `login()` : accepter `identifier` (email ou username), `invitationToken` optionnel
-- [ ] Adapter `controllers/auth.ts` (nouveaux champs body, eventId en reponse)
-- [ ] Tests integration :
+- [x] Adapter `controllers/auth.ts` (nouveaux champs body, eventId en reponse)
+- [x] Tests integration :
   - Signup avec token (happy path)
   - Signup sans token -> 400
   - Signup token invalide / email mismatch
   - Login avec token (happy path, deja participant -> idempotent)
   - Login par username
-- [ ] Mettre a jour tests existants dans `auth.test.ts` (adapter au nouveau flow)
-- [ ] Mettre a jour `.claude/context/API_MAP.md`
+- [x] Mettre a jour tests existants dans `auth.test.ts` (adapter au nouveau flow)
+- [x] Mettre a jour `.claude/context/API_MAP.md`
 
 ---
 

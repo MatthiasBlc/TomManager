@@ -3,12 +3,12 @@ import * as authService from "../services/auth";
 
 export async function signup(req: Request, res: Response, next: NextFunction) {
   try {
-    const { email, username, password } = req.body;
-    const user = await authService.signup(email, username, password);
+    const { email, username, password, invitationToken } = req.body;
+    const result = await authService.signup(email, username, password, invitationToken);
 
-    req.session.userId = user.id;
+    req.session.userId = result.user.id;
 
-    res.status(201).json({ user });
+    res.status(201).json({ user: result.user, eventId: result.eventId });
   } catch (err) {
     next(err);
   }
@@ -16,12 +16,12 @@ export async function signup(req: Request, res: Response, next: NextFunction) {
 
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
-    const { email, password } = req.body;
-    const user = await authService.login(email, password);
+    const { identifier, password, invitationToken } = req.body;
+    const result = await authService.login(identifier, password, invitationToken);
 
-    req.session.userId = user.id;
+    req.session.userId = result.user.id;
 
-    res.json({ user });
+    res.json({ user: result.user, eventId: result.eventId });
   } catch (err) {
     next(err);
   }

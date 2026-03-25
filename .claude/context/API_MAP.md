@@ -8,12 +8,12 @@
 
 ## Auth (`/api/auth`)
 
-| Method | Path      | Description            |
-| ------ | --------- | ---------------------- |
-| POST   | `/signup` | Create account         |
-| POST   | `/login`  | Login with credentials |
-| POST   | `/logout` | Destroy session        |
-| GET    | `/me`     | Get current user       |
+| Method | Path      | Description                                                 |
+| ------ | --------- | ----------------------------------------------------------- |
+| POST   | `/signup` | Create account (requires invitationToken, email must match) |
+| POST   | `/login`  | Login with identifier (email/username), optional token      |
+| POST   | `/logout` | Destroy session                                             |
+| GET    | `/me`     | Get current user                                            |
 
 ## Events (`/api/events`)
 
