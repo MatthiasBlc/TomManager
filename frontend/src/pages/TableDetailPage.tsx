@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
 import EditTableModal from "../components/planning/EditTableModal";
+import { useEventSocket } from "../hooks/useEventSocket";
 
 interface TableDetail {
   id: string;
@@ -55,6 +56,16 @@ export default function TableDetailPage() {
   useEffect(() => {
     fetchTable();
   }, [fetchTable]);
+
+  useEventSocket(eventId, {
+    onTableUpdated: fetchTable,
+    onTableDeleted: () => navigate(`/events/${eventId}/planning`),
+    onPlayerJoined: fetchTable,
+    onPlayerLeft: fetchTable,
+    onPlayerKicked: fetchTable,
+    onPlayerPromoted: fetchTable,
+    onPlayerDemoted: fetchTable,
+  });
 
   const handleJoin = async () => {
     try {

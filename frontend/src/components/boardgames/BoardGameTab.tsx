@@ -4,6 +4,7 @@ import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
 import BoardGameList from "./BoardGameList";
 import AddBoardGameModal from "./AddBoardGameModal";
+import { useEventSocket } from "../../hooks/useEventSocket";
 
 interface EventBoardGameEntry {
   id: string;
@@ -43,6 +44,11 @@ export default function BoardGameTab({ eventId }: Props) {
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries]);
+
+  useEventSocket(eventId, {
+    onBoardGameAdded: fetchEntries,
+    onBoardGameRemoved: fetchEntries,
+  });
 
   const handleRemove = async (entryId: string) => {
     try {

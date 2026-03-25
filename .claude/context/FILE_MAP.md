@@ -40,6 +40,9 @@ src/
 │   ├── bgg.ts             # BGG XML API client (search, thing detail)
 │   ├── boardGame.ts       # BoardGame CRUD, search (local + BGG fallback)
 │   └── eventBoardGame.ts  # EventBoardGame CRUD (add/list/remove per event)
+├── socket/
+│   ├── index.ts           # Socket.io setup, session auth, room handlers, getIO()
+│   └── emitter.ts         # emitToEvent helper for services
 ├── types/
 │   └── express-session.d.ts  # Session type augmentation
 ├── util/
@@ -57,7 +60,8 @@ src/
         ├── invitation.test.ts  # Invitation API tests
         ├── participant.test.ts # Participant + invitation listing tests
         ├── boardGame.test.ts      # BoardGame CRUD + BGG search tests
-        └── eventBoardGame.test.ts # EventBoardGame CRUD + cascade tests
+        ├── eventBoardGame.test.ts # EventBoardGame CRUD + cascade tests
+        └── socket.test.ts         # Socket.io auth, rooms, broadcast tests
 ```
 
 ## Frontend (frontend/src/)
@@ -70,8 +74,10 @@ src/
 ├── config/
 │   └── api.ts             # Axios instance
 ├── components/
+│   ├── common/
+│   │   └── ConnectionStatus.tsx   # WebSocket connection indicator
 │   ├── layout/
-│   │   └── Navbar.tsx             # Top navigation bar
+│   │   └── Navbar.tsx             # Top navigation bar + ConnectionStatus
 │   ├── events/
 │   │   ├── CreateEventModal.tsx   # Modal for creating events
 │   │   ├── EditEventModal.tsx     # Modal for editing events
@@ -90,6 +96,9 @@ src/
 │       ├── BoardGameList.tsx          # List grouped by game
 │       ├── AddBoardGameModal.tsx      # Modal: search + add or create manually
 │       └── ManualBoardGameForm.tsx    # Manual creation form
+├── hooks/
+│   ├── useSocket.ts         # Socket.io singleton connection
+│   └── useEventSocket.ts    # Join/leave event room, listen to events
 ├── contexts/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/

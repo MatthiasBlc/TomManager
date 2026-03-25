@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../config/api";
 import TimelineView from "../components/planning/TimelineView";
 import CreateTableModal from "../components/planning/CreateTableModal";
+import { useEventSocket } from "../hooks/useEventSocket";
 
 interface TableSummary {
   id: string;
@@ -41,6 +42,17 @@ export default function PlanningPage() {
   useEffect(() => {
     fetchTables();
   }, [fetchTables]);
+
+  useEventSocket(eventId, {
+    onTableCreated: fetchTables,
+    onTableUpdated: fetchTables,
+    onTableDeleted: fetchTables,
+    onPlayerJoined: fetchTables,
+    onPlayerLeft: fetchTables,
+    onPlayerKicked: fetchTables,
+    onPlayerPromoted: fetchTables,
+    onPlayerDemoted: fetchTables,
+  });
 
   const handleTableClick = (tableId: string) => {
     navigate(`/events/${eventId}/planning/${tableId}`);

@@ -33,14 +33,14 @@
 
 ## Session 3 : Frontend hooks + integration pages
 
-- [ ] Creer `frontend/src/hooks/useSocket.ts` — connexion singleton
-- [ ] Creer `frontend/src/hooks/useEventSocket.ts` — join/leave room, ecoute events
-- [ ] Creer `frontend/src/components/common/ConnectionStatus.tsx` — indicateur navbar
-- [ ] Modifier `PlanningPage.tsx` — refetch sur table:created/updated/deleted
-- [ ] Modifier `TableDetailPage.tsx` — refetch sur player events
-- [ ] Modifier `BoardGameTab.tsx` — refetch sur boardgame events
-- [ ] Modifier `Navbar.tsx` — integrer ConnectionStatus
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md`
+- [x] Creer `frontend/src/hooks/useSocket.ts` — connexion singleton
+- [x] Creer `frontend/src/hooks/useEventSocket.ts` — join/leave room, ecoute events
+- [x] Creer `frontend/src/components/common/ConnectionStatus.tsx` — indicateur navbar
+- [x] Modifier `PlanningPage.tsx` — refetch sur table:created/updated/deleted
+- [x] Modifier `TableDetailPage.tsx` — refetch sur player events
+- [x] Modifier `BoardGameTab.tsx` — refetch sur boardgame events
+- [x] Modifier `Navbar.tsx` — integrer ConnectionStatus
+- [x] Mettre a jour `.claude/context/FILE_MAP.md`
 
 ---
 
