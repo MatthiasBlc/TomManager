@@ -28,6 +28,11 @@ async function cascadeRemoveFromTables(
   userId: string,
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 ) {
+  // Delete EventBoardGame entries for this user in this event
+  await tx.eventBoardGame.deleteMany({
+    where: { eventId, broughtByUserId: userId },
+  });
+
   // Delete GameTables created by this user in this event (cascade handles children)
   await tx.gameTable.deleteMany({
     where: { eventId, createdBy: userId },

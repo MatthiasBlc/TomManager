@@ -68,3 +68,11 @@
 | GET    | `/:boardGameId`   | requireAuth | Detail (lazy fetch BGG si stub)      |
 | POST   | `/`               | requireAuth | Creation manuelle                    |
 | POST   | `/from-bgg`       | requireAuth | Find or create from BGG data         |
+
+## Event Board Games (`/api/events/:eventId/boardgames`)
+
+| Method | Path        | Auth                                  | Description                    |
+| ------ | ----------- | ------------------------------------- | ------------------------------ |
+| POST   | `/`         | requireAuth + requireEventParticipant | Ajouter un jeu a l'event       |
+| GET    | `/`         | requireAuth + requireEventParticipant | Lister les jeux de l'event     |
+| DELETE | `/:id`      | requireAuth + requireEventParticipant | Retirer un jeu de l'event      |

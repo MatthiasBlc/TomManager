@@ -42,20 +42,20 @@
 
 ## Session 3 : EventBoardGame CRUD backend + cascade
 
-- [ ] Creer `services/eventBoardGame.ts` — addToEvent, listByEvent, removeFromEvent
+- [x] Creer `services/eventBoardGame.ts` — addToEvent, listByEvent, removeFromEvent
   - addToEvent : verif participant, verif doublon -> 409
   - listByEvent : avec infos BoardGame + broughtBy user
   - removeFromEvent : owner ou admin, sinon 403
-- [ ] Creer `controllers/eventBoardGame.ts` — handlers add, list, remove
-- [ ] Creer `routes/eventBoardGame.ts` — POST, GET, DELETE
-- [ ] Brancher dans `routes/index.ts`
-- [ ] Modifier `services/participant.ts` — cascade retrait participant inclut EventBoardGame
-- [ ] Tests integration :
+- [x] Creer `controllers/eventBoardGame.ts` — handlers add, list, remove
+- [x] Creer `routes/eventBoardGame.ts` — POST, GET, DELETE
+- [x] Brancher dans `routes/index.ts`
+- [x] Modifier `services/participant.ts` — cascade retrait participant inclut EventBoardGame
+- [x] Tests integration :
   - Ajout a l'event (happy path, doublon 409, non-participant 403)
   - Liste jeux event (avec infos jeu + qui l'amene)
   - Retrait (owner OK, admin OK, non-owner 403)
   - Cascade retrait participant (EventBoardGame supprimees)
-- [ ] Mettre a jour `.claude/context/API_MAP.md`
+- [x] Mettre a jour `.claude/context/API_MAP.md`
 
 ---
 
