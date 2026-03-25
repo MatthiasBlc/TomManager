@@ -45,13 +45,15 @@ src/
 ```
 src/
 ├── main.tsx               # Entry point
-├── App.tsx                # Router + Toaster
+├── App.tsx                # Router + AuthProvider + Toaster
 ├── vite-env.d.ts          # Vite types
 ├── config/
 │   └── api.ts             # Axios instance
+├── contexts/
+│   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/
 │   ├── HomePage.tsx       # Landing page
-│   └── LoginPage.tsx      # Login form
+│   └── LoginPage.tsx      # Login form (identifier, optional token)
 ├── routes/
 │   └── AppRoutes.tsx      # Route definitions
 ├── styles/

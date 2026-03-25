@@ -1,20 +1,47 @@
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../config/api";
+import { useAuth } from "../contexts/AuthContext";
 
 interface LoginForm {
-  email: string;
+  identifier: string;
   password: string;
+}
+
+interface InvitationInfo {
+  email: string;
+  eventName: string;
+  eventId: string;
 }
 
 export default function LoginPage() {
   const { register, handleSubmit } = useForm<LoginForm>();
+  const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const token = searchParams.get("token");
+  const [invitationInfo, setInvitationInfo] = useState<InvitationInfo | null>(null);
+
+  useEffect(() => {
+    if (token) {
+      api
+        .get(`/api/invitations/${token}`)
+        .then((res) => setInvitationInfo(res.data.data))
+        .catch(() => toast.error("Invalid or expired invitation"));
+    }
+  }, [token]);
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      await api.post("/api/auth/login", data);
+      const result = await login(data.identifier, data.password, token || undefined);
       toast.success("Logged in!");
-      window.location.href = "/";
+      if (result.eventId) {
+        navigate(`/events/${result.eventId}`);
+      } else {
+        navigate("/");
+      }
     } catch {
       toast.error("Invalid credentials");
     }
@@ -25,15 +52,25 @@ export default function LoginPage() {
       <div className="card w-96 bg-base-100 shadow-xl">
         <div className="card-body">
           <h2 className="card-title justify-center">Login</h2>
+
+          {invitationInfo && (
+            <div className="alert alert-info text-sm">
+              <span>
+                You have been invited to <strong>{invitationInfo.eventName}</strong>.
+                Log in to join.
+              </span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Email</span>
+                <span className="label-text">Email or username</span>
               </label>
               <input
-                type="email"
+                type="text"
                 className="input input-bordered"
-                {...register("email", { required: true })}
+                {...register("identifier", { required: true })}
               />
             </div>
             <div className="form-control">

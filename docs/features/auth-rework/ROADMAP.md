@@ -66,14 +66,14 @@
 
 ## Session 5 : Frontend — AuthContext + LoginPage rework
 
-- [ ] Creer `contexts/AuthContext.tsx` — AuthProvider, useAuth hook
-- [ ] Wrapper l'app avec AuthProvider dans `App.tsx`
-- [ ] Modifier `LoginPage.tsx` :
+- [x] Creer `contexts/AuthContext.tsx` — AuthProvider, useAuth hook
+- [x] Wrapper l'app avec AuthProvider dans `App.tsx`
+- [x] Modifier `LoginPage.tsx` :
   - `identifier` au lieu de `email`
   - Support `?token=` query param
   - Affichage info invitation si token present
   - Redirection post-login (vers event si token, vers / sinon)
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md`
+- [x] Mettre a jour `.claude/context/FILE_MAP.md`
 
 ---
 
