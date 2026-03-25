@@ -1,11 +1,11 @@
 # Avancement du projet
 
-## Phase actuelle : Phase 1 terminee, prochaine Phase 2
+## Phase actuelle : Phase 2 terminee, prochaine Phase 3
 
-Phase 1 (Auth Rework - inscription par invitation) est complete.
-Detail : `docs/features/auth-rework/ROADMAP.md`
+Phase 1 (Auth Rework) : complete. Detail : `docs/features/auth-rework/ROADMAP.md`
+Phase 2 (Event Management) : complete. Detail : `docs/features/event-management/ROADMAP.md`
 
-Prochaine etape : Phase 2 (Event Management - CRUD complet events, participants, invitations).
+Prochaine etape : Phase 3 (Planning System - GameTables).
 
 ## Resume de reprise
 
