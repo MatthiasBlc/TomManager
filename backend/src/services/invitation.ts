@@ -102,3 +102,16 @@ export async function acceptInvitation(token: string, userId: string) {
 
   return { invitation: updatedInvitation, participation };
 }
+
+export async function listInvitations(eventId: string) {
+  return prisma.eventInvitation.findMany({
+    where: { eventId },
+    select: {
+      id: true,
+      email: true,
+      status: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}

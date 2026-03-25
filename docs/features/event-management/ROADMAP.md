@@ -27,24 +27,24 @@
 
 ## Session 2 : Invitations listing + Participants CRUD backend
 
-- [ ] Ajouter `listInvitations(eventId)` dans `services/invitation.ts`
-- [ ] Ajouter handler + route GET `/api/events/:eventId/invitations`
-- [ ] Creer `services/participant.ts` :
+- [x] Ajouter `listInvitations(eventId)` dans `services/invitation.ts`
+- [x] Ajouter handler + route GET `/api/events/:eventId/invitations`
+- [x] Creer `services/participant.ts` :
   - `listParticipants(eventId)` — userId, username, role, joinedAt
   - `removeParticipant(eventId, userId)` — verif createur, cascade basique
   - `leaveEvent(eventId, userId)` — verif createur, meme cascade
-- [ ] Creer `controllers/participant.ts`
-- [ ] Creer `routes/participant.ts` :
+- [x] Creer `controllers/participant.ts`
+- [x] Creer `routes/participant.ts` :
   - `GET /api/events/:eventId/participants`
   - `DELETE /api/events/:eventId/participants/me`
   - `DELETE /api/events/:eventId/participants/:userId`
-- [ ] Brancher dans `routes/index.ts`
-- [ ] Tests integration :
+- [x] Brancher dans `routes/index.ts`
+- [x] Tests integration :
   - Invitation listing (createur OK, non-createur 403)
   - Participant listing (participant OK, non-participant 403)
   - Remove participant (createur OK, self-remove impossible, non-createur 403)
   - Leave event (participant OK, createur impossible)
-- [ ] Mettre a jour `.claude/context/API_MAP.md`
+- [x] Mettre a jour `.claude/context/API_MAP.md`
 
 ---
 

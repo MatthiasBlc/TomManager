@@ -27,7 +27,16 @@
 
 ## Invitations
 
-| Method | Path                                   | Auth                       | Description        |
-| ------ | -------------------------------------- | -------------------------- | ------------------ |
-| POST   | `/api/events/:eventId/invitations`     | requireAuth + requireAdmin | Create invitation  |
-| GET    | `/api/invitations/:token`              | Public                     | Validate token     |
+| Method | Path                                   | Auth                              | Description           |
+| ------ | -------------------------------------- | --------------------------------- | --------------------- |
+| POST   | `/api/events/:eventId/invitations`     | requireAuth + requireAdmin        | Create invitation     |
+| GET    | `/api/events/:eventId/invitations`     | requireAuth + requireEventCreator | List invitations      |
+| GET    | `/api/invitations/:token`              | Public                            | Validate token        |
+
+## Participants (`/api/events/:eventId/participants`)
+
+| Method | Path         | Auth                              | Description          |
+| ------ | ------------ | --------------------------------- | -------------------- |
+| GET    | `/`          | requireAuth + requireEventParticipant | List participants |
+| DELETE | `/me`        | requireAuth + requireEventParticipant | Leave event       |
+| DELETE | `/:userId`   | requireAuth + requireEventCreator | Remove participant   |

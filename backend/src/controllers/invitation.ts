@@ -38,3 +38,13 @@ export async function validate(req: Request, res: Response, next: NextFunction) 
     next(err);
   }
 }
+
+export async function list(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { eventId } = req.params;
+    const invitations = await invitationService.listInvitations(eventId);
+    res.json({ data: invitations });
+  } catch (err) {
+    next(err);
+  }
+}
