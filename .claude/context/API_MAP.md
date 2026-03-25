@@ -59,3 +59,12 @@
 | Method | Path    | Auth        | Description          |
 | ------ | ------- | ----------- | -------------------- |
 | GET    | `/?q=`  | requireAuth | Tag autocomplete     |
+
+## Board Games (`/api/boardgames`)
+
+| Method | Path              | Auth        | Description                          |
+| ------ | ----------------- | ----------- | ------------------------------------ |
+| GET    | `/search?q=`      | requireAuth | Recherche (local + fallback BGG)     |
+| GET    | `/:boardGameId`   | requireAuth | Detail (lazy fetch BGG si stub)      |
+| POST   | `/`               | requireAuth | Creation manuelle                    |
+| POST   | `/from-bgg`       | requireAuth | Find or create from BGG data         |

@@ -18,25 +18,25 @@
 
 ## Session 2 : Service BGG + BoardGame CRUD backend
 
-- [ ] Installer dep XML parser si necessaire (ex: `fast-xml-parser`)
-- [ ] Creer `services/bgg.ts` — client HTTP BGG XML API v2
+- [x] Installer dep XML parser si necessaire (ex: `fast-xml-parser`)
+- [x] Creer `services/bgg.ts` — client HTTP BGG XML API v2
   - searchBGG(query) : parse XML search results
   - fetchBGGThing(bggId) : parse XML thing detail
   - Timeout 5s, 1 retry
-- [ ] Creer `services/boardGame.ts` — searchBoardGames, getBoardGame, createBoardGame
+- [x] Creer `services/boardGame.ts` — searchBoardGames, getBoardGame, createBoardGame
   - searchBoardGames : local ILIKE + fallback BGG, dedup, max 20
   - getBoardGame : lazy fetch BGG si stub (description NULL)
   - createBoardGame : creation manuelle
-- [ ] Creer `controllers/boardGame.ts` — handlers search, detail, create
-- [ ] Creer `routes/boardGame.ts` — GET /search, GET /:id, POST /
-- [ ] Brancher dans `routes/index.ts`
-- [ ] Tests integration :
+- [x] Creer `controllers/boardGame.ts` — handlers search, detail, create
+- [x] Creer `routes/boardGame.ts` — GET /search, GET /:id, POST /
+- [x] Brancher dans `routes/index.ts`
+- [x] Tests integration :
   - Recherche locale (happy path)
   - Recherche avec fallback BGG (mock HTTP)
   - Detail avec lazy fetch BGG (mock HTTP)
   - Creation manuelle (happy path, validation)
   - Parsing XML BGG (mock responses)
-- [ ] Mettre a jour `.claude/context/API_MAP.md`
+- [x] Mettre a jour `.claude/context/API_MAP.md`
 
 ---
 
