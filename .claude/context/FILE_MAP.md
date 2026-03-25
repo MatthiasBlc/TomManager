@@ -52,10 +52,12 @@ src/
 ├── contexts/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/
-│   ├── HomePage.tsx       # Landing page
-│   └── LoginPage.tsx      # Login form (identifier, optional token)
+│   ├── HomePage.tsx              # Landing page
+│   ├── LoginPage.tsx             # Login form (identifier, optional token)
+│   ├── SignupPage.tsx            # Signup form (invitation required)
+│   └── InvitationLandingPage.tsx # /invite/:token — validates and redirects
 ├── routes/
-│   └── AppRoutes.tsx      # Route definitions
+│   └── AppRoutes.tsx      # Route definitions (/, /login, /signup, /invite/:token)
 ├── styles/
 │   └── index.css          # Tailwind directives
 └── __tests__/

@@ -79,20 +79,20 @@
 
 ## Session 6 : Frontend — InvitationLandingPage + SignupPage
 
-- [ ] Creer `pages/InvitationLandingPage.tsx` :
+- [x] Creer `pages/InvitationLandingPage.tsx` :
   - Appel GET /api/invitations/:token
   - Redirection vers login ou signup selon hasAccount
   - Affichage erreurs (expire, utilise, introuvable)
-- [ ] Creer `pages/SignupPage.tsx` :
+- [x] Creer `pages/SignupPage.tsx` :
   - Email pre-rempli (readonly) depuis query param
   - Champs : username, password, confirm password
   - Appel signup avec token
   - Redirection vers event
-- [ ] Ajouter routes dans `AppRoutes.tsx` (`/invite/:token`, `/signup`)
+- [x] Ajouter routes dans `AppRoutes.tsx` (`/invite/:token`, `/signup`)
 - [ ] Tests frontend :
   - InvitationLandingPage rendu + redirection
   - SignupPage validation formulaire
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md`
+- [x] Mettre a jour `.claude/context/FILE_MAP.md`
 
 ---
 
