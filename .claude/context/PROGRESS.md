@@ -1,13 +1,11 @@
 # Avancement du projet
 
-## Phase actuelle : Pre-developpement (spec & roadmap)
+## Phase actuelle : Phase 1 terminee, prochaine Phase 2
 
-Boilerplate en place. Spec et roadmap rediges.
+Phase 1 (Auth Rework - inscription par invitation) est complete.
+Detail : `docs/features/auth-rework/ROADMAP.md`
 
-- `docs/SPEC.md` : specification technique complete (37 endpoints, 12 entites, tous edge cases)
-- `docs/ROADMAP.md` : roadmap 7 phases (auth -> events -> planning -> boardgames -> realtime -> notifications -> polish)
-
-Prochaine etape : Phase 1 (Auth Rework - inscription par invitation).
+Prochaine etape : Phase 2 (Event Management - CRUD complet events, participants, invitations).
 
 ## Resume de reprise
 

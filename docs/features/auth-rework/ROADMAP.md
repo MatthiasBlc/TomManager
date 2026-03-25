@@ -98,8 +98,8 @@
 
 ## Session 7 : Polish + mise a jour docs
 
-- [ ] Verifier tous les tests passent (backend + frontend)
-- [ ] Verifier les edge cases (cf. spec section 4)
-- [ ] Mettre a jour `.claude/context/PROGRESS.md` (phase 1 terminee)
-- [ ] Mettre a jour `.claude/context/TESTS.md` (inventaire tests)
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md` (final)
+- [x] Verifier tous les tests passent (backend + frontend) — 38/38
+- [x] Verifier les edge cases (cf. spec section 4)
+- [x] Mettre a jour `.claude/context/PROGRESS.md` (phase 1 terminee)
+- [x] Mettre a jour `.claude/context/TESTS.md` (inventaire tests)
+- [x] Mettre a jour `.claude/context/FILE_MAP.md` (final)
