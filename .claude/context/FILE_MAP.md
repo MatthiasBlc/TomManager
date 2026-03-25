@@ -9,15 +9,21 @@ src/
 ├── config/
 │   └── env.ts             # Environment validation (envalid)
 ├── controllers/
-│   └── auth.ts            # signup, login, logout, me
+│   ├── auth.ts            # signup, login, logout, me
+│   ├── event.ts           # create event
+│   └── invitation.ts      # create invitation, validate token
 ├── middleware/
-│   ├── auth.ts            # requireAuth middleware
+│   ├── auth.ts            # requireAuth, requireAdmin
 │   └── errorHandler.ts    # Global error handler
 ├── routes/
 │   ├── index.ts           # Main router
-│   └── auth.ts            # Auth routes
+│   ├── auth.ts            # Auth routes
+│   ├── event.ts           # Event routes
+│   └── invitation.ts      # Invitation routes
 ├── services/
-│   └── auth.ts            # Auth business logic
+│   ├── auth.ts            # Auth business logic
+│   ├── event.ts           # Event creation
+│   └── invitation.ts      # Invitation CRUD, token validation
 ├── types/
 │   └── express-session.d.ts  # Session type augmentation
 ├── util/
@@ -28,8 +34,10 @@ src/
     │   ├── globalSetup.ts # DB cleanup afterEach
     │   └── testHelpers.ts # Supertest helpers
     └── integration/
-        ├── health.test.ts # Health check test
-        └── auth.test.ts   # Auth API tests
+        ├── health.test.ts     # Health check test
+        ├── auth.test.ts       # Auth API tests
+        ├── event.test.ts      # Event API tests
+        └── invitation.test.ts # Invitation API tests
 ```
 
 ## Frontend (frontend/src/)

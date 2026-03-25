@@ -39,10 +39,12 @@ npx vitest run                    # Tous les tests
 
 ## Inventaire des tests
 
-### Backend (~5 tests)
+### Backend (~27 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup, login, me)
+- `integration/event.test.ts` - Event API (create, auth, validation)
+- `integration/invitation.test.ts` - Invitation API (create, resend, validate token)
 
 ### Frontend (~1 test)
 

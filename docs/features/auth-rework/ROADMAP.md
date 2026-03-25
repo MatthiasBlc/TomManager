@@ -30,18 +30,19 @@
 
 ## Session 3 : Service Invitation (creation + validation token)
 
-- [ ] Creer `services/invitation.ts` :
+- [x] Creer `services/invitation.ts` :
   - `createInvitation(eventId, email, invitedBy)` — genere token, gere resend EXPIRED
   - `validateToken(token)` — retourne info invitation + hasAccount
-- [ ] Creer `controllers/invitation.ts` — handlers POST create + GET validate
-- [ ] Creer `routes/invitation.ts` :
+  - `acceptInvitation(token, userId)` — accepte invitation, cree participation
+- [x] Creer `controllers/invitation.ts` — handlers POST create + GET validate
+- [x] Creer `routes/invitation.ts` :
   - `POST /api/events/:eventId/invitations` (requireAuth + requireAdmin)
   - `GET /api/invitations/:token` (public)
-- [ ] Brancher dans `routes/index.ts`
-- [ ] Tests integration :
+- [x] Brancher dans `routes/index.ts`
+- [x] Tests integration :
   - Creation invitation (happy path, PENDING existant -> 409, EXPIRED -> resend)
   - Validation token (valide, expire, utilise, introuvable)
-- [ ] Mettre a jour `.claude/context/API_MAP.md`
+- [x] Mettre a jour `.claude/context/API_MAP.md`
 
 ---
 

@@ -20,3 +20,10 @@
 | Method | Path | Auth                    | Description  |
 | ------ | ---- | ----------------------- | ------------ |
 | POST   | `/`  | requireAuth + requireAdmin | Create event |
+
+## Invitations
+
+| Method | Path                                   | Auth                       | Description        |
+| ------ | -------------------------------------- | -------------------------- | ------------------ |
+| POST   | `/api/events/:eventId/invitations`     | requireAuth + requireAdmin | Create invitation  |
+| GET    | `/api/invitations/:token`              | Public                     | Validate token     |
