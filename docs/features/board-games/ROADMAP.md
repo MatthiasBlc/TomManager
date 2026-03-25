@@ -74,7 +74,7 @@
 
 ## Session 5 : Tests + polish + mise a jour docs
 
-- [ ] Verifier tous les tests passent (backend + frontend)
-- [ ] Mettre a jour `.claude/context/PROGRESS.md` (phase 4 terminee)
-- [ ] Mettre a jour `.claude/context/TESTS.md`
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md` (final)
+- [x] Verifier tous les tests passent (backend + frontend) — 123+1 = 124
+- [x] Mettre a jour `.claude/context/PROGRESS.md` (phase 4 terminee)
+- [x] Mettre a jour `.claude/context/TESTS.md`
+- [x] Mettre a jour `.claude/context/FILE_MAP.md` (final)
