@@ -21,7 +21,7 @@ interface EventDetail {
   }[];
 }
 
-type Tab = "info" | "participants" | "invitations";
+type Tab = "info" | "participants" | "invitations" | "planning";
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -109,6 +109,12 @@ export default function EventDetailPage() {
           onClick={() => setTab("info")}
         >
           Info
+        </button>
+        <button
+          className={`tab ${tab === "planning" ? "tab-active" : ""}`}
+          onClick={() => navigate(`/events/${eventId}/planning`)}
+        >
+          Planning
         </button>
         <button
           className={`tab ${tab === "participants" ? "tab-active" : ""}`}

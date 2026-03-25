@@ -83,13 +83,13 @@
 
 ## Session 5 : Frontend — PlanningPage + TableCard + CreateTableModal
 
-- [ ] Creer `pages/PlanningPage.tsx` — vue timeline des tables
-- [ ] Creer `components/planning/TimelineView.tsx` — affichage chronologique
-- [ ] Creer `components/planning/TableCard.tsx` — carte table
-- [ ] Creer `components/planning/CreateTableModal.tsx` — formulaire creation
-- [ ] Creer `components/planning/TagInput.tsx` — autocomplete multi-select
-- [ ] Ajouter route `/events/:eventId/planning` + onglet dans EventDetailPage
-- [ ] Mettre a jour `.claude/context/FILE_MAP.md`
+- [x] Creer `pages/PlanningPage.tsx` — vue timeline des tables
+- [x] Creer `components/planning/TimelineView.tsx` — affichage chronologique
+- [x] Creer `components/planning/TableCard.tsx` — carte table
+- [x] Creer `components/planning/CreateTableModal.tsx` — formulaire creation
+- [x] Creer `components/planning/TagInput.tsx` — autocomplete multi-select
+- [x] Ajouter route `/events/:eventId/planning` + onglet dans EventDetailPage
+- [x] Mettre a jour `.claude/context/FILE_MAP.md`
 
 ---
 
