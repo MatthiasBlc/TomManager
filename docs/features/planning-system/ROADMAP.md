@@ -66,18 +66,18 @@
 
 ## Session 4 : Cascades (dates event + retrait participant)
 
-- [ ] Modifier `updateEvent` — cascade dates sur GameTables
+- [x] Modifier `updateEvent` — cascade dates sur GameTables
   - Clamper dates tables, supprimer si invalides
-- [ ] Modifier `removeParticipant` / `leaveEvent` — cascade tables
+- [x] Modifier `removeParticipant` / `leaveEvent` — cascade tables
   - Supprimer GameTables creees par le user
   - Supprimer GameTableParticipant pour le user
   - Promouvoir waitlist si necessaire
-- [ ] Modifier `deleteEvent` — cascade GameTables + participants + tags
-- [ ] Tests integration :
+- [x] Modifier `deleteEvent` — cascade GameTables + participants + tags
+- [x] Tests integration :
   - Cascade dates event (clamp, suppression tables invalides)
   - Cascade retrait participant (tables supprimees, participations retirees)
   - Cascade delete event (tout nettoye)
-- [ ] Mettre a jour `.claude/context/API_MAP.md` si besoin
+- [x] Mettre a jour `.claude/context/API_MAP.md` si besoin
 
 ---
 

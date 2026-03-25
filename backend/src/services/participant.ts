@@ -23,6 +23,44 @@ export async function listParticipants(eventId: string) {
   }));
 }
 
+async function cascadeRemoveFromTables(
+  eventId: string,
+  userId: string,
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
+) {
+  // Delete GameTables created by this user in this event (cascade handles children)
+  await tx.gameTable.deleteMany({
+    where: { eventId, createdBy: userId },
+  });
+
+  // Remove user from all table participations in this event
+  const tableParticipations = await tx.gameTableParticipant.findMany({
+    where: {
+      gameTable: { eventId },
+      userId,
+    },
+    include: { gameTable: true },
+  });
+
+  for (const tp of tableParticipations) {
+    await tx.gameTableParticipant.delete({ where: { id: tp.id } });
+
+    // Promote waitlist if the user was confirmed
+    if (tp.status === "CONFIRMED") {
+      const firstWaitlisted = await tx.gameTableParticipant.findFirst({
+        where: { gameTableId: tp.gameTableId, status: "WAITLIST" },
+        orderBy: { joinedAt: "asc" },
+      });
+      if (firstWaitlisted) {
+        await tx.gameTableParticipant.update({
+          where: { id: firstWaitlisted.id },
+          data: { status: "CONFIRMED" },
+        });
+      }
+    }
+  }
+}
+
 export async function removeParticipant(eventId: string, userId: string) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
@@ -41,8 +79,9 @@ export async function removeParticipant(eventId: string, userId: string) {
     throw createError(404, "Participant not found");
   }
 
-  await prisma.eventParticipation.delete({
-    where: { id: participation.id },
+  await prisma.$transaction(async (tx) => {
+    await cascadeRemoveFromTables(eventId, userId, tx);
+    await tx.eventParticipation.delete({ where: { id: participation.id } });
   });
 }
 
@@ -64,7 +103,8 @@ export async function leaveEvent(eventId: string, userId: string) {
     throw createError(404, "Not a participant of this event");
   }
 
-  await prisma.eventParticipation.delete({
-    where: { id: participation.id },
+  await prisma.$transaction(async (tx) => {
+    await cascadeRemoveFromTables(eventId, userId, tx);
+    await tx.eventParticipation.delete({ where: { id: participation.id } });
   });
 }

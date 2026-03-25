@@ -652,6 +652,164 @@ describe("GameTable API", () => {
   });
 });
 
+describe("Cascade Tests", () => {
+  describe("Event date cascade to GameTables", () => {
+    it("should clamp table dates when event dates shrink", async () => {
+      const { admin, event } = await setupEventWithParticipant();
+
+      // Create table spanning full event (10:00-18:00)
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({
+          ...validTableData,
+          startDateTime: "2026-06-01T10:00:00Z",
+          endDateTime: "2026-06-01T18:00:00Z",
+        });
+
+      // Shrink event to 12:00-16:00
+      await request
+        .patch(`/api/events/${event.id}`)
+        .set("Cookie", admin.cookie)
+        .send({
+          startDateTime: "2026-06-01T12:00:00Z",
+          endDateTime: "2026-06-01T16:00:00Z",
+        });
+
+      const tables = await request
+        .get(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie);
+
+      expect(tables.body.data).toHaveLength(1);
+      expect(new Date(tables.body.data[0].startDateTime).toISOString()).toBe("2026-06-01T12:00:00.000Z");
+      expect(new Date(tables.body.data[0].endDateTime).toISOString()).toBe("2026-06-01T16:00:00.000Z");
+    });
+
+    it("should delete table when clamped dates become invalid", async () => {
+      const { admin, event } = await setupEventWithParticipant();
+
+      // Create table 10:00-12:00
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({
+          ...validTableData,
+          startDateTime: "2026-06-01T10:00:00Z",
+          endDateTime: "2026-06-01T12:00:00Z",
+        });
+
+      // Move event start to 14:00 — table (10-12) becomes invalid
+      await request
+        .patch(`/api/events/${event.id}`)
+        .set("Cookie", admin.cookie)
+        .send({ startDateTime: "2026-06-01T14:00:00Z" });
+
+      const tables = await request
+        .get(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie);
+
+      expect(tables.body.data).toHaveLength(0);
+    });
+  });
+
+  describe("Participant removal cascade to GameTables", () => {
+    it("should delete tables created by removed participant", async () => {
+      const { admin, playerCookie, playerId, event } = await setupEventWithParticipant();
+
+      // Player creates a table
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send(validTableData);
+
+      // Admin removes player from event
+      await request
+        .delete(`/api/events/${event.id}/participants/${playerId}`)
+        .set("Cookie", admin.cookie);
+
+      // Tables created by removed player should be gone
+      const tables = await request
+        .get(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie);
+
+      expect(tables.body.data).toHaveLength(0);
+    });
+
+    it("should remove participant from tables and promote waitlist", async () => {
+      const { admin, playerCookie, playerId, event } = await setupEventWithParticipant();
+
+      // Admin creates table with maxPlayers=1
+      const createRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({ ...validTableData, maxPlayers: 1 });
+      const tableId = createRes.body.data.id;
+
+      // Player joins (confirmed)
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", playerCookie);
+
+      // Add a third participant who will be waitlisted
+      const inv = await createTestInvitation(admin.cookie, event.id, "wait@example.com");
+      await request.post("/api/auth/signup").send({
+        email: "wait@example.com",
+        username: "waiter",
+        password: "Password123!",
+        invitationToken: inv.invitation.token,
+      });
+      const waitLogin = await request.post("/api/auth/login").send({
+        identifier: "wait@example.com",
+        password: "Password123!",
+      });
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", waitLogin.headers["set-cookie"]);
+
+      // Remove player from event
+      await request
+        .delete(`/api/events/${event.id}/participants/${playerId}`)
+        .set("Cookie", admin.cookie);
+
+      // Waitlisted should be promoted
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+
+      expect(detail.body.data.participants).toHaveLength(1);
+      expect(detail.body.data.participants[0].status).toBe("CONFIRMED");
+      expect(detail.body.data.participants[0].username).toBe("waiter");
+    });
+  });
+
+  describe("Event deletion cascade to GameTables", () => {
+    it("should delete all tables when event is deleted", async () => {
+      const { admin, event } = await setupEventWithParticipant();
+
+      // Create tables
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send(validTableData);
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({ ...validTableData, title: "Second Table" });
+
+      // Delete event
+      await request
+        .delete(`/api/events/${event.id}`)
+        .set("Cookie", admin.cookie);
+
+      // Event should be gone
+      const eventRes = await request
+        .get(`/api/events/${event.id}`)
+        .set("Cookie", admin.cookie);
+      expect(eventRes.status).toBe(404);
+    });
+  });
+});
+
 describe("Tag API", () => {
   describe("GET /api/tags?q=", () => {
     it("should return matching tags", async () => {

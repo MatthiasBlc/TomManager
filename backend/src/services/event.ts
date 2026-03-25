@@ -154,6 +154,26 @@ export async function updateEvent(
         where: { eventId, status: "PENDING" },
         data: { expiresAt: end },
       });
+
+      // Cascade dates to GameTables
+      const tables = await tx.gameTable.findMany({ where: { eventId } });
+      for (const table of tables) {
+        const clampedStart = table.startDateTime < start ? start : table.startDateTime;
+        const clampedEnd = table.endDateTime > end ? end : table.endDateTime;
+
+        if (clampedStart >= clampedEnd) {
+          // Table becomes invalid — delete it (cascade handles tags + participants)
+          await tx.gameTable.delete({ where: { id: table.id } });
+        } else if (
+          clampedStart.getTime() !== table.startDateTime.getTime() ||
+          clampedEnd.getTime() !== table.endDateTime.getTime()
+        ) {
+          await tx.gameTable.update({
+            where: { id: table.id },
+            data: { startDateTime: clampedStart, endDateTime: clampedEnd },
+          });
+        }
+      }
     }
 
     return updated;
@@ -168,9 +188,11 @@ export async function deleteEvent(eventId: string) {
     throw createError(404, "Event not found");
   }
 
-  await prisma.$transaction([
-    prisma.eventParticipation.deleteMany({ where: { eventId } }),
-    prisma.eventInvitation.deleteMany({ where: { eventId } }),
-    prisma.event.delete({ where: { id: eventId } }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    // Delete GameTables (cascade handles GameTableTag + GameTableParticipant)
+    await tx.gameTable.deleteMany({ where: { eventId } });
+    await tx.eventParticipation.deleteMany({ where: { eventId } });
+    await tx.eventInvitation.deleteMany({ where: { eventId } });
+    await tx.event.delete({ where: { id: eventId } });
+  });
 }
