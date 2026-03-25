@@ -17,9 +17,13 @@
 
 ## Events (`/api/events`)
 
-| Method | Path | Auth                    | Description  |
-| ------ | ---- | ----------------------- | ------------ |
-| POST   | `/`  | requireAuth + requireAdmin | Create event |
+| Method | Path          | Auth                              | Description                |
+| ------ | ------------- | --------------------------------- | -------------------------- |
+| POST   | `/`           | requireAuth + requireAdmin        | Create event               |
+| GET    | `/`           | requireAuth                       | List events (USER/ADMIN)   |
+| GET    | `/:eventId`   | requireAuth + requireEventParticipant | Event detail           |
+| PATCH  | `/:eventId`   | requireAuth + requireEventCreator | Update event               |
+| DELETE | `/:eventId`   | requireAuth + requireEventCreator | Delete event + cascade     |
 
 ## Invitations
 

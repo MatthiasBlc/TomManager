@@ -6,22 +6,22 @@
 
 ## Session 1 : Middlewares + Event CRUD backend (list, detail, update, delete)
 
-- [ ] Ajouter middleware `requireEventParticipant` dans `middleware/auth.ts`
-- [ ] Ajouter middleware `requireEventCreator` dans `middleware/auth.ts`
-- [ ] Ajouter `listEvents(userId, role, upcoming?)` dans `services/event.ts`
-- [ ] Ajouter `getEvent(eventId)` dans `services/event.ts`
-- [ ] Ajouter `updateEvent(eventId, data)` dans `services/event.ts`
+- [x] Ajouter middleware `requireEventParticipant` dans `middleware/auth.ts`
+- [x] Ajouter middleware `requireEventCreator` dans `middleware/auth.ts`
+- [x] Ajouter `listEvents(userId, role, upcoming?)` dans `services/event.ts`
+- [x] Ajouter `getEvent(eventId)` dans `services/event.ts`
+- [x] Ajouter `updateEvent(eventId, data)` dans `services/event.ts`
   - Mettre a jour expiresAt des invitations PENDING si dates changent
-- [ ] Ajouter `deleteEvent(eventId)` dans `services/event.ts`
+- [x] Ajouter `deleteEvent(eventId)` dans `services/event.ts`
   - Cascade : invitations + participations
-- [ ] Ajouter handlers dans `controllers/event.ts` (list, detail, update, delete)
-- [ ] Ajouter routes dans `routes/event.ts` (GET /, GET /:eventId, PATCH /:eventId, DELETE /:eventId)
-- [ ] Tests integration :
+- [x] Ajouter handlers dans `controllers/event.ts` (list, detail, update, delete)
+- [x] Ajouter routes dans `routes/event.ts` (GET /, GET /:eventId, PATCH /:eventId, DELETE /:eventId)
+- [x] Tests integration :
   - List events (USER/ADMIN, upcoming filter)
   - Detail event (participant, non-participant, admin)
   - Update event (createur, non-createur, validation)
   - Delete event (createur, non-createur, cascade)
-- [ ] Mettre a jour `.claude/context/API_MAP.md`
+- [x] Mettre a jour `.claude/context/API_MAP.md`
 
 ---
 

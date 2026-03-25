@@ -25,3 +25,54 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
     next(err);
   }
 }
+
+export async function requireEventParticipant(req: Request, res: Response, next: NextFunction) {
+  try {
+    const eventId = req.params.eventId;
+    const userId = req.session.userId!;
+
+    const participation = await prisma.eventParticipation.findUnique({
+      where: { eventId_userId: { eventId, userId } },
+    });
+
+    if (!participation) {
+      // Allow ADMIN access even without participation
+      const user = await prisma.user.findFirst({
+        where: { id: userId, deletedAt: null },
+      });
+      if (!user || user.role !== "ADMIN") {
+        res.status(403).json({ error: { message: "Event participation required" } });
+        return;
+      }
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function requireEventCreator(req: Request, res: Response, next: NextFunction) {
+  try {
+    const eventId = req.params.eventId;
+    const userId = req.session.userId!;
+
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      res.status(404).json({ error: { message: "Event not found" } });
+      return;
+    }
+
+    if (event.createdBy !== userId) {
+      res.status(403).json({ error: { message: "Only the event creator can perform this action" } });
+      return;
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
