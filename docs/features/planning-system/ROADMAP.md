@@ -6,15 +6,15 @@
 
 ## Session 1 : Migration Prisma + Modeles DB
 
-- [ ] Ajouter enum `TableParticipantStatus` (CONFIRMED, WAITLIST)
-- [ ] Ajouter model `GameTable` avec relations et index
-- [ ] Ajouter model `Tag` (name unique lowercase)
-- [ ] Ajouter model `GameTableTag` (PK composite)
-- [ ] Ajouter model `GameTableParticipant` avec contrainte unique et index
-- [ ] Ajouter relations sur User et Event
-- [ ] Generer et appliquer la migration
-- [ ] Mettre a jour `.claude/context/DB_MODELS.md`
-- [ ] Mettre a jour globalSetup.ts (cleanup des nouvelles tables)
+- [x] Ajouter enum `TableParticipantStatus` (CONFIRMED, WAITLIST)
+- [x] Ajouter model `GameTable` avec relations et index
+- [x] Ajouter model `Tag` (name unique lowercase)
+- [x] Ajouter model `GameTableTag` (PK composite)
+- [x] Ajouter model `GameTableParticipant` avec contrainte unique et index
+- [x] Ajouter relations sur User et Event
+- [x] Generer et appliquer la migration
+- [x] Mettre a jour `.claude/context/DB_MODELS.md`
+- [x] Mettre a jour globalSetup.ts (cleanup des nouvelles tables)
 
 ---
 

@@ -25,9 +25,11 @@ model User {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  createdEvents       Event[]
-  sentInvitations     EventInvitation[]
-  eventParticipations EventParticipation[]
+  createdEvents          Event[]
+  sentInvitations        EventInvitation[]
+  eventParticipations    EventParticipation[]
+  createdGameTables      GameTable[]
+  gameTableParticipations GameTableParticipant[]
 }
 
 model Event {
@@ -42,6 +44,7 @@ model Event {
   creator        User                @relation(fields: [createdBy], references: [id])
   invitations    EventInvitation[]
   participations EventParticipation[]
+  gameTables     GameTable[]
 }
 
 model EventInvitation {
@@ -74,6 +77,59 @@ model EventParticipation {
   @@unique([eventId, userId])
 }
 
+model GameTable {
+  id            String   @id @default(uuid())
+  eventId       String
+  createdBy     String
+  title         String
+  pitch         String?
+  triggers      String?
+  comments      String?
+  maxPlayers    Int
+  startDateTime DateTime
+  endDateTime   DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  event        Event                @relation(fields: [eventId], references: [id])
+  creator      User                 @relation(fields: [createdBy], references: [id])
+  tags         GameTableTag[]
+  participants GameTableParticipant[]
+
+  @@index([eventId, startDateTime])
+}
+
+model Tag {
+  id   String @id @default(uuid())
+  name String @unique
+
+  gameTables GameTableTag[]
+}
+
+model GameTableTag {
+  gameTableId String
+  tagId       String
+
+  gameTable GameTable @relation(fields: [gameTableId], references: [id], onDelete: Cascade)
+  tag       Tag       @relation(fields: [tagId], references: [id])
+
+  @@id([gameTableId, tagId])
+}
+
+model GameTableParticipant {
+  id          String                @id @default(uuid())
+  gameTableId String
+  userId      String
+  status      TableParticipantStatus @default(CONFIRMED)
+  joinedAt    DateTime              @default(now())
+
+  gameTable GameTable @relation(fields: [gameTableId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([gameTableId, userId])
+  @@index([gameTableId, status])
+}
+
 enum Role {
   USER
   ADMIN
@@ -83,4 +139,9 @@ enum InvitationStatus {
   PENDING
   ACCEPTED
   EXPIRED
+}
+
+enum TableParticipantStatus {
+  CONFIRMED
+  WAITLIST
 }
