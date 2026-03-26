@@ -266,7 +266,7 @@ describe("GameTable API", () => {
     });
 
     it("should demote last confirmed players when reducing maxPlayers", async () => {
-      const { admin, playerCookie, playerId, event } = await setupEventWithParticipant();
+      const { admin, playerCookie, playerId: _playerId, event } = await setupEventWithParticipant();
 
       // Admin creates table with maxPlayers=2
       const createRes = await request

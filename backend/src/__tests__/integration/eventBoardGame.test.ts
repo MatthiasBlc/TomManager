@@ -93,7 +93,7 @@ describe("EventBoardGame API", () => {
       const bg = await createBoardGame();
 
       // Create a user who is NOT a participant
-      const { user: outsider } = await (await import("../setup/testHelpers")).createTestUserDirectly({
+      const { user: _outsider } = await (await import("../setup/testHelpers")).createTestUserDirectly({
         email: "outsider@example.com",
         username: "outsider",
       });

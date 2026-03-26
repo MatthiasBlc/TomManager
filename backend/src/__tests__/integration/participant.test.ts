@@ -18,7 +18,7 @@ async function addParticipant(eventId: string, userId: string) {
 describe("Participant API", () => {
   describe("GET /api/events/:eventId/participants", () => {
     it("should list participants for event participant", async () => {
-      const { cookie: adminCookie, user: admin } = await setupAdmin();
+      const { cookie: adminCookie, user: _admin } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
       const { user: regularUser } = await createTestUserDirectly({

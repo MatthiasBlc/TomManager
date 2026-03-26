@@ -8,7 +8,7 @@ import {
 } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
-async function createEventAsAdmin(cookie: string | string[]) {
+async function createEventAsAdmin(cookie: string[]) {
   const res = await request
     .post("/api/events")
     .set("Cookie", cookie)

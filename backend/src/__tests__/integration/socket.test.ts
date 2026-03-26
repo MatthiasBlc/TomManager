@@ -5,7 +5,6 @@ import { io as ioClient, Socket as ClientSocket } from "socket.io-client";
 import app from "../../app";
 import { initSocket } from "../../socket";
 import {
-  request,
   setupAdmin,
   createTestEvent,
 } from "../setup/testHelpers";

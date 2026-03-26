@@ -52,7 +52,7 @@ export async function setupAdmin(overrides?: {
   const res = await request
     .post("/api/auth/login")
     .send({ identifier: email, password });
-  const cookie = res.headers["set-cookie"];
+  const cookie = [res.headers["set-cookie"]].flat() as string[];
 
   return { user, cookie, email, username, password };
 }
@@ -61,7 +61,7 @@ export async function setupAdmin(overrides?: {
  * Creates an event and returns it. Requires an admin cookie.
  */
 export async function createTestEvent(
-  cookie: string | string[],
+  cookie: string[],
   overrides?: { name?: string; startDateTime?: string; endDateTime?: string }
 ) {
   const res = await request
@@ -79,7 +79,7 @@ export async function createTestEvent(
  * Creates an invitation and returns the token. Requires an admin cookie and an eventId.
  */
 export async function createTestInvitation(
-  cookie: string | string[],
+  cookie: string[],
   eventId: string,
   email: string
 ) {
@@ -143,7 +143,7 @@ export async function loginTestUser(
   password = "Password123!"
 ) {
   const res = await request.post("/api/auth/login").send({ identifier, password });
-  const cookie = res.headers["set-cookie"];
+  const cookie = [res.headers["set-cookie"]].flat() as string[];
   return { res, cookie };
 }
 
@@ -152,6 +152,6 @@ export async function loginAdminUser(
   password = "Password123!"
 ) {
   const res = await request.post("/api/auth/login").send({ identifier, password });
-  const cookie = res.headers["set-cookie"];
+  const cookie = [res.headers["set-cookie"]].flat() as string[];
   return { res, cookie };
 }

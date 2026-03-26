@@ -520,7 +520,7 @@ describe("Notification API", () => {
     });
 
     it("should return 403 for another user's notification", async () => {
-      const { cookie: cookie1, userId: userId1 } = await setupAuthenticatedUser({
+      const { cookie: _cookie1, userId: userId1 } = await setupAuthenticatedUser({
         email: "u1@api.com",
         username: "apiuser1",
       });
@@ -658,7 +658,7 @@ async function setupEventWithPlayer() {
 }
 
 // Helper: add a second player
-async function addSecondPlayer(adminCookie: string | string[], eventId: string) {
+async function addSecondPlayer(adminCookie: string[], eventId: string) {
   const invitation = await createTestInvitation(adminCookie, eventId, "player2@notif.com");
   await request.post("/api/auth/signup").send({
     email: "player2@notif.com",
@@ -717,7 +717,7 @@ describe("Notification Triggers", () => {
 
   describe("Table update with demotion", () => {
     it("should notify demoted players when maxPlayers is reduced", async () => {
-      const { admin, event, playerCookie, playerId } = await setupEventWithPlayer();
+      const { admin, event, playerCookie, playerId: _playerId } = await setupEventWithPlayer();
 
       // Player creates a table with maxPlayers=2
       const tableRes = await request
@@ -855,7 +855,7 @@ describe("Notification Triggers", () => {
 
   describe("Remove participant", () => {
     it("should notify removed participant", async () => {
-      const { admin, event, playerCookie, playerId } = await setupEventWithPlayer();
+      const { admin, event, playerCookie: _playerCookie, playerId } = await setupEventWithPlayer();
 
       // Admin removes the player
       await request
