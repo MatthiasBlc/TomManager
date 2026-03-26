@@ -5,6 +5,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import CreateEventModal from "../components/events/CreateEventModal";
 import FAB from "../components/common/FAB";
+import { SkeletonCardGrid } from "../components/common/Skeleton";
+import EmptyState from "../components/common/EmptyState";
 
 interface EventSummary {
   id: string;
@@ -46,36 +48,32 @@ export default function EventListPage() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <span className="loading loading-spinner loading-lg" />
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-4 md:py-8">
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <h1 className="text-xl font-bold md:text-2xl">Events</h1>
         {user?.role === "ADMIN" && !isMobile && (
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+          <button className="btn btn-primary active:scale-95 transition-transform" onClick={() => setShowCreate(true)}>
             Create Event
           </button>
         )}
       </div>
 
-      {events.length === 0 ? (
-        <div className="text-center py-20 text-base-content/60">
-          <p className="text-lg">No events yet.</p>
-        </div>
+      {loading ? (
+        <SkeletonCardGrid count={3} />
+      ) : events.length === 0 ? (
+        <EmptyState
+          icon={<span>📅</span>}
+          title="No events yet"
+          description={user?.role === "ADMIN" ? "Create your first event to get started." : undefined}
+        />
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 animate-fade-in">
           {events.map((event) => (
             <Link
               key={event.id}
               to={`/events/${event.id}`}
-              className="card bg-base-100 shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+              className="card bg-base-100 shadow-sm hover:shadow-md active:scale-[0.98] transition-all"
             >
               <div className="card-body p-4 md:p-6">
                 <h2 className="card-title text-base md:text-lg">{event.name}</h2>

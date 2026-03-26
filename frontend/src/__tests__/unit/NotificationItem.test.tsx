@@ -120,7 +120,7 @@ describe("NotificationItem", () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByTitle("Supprimer"));
+    fireEvent.click(screen.getByLabelText("Supprimer la notification"));
     expect(onDelete).toHaveBeenCalledWith("n1");
   });
 

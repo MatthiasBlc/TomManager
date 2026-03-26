@@ -59,7 +59,7 @@ export default function NotificationItem({ notification, onMarkAsRead, onDelete 
 
   return (
     <div
-      className={`flex items-start gap-2 p-3 cursor-pointer hover:bg-base-200 transition-colors ${
+      className={`flex items-start gap-2 p-3 cursor-pointer hover:bg-base-200 active:scale-[0.98] transition-all ${
         !notification.read ? "bg-base-200/50" : ""
       }`}
       onClick={handleClick}
@@ -78,7 +78,7 @@ export default function NotificationItem({ notification, onMarkAsRead, onDelete 
           e.stopPropagation();
           onDelete(notification.id);
         }}
-        title="Supprimer"
+        aria-label="Supprimer la notification"
       >
         ✕
       </button>

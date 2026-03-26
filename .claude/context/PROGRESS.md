@@ -1,6 +1,6 @@
 # Avancement du projet
 
-## Phase actuelle : Phase 7 en cours (Sessions 1-5 terminees)
+## Phase actuelle : Phase 7 en cours (Sessions 1-7 terminees)
 
 Phase 1 (Auth Rework) : complete. Detail : `docs/features/auth-rework/ROADMAP.md`
 Phase 2 (Event Management) : complete. Detail : `docs/features/event-management/ROADMAP.md`

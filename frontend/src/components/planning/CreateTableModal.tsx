@@ -60,10 +60,11 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
     <ResponsiveModal open={open} onClose={onClose} title="Create Table">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ct-title">
             <span className="label-text">Title</span>
           </label>
           <input
+            id="ct-title"
             type="text"
             className="input input-bordered w-full"
             {...register("title", {
@@ -79,10 +80,11 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
         </div>
 
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ct-pitch">
             <span className="label-text">Pitch</span>
           </label>
           <textarea
+            id="ct-pitch"
             className="textarea textarea-bordered w-full"
             rows={3}
             {...register("pitch", {
@@ -92,10 +94,11 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
         </div>
 
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ct-triggers">
             <span className="label-text">Triggers</span>
           </label>
           <textarea
+            id="ct-triggers"
             className="textarea textarea-bordered w-full"
             rows={2}
             {...register("triggers", {
@@ -105,10 +108,11 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
         </div>
 
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ct-comments">
             <span className="label-text">Comments</span>
           </label>
           <textarea
+            id="ct-comments"
             className="textarea textarea-bordered w-full"
             rows={2}
             {...register("comments", {
@@ -118,10 +122,11 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
         </div>
 
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ct-maxPlayers">
             <span className="label-text">Max Players</span>
           </label>
           <input
+            id="ct-maxPlayers"
             type="number"
             className="input input-bordered w-full"
             inputMode="numeric"
@@ -143,10 +148,11 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           <div className="form-control">
-            <label className="label">
+            <label className="label" htmlFor="ct-start">
               <span className="label-text">Start</span>
             </label>
             <input
+              id="ct-start"
               type="datetime-local"
               className="input input-bordered w-full"
               {...register("startDateTime", { required: "Start is required" })}
@@ -158,10 +164,11 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
             )}
           </div>
           <div className="form-control">
-            <label className="label">
+            <label className="label" htmlFor="ct-end">
               <span className="label-text">End</span>
             </label>
             <input
+              id="ct-end"
               type="datetime-local"
               className="input input-bordered w-full"
               {...register("endDateTime", { required: "End is required" })}

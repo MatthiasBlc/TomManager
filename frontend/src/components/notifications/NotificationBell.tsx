@@ -3,6 +3,7 @@ import { useNotifications } from "../../hooks/useNotifications";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import MobileSheet from "../common/MobileSheet";
 import NotificationItem from "./NotificationItem";
+import { SkeletonNotificationList } from "../common/Skeleton";
 
 function NotificationList({
   notifications,
@@ -28,8 +29,14 @@ function NotificationList({
         )}
       </div>
       <div className="overflow-y-auto flex-1 divide-y divide-base-200">
+        {isLoading && notifications.length === 0 && (
+          <SkeletonNotificationList count={4} />
+        )}
         {notifications.length === 0 && !isLoading && (
-          <p className="text-sm text-center opacity-50 py-6">Aucune notification</p>
+          <div className="text-center py-8 animate-fade-in">
+            <span className="text-3xl mb-2 block">🔔</span>
+            <p className="text-sm opacity-50">Aucune notification</p>
+          </div>
         )}
         {notifications.map((notif) => (
           <NotificationItem
@@ -103,7 +110,7 @@ export default function NotificationBell() {
 
         {/* Desktop dropdown */}
         {open && !isMobile && (
-          <div className="absolute right-0 mt-2 w-80 bg-base-100 rounded-lg shadow-xl border border-base-300 z-50 max-h-96 flex flex-col">
+          <div className="absolute right-0 mt-2 w-80 bg-base-100 rounded-lg shadow-lg border border-base-300 z-50 max-h-96 flex flex-col">
             <NotificationList {...notifData} />
           </div>
         )}

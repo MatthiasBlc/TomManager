@@ -148,7 +148,7 @@ export default function EventDetailPage() {
       </div>
 
       {tab === "info" && (
-        <div className="card bg-base-100 shadow-md">
+        <div className="card bg-base-100 shadow-sm">
           <div className="card-body p-4 md:p-6">
             <h2 className="card-title text-base md:text-lg">{event.name}</h2>
             <div className="space-y-2 text-sm">

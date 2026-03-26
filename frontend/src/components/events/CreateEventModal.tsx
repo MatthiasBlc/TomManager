@@ -46,10 +46,11 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
     <ResponsiveModal open={open} onClose={onClose} title="Create Event">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 md:p-0 md:mt-4">
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ce-name">
             <span className="label-text">Name</span>
           </label>
           <input
+            id="ce-name"
             type="text"
             className="input input-bordered w-full"
             {...register("name", {
@@ -64,10 +65,11 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
           )}
         </div>
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ce-start">
             <span className="label-text">Start</span>
           </label>
           <input
+            id="ce-start"
             type="datetime-local"
             className="input input-bordered w-full"
             {...register("startDateTime", { required: "Start date is required" })}
@@ -79,10 +81,11 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
           )}
         </div>
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ce-end">
             <span className="label-text">End</span>
           </label>
           <input
+            id="ce-end"
             type="datetime-local"
             className="input input-bordered w-full"
             {...register("endDateTime", { required: "End date is required" })}

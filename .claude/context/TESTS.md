@@ -52,7 +52,7 @@ npx vitest run                    # Tous les tests
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
 
-### Frontend (~40 tests)
+### Frontend (~58 tests)
 
 - `unit/App.test.tsx` - App renders
 - `unit/NotificationBell.test.tsx` - Bell badge, dropdown toggle, mark all read, empty state, load more
@@ -61,6 +61,8 @@ npx vitest run                    # Tous les tests
 - `unit/MobileSheet.test.tsx` - Open/close, title, backdrop click, Escape key, aria-modal
 - `unit/AuthPages.test.tsx` - HomePage responsive classes, LoginPage mobile card, SignupPage no w-96, InvitationLandingPage spinner
 - `unit/EventPages.test.tsx` - FAB aria-label/positioning, ResponsiveModal desktop/mobile/closed rendering
+- `unit/SkeletonEmptyState.test.tsx` - Skeleton variants (card, grid, board game, notification, table detail), EmptyState (title, icon, description, action, animation)
+- `unit/Accessibility.test.tsx` - axe-core tests: EmptyState, SkeletonCardGrid, MobileSheet, ResponsiveModal, NotificationItem (0 violations)
 
 ### Couverture (seuils CI)
 

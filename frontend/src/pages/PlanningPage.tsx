@@ -7,6 +7,7 @@ import TimelineView from "../components/planning/TimelineView";
 import CreateTableModal from "../components/planning/CreateTableModal";
 import FAB from "../components/common/FAB";
 import { useEventSocket } from "../hooks/useEventSocket";
+import { SkeletonCardGrid } from "../components/common/Skeleton";
 
 interface TableSummary {
   id: string;
@@ -61,14 +62,6 @@ export default function PlanningPage() {
     navigate(`/events/${eventId}/planning/${tableId}`);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <span className="loading loading-spinner loading-lg" />
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-4 md:py-8">
       <div className="flex items-center justify-between mb-4 md:mb-6">
@@ -84,13 +77,17 @@ export default function PlanningPage() {
           <h1 className="text-xl font-bold md:text-2xl">Planning</h1>
         </div>
         {!isMobile && (
-          <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
+          <button className="btn btn-primary active:scale-95 transition-transform" onClick={() => setShowCreate(true)}>
             Create Table
           </button>
         )}
       </div>
 
-      <TimelineView tables={tables} onTableClick={handleTableClick} />
+      {loading ? (
+        <SkeletonCardGrid count={4} />
+      ) : (
+        <TimelineView tables={tables} onTableClick={handleTableClick} />
+      )}
 
       {isMobile && (
         <FAB onClick={() => setShowCreate(true)} label="Create Table" />

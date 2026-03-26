@@ -24,7 +24,7 @@ export default function TableCard({ table, onClick }: Props) {
 
   return (
     <div
-      className="card bg-base-100 shadow-md hover:shadow-lg active:scale-[0.98] transition-all cursor-pointer"
+      className="card bg-base-100 shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer"
       onClick={onClick}
     >
       <div className="card-body p-4">

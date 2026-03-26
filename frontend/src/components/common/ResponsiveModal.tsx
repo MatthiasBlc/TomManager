@@ -23,7 +23,7 @@ export default function ResponsiveModal({ open, onClose, title, children }: Prop
   if (!open) return null;
 
   return (
-    <dialog className="modal modal-open">
+    <dialog className="modal modal-open" role="dialog" aria-modal="true" aria-label={title}>
       <div className="modal-box">
         <h3 className="font-bold text-lg">{title}</h3>
         {children}

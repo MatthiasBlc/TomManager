@@ -86,13 +86,13 @@ Spec de reference : [SPEC_UI_MOBILE_FIRST.md](./SPEC_UI_MOBILE_FIRST.md)
 
 **Objectif** : Feedback utilisateur complet (loading, vide, erreurs).
 
-- [ ] Composant `Skeleton` reutilisable (card skeleton, list skeleton, text skeleton)
-- [ ] Skeletons dans : EventListPage, PlanningPage, TableDetailPage, BoardGameList, NotificationBell dropdown
-- [ ] Composant `EmptyState` reutilisable (icone + texte + CTA optionnel)
-- [ ] Empty states dans : EventListPage, PlanningPage, BoardGameList, ParticipantList, NotificationBell
-- [ ] `active:scale-95` sur tous les boutons et cartes cliquables
-- [ ] Transitions d'apparition (`animate-fade-in`) sur les contenus charges
-- [ ] Tests : skeletons affiches pendant loading, empty states affiches quand liste vide
+- [x] Composant `Skeleton` reutilisable (card skeleton, list skeleton, text skeleton)
+- [x] Skeletons dans : EventListPage, PlanningPage, TableDetailPage, BoardGameList, NotificationBell dropdown
+- [x] Composant `EmptyState` reutilisable (icone + texte + CTA optionnel)
+- [x] Empty states dans : EventListPage, PlanningPage, BoardGameList, ParticipantList, NotificationBell
+- [x] `active:scale-95` sur tous les boutons et cartes cliquables
+- [x] Transitions d'apparition (`animate-fade-in`) sur les contenus charges
+- [x] Tests : skeletons affiches pendant loading, empty states affiches quand liste vide
 
 **Validation** : Aucune page ne reste "blanche" pendant le chargement.
 
@@ -102,15 +102,15 @@ Spec de reference : [SPEC_UI_MOBILE_FIRST.md](./SPEC_UI_MOBILE_FIRST.md)
 
 **Objectif** : Audit global d'uniformite, accessibilite de base.
 
-- [ ] Audit couleurs : remplacer toute couleur hardcodee par variables DaisyUI
-- [ ] Audit arrondis : uniformiser (choix projet : `rounded-lg` pour les cartes, `rounded-xl` pour les modals/sheets)
-- [ ] Audit ombres : `shadow-sm` cartes, `shadow-lg` modals
-- [ ] `aria-label` sur tous les boutons icone-only
-- [ ] `role="dialog"` + `aria-modal` sur MobileSheet et modals
-- [ ] Focus trap dans MobileSheet
-- [ ] Labels `htmlFor` sur tous les inputs
-- [ ] Integration `vitest-axe` : test axe sur pages principales (0 erreur critique)
-- [ ] Tests : accessibilite axe-core sur EventListPage, PlanningPage, TableDetailPage
+- [x] Audit couleurs : remplacer toute couleur hardcodee par variables DaisyUI
+- [x] Audit arrondis : uniformiser (choix projet : `rounded-lg` pour les cartes, `rounded-xl` pour les modals/sheets)
+- [x] Audit ombres : `shadow-sm` cartes, `shadow-lg` modals
+- [x] `aria-label` sur tous les boutons icone-only
+- [x] `role="dialog"` + `aria-modal` sur MobileSheet et modals
+- [x] Focus trap dans MobileSheet
+- [x] Labels `htmlFor` sur tous les inputs
+- [x] Integration `vitest-axe` : test axe sur pages principales (0 erreur critique)
+- [x] Tests : accessibilite axe-core sur MobileSheet, ResponsiveModal, NotificationItem, EmptyState, Skeleton
 
 **Validation** : Zero violation axe "critical" ou "serious".
 

@@ -71,10 +71,11 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     <ResponsiveModal open={open} onClose={onClose} title="Edit Event">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 md:p-0 md:mt-4">
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ee-name">
             <span className="label-text">Name</span>
           </label>
           <input
+            id="ee-name"
             type="text"
             className="input input-bordered w-full"
             {...register("name", {
@@ -89,20 +90,22 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
           )}
         </div>
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ee-start">
             <span className="label-text">Start</span>
           </label>
           <input
+            id="ee-start"
             type="datetime-local"
             className="input input-bordered w-full"
             {...register("startDateTime", { required: "Start date is required" })}
           />
         </div>
         <div className="form-control">
-          <label className="label">
+          <label className="label" htmlFor="ee-end">
             <span className="label-text">End</span>
           </label>
           <input
+            id="ee-end"
             type="datetime-local"
             className="input input-bordered w-full"
             {...register("endDateTime", { required: "End date is required" })}

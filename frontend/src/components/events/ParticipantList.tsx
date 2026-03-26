@@ -2,6 +2,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import EmptyState from "../common/EmptyState";
 
 interface Participant {
   userId: string;
@@ -50,12 +51,22 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
     }
   };
 
+  if (participants.length === 0) {
+    return (
+      <EmptyState
+        icon={<span>👥</span>}
+        title="No participants yet"
+        description="Share the event link to invite people."
+      />
+    );
+  }
+
   return (
     <div>
       {isMobile ? (
-        <div className="space-y-2">
+        <div className="space-y-2 animate-fade-in">
           {participants.map((p) => (
-            <div key={p.userId} className="card bg-base-100 shadow-sm">
+            <div key={p.userId} className="card bg-base-100 shadow-sm active:scale-[0.98] transition-transform">
               <div className="card-body p-3 flex-row items-center justify-between">
                 <div>
                   <p className="font-medium text-sm">{p.username}</p>

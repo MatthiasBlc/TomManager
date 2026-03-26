@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import BoardGameList from "./BoardGameList";
 import AddBoardGameModal from "./AddBoardGameModal";
 import { useEventSocket } from "../../hooks/useEventSocket";
+import { SkeletonBoardGameList } from "../common/Skeleton";
 
 interface EventBoardGameEntry {
   id: string;
@@ -60,31 +61,27 @@ export default function BoardGameTab({ eventId }: Props) {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-8">
-        <span className="loading loading-spinner loading-md" />
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">
-          Board Games ({entries.length})
+          Board Games {!loading && `(${entries.length})`}
         </h2>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>
+        <button className="btn btn-primary btn-sm active:scale-95 transition-transform" onClick={() => setShowAdd(true)}>
           Add Game
         </button>
       </div>
 
+      {loading ? (
+        <SkeletonBoardGameList count={3} />
+      ) : (
       <BoardGameList
         entries={entries}
         onRemove={handleRemove}
         currentUserId={user?.id}
         isAdmin={user?.role === "ADMIN"}
       />
+      )}
 
       <AddBoardGameModal
         open={showAdd}

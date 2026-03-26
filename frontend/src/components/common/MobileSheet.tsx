@@ -7,8 +7,13 @@ interface Props {
   children: ReactNode;
 }
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export default function MobileSheet({ open, onClose, title, children }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const startY = useRef(0);
   const currentY = useRef(0);
 
@@ -31,6 +36,51 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
     }
     return () => {
       document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  // Focus trap + auto-focus + restore focus
+  useEffect(() => {
+    if (!open) return;
+
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    // Auto-focus first focusable element
+    requestAnimationFrame(() => {
+      const container = containerRef.current;
+      if (!container) return;
+      const first = container.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (first) first.focus();
+    });
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const container = containerRef.current;
+      if (!container) return;
+
+      const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+      if (focusable.length === 0) {
+        e.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      // Restore focus
+      previousFocusRef.current?.focus();
     };
   }, [open]);
 
@@ -60,7 +110,7 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true">
+    <div ref={containerRef} className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label={title || "Dialog"}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 animate-fade-in"
@@ -69,7 +119,7 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
       {/* Sheet */}
       <div
         ref={sheetRef}
-        className="absolute bottom-0 left-0 right-0 bg-base-100 rounded-t-2xl animate-slide-up max-h-[90vh] flex flex-col"
+        className="absolute bottom-0 left-0 right-0 bg-base-100 rounded-t-xl animate-slide-up max-h-[90vh] flex flex-col"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}

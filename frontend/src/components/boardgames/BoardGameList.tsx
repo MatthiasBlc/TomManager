@@ -1,4 +1,5 @@
 import BoardGameCard from "./BoardGameCard";
+import EmptyState from "../common/EmptyState";
 
 interface EventBoardGameEntry {
   id: string;
@@ -30,9 +31,11 @@ interface GroupedGame {
 export default function BoardGameList({ entries, onRemove, currentUserId, isAdmin }: Props) {
   if (entries.length === 0) {
     return (
-      <div className="text-center py-8 opacity-50">
-        No board games added yet.
-      </div>
+      <EmptyState
+        icon={<span>🎲</span>}
+        title="No board games added yet"
+        description="Add a board game to share with the group."
+      />
     );
   }
 
@@ -55,7 +58,7 @@ export default function BoardGameList({ entries, onRemove, currentUserId, isAdmi
   }, {});
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 animate-fade-in">
       {Object.values(grouped).map((group) => (
         <BoardGameCard
           key={group.game.id}

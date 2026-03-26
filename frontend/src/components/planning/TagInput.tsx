@@ -70,7 +70,7 @@ export default function TagInput({ value, onChange }: Props) {
         {value.map((tag) => (
           <span key={tag} className="badge badge-primary gap-1">
             {tag}
-            <button type="button" onClick={() => removeTag(tag)} className="text-xs">
+            <button type="button" onClick={() => removeTag(tag)} className="text-xs" aria-label={`Remove tag ${tag}`}>
               x
             </button>
           </span>

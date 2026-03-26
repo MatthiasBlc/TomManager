@@ -6,6 +6,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import EditTableModal from "../components/planning/EditTableModal";
 import { useEventSocket } from "../hooks/useEventSocket";
+import { SkeletonTableDetail } from "../components/common/Skeleton";
+import EmptyState from "../components/common/EmptyState";
 
 interface TableDetail {
   id: string;
@@ -127,8 +129,8 @@ export default function TableDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
-        <span className="loading loading-spinner loading-lg" />
+      <div className="container mx-auto px-4 py-4 md:py-8 max-w-3xl">
+        <SkeletonTableDetail />
       </div>
     );
   }
@@ -136,7 +138,7 @@ export default function TableDetailPage() {
   if (!table) return null;
 
   return (
-    <div className="container mx-auto px-4 py-4 md:py-8 max-w-3xl">
+    <div className="container mx-auto px-4 py-4 md:py-8 max-w-3xl animate-fade-in">
       {!isMobile && (
         <button
           className="btn btn-ghost btn-sm mb-4"
@@ -205,7 +207,7 @@ export default function TableDetailPage() {
               )}
             </h3>
             {table.participants.length === 0 ? (
-              <p className="text-sm opacity-60">No participants yet</p>
+              <EmptyState icon={<span>👥</span>} title="No participants yet" />
             ) : isMobile ? (
               <div className="space-y-2">
                 {table.participants.map((p) => (
