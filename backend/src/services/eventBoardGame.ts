@@ -32,13 +32,14 @@ export async function addToEvent(eventId: string, boardGameId: string, userId: s
   return entry;
 }
 
-export async function listByEvent(eventId: string) {
+export async function listByEvent(eventId: string, limit?: number) {
   return prisma.eventBoardGame.findMany({
     where: { eventId },
     include: {
       boardGame: true,
       broughtBy: { select: { id: true, username: true } },
     },
+    take: limit,
     orderBy: { createdAt: "asc" },
   });
 }

@@ -239,4 +239,28 @@ describe("Auth API", () => {
       expect(res.body.user.email).toBe("user@example.com");
     });
   });
+
+  describe("Error format consistency", () => {
+    it("should return { error: { message } } on invalid credentials", async () => {
+      const res = await request.post("/api/auth/login").send({
+        identifier: "nonexistent@example.com",
+        password: "wrong",
+      });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error).toHaveProperty("message");
+      expect(typeof res.body.error.message).toBe("string");
+    });
+
+    it("should return { error: { message } } on signup without token", async () => {
+      const res = await request.post("/api/auth/signup").send({
+        email: "test@example.com",
+        username: "testuser",
+        password: "Password123!",
+      });
+
+      expect(res.status).toBeGreaterThanOrEqual(400);
+      expect(res.body.error).toHaveProperty("message");
+    });
+  });
 });

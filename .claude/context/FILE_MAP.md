@@ -20,7 +20,8 @@ src/
 │   └── notification.ts    # list, unreadCount, markAsRead, markAllAsRead, delete
 ├── middleware/
 │   ├── auth.ts            # requireAuth, requireAdmin, requireEventParticipant, requireEventCreator, requireTableGMOrAdmin
-│   └── errorHandler.ts    # Global error handler
+│   ├── errorHandler.ts    # Global error handler
+│   └── rateLimiter.ts     # authRateLimiter (15min window, 10 req, skipped in test)
 ├── routes/
 │   ├── index.ts           # Main router
 │   ├── auth.ts            # Auth routes
@@ -73,7 +74,7 @@ src/
 ```
 src/
 ├── main.tsx               # Entry point
-├── App.tsx                # Router + AuthProvider + Toaster
+├── App.tsx                # Router + AuthProvider + Toaster + offline banner
 ├── vite-env.d.ts          # Vite types
 ├── config/
 │   └── api.ts             # Axios instance
@@ -115,7 +116,8 @@ src/
 │   ├── useSocket.ts         # Socket.io singleton connection
 │   ├── useEventSocket.ts    # Join/leave event room, listen to events
 │   ├── useNotifications.ts  # Notification fetch, socket, mark read, pagination
-│   └── useIsMobile.ts       # matchMedia hook for mobile breakpoint detection
+│   ├── useIsMobile.ts       # matchMedia hook for mobile breakpoint detection
+│   └── useOnlineStatus.ts   # Browser online/offline detection hook
 ├── contexts/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/

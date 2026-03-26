@@ -44,7 +44,7 @@ export async function createEvent(
   return event;
 }
 
-export async function listEvents(userId: string, role: string, upcoming?: boolean) {
+export async function listEvents(userId: string, role: string, upcoming?: boolean, limit?: number) {
   const now = new Date();
 
   const where: Record<string, unknown> = {};
@@ -66,6 +66,7 @@ export async function listEvents(userId: string, role: string, upcoming?: boolea
       endDateTime: true,
       _count: { select: { participations: true } },
     },
+    take: limit,
     orderBy: { startDateTime: "asc" },
   });
 

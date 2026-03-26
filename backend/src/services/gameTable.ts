@@ -124,7 +124,7 @@ export async function createTable(
   return result;
 }
 
-export async function listTables(eventId: string, currentUserId: string) {
+export async function listTables(eventId: string, currentUserId: string, limit?: number) {
   const tables = await prisma.gameTable.findMany({
     where: { eventId },
     include: {
@@ -134,6 +134,7 @@ export async function listTables(eventId: string, currentUserId: string) {
         select: { userId: true, status: true },
       },
     },
+    take: limit,
     orderBy: { startDateTime: "asc" },
   });
 

@@ -3,7 +3,7 @@ import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
 import { createNotification } from "./notification";
 
-export async function listParticipants(eventId: string) {
+export async function listParticipants(eventId: string, limit?: number) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
     throw createError(404, "Event not found");
@@ -14,6 +14,7 @@ export async function listParticipants(eventId: string) {
     include: {
       user: { select: { id: true, username: true, role: true } },
     },
+    take: limit,
     orderBy: { createdAt: "asc" },
   });
 

@@ -8,7 +8,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
     const unreadOnly = req.query.unread === "true";
 
     if (limit !== undefined && (isNaN(limit) || limit < 1)) {
-      return res.status(400).json({ error: "limit must be a positive integer" });
+      return res.status(400).json({ error: { message: "limit must be a positive integer" } });
     }
 
     const result = await notificationService.getNotifications(req.session.userId!, {

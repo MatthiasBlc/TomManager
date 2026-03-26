@@ -3,7 +3,13 @@ import * as participantService from "../services/participant";
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
-    const participants = await participantService.listParticipants(req.params.eventId);
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+
+    if (limit !== undefined && (isNaN(limit) || limit < 1)) {
+      return res.status(400).json({ error: { message: "limit must be a positive integer" } });
+    }
+
+    const participants = await participantService.listParticipants(req.params.eventId, limit);
     res.json({ data: participants });
   } catch (err) {
     next(err);

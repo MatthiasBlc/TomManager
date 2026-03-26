@@ -36,7 +36,7 @@ export async function findOrCreateBGG(req: Request, res: Response, next: NextFun
   try {
     const { bggId, name, yearPublished } = req.body;
     if (!bggId || !name) {
-      return res.status(400).json({ error: "bggId and name are required" });
+      return res.status(400).json({ error: { message: "bggId and name are required" } });
     }
     const boardGame = await boardGameService.findOrCreateFromBGG(bggId, name, yearPublished);
     res.status(201).json({ data: boardGame });

@@ -17,9 +17,16 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+
+    if (limit !== undefined && (isNaN(limit) || limit < 1)) {
+      return res.status(400).json({ error: { message: "limit must be a positive integer" } });
+    }
+
     const tables = await gameTableService.listTables(
       req.params.eventId,
-      req.session.userId!
+      req.session.userId!,
+      limit
     );
     res.json({ data: tables });
   } catch (err) {

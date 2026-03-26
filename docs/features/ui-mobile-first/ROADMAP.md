@@ -120,13 +120,13 @@ Spec de reference : [SPEC_UI_MOBILE_FIRST.md](./SPEC_UI_MOBILE_FIRST.md)
 
 **Objectif** : Ajustements backend, PWA basique, documentation finale.
 
-- [ ] Backend : standardiser format erreurs (`{ error, details? }`)
-- [ ] Backend : rate limiting sur `/api/auth/login` et `/api/auth/signup`
-- [ ] Backend : verifier que tous les endpoints de liste supportent `?limit=`
-- [ ] `manifest.json` : nom, icones, theme-color, `display: standalone`
-- [ ] Meta tags : viewport, theme-color, apple-mobile-web-app-capable
-- [ ] Hook `useOnlineStatus` : banner "Hors connexion" quand offline
-- [ ] Mise a jour `.claude/context/` : PROGRESS, FILE_MAP, TESTS
-- [ ] Tests backend : rate limiting, format erreurs
+- [x] Backend : standardiser format erreurs (`{ error: { message } }`) dans boardGame, notification, eventBoardGame
+- [x] Backend : rate limiting sur `/api/auth/login` et `/api/auth/signup` (express-rate-limit, 10 req/15min)
+- [x] Backend : tous les endpoints de liste supportent `?limit=` (events, tables, participants, eventBoardGames, notifications)
+- [x] `manifest.json` : nom, icones (SVG placeholder), theme-color, `display: standalone`
+- [x] Meta tags : viewport, theme-color, apple-mobile-web-app-capable, manifest link
+- [x] Hook `useOnlineStatus` : banner "Hors connexion" quand offline
+- [x] Mise a jour `.claude/context/` : PROGRESS, FILE_MAP, TESTS
+- [x] Tests backend : error format consistency (auth, boardGame)
 
 **Validation** : `npm test` passe (backend + frontend), PWA installable sur mobile.

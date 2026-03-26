@@ -268,7 +268,7 @@ describe("BoardGame API", () => {
       expect(count).toBe(1);
     });
 
-    it("should reject missing bggId or name", async () => {
+    it("should reject missing bggId or name with standard error format", async () => {
       const { playerCookie } = await setupEventWithParticipant();
 
       const res = await request
@@ -277,6 +277,8 @@ describe("BoardGame API", () => {
         .send({ bggId: "13" });
 
       expect(res.status).toBe(400);
+      expect(res.body.error).toHaveProperty("message");
+      expect(typeof res.body.error.message).toBe("string");
     });
   });
 });
