@@ -25,14 +25,14 @@ export default function SignupPage() {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-base-200">
-        <div className="card w-96 bg-base-100 shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-base-200 px-4">
+        <div className="card w-full bg-base-100 shadow-xl sm:max-w-sm">
           <div className="card-body items-center text-center">
             <h2 className="card-title">Sign Up</h2>
             <div className="alert alert-error">
               <span>An invitation is required to sign up.</span>
             </div>
-            <a href="/login" className="btn btn-primary mt-4">
+            <a href="/login" className="btn btn-primary btn-block mt-4">
               Go to login
             </a>
           </div>
@@ -55,30 +55,33 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-base-200">
-      <div className="card w-96 bg-base-100 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-base-200 px-4">
+      <div className="card w-full bg-base-100 shadow-xl sm:max-w-sm">
         <div className="card-body">
           <h2 className="card-title justify-center">Sign Up</h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="signup-email">
                 <span className="label-text">Email</span>
               </label>
               <input
+                id="signup-email"
                 type="email"
-                className="input input-bordered"
+                className="input input-bordered w-full"
+                inputMode="email"
                 value={email}
                 readOnly
                 disabled
               />
             </div>
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="signup-username">
                 <span className="label-text">Username</span>
               </label>
               <input
+                id="signup-username"
                 type="text"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...register("username", {
                   required: "Username is required",
                   minLength: { value: 3, message: "At least 3 characters" },
@@ -91,12 +94,13 @@ export default function SignupPage() {
               )}
             </div>
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="signup-password">
                 <span className="label-text">Password</span>
               </label>
               <input
+                id="signup-password"
                 type="password"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...register("password", {
                   required: "Password is required",
                   minLength: { value: 8, message: "At least 8 characters" },
@@ -109,12 +113,13 @@ export default function SignupPage() {
               )}
             </div>
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="signup-confirm">
                 <span className="label-text">Confirm password</span>
               </label>
               <input
+                id="signup-confirm"
                 type="password"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...register("confirmPassword", {
                   required: "Please confirm your password",
                   validate: (val) => val === watch("password") || "Passwords do not match",
@@ -128,7 +133,7 @@ export default function SignupPage() {
                 </label>
               )}
             </div>
-            <button type="submit" className="btn btn-primary w-full">
+            <button type="submit" className="btn btn-primary btn-block">
               Create account
             </button>
           </form>

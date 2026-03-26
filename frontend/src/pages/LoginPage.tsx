@@ -48,8 +48,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-base-200">
-      <div className="card w-96 bg-base-100 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-base-200 px-4">
+      <div className="card w-full bg-base-100 shadow-xl sm:max-w-sm">
         <div className="card-body">
           <h2 className="card-title justify-center">Login</h2>
 
@@ -64,26 +64,29 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="login-identifier">
                 <span className="label-text">Email or username</span>
               </label>
               <input
+                id="login-identifier"
                 type="text"
-                className="input input-bordered"
+                className="input input-bordered w-full"
+                inputMode="email"
                 {...register("identifier", { required: true })}
               />
             </div>
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="login-password">
                 <span className="label-text">Password</span>
               </label>
               <input
+                id="login-password"
                 type="password"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...register("password", { required: true })}
               />
             </div>
-            <button type="submit" className="btn btn-primary w-full">
+            <button type="submit" className="btn btn-primary btn-block">
               Login
             </button>
           </form>

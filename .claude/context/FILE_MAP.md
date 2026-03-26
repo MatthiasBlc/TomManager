@@ -135,5 +135,6 @@ src/
         ├── NotificationBell.test.tsx # NotificationBell component tests
         ├── NotificationItem.test.tsx # NotificationItem component tests
         ├── BottomTabBar.test.tsx     # BottomTabBar navigation tests
-        └── MobileSheet.test.tsx      # MobileSheet bottom sheet tests
+        ├── MobileSheet.test.tsx      # MobileSheet bottom sheet tests
+        └── AuthPages.test.tsx       # Auth pages mobile-first tests
 ```

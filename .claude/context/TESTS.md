@@ -52,13 +52,14 @@ npx vitest run                    # Tous les tests
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
 
-### Frontend (~26 tests)
+### Frontend (~35 tests)
 
 - `unit/App.test.tsx` - App renders
 - `unit/NotificationBell.test.tsx` - Bell badge, dropdown toggle, mark all read, empty state, load more
 - `unit/NotificationItem.test.tsx` - Render by type, bold unread, click navigation, mark read, delete
 - `unit/BottomTabBar.test.tsx` - Events tab, username, Planning/Games conditional on eventId
 - `unit/MobileSheet.test.tsx` - Open/close, title, backdrop click, Escape key, aria-modal
+- `unit/AuthPages.test.tsx` - HomePage responsive classes, LoginPage mobile card, SignupPage no w-96, InvitationLandingPage spinner
 
 ### Couverture (seuils CI)
 

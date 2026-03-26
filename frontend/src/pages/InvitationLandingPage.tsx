@@ -47,14 +47,14 @@ export default function InvitationLandingPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-base-200">
-      <div className="card w-96 bg-base-100 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-base-200 px-4">
+      <div className="card w-full bg-base-100 shadow-xl sm:max-w-sm">
         <div className="card-body items-center text-center">
           <h2 className="card-title">Invitation</h2>
           <div className="alert alert-error">
             <span>{errorMessage}</span>
           </div>
-          <a href="/login" className="btn btn-primary mt-4">
+          <a href="/login" className="btn btn-primary btn-block mt-4">
             Go to login
           </a>
         </div>
