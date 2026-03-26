@@ -80,7 +80,9 @@ src/
 ├── components/
 │   ├── common/
 │   │   ├── ConnectionStatus.tsx   # WebSocket connection indicator
-│   │   └── MobileSheet.tsx        # Bottom sheet modal (swipe-down to close)
+│   │   ├── MobileSheet.tsx        # Bottom sheet modal (swipe-down to close)
+│   │   ├── ResponsiveModal.tsx    # MobileSheet on mobile, DaisyUI modal on desktop
+│   │   └── FAB.tsx                # Floating Action Button (fixed bottom-right)
 │   ├── notifications/
 │   │   ├── NotificationBell.tsx   # Bell icon + badge + dropdown
 │   │   └── NotificationItem.tsx   # Single notification item with icon, nav, delete
@@ -136,5 +138,6 @@ src/
         ├── NotificationItem.test.tsx # NotificationItem component tests
         ├── BottomTabBar.test.tsx     # BottomTabBar navigation tests
         ├── MobileSheet.test.tsx      # MobileSheet bottom sheet tests
-        └── AuthPages.test.tsx       # Auth pages mobile-first tests
+        ├── AuthPages.test.tsx       # Auth pages mobile-first tests
+        └── EventPages.test.tsx      # FAB + ResponsiveModal tests
 ```

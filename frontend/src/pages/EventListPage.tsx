@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import CreateEventModal from "../components/events/CreateEventModal";
+import FAB from "../components/common/FAB";
 
 interface EventSummary {
   id: string;
@@ -14,6 +16,7 @@ interface EventSummary {
 
 export default function EventListPage() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -52,10 +55,10 @@ export default function EventListPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Events</h1>
-        {user?.role === "ADMIN" && (
+    <div className="container mx-auto px-4 py-4 md:py-8">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <h1 className="text-xl font-bold md:text-2xl">Events</h1>
+        {user?.role === "ADMIN" && !isMobile && (
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
             Create Event
           </button>
@@ -67,25 +70,29 @@ export default function EventListPage() {
           <p className="text-lg">No events yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
           {events.map((event) => (
             <Link
               key={event.id}
               to={`/events/${event.id}`}
-              className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow"
+              className="card bg-base-100 shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
             >
-              <div className="card-body">
-                <h2 className="card-title">{event.name}</h2>
-                <p className="text-sm opacity-70">
+              <div className="card-body p-4 md:p-6">
+                <h2 className="card-title text-base md:text-lg">{event.name}</h2>
+                <p className="text-xs opacity-70 md:text-sm">
                   {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
                 </p>
-                <div className="badge badge-outline">
+                <div className="badge badge-outline text-xs">
                   {event.participantCount} participant{event.participantCount !== 1 ? "s" : ""}
                 </div>
               </div>
             </Link>
           ))}
         </div>
+      )}
+
+      {user?.role === "ADMIN" && isMobile && (
+        <FAB onClick={() => setShowCreate(true)} label="Create Event" />
       )}
 
       <CreateEventModal

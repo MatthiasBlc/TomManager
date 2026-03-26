@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import api from "../../config/api";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 interface Invitation {
   id: string;
@@ -16,6 +17,7 @@ interface Props {
 
 export default function InvitationManager({ eventId }: Props) {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const isMobile = useIsMobile();
   const { register, handleSubmit, reset } = useForm<{ email: string }>();
 
   const fetchInvitations = useCallback(async () => {
@@ -64,20 +66,37 @@ export default function InvitationManager({ eventId }: Props) {
 
   return (
     <div>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex gap-2 mb-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2 mb-4 sm:flex-row">
         <input
           type="email"
           placeholder="Email address"
-          className="input input-bordered flex-1"
+          className="input input-bordered w-full sm:flex-1"
+          inputMode="email"
           {...register("email", { required: true })}
         />
-        <button type="submit" className="btn btn-primary">
+        <button type="submit" className="btn btn-primary btn-block sm:btn-wide">
           Invite
         </button>
       </form>
 
       {invitations.length === 0 ? (
         <p className="text-sm opacity-60">No invitations yet.</p>
+      ) : isMobile ? (
+        <div className="space-y-2">
+          {invitations.map((inv) => (
+            <div key={inv.id} className="card bg-base-100 shadow-sm">
+              <div className="card-body p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium truncate flex-1 mr-2">{inv.email}</p>
+                  <span className={`badge badge-sm ${statusBadge(inv.status)}`}>{inv.status}</span>
+                </div>
+                <p className="text-xs opacity-60">
+                  {new Date(inv.createdAt).toLocaleDateString("fr-FR")}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="table">

@@ -84,66 +84,74 @@ export default function EventDetailPage() {
   if (!event) return null;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{event.name}</h1>
-          <p className="text-sm opacity-70 mt-1">
+    <div className="container mx-auto px-4 py-4 md:py-8">
+      <div className="flex items-start justify-between mb-4 md:mb-6">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg font-bold truncate md:text-2xl">{event.name}</h1>
+          <p className="text-xs opacity-70 mt-1 md:text-sm">
             {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
           </p>
         </div>
         {isCreator && (
-          <div className="flex gap-2">
-            <button className="btn btn-outline btn-sm" onClick={() => setShowEdit(true)}>
-              Edit
+          <div className="flex gap-2 ml-2 shrink-0">
+            <button className="btn btn-outline btn-sm btn-square md:btn-wide" onClick={() => setShowEdit(true)} aria-label="Edit event">
+              <span className="hidden md:inline">Edit</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
             </button>
-            <button className="btn btn-outline btn-error btn-sm" onClick={handleDelete}>
-              Delete
+            <button className="btn btn-outline btn-error btn-sm btn-square md:btn-wide" onClick={handleDelete} aria-label="Delete event">
+              <span className="hidden md:inline">Delete</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
             </button>
           </div>
         )}
       </div>
 
-      <div className="tabs tabs-boxed mb-6">
-        <button
-          className={`tab ${tab === "info" ? "tab-active" : ""}`}
-          onClick={() => setTab("info")}
-        >
-          Info
-        </button>
-        <button
-          className={`tab ${tab === "planning" ? "tab-active" : ""}`}
-          onClick={() => navigate(`/events/${eventId}/planning`)}
-        >
-          Planning
-        </button>
-        <button
-          className={`tab ${tab === "games" ? "tab-active" : ""}`}
-          onClick={() => setTab("games")}
-        >
-          Games
-        </button>
-        <button
-          className={`tab ${tab === "participants" ? "tab-active" : ""}`}
-          onClick={() => setTab("participants")}
-        >
-          Participants ({event.participants.length})
-        </button>
-        {isCreator && (
+      <div className="overflow-x-auto -mx-4 px-4 mb-4 md:mb-6 md:mx-0 md:px-0">
+        <div className="tabs tabs-boxed inline-flex min-w-max">
           <button
-            className={`tab ${tab === "invitations" ? "tab-active" : ""}`}
-            onClick={() => setTab("invitations")}
+            className={`tab ${tab === "info" ? "tab-active" : ""}`}
+            onClick={() => setTab("info")}
           >
-            Invitations
+            Info
           </button>
-        )}
+          <button
+            className={`tab ${tab === "planning" ? "tab-active" : ""}`}
+            onClick={() => navigate(`/events/${eventId}/planning`)}
+          >
+            Planning
+          </button>
+          <button
+            className={`tab ${tab === "games" ? "tab-active" : ""}`}
+            onClick={() => setTab("games")}
+          >
+            Games
+          </button>
+          <button
+            className={`tab ${tab === "participants" ? "tab-active" : ""}`}
+            onClick={() => setTab("participants")}
+          >
+            Participants ({event.participants.length})
+          </button>
+          {isCreator && (
+            <button
+              className={`tab ${tab === "invitations" ? "tab-active" : ""}`}
+              onClick={() => setTab("invitations")}
+            >
+              Invitations
+            </button>
+          )}
+        </div>
       </div>
 
       {tab === "info" && (
         <div className="card bg-base-100 shadow-md">
-          <div className="card-body">
-            <h2 className="card-title">{event.name}</h2>
-            <div className="space-y-2">
+          <div className="card-body p-4 md:p-6">
+            <h2 className="card-title text-base md:text-lg">{event.name}</h2>
+            <div className="space-y-2 text-sm">
               <p>
                 <span className="font-medium">Start:</span> {formatDate(event.startDateTime)}
               </p>
@@ -165,7 +173,6 @@ export default function EventDetailPage() {
           participants={event.participants}
           onChanged={() => {
             fetchEvent();
-            // If user left, they'll get redirected by fetchEvent error handler
           }}
         />
       )}
