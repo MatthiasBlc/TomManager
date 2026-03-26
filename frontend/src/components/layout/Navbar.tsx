@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
 import ConnectionStatus from "../common/ConnectionStatus";
+import NotificationBell from "../notifications/NotificationBell";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -29,6 +30,7 @@ export default function Navbar() {
               Events
             </Link>
             <ConnectionStatus />
+            <NotificationBell />
             <span className="text-sm opacity-70">{user.username}</span>
             <button onClick={handleLogout} className="btn btn-ghost btn-sm">
               Logout
