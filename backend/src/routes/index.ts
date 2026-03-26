@@ -7,6 +7,7 @@ import gameTableRouter from "./gameTable";
 import tagRouter from "./tag";
 import boardGameRouter from "./boardGame";
 import eventBoardGameRouter from "./eventBoardGame";
+import notificationRouter from "./notification";
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.use("/events", gameTableRouter);
 router.use("/events", eventBoardGameRouter);
 router.use("/tags", tagRouter);
 router.use("/boardgames", boardGameRouter);
+router.use("/notifications", notificationRouter);
 // Invitation routes are mounted at root level since they span /events and /invitations
 router.use(invitationRouter);
 
