@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import prisma from "../../util/db";
-import { request, createTestUserDirectly, setupAdmin } from "../setup/testHelpers";
+import {
+  request,
+  createTestUserDirectly,
+  setupAdmin,
+  createTestEvent,
+  createTestInvitation,
+} from "../setup/testHelpers";
 import * as notificationService from "../../services/notification";
 
 async function createUser(overrides?: { email?: string; username?: string }) {
@@ -626,6 +632,241 @@ describe("Notification API", () => {
         .set("Cookie", cookie2);
 
       expect(res.status).toBe(403);
+    });
+  });
+});
+
+// Helper: setup admin + event + participant user
+async function setupEventWithPlayer() {
+  const admin = await setupAdmin();
+  const event = await createTestEvent(admin.cookie);
+
+  const invitation = await createTestInvitation(admin.cookie, event.id, "player@notif.com");
+  await request.post("/api/auth/signup").send({
+    email: "player@notif.com",
+    username: "notifplayer",
+    password: "Password123!",
+    invitationToken: invitation.invitation.token,
+  });
+  const loginRes = await request
+    .post("/api/auth/login")
+    .send({ identifier: "player@notif.com", password: "Password123!" });
+  const playerCookie = loginRes.headers["set-cookie"];
+  const playerId = loginRes.body.user.id;
+
+  return { admin, event, playerCookie, playerId };
+}
+
+// Helper: add a second player
+async function addSecondPlayer(adminCookie: string | string[], eventId: string) {
+  const invitation = await createTestInvitation(adminCookie, eventId, "player2@notif.com");
+  await request.post("/api/auth/signup").send({
+    email: "player2@notif.com",
+    username: "notifplayer2",
+    password: "Password123!",
+    invitationToken: invitation.invitation.token,
+  });
+  const loginRes = await request
+    .post("/api/auth/login")
+    .send({ identifier: "player2@notif.com", password: "Password123!" });
+  return { cookie: loginRes.headers["set-cookie"], userId: loginRes.body.user.id };
+}
+
+describe("Notification Triggers", () => {
+  describe("Table deletion", () => {
+    it("should notify participants when a table is deleted", async () => {
+      const { admin, event, playerCookie, playerId } = await setupEventWithPlayer();
+
+      // Player creates a table
+      const tableRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send({
+          title: "My Table",
+          maxPlayers: 5,
+          startDateTime: "2026-06-01T10:00:00Z",
+          endDateTime: "2026-06-01T12:00:00Z",
+        });
+      const tableId = tableRes.body.data.id;
+
+      // Player2 joins the table
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      // Player (GM) deletes the table
+      await request
+        .delete(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", playerCookie);
+
+      // Player2 should have a TABLE_DELETED notification
+      const notifs = await prisma.notification.findMany({
+        where: { userId: player2.userId, type: "TABLE_DELETED" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain("My Table");
+
+      // Player (the deleter) should NOT have a notification
+      const gmNotifs = await prisma.notification.findMany({
+        where: { userId: playerId, type: "TABLE_DELETED" },
+      });
+      expect(gmNotifs).toHaveLength(0);
+    });
+  });
+
+  describe("Table update with demotion", () => {
+    it("should notify demoted players when maxPlayers is reduced", async () => {
+      const { admin, event, playerCookie, playerId } = await setupEventWithPlayer();
+
+      // Player creates a table with maxPlayers=2
+      const tableRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send({
+          title: "Demotion Table",
+          maxPlayers: 2,
+          startDateTime: "2026-06-01T10:00:00Z",
+          endDateTime: "2026-06-01T12:00:00Z",
+        });
+      const tableId = tableRes.body.data.id;
+
+      // Two players join
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      const invitation3 = await createTestInvitation(admin.cookie, event.id, "player3@notif.com");
+      await request.post("/api/auth/signup").send({
+        email: "player3@notif.com",
+        username: "notifplayer3",
+        password: "Password123!",
+        invitationToken: invitation3.invitation.token,
+      });
+      const login3 = await request
+        .post("/api/auth/login")
+        .send({ identifier: "player3@notif.com", password: "Password123!" });
+      const player3Cookie = login3.headers["set-cookie"];
+      const player3Id = login3.body.user.id;
+
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player3Cookie);
+
+      // GM reduces maxPlayers to 1 -> player3 gets demoted
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", playerCookie)
+        .send({ maxPlayers: 1 });
+
+      const demotedNotifs = await prisma.notification.findMany({
+        where: { userId: player3Id, type: "WAITLIST_DEMOTED" },
+      });
+      expect(demotedNotifs).toHaveLength(1);
+      expect(demotedNotifs[0].message).toContain("Demotion Table");
+    });
+  });
+
+  describe("Kick player", () => {
+    it("should notify kicked player", async () => {
+      const { admin, event, playerCookie } = await setupEventWithPlayer();
+
+      const tableRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send({
+          title: "Kick Table",
+          maxPlayers: 5,
+          startDateTime: "2026-06-01T10:00:00Z",
+          endDateTime: "2026-06-01T12:00:00Z",
+        });
+      const tableId = tableRes.body.data.id;
+
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      // GM kicks player2
+      await request
+        .delete(`/api/events/${event.id}/tables/${tableId}/participants/${player2.userId}`)
+        .set("Cookie", playerCookie);
+
+      const kickNotifs = await prisma.notification.findMany({
+        where: { userId: player2.userId, type: "PLAYER_KICKED" },
+      });
+      expect(kickNotifs).toHaveLength(1);
+      expect(kickNotifs[0].message).toContain("Kick Table");
+    });
+  });
+
+  describe("Leave table with promotion", () => {
+    it("should notify promoted player when someone leaves", async () => {
+      const { admin, event, playerCookie } = await setupEventWithPlayer();
+
+      // Create table with maxPlayers=1
+      const tableRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send({
+          title: "Promo Table",
+          maxPlayers: 1,
+          startDateTime: "2026-06-01T10:00:00Z",
+          endDateTime: "2026-06-01T12:00:00Z",
+        });
+      const tableId = tableRes.body.data.id;
+
+      // Player2 joins (confirmed), Player3 joins (waitlist)
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      const invitation3 = await createTestInvitation(admin.cookie, event.id, "player3@notif.com");
+      await request.post("/api/auth/signup").send({
+        email: "player3@notif.com",
+        username: "notifplayer3",
+        password: "Password123!",
+        invitationToken: invitation3.invitation.token,
+      });
+      const login3 = await request
+        .post("/api/auth/login")
+        .send({ identifier: "player3@notif.com", password: "Password123!" });
+      const player3Cookie = login3.headers["set-cookie"];
+      const player3Id = login3.body.user.id;
+
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player3Cookie);
+
+      // Player2 leaves -> Player3 promoted
+      await request
+        .delete(`/api/events/${event.id}/tables/${tableId}/leave`)
+        .set("Cookie", player2.cookie);
+
+      const promoNotifs = await prisma.notification.findMany({
+        where: { userId: player3Id, type: "WAITLIST_PROMOTED" },
+      });
+      expect(promoNotifs).toHaveLength(1);
+      expect(promoNotifs[0].message).toContain("Promo Table");
+    });
+  });
+
+  describe("Remove participant", () => {
+    it("should notify removed participant", async () => {
+      const { admin, event, playerCookie, playerId } = await setupEventWithPlayer();
+
+      // Admin removes the player
+      await request
+        .delete(`/api/events/${event.id}/participants/${playerId}`)
+        .set("Cookie", admin.cookie);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: playerId, type: "PARTICIPANT_REMOVED" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain("Test Event");
     });
   });
 });

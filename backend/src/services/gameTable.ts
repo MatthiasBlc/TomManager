@@ -2,6 +2,7 @@ import prisma from "../util/db";
 import createError from "http-errors";
 import { findOrCreateTags } from "./tag";
 import { emitToEvent } from "../socket/emitter";
+import { createNotification, createBulkNotifications } from "./notification";
 
 interface UpdateTableData {
   title?: string;
@@ -203,7 +204,7 @@ export async function getTable(tableId: string) {
   };
 }
 
-export async function updateTable(tableId: string, data: UpdateTableData) {
+export async function updateTable(tableId: string, data: UpdateTableData, updatedByUserId: string) {
   const existing = await prisma.gameTable.findUnique({
     where: { id: tableId },
     include: { participants: true },
@@ -255,6 +256,9 @@ export async function updateTable(tableId: string, data: UpdateTableData) {
     throw createError(400, "Table endDateTime must be within event bounds");
   }
 
+  const demotedUserIds: string[] = [];
+  const promotedUserIds: string[] = [];
+
   const result = await prisma.$transaction(async (tx) => {
     // Handle maxPlayers change
     const confirmedCount = existing.participants.filter((p) => p.status === "CONFIRMED").length;
@@ -272,6 +276,7 @@ export async function updateTable(tableId: string, data: UpdateTableData) {
           where: { id: p.id },
           data: { status: "WAITLIST" },
         });
+        demotedUserIds.push(p.userId);
       }
     } else if (maxPlayers > existing.maxPlayers) {
       // Promotion: promote waitlisted players
@@ -287,6 +292,7 @@ export async function updateTable(tableId: string, data: UpdateTableData) {
             where: { id: p.id },
             data: { status: "CONFIRMED" },
           });
+          promotedUserIds.push(p.userId);
         }
       }
     }
@@ -331,19 +337,83 @@ export async function updateTable(tableId: string, data: UpdateTableData) {
 
   emitToEvent(existing.eventId, "table:updated", { table: updated });
 
+  // Notify participants about the update (except the updater)
+  const participantUserIds = existing.participants
+    .map((p) => p.userId)
+    .filter((id) => id !== updatedByUserId);
+
+  if (participantUserIds.length > 0) {
+    await createBulkNotifications(
+      participantUserIds.map((userId) => ({
+        userId,
+        type: "TABLE_UPDATED" as const,
+        title: "Table modifiee",
+        message: `La table "${existing.title}" a ete modifiee`,
+        metadata: { eventId: existing.eventId, tableId },
+      }))
+    );
+  }
+
+  // Notify demoted players
+  if (demotedUserIds.length > 0) {
+    await createBulkNotifications(
+      demotedUserIds.map((userId) => ({
+        userId,
+        type: "WAITLIST_DEMOTED" as const,
+        title: "Place en liste d'attente",
+        message: `Tu es en liste d'attente pour la table "${existing.title}"`,
+        metadata: { eventId: existing.eventId, tableId },
+      }))
+    );
+  }
+
+  // Notify promoted players
+  if (promotedUserIds.length > 0) {
+    await createBulkNotifications(
+      promotedUserIds.map((userId) => ({
+        userId,
+        type: "WAITLIST_PROMOTED" as const,
+        title: "Place confirmee",
+        message: `Tu es confirme pour la table "${existing.title}"`,
+        metadata: { eventId: existing.eventId, tableId },
+      }))
+    );
+  }
+
   return updated;
 }
 
-export async function deleteTable(tableId: string) {
-  const existing = await prisma.gameTable.findUnique({ where: { id: tableId } });
+export async function deleteTable(tableId: string, deletedByUserId: string) {
+  const existing = await prisma.gameTable.findUnique({
+    where: { id: tableId },
+    include: { participants: true },
+  });
   if (!existing) {
     throw createError(404, "Table not found");
   }
+
+  // Collect participant userIds before cascade delete removes them
+  const participantUserIds = existing.participants
+    .map((p) => p.userId)
+    .filter((id) => id !== deletedByUserId);
 
   // GameTableTag and GameTableParticipant have onDelete Cascade
   await prisma.gameTable.delete({ where: { id: tableId } });
 
   emitToEvent(existing.eventId, "table:deleted", { tableId });
+
+  // Notify all participants (except the one who deleted)
+  if (participantUserIds.length > 0) {
+    await createBulkNotifications(
+      participantUserIds.map((userId) => ({
+        userId,
+        type: "TABLE_DELETED" as const,
+        title: "Table supprimee",
+        message: `La table "${existing.title}" a ete supprimee`,
+        metadata: { eventId: existing.eventId, tableId },
+      }))
+    );
+  }
 }
 
 export async function joinTable(tableId: string, userId: string) {
@@ -419,6 +489,13 @@ export async function leaveTable(tableId: string, userId: string) {
     emitToEvent(table.eventId, "table:player:left", { tableId, userId });
     if (promotedUserId) {
       emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: promotedUserId });
+      await createNotification({
+        userId: promotedUserId,
+        type: "WAITLIST_PROMOTED",
+        title: "Place confirmee",
+        message: `Tu es confirme pour la table "${table.title}"`,
+        metadata: { eventId: table.eventId, tableId },
+      });
     }
   }
 }
@@ -455,8 +532,22 @@ export async function kickPlayer(tableId: string, userId: string) {
 
   if (table) {
     emitToEvent(table.eventId, "table:player:kicked", { tableId, userId });
+    await createNotification({
+      userId,
+      type: "PLAYER_KICKED",
+      title: "Expulse d'une table",
+      message: `Tu as ete expulse de la table "${table.title}"`,
+      metadata: { eventId: table.eventId, tableId },
+    });
     if (promotedUserId) {
       emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: promotedUserId });
+      await createNotification({
+        userId: promotedUserId,
+        type: "WAITLIST_PROMOTED",
+        title: "Place confirmee",
+        message: `Tu es confirme pour la table "${table.title}"`,
+        metadata: { eventId: table.eventId, tableId },
+      });
     }
   }
 }

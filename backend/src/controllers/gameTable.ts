@@ -41,7 +41,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
     const { title, pitch, triggers, comments, maxPlayers, startDateTime, endDateTime, tags } = req.body;
     const table = await gameTableService.updateTable(req.params.tableId, {
       title, pitch, triggers, comments, maxPlayers, startDateTime, endDateTime, tags,
-    });
+    }, req.session.userId!);
     res.json({ data: table });
   } catch (err) {
     next(err);
@@ -50,7 +50,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
-    await gameTableService.deleteTable(req.params.tableId);
+    await gameTableService.deleteTable(req.params.tableId, req.session.userId!);
     res.status(204).send();
   } catch (err) {
     next(err);

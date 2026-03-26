@@ -1,6 +1,7 @@
 import prisma from "../util/db";
 import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
+import { createNotification } from "./notification";
 
 export async function listParticipants(eventId: string) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
@@ -91,6 +92,14 @@ export async function removeParticipant(eventId: string, userId: string) {
   });
 
   emitToEvent(eventId, "participant:removed", { userId });
+
+  await createNotification({
+    userId,
+    type: "PARTICIPANT_REMOVED",
+    title: "Retire d'un event",
+    message: `Tu as ete retire de l'event "${event.name}"`,
+    metadata: { eventId },
+  });
 }
 
 export async function leaveEvent(eventId: string, userId: string) {
