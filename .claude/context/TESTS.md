@@ -39,7 +39,7 @@ npx vitest run                    # Tous les tests
 
 ## Inventaire des tests
 
-### Backend (~127 tests)
+### Backend (~165 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me)
@@ -50,10 +50,13 @@ npx vitest run                    # Tous les tests
 - `integration/boardGame.test.ts` - BoardGame API (CRUD, search local + BGG fallback, lazy fetch, from-bgg) + BGG XML parsing
 - `integration/eventBoardGame.test.ts` - EventBoardGame API (add, list, remove, duplicate, non-participant, cascade)
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
+- `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
 
-### Frontend (~1 test)
+### Frontend (~16 tests)
 
 - `unit/App.test.tsx` - App renders
+- `unit/NotificationBell.test.tsx` - Bell badge, dropdown toggle, mark all read, empty state, load more
+- `unit/NotificationItem.test.tsx` - Render by type, bold unread, click navigation, mark read, delete
 
 ### Couverture (seuils CI)
 

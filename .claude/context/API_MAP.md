@@ -69,6 +69,16 @@
 | POST   | `/`               | requireAuth | Creation manuelle                    |
 | POST   | `/from-bgg`       | requireAuth | Find or create from BGG data         |
 
+## Notifications (`/api/notifications`)
+
+| Method | Path             | Auth        | Description                 |
+| ------ | ---------------- | ----------- | --------------------------- |
+| GET    | `/`              | requireAuth | List (pagine, cursor-based) |
+| GET    | `/unread-count`  | requireAuth | Unread count                |
+| PATCH  | `/:id/read`      | requireAuth | Mark as read                |
+| PATCH  | `/read-all`      | requireAuth | Mark all as read            |
+| DELETE | `/:id`           | requireAuth | Delete notification         |
+
 ## Event Board Games (`/api/events/:eventId/boardgames`)
 
 | Method | Path        | Auth                                  | Description                    |

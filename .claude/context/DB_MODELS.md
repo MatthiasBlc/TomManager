@@ -22,7 +22,7 @@
 | updatedAt    | DateTime  | Auto                    |
 | deletedAt    | DateTime? | Soft delete             |
 
-Relations: createdEvents, sentInvitations, eventParticipations, createdGameTables, gameTableParticipations
+Relations: createdEvents, sentInvitations, eventParticipations, createdGameTables, gameTableParticipations, notifications
 
 ## Event
 
@@ -168,3 +168,24 @@ PENDING | ACCEPTED | EXPIRED
 ## Enum TableParticipantStatus
 
 CONFIRMED | WAITLIST
+
+## Enum NotificationType
+
+TABLE_DELETED | TABLE_UPDATED | WAITLIST_PROMOTED | WAITLIST_DEMOTED | PLAYER_KICKED | PARTICIPANT_REMOVED | EVENT_UPDATED | EVENT_DELETED
+
+## Notification
+
+| Champ     | Type               | Notes                   |
+| --------- | ------------------ | ----------------------- |
+| id        | String             | UUID PK                 |
+| userId    | String             | FK -> User.id           |
+| type      | NotificationType   | required                |
+| title     | String             | required                |
+| message   | String             | required                |
+| metadata  | Json?              | Donnees contextuelles   |
+| read      | Boolean            | default false           |
+| readAt    | DateTime?          | Timestamp de lecture     |
+| createdAt | DateTime           | default now()           |
+
+Index: (userId, read, createdAt DESC)
+Relations: user (User)

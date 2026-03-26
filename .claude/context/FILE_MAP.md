@@ -16,7 +16,8 @@ src/
 │   ├── participant.ts     # list, remove, leave participants
 │   ├── tag.ts             # tag autocomplete search
 │   ├── boardGame.ts       # search, detail, create, findOrCreateBGG
-│   └── eventBoardGame.ts  # add, list, remove event board games
+│   ├── eventBoardGame.ts  # add, list, remove event board games
+│   └── notification.ts    # list, unreadCount, markAsRead, markAllAsRead, delete
 ├── middleware/
 │   ├── auth.ts            # requireAuth, requireAdmin, requireEventParticipant, requireEventCreator, requireTableGMOrAdmin
 │   └── errorHandler.ts    # Global error handler
@@ -29,7 +30,8 @@ src/
 │   ├── participant.ts     # Participant routes (list, remove, leave)
 │   ├── tag.ts             # Tag routes (autocomplete)
 │   ├── boardGame.ts       # BoardGame routes (search, detail, create, from-bgg)
-│   └── eventBoardGame.ts  # EventBoardGame routes (add, list, remove)
+│   ├── eventBoardGame.ts  # EventBoardGame routes (add, list, remove)
+│   └── notification.ts    # Notification routes (list, count, read, readAll, delete)
 ├── services/
 │   ├── auth.ts            # Auth business logic
 │   ├── event.ts           # Event CRUD + cascade to GameTables
@@ -39,10 +41,11 @@ src/
 │   ├── tag.ts             # Tag find-or-create, search
 │   ├── bgg.ts             # BGG XML API client (search, thing detail)
 │   ├── boardGame.ts       # BoardGame CRUD, search (local + BGG fallback)
-│   └── eventBoardGame.ts  # EventBoardGame CRUD (add/list/remove per event)
+│   ├── eventBoardGame.ts  # EventBoardGame CRUD (add/list/remove per event)
+│   └── notification.ts    # Notification CRUD, bulk create, cursor pagination
 ├── socket/
-│   ├── index.ts           # Socket.io setup, session auth, room handlers, getIO()
-│   └── emitter.ts         # emitToEvent helper for services
+│   ├── index.ts           # Socket.io setup, session auth, room handlers (event + user rooms), getIO()
+│   └── emitter.ts         # emitToEvent, emitToUser helpers for services
 ├── types/
 │   └── express-session.d.ts  # Session type augmentation
 ├── util/
@@ -61,7 +64,8 @@ src/
         ├── participant.test.ts # Participant + invitation listing tests
         ├── boardGame.test.ts      # BoardGame CRUD + BGG search tests
         ├── eventBoardGame.test.ts # EventBoardGame CRUD + cascade tests
-        └── socket.test.ts         # Socket.io auth, rooms, broadcast tests
+        ├── socket.test.ts         # Socket.io auth, rooms, broadcast tests
+        └── notification.test.ts   # Notification service + API + trigger tests
 ```
 
 ## Frontend (frontend/src/)
@@ -76,8 +80,11 @@ src/
 ├── components/
 │   ├── common/
 │   │   └── ConnectionStatus.tsx   # WebSocket connection indicator
+│   ├── notifications/
+│   │   ├── NotificationBell.tsx   # Bell icon + badge + dropdown
+│   │   └── NotificationItem.tsx   # Single notification item with icon, nav, delete
 │   ├── layout/
-│   │   └── Navbar.tsx             # Top navigation bar + ConnectionStatus
+│   │   └── Navbar.tsx             # Top navigation bar + ConnectionStatus + NotificationBell
 │   ├── events/
 │   │   ├── CreateEventModal.tsx   # Modal for creating events
 │   │   ├── EditEventModal.tsx     # Modal for editing events
@@ -98,7 +105,8 @@ src/
 │       └── ManualBoardGameForm.tsx    # Manual creation form
 ├── hooks/
 │   ├── useSocket.ts         # Socket.io singleton connection
-│   └── useEventSocket.ts    # Join/leave event room, listen to events
+│   ├── useEventSocket.ts    # Join/leave event room, listen to events
+│   └── useNotifications.ts  # Notification fetch, socket, mark read, pagination
 ├── contexts/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/
@@ -118,5 +126,7 @@ src/
     ├── setup/
     │   └── vitestSetup.ts # jest-dom setup
     └── unit/
-        └── App.test.tsx   # App render test
+        ├── App.test.tsx              # App render test
+        ├── NotificationBell.test.tsx # NotificationBell component tests
+        └── NotificationItem.test.tsx # NotificationItem component tests
 ```
