@@ -31,6 +31,7 @@ model User {
   createdGameTables      GameTable[]
   gameTableParticipations GameTableParticipant[]
   eventBoardGames        EventBoardGame[]
+  notifications          Notification[]
 }
 
 model Event {
@@ -180,4 +181,31 @@ enum InvitationStatus {
 enum TableParticipantStatus {
   CONFIRMED
   WAITLIST
+}
+
+enum NotificationType {
+  TABLE_DELETED
+  TABLE_UPDATED
+  WAITLIST_PROMOTED
+  WAITLIST_DEMOTED
+  PLAYER_KICKED
+  PARTICIPANT_REMOVED
+  EVENT_UPDATED
+  EVENT_DELETED
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  metadata  Json?
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, read, createdAt(sort: Desc)])
 }

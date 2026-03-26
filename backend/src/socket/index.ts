@@ -30,6 +30,9 @@ export function initSocket(server: HTTPServer): Server {
 
     logger.info({ userId, socketId: socket.id }, "Socket connected");
 
+    // Auto-join personal room for notifications
+    socket.join(`user:${userId}`);
+
     socket.on("join:event", ({ eventId }: { eventId: string }) => {
       if (eventId) {
         socket.join(`event:${eventId}`);

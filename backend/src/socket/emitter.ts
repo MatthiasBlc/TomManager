@@ -11,3 +11,7 @@ function safeEmit(room: string, event: string, data: unknown) {
 export function emitToEvent(eventId: string, event: string, data: unknown) {
   safeEmit(`event:${eventId}`, event, data);
 }
+
+export function emitToUser(userId: string, event: string, data: unknown) {
+  safeEmit(`user:${userId}`, event, data);
+}

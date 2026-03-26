@@ -2,6 +2,7 @@ import prisma from "../../util/db";
 import { afterEach, afterAll } from "vitest";
 
 afterEach(async () => {
+  await prisma.notification.deleteMany();
   await prisma.eventBoardGame.deleteMany();
   await prisma.boardGame.deleteMany();
   await prisma.gameTableParticipant.deleteMany();
