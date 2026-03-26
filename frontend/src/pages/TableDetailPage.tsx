@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import EditTableModal from "../components/planning/EditTableModal";
 import { useEventSocket } from "../hooks/useEventSocket";
 
@@ -31,6 +32,7 @@ export default function TableDetailPage() {
   const { eventId, tableId } = useParams<{ eventId: string; tableId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [table, setTable] = useState<TableDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState(false);
@@ -134,46 +136,24 @@ export default function TableDetailPage() {
   if (!table) return null;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <button
-        className="btn btn-ghost btn-sm mb-4"
-        onClick={() => navigate(`/events/${eventId}/planning`)}
-      >
-        &larr; Back to planning
-      </button>
+    <div className="container mx-auto px-4 py-4 md:py-8 max-w-3xl">
+      {!isMobile && (
+        <button
+          className="btn btn-ghost btn-sm mb-4"
+          onClick={() => navigate(`/events/${eventId}/planning`)}
+        >
+          &larr; Back to planning
+        </button>
+      )}
 
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{table.title}</h1>
-          <p className="text-sm opacity-70 mt-1">
-            GM: {table.creator.username}
-          </p>
-          <p className="text-sm opacity-70">
-            {formatDateTime(table.startDateTime)} - {formatDateTime(table.endDateTime)}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {!isGM && !currentParticipant && (
-            <button className="btn btn-primary btn-sm" onClick={handleJoin}>
-              Join
-            </button>
-          )}
-          {currentParticipant && (
-            <button className="btn btn-outline btn-warning btn-sm" onClick={handleLeave}>
-              Leave
-            </button>
-          )}
-          {canEdit && (
-            <>
-              <button className="btn btn-outline btn-sm" onClick={() => setShowEdit(true)}>
-                Edit
-              </button>
-              <button className="btn btn-outline btn-error btn-sm" onClick={handleDelete}>
-                Delete
-              </button>
-            </>
-          )}
-        </div>
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-lg font-bold md:text-2xl">{table.title}</h1>
+        <p className="text-xs opacity-70 mt-1 md:text-sm">
+          GM: {table.creator.username}
+        </p>
+        <p className="text-xs opacity-70 md:text-sm">
+          {formatDateTime(table.startDateTime)} - {formatDateTime(table.endDateTime)}
+        </p>
       </div>
 
       {table.tags.length > 0 && (
@@ -186,36 +166,36 @@ export default function TableDetailPage() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         {table.pitch && (
           <div className="card bg-base-100 shadow-sm">
-            <div className="card-body p-4">
+            <div className="card-body p-3 md:p-4">
               <h3 className="font-semibold text-sm">Pitch</h3>
-              <p className="whitespace-pre-wrap">{table.pitch}</p>
+              <p className="whitespace-pre-wrap text-sm">{table.pitch}</p>
             </div>
           </div>
         )}
 
         {table.triggers && (
           <div className="card bg-base-100 shadow-sm border-l-4 border-warning">
-            <div className="card-body p-4">
+            <div className="card-body p-3 md:p-4">
               <h3 className="font-semibold text-sm">Triggers</h3>
-              <p className="whitespace-pre-wrap">{table.triggers}</p>
+              <p className="whitespace-pre-wrap text-sm">{table.triggers}</p>
             </div>
           </div>
         )}
 
         {table.comments && (
           <div className="card bg-base-100 shadow-sm">
-            <div className="card-body p-4">
+            <div className="card-body p-3 md:p-4">
               <h3 className="font-semibold text-sm">Comments</h3>
-              <p className="whitespace-pre-wrap">{table.comments}</p>
+              <p className="whitespace-pre-wrap text-sm">{table.comments}</p>
             </div>
           </div>
         )}
 
         <div className="card bg-base-100 shadow-sm">
-          <div className="card-body p-4">
+          <div className="card-body p-3 md:p-4">
             <h3 className="font-semibold text-sm mb-2">
               Participants ({confirmedCount}/{table.maxPlayers})
               {table.participants.filter((p) => p.status === "WAITLIST").length > 0 && (
@@ -226,6 +206,31 @@ export default function TableDetailPage() {
             </h3>
             {table.participants.length === 0 ? (
               <p className="text-sm opacity-60">No participants yet</p>
+            ) : isMobile ? (
+              <div className="space-y-2">
+                {table.participants.map((p) => (
+                  <div key={p.userId} className="flex items-center justify-between py-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{p.username}</span>
+                      <span
+                        className={`badge badge-sm ${
+                          p.status === "CONFIRMED" ? "badge-success" : "badge-warning"
+                        }`}
+                      >
+                        {p.status}
+                      </span>
+                    </div>
+                    {canEdit && (
+                      <button
+                        className="btn btn-ghost btn-sm text-error min-h-[44px]"
+                        onClick={() => handleKick(p.userId, p.username)}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="table table-sm">
@@ -267,6 +272,30 @@ export default function TableDetailPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Sticky action bar on mobile */}
+      <div className="sticky bottom-20 mt-4 flex gap-2 md:static md:mt-6 md:bottom-auto">
+        {!isGM && !currentParticipant && (
+          <button className="btn btn-primary flex-1 md:flex-none md:btn-sm" onClick={handleJoin}>
+            Join
+          </button>
+        )}
+        {currentParticipant && (
+          <button className="btn btn-outline btn-warning flex-1 md:flex-none md:btn-sm" onClick={handleLeave}>
+            Leave
+          </button>
+        )}
+        {canEdit && (
+          <>
+            <button className="btn btn-outline flex-1 md:flex-none md:btn-sm" onClick={() => setShowEdit(true)}>
+              Edit
+            </button>
+            <button className="btn btn-outline btn-error flex-1 md:flex-none md:btn-sm" onClick={handleDelete}>
+              Delete
+            </button>
+          </>
+        )}
       </div>
 
       <EditTableModal

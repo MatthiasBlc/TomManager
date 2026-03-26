@@ -45,7 +45,7 @@ export default function TimelineView({ tables, onTableClick }: Props) {
     <div className="space-y-6">
       {Object.entries(grouped).map(([date, dateTables]) => (
         <div key={date}>
-          <h3 className="text-lg font-semibold mb-3 capitalize">{date}</h3>
+          <h3 className="text-base font-semibold mb-3 capitalize sticky top-0 bg-base-200 py-2 z-10 md:text-lg md:static md:bg-transparent md:py-0">{date}</h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {dateTables.map((table) => (
               <TableCard
