@@ -3,8 +3,11 @@ import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
 import ConnectionStatus from "../common/ConnectionStatus";
 import NotificationBell from "../notifications/NotificationBell";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import MobileHeader from "./MobileHeader";
+import BottomTabBar from "./BottomTabBar";
 
-export default function Navbar() {
+function DesktopNavbar() {
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
@@ -45,4 +48,20 @@ export default function Navbar() {
       </div>
     </div>
   );
+}
+
+export default function Navbar() {
+  const isMobile = useIsMobile();
+  const { user } = useAuth();
+
+  if (isMobile) {
+    return (
+      <>
+        <MobileHeader />
+        {user && <BottomTabBar />}
+      </>
+    );
+  }
+
+  return <DesktopNavbar />;
 }

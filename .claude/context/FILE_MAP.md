@@ -79,12 +79,16 @@ src/
 │   └── api.ts             # Axios instance
 ├── components/
 │   ├── common/
-│   │   └── ConnectionStatus.tsx   # WebSocket connection indicator
+│   │   ├── ConnectionStatus.tsx   # WebSocket connection indicator
+│   │   └── MobileSheet.tsx        # Bottom sheet modal (swipe-down to close)
 │   ├── notifications/
 │   │   ├── NotificationBell.tsx   # Bell icon + badge + dropdown
 │   │   └── NotificationItem.tsx   # Single notification item with icon, nav, delete
 │   ├── layout/
-│   │   └── Navbar.tsx             # Top navigation bar + ConnectionStatus + NotificationBell
+│   │   ├── Navbar.tsx             # Conditional: MobileHeader+BottomTabBar on mobile, DesktopNavbar on desktop
+│   │   ├── AppLayout.tsx          # Main layout wrapper (mobile padding for header/tab bar)
+│   │   ├── MobileHeader.tsx       # Fixed top header: logo, ConnectionStatus, NotificationBell
+│   │   └── BottomTabBar.tsx       # Fixed bottom navigation: Events, Planning, Games, Profile
 │   ├── events/
 │   │   ├── CreateEventModal.tsx   # Modal for creating events
 │   │   ├── EditEventModal.tsx     # Modal for editing events
@@ -106,7 +110,8 @@ src/
 ├── hooks/
 │   ├── useSocket.ts         # Socket.io singleton connection
 │   ├── useEventSocket.ts    # Join/leave event room, listen to events
-│   └── useNotifications.ts  # Notification fetch, socket, mark read, pagination
+│   ├── useNotifications.ts  # Notification fetch, socket, mark read, pagination
+│   └── useIsMobile.ts       # matchMedia hook for mobile breakpoint detection
 ├── contexts/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/
@@ -124,9 +129,11 @@ src/
 │   └── index.css          # Tailwind directives
 └── __tests__/
     ├── setup/
-    │   └── vitestSetup.ts # jest-dom setup
+    │   └── vitestSetup.ts # jest-dom + matchMedia mock setup
     └── unit/
         ├── App.test.tsx              # App render test
         ├── NotificationBell.test.tsx # NotificationBell component tests
-        └── NotificationItem.test.tsx # NotificationItem component tests
+        ├── NotificationItem.test.tsx # NotificationItem component tests
+        ├── BottomTabBar.test.tsx     # BottomTabBar navigation tests
+        └── MobileSheet.test.tsx      # MobileSheet bottom sheet tests
 ```
