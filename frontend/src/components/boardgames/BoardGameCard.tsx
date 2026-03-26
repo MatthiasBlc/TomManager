@@ -67,9 +67,9 @@ export default function BoardGameCard({
                     {canRemove && (
                       <button
                         type="button"
-                        className="text-error hover:text-error-focus"
+                        className="text-error hover:text-error-focus min-w-[24px] min-h-[24px] flex items-center justify-center"
                         onClick={() => onRemove(entry.entryId)}
-                        title="Remove"
+                        aria-label={`Remove ${game.name} brought by ${user.username}`}
                       >
                         x
                       </button>

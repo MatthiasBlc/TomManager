@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import BoardGameSearchInput from "./BoardGameSearchInput";
 import ManualBoardGameForm from "./ManualBoardGameForm";
+import ResponsiveModal from "../common/ResponsiveModal";
 
 interface BoardGameResult {
   id: string | null;
@@ -22,12 +23,17 @@ interface Props {
 export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: Props) {
   const [mode, setMode] = useState<"search" | "manual">("search");
 
+  const handleClose = () => {
+    setMode("search");
+    onClose();
+  };
+
   const addToEvent = async (boardGameId: string) => {
     try {
       await api.post(`/api/events/${eventId}/boardgames`, { boardGameId });
       toast.success("Board game added!");
       onAdded();
-      onClose();
+      handleClose();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
@@ -38,10 +44,8 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
 
   const handleSelect = async (game: BoardGameResult) => {
     if (game.id) {
-      // Local game — add directly
       await addToEvent(game.id);
     } else if (game.externalSource === "BGG" && game.externalId) {
-      // BGG result — find or create, then add
       try {
         const res = await api.post("/api/boardgames/from-bgg", {
           bggId: game.externalId,
@@ -71,13 +75,9 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
     }
   };
 
-  if (!open) return null;
-
   return (
-    <dialog className="modal modal-open">
-      <div className="modal-box max-w-md">
-        <h3 className="font-bold text-lg mb-4">Add Board Game</h3>
-
+    <ResponsiveModal open={open} onClose={handleClose} title="Add Board Game">
+      <div className="p-4 md:p-0 md:mt-4">
         {mode === "search" ? (
           <>
             <BoardGameSearchInput onSelect={handleSelect} />
@@ -96,25 +96,12 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
           />
         )}
 
-        <div className="modal-action">
-          <button
-            className="btn"
-            onClick={() => {
-              setMode("search");
-              onClose();
-            }}
-          >
+        <div className="flex justify-end pt-4">
+          <button className="btn" onClick={handleClose}>
             Close
           </button>
         </div>
       </div>
-      <div
-        className="modal-backdrop"
-        onClick={() => {
-          setMode("search");
-          onClose();
-        }}
-      />
-    </dialog>
+    </ResponsiveModal>
   );
 }

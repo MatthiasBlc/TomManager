@@ -8,13 +8,13 @@ Spec de reference : [SPEC_UI_MOBILE_FIRST.md](./SPEC_UI_MOBILE_FIRST.md)
 
 **Objectif** : Poser la navigation mobile (bottom bar + header compact) et le composant MobileSheet.
 
-- [ ] Composant `BottomTabBar` : barre fixe en bas, icones + labels, onglet actif, safe area iOS
-- [ ] Composant `MobileHeader` : header fixe top, logo compact, NotificationBell, ConnectionStatus
-- [ ] Hook `useIsMobile()` : basé sur `matchMedia('(max-width: 767px)')`, reactif au resize
-- [ ] Refactorer `Navbar.tsx` : afficher MobileHeader + BottomTabBar sur mobile, navbar classique sur desktop
-- [ ] Ajuster `App.tsx` / layout global : padding bottom pour bottom bar sur mobile
-- [ ] Composant `MobileSheet` : bottom sheet (monte du bas, swipe-down close, backdrop, max-h-90vh, scroll interne)
-- [ ] Tests : BottomTabBar (render, onglet actif), MobileSheet (open/close)
+- [x] Composant `BottomTabBar` : barre fixe en bas, icones + labels, onglet actif, safe area iOS
+- [x] Composant `MobileHeader` : header fixe top, logo compact, NotificationBell, ConnectionStatus
+- [x] Hook `useIsMobile()` : basé sur `matchMedia('(max-width: 767px)')`, reactif au resize
+- [x] Refactorer `Navbar.tsx` : afficher MobileHeader + BottomTabBar sur mobile, navbar classique sur desktop
+- [x] Ajuster `App.tsx` / layout global : padding bottom pour bottom bar sur mobile
+- [x] Composant `MobileSheet` : bottom sheet (monte du bas, swipe-down close, backdrop, max-h-90vh, scroll interne)
+- [x] Tests : BottomTabBar (render, onglet actif), MobileSheet (open/close)
 
 **Validation** : Navigation fonctionnelle sur mobile et desktop, tests passent.
 
@@ -24,12 +24,12 @@ Spec de reference : [SPEC_UI_MOBILE_FIRST.md](./SPEC_UI_MOBILE_FIRST.md)
 
 **Objectif** : Pages auth parfaites sur mobile.
 
-- [ ] `HomePage` : texte responsive (`text-2xl` -> `md:text-4xl`), CTA `btn-block` sur mobile
-- [ ] `LoginPage` : supprimer `w-96`, card `w-full px-4` -> `sm:max-w-sm sm:mx-auto`, inputs `btn-block`
-- [ ] `SignupPage` : idem LoginPage
-- [ ] `InvitationLandingPage` : idem LoginPage
-- [ ] Inputs : `inputmode="email"` sur les champs email, espacement `space-y-4`
-- [ ] Tests : rendu mobile des pages auth (pas de debordement horizontal)
+- [x] `HomePage` : texte responsive (`text-2xl` -> `md:text-4xl`), CTA `btn-block` sur mobile
+- [x] `LoginPage` : supprimer `w-96`, card `w-full px-4` -> `sm:max-w-sm sm:mx-auto`, inputs `btn-block`
+- [x] `SignupPage` : idem LoginPage
+- [x] `InvitationLandingPage` : idem LoginPage
+- [x] Inputs : `inputmode="email"` sur les champs email, espacement `space-y-4`
+- [x] Tests : rendu mobile des pages auth (pas de debordement horizontal)
 
 **Validation** : Pages auth responsive, aucun scroll horizontal sur 320px.
 
@@ -39,13 +39,13 @@ Spec de reference : [SPEC_UI_MOBILE_FIRST.md](./SPEC_UI_MOBILE_FIRST.md)
 
 **Objectif** : Liste d'events et detail parfaits sur mobile.
 
-- [ ] `EventListPage` : grille 1 colonne mobile, 2/3 colonnes desktop. FAB "Creer Event" sur mobile
-- [ ] Composant `FAB` (Floating Action Button) : rond, fixe en bas a droite, au-dessus de la bottom bar
-- [ ] `EventDetailPage` : tabs scrollables horizontalement sur mobile (`overflow-x-auto scroll-snap-x`)
-- [ ] `CreateEventModal` + `EditEventModal` : utiliser MobileSheet sur mobile, modal sur desktop
-- [ ] `ParticipantList` : cartes empilees sur mobile, table sur desktop
-- [ ] `InvitationManager` : form pleine largeur + cartes sur mobile, table sur desktop
-- [ ] Tests : EventListPage en mobile (1 colonne, FAB visible), ParticipantList mobile (pas de table)
+- [x] `EventListPage` : grille 1 colonne mobile, 2/3 colonnes desktop. FAB "Creer Event" sur mobile
+- [x] Composant `FAB` (Floating Action Button) : rond, fixe en bas a droite, au-dessus de la bottom bar
+- [x] `EventDetailPage` : tabs scrollables horizontalement sur mobile (`overflow-x-auto scroll-snap-x`)
+- [x] `CreateEventModal` + `EditEventModal` : utiliser MobileSheet sur mobile, modal sur desktop
+- [x] `ParticipantList` : cartes empilees sur mobile, table sur desktop
+- [x] `InvitationManager` : form pleine largeur + cartes sur mobile, table sur desktop
+- [x] Tests : EventListPage en mobile (1 colonne, FAB visible), ParticipantList mobile (pas de table)
 
 **Validation** : Events navigables et lisibles sur 320px.
 
@@ -55,12 +55,12 @@ Spec de reference : [SPEC_UI_MOBILE_FIRST.md](./SPEC_UI_MOBILE_FIRST.md)
 
 **Objectif** : Planning et detail table parfaits sur mobile.
 
-- [ ] `PlanningPage` : TimelineView 1 colonne mobile, FAB "Creer Table", headers jour sticky
-- [ ] `TableCard` : padding et tailles de texte responsive, `active:scale-95` au tap
-- [ ] `TableDetailPage` : participants en card list (pas table) sur mobile, boutons action `sticky bottom btn-block`
-- [ ] `CreateTableModal` + `EditTableModal` : MobileSheet sur mobile, grille datetime `grid-cols-1` -> `sm:grid-cols-2`
-- [ ] `TagInput` : taille cibles touch >= 44px
-- [ ] Tests : TableDetailPage mobile (pas de table HTML), boutons sticky
+- [x] `PlanningPage` : TimelineView 1 colonne mobile, FAB "Creer Table", headers jour sticky
+- [x] `TableCard` : padding et tailles de texte responsive, `active:scale-95` au tap
+- [x] `TableDetailPage` : participants en card list (pas table) sur mobile, boutons action `sticky bottom btn-block`
+- [x] `CreateTableModal` + `EditTableModal` : MobileSheet sur mobile, grille datetime `grid-cols-1` -> `sm:grid-cols-2`
+- [x] `TagInput` : taille cibles touch >= 44px
+- [x] Tests : TableDetailPage mobile (pas de table HTML), boutons sticky
 
 **Validation** : Planning utilisable au pouce sur mobile.
 
@@ -70,13 +70,13 @@ Spec de reference : [SPEC_UI_MOBILE_FIRST.md](./SPEC_UI_MOBILE_FIRST.md)
 
 **Objectif** : Jeux et notifications parfaits sur mobile.
 
-- [ ] `BoardGameTab` : header responsive, bouton "Ajouter" adapte
-- [ ] `BoardGameList` + `BoardGameCard` : cartes avec taille touch suffisante, bouton supprimer agrandi
-- [ ] `AddBoardGameModal` : MobileSheet sur mobile
-- [ ] `BoardGameSearchInput` : dropdown adapte mobile (max-h responsive, position safe)
-- [ ] `NotificationBell` : dropdown -> bottom sheet sur mobile
-- [ ] `NotificationItem` : zones cliquables >= 44px, swipe-to-delete envisageable (optionnel)
-- [ ] Tests : BoardGameCard touch targets, NotificationBell mobile
+- [x] `BoardGameTab` : header responsive, bouton "Ajouter" adapte
+- [x] `BoardGameList` + `BoardGameCard` : cartes avec taille touch suffisante, bouton supprimer agrandi
+- [x] `AddBoardGameModal` : MobileSheet sur mobile
+- [x] `BoardGameSearchInput` : dropdown adapte mobile (max-h responsive, position safe)
+- [x] `NotificationBell` : dropdown -> bottom sheet sur mobile
+- [x] `NotificationItem` : zones cliquables >= 44px, swipe-to-delete envisageable (optionnel)
+- [x] Tests : BoardGameCard touch targets, NotificationBell mobile
 
 **Validation** : Jeux et notifications utilisables sur mobile.
 
