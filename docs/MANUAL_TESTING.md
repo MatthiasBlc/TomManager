@@ -13,15 +13,15 @@
 
 ### 1.1 Page d'accueil
 
-- [ ] La HomePage s'affiche avec le titre et le CTA "Commencer"
+- [X] La HomePage s'affiche avec le titre et le CTA "Commencer"
 - [ ] Mobile : texte `text-2xl`, bouton pleine largeur
 - [ ] Desktop : texte `text-4xl`, bouton taille normale
 - [ ] Pas de scroll horizontal sur 320px
 
 ### 1.2 Inscription (via invitation uniquement)
 
-- [ ] Acceder a `/signup` sans token → redirige ou affiche erreur
-- [ ] Acceder a `/signup?token=INVALID` → erreur "Token invalide"
+- [x] Acceder a `/signup` sans token → redirige ou affiche erreur
+- [x] Acceder a `/signup?token=INVALID` → erreur "Token invalide"
 - [ ] Avec un token valide :
   - [ ] Email pre-rempli et non modifiable
   - [ ] Remplir username + password → inscription reussie

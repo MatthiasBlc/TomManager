@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "description": "",
   "main": "dist/index.js",
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "scripts": {
+    "seed": "npx prisma db seed",
     "dev": "nodemon src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc",
