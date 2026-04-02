@@ -39,6 +39,16 @@ export async function validate(req: Request, res: Response, next: NextFunction) 
   }
 }
 
+export async function revoke(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { eventId, invitationId } = req.params;
+    await invitationService.revokeInvitation(invitationId, eventId);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const { eventId } = req.params;

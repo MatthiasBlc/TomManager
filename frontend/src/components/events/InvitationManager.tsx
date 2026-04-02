@@ -20,6 +20,16 @@ export default function InvitationManager({ eventId }: Props) {
   const isMobile = useIsMobile();
   const { register, handleSubmit, reset } = useForm<{ email: string }>();
 
+  const handleRevoke = async (invitationId: string) => {
+    try {
+      await api.delete(`/api/events/${eventId}/invitations/${invitationId}`);
+      toast.success("Invitation revoked");
+      fetchInvitations();
+    } catch {
+      toast.error("Failed to revoke invitation");
+    }
+  };
+
   const fetchInvitations = useCallback(async () => {
     try {
       const res = await api.get(`/api/events/${eventId}/invitations`);
@@ -88,7 +98,17 @@ export default function InvitationManager({ eventId }: Props) {
               <div className="card-body p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium truncate flex-1 mr-2">{inv.email}</p>
-                  <span className={`badge badge-sm ${statusBadge(inv.status)}`}>{inv.status}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`badge badge-sm ${statusBadge(inv.status)}`}>{inv.status}</span>
+                    {inv.status === "PENDING" && (
+                      <button
+                        className="btn btn-ghost btn-xs text-error"
+                        onClick={() => handleRevoke(inv.id)}
+                      >
+                        Revoke
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs opacity-60">
                   {new Date(inv.createdAt).toLocaleDateString("fr-FR")}
@@ -105,6 +125,7 @@ export default function InvitationManager({ eventId }: Props) {
                 <th>Email</th>
                 <th>Status</th>
                 <th>Sent</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -115,6 +136,16 @@ export default function InvitationManager({ eventId }: Props) {
                     <span className={`badge ${statusBadge(inv.status)}`}>{inv.status}</span>
                   </td>
                   <td>{new Date(inv.createdAt).toLocaleDateString("fr-FR")}</td>
+                  <td>
+                    {inv.status === "PENDING" && (
+                      <button
+                        className="btn btn-ghost btn-xs text-error"
+                        onClick={() => handleRevoke(inv.id)}
+                      >
+                        Revoke
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

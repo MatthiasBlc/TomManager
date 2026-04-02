@@ -103,6 +103,22 @@ export async function acceptInvitation(token: string, userId: string) {
   return { invitation: updatedInvitation, participation };
 }
 
+export async function revokeInvitation(invitationId: string, eventId: string) {
+  const invitation = await prisma.eventInvitation.findUnique({
+    where: { id: invitationId },
+  });
+
+  if (!invitation || invitation.eventId !== eventId) {
+    throw createError(404, "Invitation not found");
+  }
+
+  if (invitation.status === "ACCEPTED") {
+    throw createError(409, "Cannot revoke an accepted invitation");
+  }
+
+  await prisma.eventInvitation.delete({ where: { id: invitationId } });
+}
+
 export async function listInvitations(eventId: string) {
   return prisma.eventInvitation.findMany({
     where: { eventId },

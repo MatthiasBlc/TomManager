@@ -20,6 +20,14 @@ router.get(
   invitationController.list
 );
 
+// DELETE /api/events/:eventId/invitations/:invitationId — revoke invitation (event creator only)
+router.delete(
+  "/events/:eventId/invitations/:invitationId",
+  requireAuth,
+  requireEventCreator,
+  invitationController.revoke
+);
+
 // GET /api/invitations/:token — validate token (public)
 router.get("/invitations/:token", invitationController.validate);
 
