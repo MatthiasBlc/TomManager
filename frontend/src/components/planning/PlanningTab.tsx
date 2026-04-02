@@ -152,7 +152,9 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         <CalendarView
           tables={tables}
           eventBounds={eventBounds}
+          eventId={eventId}
           onTableClick={handleTableClick}
+          onTableUpdated={fetchTables}
         />
       ) : (
         // Fallback si les bornes ne sont pas encore chargees

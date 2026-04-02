@@ -2,7 +2,11 @@ import { useRef, useState, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { DatesSetArg } from "@fullcalendar/core";
+import { DatesSetArg, EventDropArg } from "@fullcalendar/core";
+import { EventResizeDoneArg } from "@fullcalendar/interaction";
+import toast from "react-hot-toast";
+import api from "../../config/api";
+import { useAuth } from "../../contexts/AuthContext";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import CalendarEventBlock from "./CalendarEventBlock";
 
@@ -27,7 +31,9 @@ interface EventBounds {
 interface Props {
   tables: TableSummary[];
   eventBounds: EventBounds;
+  eventId: string;
   onTableClick: (tableId: string) => void;
+  onTableUpdated: () => void;
 }
 
 function calcNbDays(start: string, end: string): number {
@@ -37,7 +43,6 @@ function calcNbDays(start: string, end: string): number {
 
 function firstTableScrollTime(tables: TableSummary[], eventStart: string): string {
   if (tables.length === 0) {
-    // Scroll vers le debut de l'event par defaut
     const h = new Date(eventStart).getHours();
     return `${String(Math.max(0, h - 1)).padStart(2, "0")}:00:00`;
   }
@@ -49,13 +54,43 @@ function firstTableScrollTime(tables: TableSummary[], eventStart: string): strin
   return `${String(h).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:00`;
 }
 
-export default function CalendarView({ tables, eventBounds, onTableClick }: Props) {
+// Verifie si la table deplacee chevauche une autre table du meme GM
+function findGmOverlap(
+  movedTableId: string,
+  newStart: Date,
+  newEnd: Date,
+  tables: TableSummary[]
+): string | null {
+  for (const t of tables) {
+    if (t.id === movedTableId) continue;
+    if (!t.isGM) continue; // seules les tables dont l'user est GM peuvent creer un conflit
+    const tStart = new Date(t.startDateTime);
+    const tEnd = new Date(t.endDateTime);
+    if (newStart < tEnd && newEnd > tStart) return t.title;
+  }
+  return null;
+}
+
+export default function CalendarView({
+  tables,
+  eventBounds,
+  eventId,
+  onTableClick,
+  onTableUpdated,
+}: Props) {
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const calendarRef = useRef<FullCalendar>(null);
-  const nbDays = calcNbDays(eventBounds.startDateTime, eventBounds.endDateTime);
-  const scrollTime = firstTableScrollTime(tables, eventBounds.startDateTime);
+  // Ref pour avoir les tables a jour dans les callbacks sans les declarer comme dependances
+  const tablesRef = useRef(tables);
+  tablesRef.current = tables;
 
-  // Pour le header mobile : date courante affichee
+  const nbDays = calcNbDays(eventBounds.startDateTime, eventBounds.endDateTime);
+  // scrollTime calcule une seule fois au montage
+  const scrollTime = useRef(
+    firstTableScrollTime(tables, eventBounds.startDateTime)
+  ).current;
+
   const [currentDate, setCurrentDate] = useState<Date>(
     new Date(eventBounds.startDateTime)
   );
@@ -67,13 +102,77 @@ export default function CalendarView({ tables, eventBounds, onTableClick }: Prop
   const goNext = () => calendarRef.current?.getApi().next();
   const goPrev = () => calendarRef.current?.getApi().prev();
 
+  // Appel API commun pour drag et resize
+  const patchTableDates = useCallback(
+    async (
+      tableId: string,
+      newStart: Date,
+      newEnd: Date,
+      revertFunc: () => void
+    ) => {
+      // Warning si chevauchement avec une autre table du meme GM
+      const overlap = findGmOverlap(tableId, newStart, newEnd, tablesRef.current);
+      if (overlap) {
+        toast(`Attention : chevauche "${overlap}"`, { icon: "⚠️" });
+      }
+
+      try {
+        await api.patch(`/api/events/${eventId}/tables/${tableId}`, {
+          startDateTime: newStart.toISOString(),
+          endDateTime: newEnd.toISOString(),
+        });
+        onTableUpdated();
+      } catch (err: unknown) {
+        revertFunc();
+        const message =
+          (err as { response?: { data?: { error?: { message?: string } } } })
+            ?.response?.data?.error?.message || "Echec du deplacement";
+        toast.error(message);
+      }
+    },
+    [eventId, onTableUpdated]
+  );
+
+  const handleEventDrop = useCallback(
+    (info: EventDropArg) => {
+      if (!info.event.start || !info.event.end) {
+        info.revert();
+        return;
+      }
+      patchTableDates(
+        info.event.id,
+        info.event.start,
+        info.event.end,
+        info.revert
+      );
+    },
+    [patchTableDates]
+  );
+
+  const handleEventResize = useCallback(
+    (info: EventResizeDoneArg) => {
+      if (!info.event.start || !info.event.end) {
+        info.revert();
+        return;
+      }
+      patchTableDates(
+        info.event.id,
+        info.event.start,
+        info.event.end,
+        info.revert
+      );
+    },
+    [patchTableDates]
+  );
+
+  const isAdmin = user?.role === "ADMIN";
+
   const calEvents = tables.map((t) => ({
     id: t.id,
     title: t.title,
     start: t.startDateTime,
     end: t.endDateTime,
-    // Desactive les interactions FC natives - on gere le click manuellement
-    editable: false,
+    editable: t.isGM || isAdmin,
     extendedProps: {
       isGM: t.isGM,
       currentUserStatus: t.currentUserStatus,
@@ -88,8 +187,6 @@ export default function CalendarView({ tables, eventBounds, onTableClick }: Prop
     end: eventBounds.endDateTime,
   };
 
-  // Vue desktop : toutes les journees de l'event cote a cote
-  // Vue mobile : une journee a la fois avec navigation
   const initialView = isMobile ? "timeGridDay" : "timeGridEventRange";
 
   const formatMobileHeader = (d: Date) =>
@@ -168,13 +265,17 @@ export default function CalendarView({ tables, eventBounds, onTableClick }: Prop
         locale="fr"
         firstDay={1}
         nowIndicator
-        // Pas de drag/resize en phase 1
-        editable={false}
-        eventStartEditable={false}
-        eventDurationEditable={false}
-        // Touch : long press pour selectionner (sera utile phase 2)
+        // Drag & drop
+        editable
+        eventStartEditable
+        eventDurationEditable
+        // Snap 15 min (coherent avec slotDuration)
+        snapDuration="00:15:00"
+        // Long press pour declencher le drag sur mobile
         longPressDelay={500}
-        // Colonnes simultanees cote a cote
+        eventDrop={handleEventDrop}
+        eventResize={handleEventResize}
+        // Permet les tables simultanees
         eventOverlap
       />
     </div>
