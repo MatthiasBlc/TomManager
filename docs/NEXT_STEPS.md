@@ -157,7 +157,23 @@ Actuellement seul `/api/auth/login` et `/signup` sont limites.
 
 ---
 
-## Phase 14 : Features avancees (Priorite basse, a discuter)
+## Phase 14 : Migration API BoardGameGeek (Priorite haute)
+
+**Contexte** : L'API XML v2 de BGG (`boardgamegeek.com/xmlapi2`) retourne desormais `Unauthorized` sur les requetes serveur-a-serveur. La recherche BGG est donc non fonctionnelle.
+
+**Objectif** : Migrer vers l'API officielle BGG (avec authentification).
+
+- [ ] Creer un compte BGG et obtenir des credentials API
+- [ ] Remplacer `services/bgg.ts` pour utiliser l'API officielle BGG (OAuth ou cle API selon ce que BGG propose)
+- [ ] Mettre les credentials dans les variables d'environnement (`BGG_API_KEY` ou similaire)
+- [ ] Tester la recherche et le fetch des details d'un jeu
+- [ ] Mettre a jour les tests qui mockent BGG
+
+**En attendant** : utiliser "Create manually" pour ajouter des jeux.
+
+---
+
+## Phase 15 : Features avancees (Priorite basse, a discuter)
 
 Idees de features futures, a prioriser selon les besoins :
 

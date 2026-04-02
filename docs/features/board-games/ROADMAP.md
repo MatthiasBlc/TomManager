@@ -78,3 +78,17 @@
 - [x] Mettre a jour `.claude/context/PROGRESS.md` (phase 4 terminee)
 - [x] Mettre a jour `.claude/context/TESTS.md`
 - [x] Mettre a jour `.claude/context/FILE_MAP.md` (final)
+
+---
+
+## Session 6 : Migration API BGG (a faire)
+
+> Contexte : l'API XML v2 de BGG retourne desormais Unauthorized sur les requetes
+> serveur-a-serveur depuis avril 2026. La recherche BGG est non fonctionnelle.
+> En attendant, utiliser "Create manually".
+
+- [ ] Obtenir credentials API BGG officielle
+- [ ] Remplacer `backend/src/services/bgg.ts` avec le nouvel endpoint authentifie
+- [ ] Ajouter `BGG_API_KEY` (ou equivalent) aux variables d'environnement
+- [ ] Tester recherche + fetch details jeu
+- [ ] Mettre a jour les tests qui mockent BGG
