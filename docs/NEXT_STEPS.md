@@ -202,22 +202,25 @@ Phase 9 (Mailer) devient entierement obsolete.
 **Flux complet**
 
 ```
-Premiere connexion
-  1. L'user clique "Se connecter avec Discord" sur TomManager
-  2. OAuth2 Discord → on recupere discordId, username, avatar
-  3. Si discordId inconnu → creation automatique du compte User en DB
-  4. Session TomManager creee (meme mecanique express-session existante)
+Creation de compte (automatique, sans action de l'user)
+  1. L'admin cree l'event "Hiver 2028" dans TomManager
+  2. L'admin saisit l'ID du role Discord dans TomManager
+  3. Sur Discord, l'admin assigne le role "Hiver 2028" au membre
+  4. Le bot detecte l'assignation (guildMemberUpdate)
+     → Si aucun User avec ce discordId : CREE le compte (discordId, username, avatar depuis Discord)
+     → Cree EventParticipation
+  5. L'user a un compte TomManager et l'acces a l'event sans avoir rien fait
 
-Acces a un event
-  5. L'admin cree l'event "Hiver 2028" dans TomManager
-  6. L'admin saisit l'ID du role Discord dans TomManager (role cree manuellement sur Discord)
-  7. Sur Discord, l'admin assigne manuellement le role "Hiver 2028" au membre
-  8. Le bot detecte l'assignation (guildMemberUpdate) → cree EventParticipation en DB
-  9. Le membre voit l'event apparaitre dans TomManager sans aucune action de sa part
+Premiere connexion (session)
+  6. L'user clique "Se connecter avec Discord" sur TomManager
+  7. OAuth2 Discord → on recupere le discordId
+  8. User.findOne({ discordId }) → compte existe deja (cree par le bot)
+  9. Session TomManager creee — pas de creation de compte ici, juste une auth
 
 Retrait d'acces
   10. L'admin retire le role Discord au membre
   11. Le bot detecte le retrait → supprime EventParticipation (cascade propre)
+      Note : le compte User est conserve (historique des tables, etc.)
 ```
 
 ---
@@ -263,13 +266,26 @@ guildMemberUpdate(oldMember, newMember)
 
   pour chaque role ajoute :
     event = Event.findOne({ discordRoleId: role.id })
-    user  = User.findOne({ discordId: newMember.id })
-    si event && user → creer EventParticipation (upsert)
+    si event :
+      user = User.findOne({ discordId: newMember.id })
+      si !user :
+        // Creation automatique du compte
+        user = User.create({
+          discordId:       newMember.id,
+          username:        newMember.displayName,
+          discordUsername: newMember.user.username,
+          avatarUrl:       newMember.displayAvatarURL(),
+          role:            "USER",
+        })
+      EventParticipation.upsert({ eventId: event.id, userId: user.id })
 
   pour chaque role retire :
     event = Event.findOne({ discordRoleId: role.id })
     user  = User.findOne({ discordId: newMember.id })
-    si event && user → supprimer EventParticipation + cascade tables
+    si event && user :
+      EventParticipation.delete({ eventId: event.id, userId: user.id })
+      // cascade : participations aux tables de l'event supprimees aussi
+      // le compte User est conserve
 ```
 
 ---
