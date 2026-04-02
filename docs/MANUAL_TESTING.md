@@ -13,7 +13,7 @@
 
 ### 1.1 Page d'accueil
 
-- [X] La HomePage s'affiche avec le titre et le CTA "Commencer"
+- [x] La HomePage s'affiche avec le titre et le CTA "Commencer"
 - [ ] Mobile : texte `text-2xl`, bouton pleine largeur
 - [ ] Desktop : texte `text-4xl`, bouton taille normale
 - [ ] Pas de scroll horizontal sur 320px
@@ -23,10 +23,10 @@
 - [x] Acceder a `/signup` sans token → redirige ou affiche erreur
 - [x] Acceder a `/signup?token=INVALID` → erreur "Token invalide"
 - [ ] Avec un token valide :
-  - [ ] Email pre-rempli et non modifiable
-  - [ ] Remplir username + password → inscription reussie
+  - [x] Email pre-rempli et non modifiable
+  - [x] Remplir username + password → inscription reussie
   - [ ] Redirection vers la page de l'event automatiquement
-  - [ ] Session creee (cookie `connect.sid`)
+  - [x] Session creee (cookie `connect.sid`)
 - [ ] Inscription avec email different du token → erreur 403
 - [ ] Inscription avec username deja pris → erreur 409
 - [ ] Inscription avec email deja pris → erreur 409
@@ -35,10 +35,10 @@
 
 ### 1.3 Connexion
 
-- [ ] Login avec email valide → succes
+- [x] Login avec email valide → succes
 - [ ] Login avec username valide → succes
-- [ ] Login avec mauvais mot de passe → erreur 401
-- [ ] Login avec identifiant inexistant → erreur 401
+- [x] Login avec mauvais mot de passe → erreur 401
+- [x] Login avec identifiant inexistant → erreur 401
 - [ ] Login avec token d'invitation :
   - [ ] Participation a l'event creee automatiquement
   - [ ] Redirection vers `/events/:eventId`
@@ -49,7 +49,7 @@
 
 ### 1.4 Deconnexion
 
-- [ ] Bouton logout → session detruite
+- [x] Bouton logout → session detruite
 - [ ] Apres logout, acces a une page protegee → redirection login
 - [ ] Cookie `connect.sid` supprime
 
@@ -189,12 +189,14 @@
 ### 5.1b Vue Calendrier (FullCalendar)
 
 **Toggle et preference**
+
 - [ ] Bouton toggle liste/calendrier visible en haut a gauche du planning
 - [ ] Basculer vers "calendrier" → vue FullCalendar s'affiche
 - [ ] Basculer vers "liste" → TimelineView s'affiche a nouveau
 - [ ] Rafraichir la page → la derniere vue choisie est restauree (localStorage)
 
 **Affichage desktop (>= 768px)**
+
 - [ ] Toutes les journees de l'event affiches en colonnes cote a cote
 - [ ] Axe horaire a gauche (labels toutes les heures, format 24h)
 - [ ] Tables simultanees affichees en colonnes cote a cote (pas superposees)
@@ -202,24 +204,28 @@
 - [ ] Indicateur "maintenant" (ligne rouge) si l'event est en cours
 
 **Affichage mobile (< 768px)**
+
 - [ ] Une seule journee affichee a la fois
 - [ ] Boutons < > pour naviguer entre les jours
 - [ ] Le header affiche le jour courant (ex: "lundi 14 janvier")
 - [ ] Impossible de naviguer avant le debut ou apres la fin de l'event
 
 **Color coding**
+
 - [ ] Table dont l'user est MJ → couleur secondary
 - [ ] Table ou l'user est inscrit (CONFIRMED) → couleur success
 - [ ] Table ou l'user est en waitlist → couleur warning
 - [ ] Autre table → couleur primary (semi-transparente)
 
 **Contenu des blocs**
+
 - [ ] Titre tronque si trop long
 - [ ] Plage horaire (timeText FC)
 - [ ] Compteur joueurs confirmes/max (+ waitlist si >0)
 - [ ] Clic sur un bloc → navigation vers le detail de la table
 
 **Drag & drop**
+
 - [ ] MJ peut drag sa propre table → nouveau creneau
 - [ ] Admin peut drag n'importe quelle table
 - [ ] Participant non-MJ : drag bloque (bloc non draggable)
@@ -230,6 +236,7 @@
 - [ ] Chevauchement avec une autre table du meme MJ → toast warning (action autorisee quand meme)
 
 **Resize**
+
 - [ ] MJ peut tirer le bas d'un bloc pour changer la duree
 - [ ] Admin peut resizer n'importe quel bloc
 - [ ] Snap 15 min au relache
@@ -238,11 +245,13 @@
 - [ ] Erreur API → revert visuel + toast d'erreur
 
 **Temps reel (calendrier ouvert)**
+
 - [ ] Un autre user deplace une table → calendrier mis a jour sans rafraichir
 - [ ] Une nouvelle table est creee → apparait dans le calendrier
 - [ ] Une table est supprimee → disparait du calendrier
 
 **Mobile drag (< 768px)**
+
 - [ ] Long press (500ms) sur un bloc editable → initie le drag
 - [ ] Drag touch fonctionne de la meme maniere que desktop
 
@@ -385,6 +394,7 @@
 Ouvrir 2 navigateurs/onglets avec 2 users differents sur le meme event.
 
 **Tables :**
+
 - [ ] User A cree une table → apparait chez User B sans rafraichir
 - [ ] User A modifie une table → mise a jour chez User B
 - [ ] User A supprime une table → disparait chez User B
@@ -392,10 +402,12 @@ Ouvrir 2 navigateurs/onglets avec 2 users differents sur le meme event.
 - [ ] User A quitte une table → compteur mis a jour chez User B
 
 **Jeux :**
+
 - [ ] User A ajoute un jeu → apparait chez User B
 - [ ] User A retire un jeu → disparait chez User B
 
 **Participants :**
+
 - [ ] Admin retire User B → User B recoit une notification temps reel
 
 ### 7.3 Rooms Socket.io
