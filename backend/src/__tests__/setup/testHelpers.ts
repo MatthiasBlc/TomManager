@@ -86,7 +86,7 @@ export async function createTestInvitation(
   const res = await request
     .post(`/api/events/${eventId}/invitations`)
     .set("Cookie", cookie)
-    .send({ email });
+    .send({ identifier: email });
   return res.body.data;
 }
 

@@ -22,7 +22,7 @@ async function createEventAsAdmin(cookie: string[]) {
 
 describe("Invitation API", () => {
   describe("POST /api/events/:eventId/invitations", () => {
-    it("should create an invitation as admin", async () => {
+    it("should create an invitation by email", async () => {
       await createAdminUser();
       const { cookie } = await loginAdminUser();
       const event = await createEventAsAdmin(cookie);
@@ -30,13 +30,43 @@ describe("Invitation API", () => {
       const res = await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", cookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
       expect(res.status).toBe(201);
       expect(res.body.data.invitation).toHaveProperty("token");
       expect(res.body.data.invitation.email).toBe("invited@example.com");
       expect(res.body.data.invitation.status).toBe("PENDING");
       expect(res.body.data.inviteLink).toContain("/invite/");
+    });
+
+    it("should create an invitation by username and resolve to email", async () => {
+      await createAdminUser();
+      const { cookie } = await loginAdminUser();
+      const event = await createEventAsAdmin(cookie);
+
+      await createTestUser({ email: "michel@test.fr", username: "michel" });
+
+      const res = await request
+        .post(`/api/events/${event.id}/invitations`)
+        .set("Cookie", cookie)
+        .send({ identifier: "michel" });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.invitation.email).toBe("michel@test.fr");
+      expect(res.body.data.invitation.status).toBe("PENDING");
+    });
+
+    it("should return 404 for unknown username", async () => {
+      await createAdminUser();
+      const { cookie } = await loginAdminUser();
+      const event = await createEventAsAdmin(cookie);
+
+      const res = await request
+        .post(`/api/events/${event.id}/invitations`)
+        .set("Cookie", cookie)
+        .send({ identifier: "unknown-user" });
+
+      expect(res.status).toBe(404);
     });
 
     it("should reject non-admin user", async () => {
@@ -50,7 +80,7 @@ describe("Invitation API", () => {
       const res = await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", userCookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
       expect(res.status).toBe(403);
     });
@@ -58,25 +88,12 @@ describe("Invitation API", () => {
     it("should reject unauthenticated request", async () => {
       const res = await request
         .post("/api/events/some-id/invitations")
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
       expect(res.status).toBe(401);
     });
 
-    it("should reject invalid email", async () => {
-      await createAdminUser();
-      const { cookie } = await loginAdminUser();
-      const event = await createEventAsAdmin(cookie);
-
-      const res = await request
-        .post(`/api/events/${event.id}/invitations`)
-        .set("Cookie", cookie)
-        .send({ email: "not-an-email" });
-
-      expect(res.status).toBe(400);
-    });
-
-    it("should reject missing email", async () => {
+    it("should reject missing identifier", async () => {
       await createAdminUser();
       const { cookie } = await loginAdminUser();
       const event = await createEventAsAdmin(cookie);
@@ -97,12 +114,12 @@ describe("Invitation API", () => {
       await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", cookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
       const res = await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", cookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
       expect(res.status).toBe(409);
     });
@@ -112,11 +129,10 @@ describe("Invitation API", () => {
       const { cookie } = await loginAdminUser();
       const event = await createEventAsAdmin(cookie);
 
-      // Create invitation then manually expire it
       const firstRes = await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", cookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
       await prisma.eventInvitation.update({
         where: { id: firstRes.body.data.invitation.id },
@@ -126,7 +142,7 @@ describe("Invitation API", () => {
       const res = await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", cookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
       expect(res.status).toBe(201);
       expect(res.body.data.invitation.token).not.toBe(
@@ -141,7 +157,7 @@ describe("Invitation API", () => {
       const res = await request
         .post("/api/events/00000000-0000-0000-0000-000000000000/invitations")
         .set("Cookie", cookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
       expect(res.status).toBe(404);
     });
@@ -156,7 +172,7 @@ describe("Invitation API", () => {
       const invRes = await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", cookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
       const token = invRes.body.data.invitation.token;
 
@@ -174,13 +190,12 @@ describe("Invitation API", () => {
       const { cookie } = await loginAdminUser();
       const event = await createEventAsAdmin(cookie);
 
-      // Create a user with the invited email
       await createTestUser({ email: "existing@example.com", username: "existinguser" });
 
       const invRes = await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", cookie)
-        .send({ email: "existing@example.com" });
+        .send({ identifier: "existing@example.com" });
 
       const token = invRes.body.data.invitation.token;
 
@@ -204,9 +219,8 @@ describe("Invitation API", () => {
       const invRes = await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", cookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
-      // Manually set expiresAt to the past
       await prisma.eventInvitation.update({
         where: { id: invRes.body.data.invitation.id },
         data: { expiresAt: new Date("2020-01-01") },
@@ -226,9 +240,8 @@ describe("Invitation API", () => {
       const invRes = await request
         .post(`/api/events/${event.id}/invitations`)
         .set("Cookie", cookie)
-        .send({ email: "invited@example.com" });
+        .send({ identifier: "invited@example.com" });
 
-      // Manually mark as ACCEPTED
       await prisma.eventInvitation.update({
         where: { id: invRes.body.data.invitation.id },
         data: { status: "ACCEPTED" },

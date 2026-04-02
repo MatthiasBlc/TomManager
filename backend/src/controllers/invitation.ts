@@ -1,25 +1,39 @@
 import { Request, Response, NextFunction } from "express";
 import * as invitationService from "../services/invitation";
+import prisma from "../util/db";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const { eventId } = req.params;
-    const { email } = req.body;
+    const { identifier } = req.body;
 
-    if (!email || typeof email !== "string") {
-      res.status(400).json({ error: { message: "Email is required" } });
+    if (!identifier || typeof identifier !== "string" || !identifier.trim()) {
+      res.status(400).json({ error: { message: "Email or username is required" } });
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      res.status(400).json({ error: { message: "Invalid email format" } });
-      return;
+    let email: string;
+
+    if (EMAIL_REGEX.test(identifier.trim())) {
+      email = identifier.trim().toLowerCase();
+    } else {
+      // Resoudre le username en email
+      const user = await prisma.user.findFirst({
+        where: { username: identifier.trim(), deletedAt: null },
+        select: { email: true },
+      });
+      if (!user) {
+        res.status(404).json({ error: { message: `Aucun utilisateur avec le pseudo "${identifier.trim()}"` } });
+        return;
+      }
+      email = user.email;
     }
 
     const result = await invitationService.createInvitation(
       eventId,
-      email.toLowerCase(),
+      email,
       req.session.userId!
     );
 

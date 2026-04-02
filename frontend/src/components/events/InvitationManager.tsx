@@ -18,7 +18,7 @@ interface Props {
 export default function InvitationManager({ eventId }: Props) {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const isMobile = useIsMobile();
-  const { register, handleSubmit, reset } = useForm<{ email: string }>();
+  const { register, handleSubmit, reset } = useForm<{ identifier: string }>();
 
   const handleRevoke = async (invitationId: string) => {
     try {
@@ -43,9 +43,9 @@ export default function InvitationManager({ eventId }: Props) {
     fetchInvitations();
   }, [fetchInvitations]);
 
-  const onSubmit = async (data: { email: string }) => {
+  const onSubmit = async (data: { identifier: string }) => {
     try {
-      const res = await api.post(`/api/events/${eventId}/invitations`, { email: data.email });
+      const res = await api.post(`/api/events/${eventId}/invitations`, { identifier: data.identifier });
       const token = res.data.data.invitation.token;
       const link = `${window.location.origin}/invite/${token}`;
 
@@ -78,11 +78,11 @@ export default function InvitationManager({ eventId }: Props) {
     <div>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2 mb-4 sm:flex-row">
         <input
-          type="email"
-          placeholder="Email address"
+          type="text"
+          placeholder="Email ou pseudo"
           className="input input-bordered w-full sm:flex-1"
-          inputMode="email"
-          {...register("email", { required: true })}
+          autoComplete="off"
+          {...register("identifier", { required: true })}
         />
         <button type="submit" className="btn btn-primary btn-block sm:btn-wide">
           Invite
