@@ -323,6 +323,66 @@ Total : 1-2 sprints. Le seul vrai travail est l'OAuth2 Discord cote backend.
 
 ---
 
+**OAuth2 Discord — fonctionnement et securite**
+
+```
+Browser                    TomManager Backend           Discord
+  |                               |                        |
+  |-- clic "Login Discord" ------>|                        |
+  |                               |-- genere state (CSRF)  |
+  |<-- redirect authorize URL ----|                        |
+  |                                                        |
+  |-------- redirect vers discord.com/oauth2/authorize --->|
+  |<-- consent screen Discord ------------------------------|
+  |    "TomManager veut acceder a votre profil"            |
+  |                                                        |
+  |-- user clique "Autoriser" ---------------------------->|
+  |<-- redirect /auth/discord/callback?code=XXX&state=YYY--|
+  |                                                        |
+  |-- GET /auth/discord/callback?code=XXX --------------->|
+  |                               |-- POST /oauth2/token ->|
+  |                               |   (code + client_secret)
+  |                               |<-- access_token -------|
+  |                               |-- GET /users/@me ----->|
+  |                               |<-- { id, username... } |
+  |                               |-- User.findOrCreate()  |
+  |                               |-- session creee        |
+  |<-- redirect /events -----------|                        |
+```
+
+*Securite cote TomManager*
+
+- **Code ephemere a usage unique** : valable ~5 min, inutilisable une seconde fois
+- **Echange serveur a serveur** : le `client_secret` ne quitte jamais le backend,
+  le browser ne voit jamais le `access_token` Discord
+- **Protection CSRF via `state`** : token aleatoire genere avant la redirection,
+  verifie au retour du callback — empeche de forcer la liaison d'un compte tiers
+- **Aucun token Discord stocke** : apres recuperation du profil, le `access_token` est jete.
+  TomManager n'a pas besoin de rappeler l'API Discord ensuite
+- **Session inchangee** : cookie `connect.sid` httpOnly + secure + SameSite,
+  meme mecanique que l'auth email/password existante
+
+*Securite cote compte Discord*
+
+- **Scope minimal `identify` uniquement** : donne acces a `id`, `username`, `avatar` — rien d'autre
+- TomManager ne peut pas : lire/envoyer des messages, voir les serveurs,
+  acceder a l'email Discord, modifier quoi que ce soit
+- **Consentement explicite** : Discord affiche un ecran listant exactement ce qui est demande
+- **Revocable** : l'utilisateur peut revoquer l'acces depuis Discord > Parametres > Applis autorisees.
+  Note : cela invalide le token OAuth mais pas la session TomManager en cours
+  (comportement OAuth2 standard — a gerer avec une duree de session raisonnable)
+
+*Ce qu'on evite deliberement*
+
+| Evite                        | Raison                                         |
+|------------------------------|------------------------------------------------|
+| Stocker le `access_token`    | Inutile, surface d'attaque supplementaire      |
+| Scope `email`                | Non necessaire                                 |
+| Scope `guilds`               | Le bot lit les roles avec son propre token     |
+| PKCE                         | Non requis, client confidentiel avec secret    |
+
+---
+
 ## Etat actuel du projet
 
 | Aspect | Score | Detail |
