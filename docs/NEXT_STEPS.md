@@ -187,6 +187,31 @@ Idees de features futures, a prioriser selon les besoins :
 - [ ] **i18n** : support multi-langue (FR/EN)
 - [ ] **Commentaires** : commentaires sur les tables
 - [ ] **Votes** : systeme de vote pour choisir les jeux/tables
+- [ ] **Bot Discord** : integration Discord pour la gestion des roles par event (voir detail ci-dessous)
+
+### Detail : Bot Discord (Phase 15+)
+
+**Objectif** : sur le serveur Discord dedie, attribuer automatiquement un role Discord par event
+aux participants, et le retirer quand ils quittent.
+
+**Liaison compte utilisateur**
+- Option A (recommandee) : flux OAuth Discord — l'user autorise l'app, on recupere son Discord ID
+- Option B (fragile) : saisie manuelle du Discord ID par l'admin
+
+**Gestion des roles par event**
+- Creer un role Discord dynamiquement a la creation d'un event (ex: `@Convention-Ete-2026`)
+- Assigner le role a chaque participant qui rejoint l'event
+- Retirer le role quand le participant quitte ou est retire
+- Supprimer le role Discord a la suppression de l'event (eviter les roles orphelins)
+
+**Infrastructure**
+- Le bot tourne en permanence : process Node.js dedie (`discord.js`), ou service Docker separe
+- Necessite un serveur Discord avec les permissions bot appropriees (Manage Roles)
+- Synchronisation TomManager → Discord via les events Socket.io existants ou une file interne
+- Credentials : `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` en variables d'environnement
+
+**Surface de complexite** : realiste mais non triviale (OAuth, gestion des permissions Discord,
+process long-running supplementaire, synchronisation d'etat). A traiter comme un sous-projet autonome.
 
 ---
 
