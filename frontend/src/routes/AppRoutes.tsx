@@ -7,6 +7,7 @@ import EventListPage from "../pages/EventListPage";
 import EventDetailPage from "../pages/EventDetailPage";
 import PlanningPage from "../pages/PlanningPage";
 import TableDetailPage from "../pages/TableDetailPage";
+import PrivateRoute from "../components/common/PrivateRoute";
 
 export default function AppRoutes() {
   return (
@@ -15,10 +16,22 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/invite/:token" element={<InvitationLandingPage />} />
-      <Route path="/events" element={<EventListPage />} />
-      <Route path="/events/:eventId" element={<EventDetailPage />} />
-      <Route path="/events/:eventId/planning" element={<PlanningPage />} />
-      <Route path="/events/:eventId/planning/:tableId" element={<TableDetailPage />} />
+      <Route
+        path="/events"
+        element={<PrivateRoute><EventListPage /></PrivateRoute>}
+      />
+      <Route
+        path="/events/:eventId"
+        element={<PrivateRoute><EventDetailPage /></PrivateRoute>}
+      />
+      <Route
+        path="/events/:eventId/planning"
+        element={<PrivateRoute><PlanningPage /></PrivateRoute>}
+      />
+      <Route
+        path="/events/:eventId/planning/:tableId"
+        element={<PrivateRoute><TableDetailPage /></PrivateRoute>}
+      />
     </Routes>
   );
 }

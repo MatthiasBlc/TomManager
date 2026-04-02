@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -21,14 +21,16 @@ export default function LoginPage() {
   const { user, loading, login } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const token = searchParams.get("token");
   const [invitationInfo, setInvitationInfo] = useState<InvitationInfo | null>(null);
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/events";
 
   useEffect(() => {
     if (!loading && user) {
-      navigate("/events", { replace: true });
+      navigate(from, { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, from]);
 
   useEffect(() => {
     if (token) {
@@ -46,7 +48,7 @@ export default function LoginPage() {
       if (result.eventId) {
         navigate(`/events/${result.eventId}`);
       } else {
-        navigate("/events");
+        navigate(from, { replace: true });
       }
     } catch {
       toast.error("Invalid credentials");
