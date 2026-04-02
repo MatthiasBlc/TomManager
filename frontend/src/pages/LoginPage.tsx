@@ -18,11 +18,17 @@ interface InvitationInfo {
 
 export default function LoginPage() {
   const { register, handleSubmit } = useForm<LoginForm>();
-  const { login } = useAuth();
+  const { user, loading, login } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
   const [invitationInfo, setInvitationInfo] = useState<InvitationInfo | null>(null);
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/events", { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     if (token) {
@@ -40,7 +46,7 @@ export default function LoginPage() {
       if (result.eventId) {
         navigate(`/events/${result.eventId}`);
       } else {
-        navigate("/");
+        navigate("/events");
       }
     } catch {
       toast.error("Invalid credentials");

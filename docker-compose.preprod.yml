@@ -57,6 +57,7 @@ services:
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
       <<: *health_http
+    command: sh -c "npx prisma migrate deploy && node prisma/seed.js && node dist/server.js"
     logging: *default-logging
 
   tommanager-dev-frontend:

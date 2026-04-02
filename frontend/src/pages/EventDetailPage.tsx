@@ -7,6 +7,7 @@ import EditEventModal from "../components/events/EditEventModal";
 import ParticipantList from "../components/events/ParticipantList";
 import InvitationManager from "../components/events/InvitationManager";
 import BoardGameTab from "../components/boardgames/BoardGameTab";
+import PlanningTab from "../components/planning/PlanningTab";
 
 interface EventDetail {
   id: string;
@@ -120,7 +121,7 @@ export default function EventDetailPage() {
           </button>
           <button
             className={`tab ${tab === "planning" ? "tab-active" : ""}`}
-            onClick={() => navigate(`/events/${eventId}/planning`)}
+            onClick={() => setTab("planning")}
           >
             Planning
           </button>
@@ -180,6 +181,8 @@ export default function EventDetailPage() {
       {tab === "invitations" && isCreator && (
         <InvitationManager eventId={event.id} />
       )}
+
+      {tab === "planning" && <PlanningTab eventId={event.id} />}
 
       {tab === "games" && <BoardGameTab eventId={event.id} />}
 

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import toast from "react-hot-toast";
 import ConnectionStatus from "../common/ConnectionStatus";
@@ -9,10 +9,12 @@ import BottomTabBar from "./BottomTabBar";
 
 function DesktopNavbar() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
       await logout();
+      navigate("/");
       toast.success("Logged out");
     } catch {
       toast.error("Logout failed");

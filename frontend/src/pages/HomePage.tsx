@@ -1,4 +1,17 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+
 export default function HomePage() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/events", { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   return (
     <div className="hero min-h-screen bg-base-200">
       <div className="hero-content text-center px-4">
