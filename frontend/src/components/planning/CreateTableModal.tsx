@@ -5,14 +5,27 @@ import api from "../../config/api";
 import TagInput from "./TagInput";
 import ResponsiveModal from "../common/ResponsiveModal";
 
+const DURATION_OPTIONS = [
+  { label: "30 min", value: 30 },
+  { label: "1h", value: 60 },
+  { label: "1h30", value: 90 },
+  { label: "2h", value: 120 },
+  { label: "2h30", value: 150 },
+  { label: "3h", value: 180 },
+  { label: "4h", value: 240 },
+  { label: "5h", value: 300 },
+  { label: "6h", value: 360 },
+];
+
 interface CreateTableForm {
   title: string;
   pitch: string;
   triggers: string;
   comments: string;
   maxPlayers: number;
-  startDateTime: string;
-  endDateTime: string;
+  date: string;
+  startTime: string;
+  durationMinutes: number;
 }
 
 interface Props {
@@ -29,21 +42,24 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<CreateTableForm>();
+  } = useForm<CreateTableForm>({ defaultValues: { durationMinutes: 120 } });
 
   const onSubmit = async (data: CreateTableForm) => {
     try {
+      const startDateTime = new Date(`${data.date}T${data.startTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + Number(data.durationMinutes) * 60000);
+
       await api.post(`/api/events/${eventId}/tables`, {
         title: data.title,
         pitch: data.pitch || undefined,
         triggers: data.triggers || undefined,
         comments: data.comments || undefined,
         maxPlayers: Number(data.maxPlayers),
-        startDateTime: new Date(data.startDateTime).toISOString(),
-        endDateTime: new Date(data.endDateTime).toISOString(),
+        startDateTime: startDateTime.toISOString(),
+        endDateTime: endDateTime.toISOString(),
         tags: tags.length > 0 ? tags : undefined,
       });
-      toast.success("Table created!");
+      toast.success("Table creee !");
       reset();
       setTags([]);
       onCreated();
@@ -51,25 +67,25 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Failed to create table";
+          ?.error?.message || "Echec de la creation";
       toast.error(message);
     }
   };
 
   return (
-    <ResponsiveModal open={open} onClose={onClose} title="Create Table">
+    <ResponsiveModal open={open} onClose={onClose} title="Creer une table">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ct-title">
-            <span className="label-text">Title</span>
+            <span className="label-text">Titre</span>
           </label>
           <input
             id="ct-title"
             type="text"
             className="input input-bordered w-full"
             {...register("title", {
-              required: "Title is required",
-              maxLength: { value: 150, message: "Max 150 characters" },
+              required: "Le titre est requis",
+              maxLength: { value: 150, message: "Max 150 caracteres" },
             })}
           />
           {errors.title && (
@@ -88,7 +104,7 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
             className="textarea textarea-bordered w-full"
             rows={3}
             {...register("pitch", {
-              maxLength: { value: 2000, message: "Max 2000 characters" },
+              maxLength: { value: 2000, message: "Max 2000 caracteres" },
             })}
           />
         </div>
@@ -102,28 +118,28 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
             className="textarea textarea-bordered w-full"
             rows={2}
             {...register("triggers", {
-              maxLength: { value: 1000, message: "Max 1000 characters" },
+              maxLength: { value: 1000, message: "Max 1000 caracteres" },
             })}
           />
         </div>
 
         <div className="form-control">
           <label className="label" htmlFor="ct-comments">
-            <span className="label-text">Comments</span>
+            <span className="label-text">Commentaires</span>
           </label>
           <textarea
             id="ct-comments"
             className="textarea textarea-bordered w-full"
             rows={2}
             {...register("comments", {
-              maxLength: { value: 1000, message: "Max 1000 characters" },
+              maxLength: { value: 1000, message: "Max 1000 caracteres" },
             })}
           />
         </div>
 
         <div className="form-control">
           <label className="label" htmlFor="ct-maxPlayers">
-            <span className="label-text">Max Players</span>
+            <span className="label-text">Joueurs max</span>
           </label>
           <input
             id="ct-maxPlayers"
@@ -133,7 +149,7 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
             min={1}
             max={20}
             {...register("maxPlayers", {
-              required: "Max players is required",
+              required: "Requis",
               min: { value: 1, message: "Min 1" },
               max: { value: 20, message: "Max 20" },
               valueAsNumber: true,
@@ -146,38 +162,54 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <div className="form-control">
-            <label className="label" htmlFor="ct-start">
-              <span className="label-text">Start</span>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          <div className="form-control sm:col-span-1">
+            <label className="label" htmlFor="ct-date">
+              <span className="label-text">Date</span>
             </label>
             <input
-              id="ct-start"
-              type="datetime-local"
+              id="ct-date"
+              type="date"
               className="input input-bordered w-full"
-              {...register("startDateTime", { required: "Start is required" })}
+              {...register("date", { required: "Requis" })}
             />
-            {errors.startDateTime && (
+            {errors.date && (
               <label className="label">
-                <span className="label-text-alt text-error">{errors.startDateTime.message}</span>
+                <span className="label-text-alt text-error">{errors.date.message}</span>
               </label>
             )}
           </div>
           <div className="form-control">
-            <label className="label" htmlFor="ct-end">
-              <span className="label-text">End</span>
+            <label className="label" htmlFor="ct-startTime">
+              <span className="label-text">Heure de debut</span>
             </label>
             <input
-              id="ct-end"
-              type="datetime-local"
+              id="ct-startTime"
+              type="time"
               className="input input-bordered w-full"
-              {...register("endDateTime", { required: "End is required" })}
+              {...register("startTime", { required: "Requis" })}
             />
-            {errors.endDateTime && (
+            {errors.startTime && (
               <label className="label">
-                <span className="label-text-alt text-error">{errors.endDateTime.message}</span>
+                <span className="label-text-alt text-error">{errors.startTime.message}</span>
               </label>
             )}
+          </div>
+          <div className="form-control">
+            <label className="label" htmlFor="ct-duration">
+              <span className="label-text">Duree</span>
+            </label>
+            <select
+              id="ct-duration"
+              className="select select-bordered w-full"
+              {...register("durationMinutes", { required: "Requis", valueAsNumber: true })}
+            >
+              {DURATION_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -190,10 +222,10 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
 
         <div className="flex gap-2 justify-end pt-2">
           <button type="button" className="btn" onClick={onClose}>
-            Cancel
+            Annuler
           </button>
           <button type="submit" className="btn btn-primary">
-            Create
+            Creer
           </button>
         </div>
       </form>
