@@ -186,6 +186,66 @@
 - [ ] Empty state si aucune table
 - [ ] `active:scale-95` au tap sur les cartes
 
+### 5.1b Vue Calendrier (FullCalendar)
+
+**Toggle et preference**
+- [ ] Bouton toggle liste/calendrier visible en haut a gauche du planning
+- [ ] Basculer vers "calendrier" → vue FullCalendar s'affiche
+- [ ] Basculer vers "liste" → TimelineView s'affiche a nouveau
+- [ ] Rafraichir la page → la derniere vue choisie est restauree (localStorage)
+
+**Affichage desktop (>= 768px)**
+- [ ] Toutes les journees de l'event affiches en colonnes cote a cote
+- [ ] Axe horaire a gauche (labels toutes les heures, format 24h)
+- [ ] Tables simultanees affichees en colonnes cote a cote (pas superposees)
+- [ ] Scroll automatique vers la premiere table (ou le debut de l'event si vide)
+- [ ] Indicateur "maintenant" (ligne rouge) si l'event est en cours
+
+**Affichage mobile (< 768px)**
+- [ ] Une seule journee affichee a la fois
+- [ ] Boutons < > pour naviguer entre les jours
+- [ ] Le header affiche le jour courant (ex: "lundi 14 janvier")
+- [ ] Impossible de naviguer avant le debut ou apres la fin de l'event
+
+**Color coding**
+- [ ] Table dont l'user est MJ → couleur secondary
+- [ ] Table ou l'user est inscrit (CONFIRMED) → couleur success
+- [ ] Table ou l'user est en waitlist → couleur warning
+- [ ] Autre table → couleur primary (semi-transparente)
+
+**Contenu des blocs**
+- [ ] Titre tronque si trop long
+- [ ] Plage horaire (timeText FC)
+- [ ] Compteur joueurs confirmes/max (+ waitlist si >0)
+- [ ] Clic sur un bloc → navigation vers le detail de la table
+
+**Drag & drop**
+- [ ] MJ peut drag sa propre table → nouveau creneau
+- [ ] Admin peut drag n'importe quelle table
+- [ ] Participant non-MJ : drag bloque (bloc non draggable)
+- [ ] Snap a 15 minutes au relache
+- [ ] Impossible de deposer hors de la plage de l'event (zone grisee/bloquee)
+- [ ] Drag reussi → PATCH API + table mise a jour pour tous (temps reel)
+- [ ] Erreur API → revert visuel + toast d'erreur
+- [ ] Chevauchement avec une autre table du meme MJ → toast warning (action autorisee quand meme)
+
+**Resize**
+- [ ] MJ peut tirer le bas d'un bloc pour changer la duree
+- [ ] Admin peut resizer n'importe quel bloc
+- [ ] Snap 15 min au relache
+- [ ] Impossible de depasser la fin de l'event
+- [ ] Resize reussi → PATCH API + mise a jour temps reel
+- [ ] Erreur API → revert visuel + toast d'erreur
+
+**Temps reel (calendrier ouvert)**
+- [ ] Un autre user deplace une table → calendrier mis a jour sans rafraichir
+- [ ] Une nouvelle table est creee → apparait dans le calendrier
+- [ ] Une table est supprimee → disparait du calendrier
+
+**Mobile drag (< 768px)**
+- [ ] Long press (500ms) sur un bloc editable → initie le drag
+- [ ] Drag touch fonctionne de la meme maniere que desktop
+
 ### 5.2 Creation de table
 
 - [ ] Champs : titre (1-150), pitch (max 2000), triggers (max 1000), commentaires (max 1000), maxPlayers (1-20), dates debut/fin, tags
