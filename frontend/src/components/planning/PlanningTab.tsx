@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import TimelineView from "./TimelineView";
 import CalendarView from "./CalendarView";
 import CreateTableModal from "./CreateTableModal";
+import TableDetailModal from "./TableDetailModal";
 import FAB from "../common/FAB";
 import { useEventSocket } from "../../hooks/useEventSocket";
 import { SkeletonCardGrid } from "../common/Skeleton";
@@ -43,13 +43,13 @@ function getStoredView(): ViewMode {
 }
 
 export default function PlanningTab({ eventId }: { eventId: string }) {
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [tables, setTables] = useState<TableSummary[]>([]);
   const [eventBounds, setEventBounds] = useState<EventBounds | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>(getStoredView);
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
   const switchView = (mode: ViewMode) => {
     setViewMode(mode);
@@ -100,7 +100,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
   });
 
   const handleTableClick = (tableId: string) => {
-    navigate(`/events/${eventId}/planning/${tableId}`);
+    setSelectedTableId(tableId);
   };
 
   // Toggle liste / calendrier
@@ -170,6 +170,15 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         onClose={() => setShowCreate(false)}
         onCreated={fetchTables}
         eventId={eventId}
+      />
+
+      <TableDetailModal
+        open={selectedTableId !== null}
+        onClose={() => setSelectedTableId(null)}
+        tableId={selectedTableId}
+        eventId={eventId}
+        onTableDeleted={fetchTables}
+        onTableUpdated={fetchTables}
       />
     </>
   );
