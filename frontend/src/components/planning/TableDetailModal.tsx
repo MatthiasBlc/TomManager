@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -48,7 +47,6 @@ export default function TableDetailModal({
   onTableDeleted,
   onTableUpdated,
 }: Props) {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [table, setTable] = useState<TableDetail | null>(null);
@@ -321,16 +319,6 @@ export default function TableDetailModal({
                   </button>
                 </>
               )}
-              {/* Lien vers la page complete */}
-              <button
-                className="btn btn-ghost btn-sm ml-auto"
-                onClick={() => {
-                  onClose();
-                  navigate(`/events/${eventId}/planning/${table.id}`);
-                }}
-              >
-                Voir la page →
-              </button>
             </div>
           </div>
         )}
