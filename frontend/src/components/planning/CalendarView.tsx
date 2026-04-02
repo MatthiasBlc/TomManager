@@ -1,14 +1,17 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useMemo } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { DatesSetArg, EventDropArg } from "@fullcalendar/core";
+import { DatesSetArg, EventDropArg, EventContentArg } from "@fullcalendar/core";
 import { EventResizeDoneArg } from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import CalendarEventBlock from "./CalendarEventBlock";
+
+// Stable hors du composant pour eviter les re-renders FC
+const FC_PLUGINS = [timeGridPlugin, interactionPlugin];
 
 interface TableSummary {
   id: string;
@@ -85,7 +88,21 @@ export default function CalendarView({
   const tablesRef = useRef(tables);
   tablesRef.current = tables;
 
-  const nbDays = calcNbDays(eventBounds.startDateTime, eventBounds.endDateTime);
+  const nbDays = useMemo(
+    () => calcNbDays(eventBounds.startDateTime, eventBounds.endDateTime),
+    [eventBounds.startDateTime, eventBounds.endDateTime]
+  );
+
+  const fcViews = useMemo(
+    () => ({
+      timeGridEventRange: {
+        type: "timeGrid" as const,
+        duration: { days: nbDays },
+      },
+    }),
+    [nbDays]
+  );
+
   // scrollTime calcule une seule fois au montage
   const scrollTime = useRef(
     firstTableScrollTime(tables, eventBounds.startDateTime)
@@ -167,25 +184,37 @@ export default function CalendarView({
 
   const isAdmin = user?.role === "ADMIN";
 
-  const calEvents = tables.map((t) => ({
-    id: t.id,
-    title: t.title,
-    start: t.startDateTime,
-    end: t.endDateTime,
-    editable: t.isGM || isAdmin,
-    extendedProps: {
-      isGM: t.isGM,
-      currentUserStatus: t.currentUserStatus,
-      confirmedCount: t.confirmedCount,
-      maxPlayers: t.maxPlayers,
-      waitlistCount: t.waitlistCount,
-    },
-  }));
+  const calEvents = useMemo(
+    () =>
+      tables.map((t) => ({
+        id: t.id,
+        title: t.title,
+        start: t.startDateTime,
+        end: t.endDateTime,
+        editable: t.isGM || isAdmin,
+        extendedProps: {
+          isGM: t.isGM,
+          currentUserStatus: t.currentUserStatus,
+          confirmedCount: t.confirmedCount,
+          maxPlayers: t.maxPlayers,
+          waitlistCount: t.waitlistCount,
+        },
+      })),
+    [tables, isAdmin]
+  );
 
-  const validRange = {
-    start: eventBounds.startDateTime,
-    end: eventBounds.endDateTime,
-  };
+  const validRange = useMemo(
+    () => ({
+      start: eventBounds.startDateTime,
+      end: eventBounds.endDateTime,
+    }),
+    [eventBounds.startDateTime, eventBounds.endDateTime]
+  );
+
+  const renderEventContent = useCallback(
+    (arg: EventContentArg) => <CalendarEventBlock arg={arg} />,
+    []
+  );
 
   const initialView = isMobile ? "timeGridDay" : "timeGridEventRange";
 
@@ -241,14 +270,9 @@ export default function CalendarView({
 
       <FullCalendar
         ref={calendarRef}
-        plugins={[timeGridPlugin, interactionPlugin]}
+        plugins={FC_PLUGINS}
         initialView={initialView}
-        views={{
-          timeGridEventRange: {
-            type: "timeGrid",
-            duration: { days: nbDays },
-          },
-        }}
+        views={fcViews}
         initialDate={eventBounds.startDateTime}
         validRange={validRange}
         headerToolbar={false}
@@ -259,7 +283,7 @@ export default function CalendarView({
         scrollTime={scrollTime}
         height={isMobile ? "calc(100dvh - 220px)" : "calc(100dvh - 200px)"}
         events={calEvents}
-        eventContent={(arg) => <CalendarEventBlock arg={arg} />}
+        eventContent={renderEventContent}
         eventClick={(info) => onTableClick(info.event.id)}
         datesSet={handleDatesSet}
         locale="fr"
