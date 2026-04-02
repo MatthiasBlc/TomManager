@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import TimelineView from "./TimelineView";
+import CalendarView from "./CalendarView";
 import CreateTableModal from "./CreateTableModal";
 import FAB from "../common/FAB";
 import { useEventSocket } from "../../hooks/useEventSocket";
@@ -24,12 +25,40 @@ interface TableSummary {
   isGM: boolean;
 }
 
+interface EventBounds {
+  startDateTime: string;
+  endDateTime: string;
+}
+
+type ViewMode = "list" | "calendar";
+const VIEW_PREF_KEY = "planning_view_preference";
+
+function getStoredView(): ViewMode {
+  try {
+    const v = localStorage.getItem(VIEW_PREF_KEY);
+    return v === "calendar" ? "calendar" : "list";
+  } catch {
+    return "list";
+  }
+}
+
 export default function PlanningTab({ eventId }: { eventId: string }) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [tables, setTables] = useState<TableSummary[]>([]);
+  const [eventBounds, setEventBounds] = useState<EventBounds | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>(getStoredView);
+
+  const switchView = (mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem(VIEW_PREF_KEY, mode);
+    } catch {
+      // localStorage indisponible
+    }
+  };
 
   const fetchTables = useCallback(async () => {
     try {
@@ -42,9 +71,22 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
     }
   }, [eventId]);
 
+  const fetchEventBounds = useCallback(async () => {
+    try {
+      const res = await api.get(`/api/events/${eventId}`);
+      setEventBounds({
+        startDateTime: res.data.data.startDateTime,
+        endDateTime: res.data.data.endDateTime,
+      });
+    } catch {
+      // Silencieux : les bornes ne bloquent pas l'affichage de la liste
+    }
+  }, [eventId]);
+
   useEffect(() => {
     fetchTables();
-  }, [fetchTables]);
+    fetchEventBounds();
+  }, [fetchTables, fetchEventBounds]);
 
   useEventSocket(eventId, {
     onTableCreated: fetchTables,
@@ -61,19 +103,59 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
     navigate(`/events/${eventId}/planning/${tableId}`);
   };
 
+  // Toggle liste / calendrier
+  const ViewToggle = (
+    <div className="flex rounded-lg border border-base-300 p-0.5 gap-0.5">
+      <button
+        className={`btn btn-xs btn-square ${viewMode === "list" ? "btn-primary" : "btn-ghost"}`}
+        onClick={() => switchView("list")}
+        aria-label="Vue liste"
+        title="Vue liste"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+        </svg>
+      </button>
+      <button
+        className={`btn btn-xs btn-square ${viewMode === "calendar" ? "btn-primary" : "btn-ghost"}`}
+        onClick={() => switchView("calendar")}
+        aria-label="Vue calendrier"
+        title="Vue calendrier"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </button>
+    </div>
+  );
+
   return (
     <>
-      {!isMobile && (
-        <div className="flex justify-end mb-4">
-          <button className="btn btn-primary active:scale-95 transition-transform" onClick={() => setShowCreate(true)}>
+      {/* Header avec toggle + bouton desktop */}
+      <div className="flex items-center justify-between mb-4">
+        {ViewToggle}
+        {!isMobile && (
+          <button
+            className="btn btn-primary btn-sm active:scale-95 transition-transform"
+            onClick={() => setShowCreate(true)}
+          >
             Create Table
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {loading ? (
         <SkeletonCardGrid count={4} />
+      ) : viewMode === "list" ? (
+        <TimelineView tables={tables} onTableClick={handleTableClick} />
+      ) : eventBounds ? (
+        <CalendarView
+          tables={tables}
+          eventBounds={eventBounds}
+          onTableClick={handleTableClick}
+        />
       ) : (
+        // Fallback si les bornes ne sont pas encore chargees
         <TimelineView tables={tables} onTableClick={handleTableClick} />
       )}
 

@@ -1,3 +1,97 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* FullCalendar - integration theme DaisyUI */
+.fc-wrapper .fc {
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+/* En-tetes de colonnes (jours) */
+.fc-wrapper .fc-col-header-cell {
+  background-color: hsl(var(--b2));
+  border-color: hsl(var(--b3));
+  padding: 0.25rem 0;
+}
+.fc-wrapper .fc-col-header-cell-cushion {
+  color: hsl(var(--bc));
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-decoration: none !important;
+  padding: 4px 8px;
+  text-transform: capitalize;
+}
+
+/* Grille */
+.fc-wrapper .fc-timegrid-slot {
+  border-color: hsl(var(--b3));
+  height: 20px;
+}
+.fc-wrapper .fc-timegrid-slot-minor {
+  border-color: hsl(var(--b2));
+}
+.fc-wrapper .fc-scrollgrid {
+  border-color: hsl(var(--b3));
+}
+.fc-wrapper .fc-scrollgrid td,
+.fc-wrapper .fc-scrollgrid th {
+  border-color: hsl(var(--b3));
+}
+.fc-wrapper .fc-timegrid-col {
+  background-color: hsl(var(--b1));
+}
+
+/* Labels d'heures */
+.fc-wrapper .fc-timegrid-slot-label-cushion {
+  color: hsl(var(--bc) / 0.5);
+  font-size: 0.7rem;
+  padding: 0 4px;
+}
+
+/* Indicateur de l'heure courante */
+.fc-wrapper .fc-timegrid-now-indicator-line {
+  border-color: hsl(var(--er));
+}
+.fc-wrapper .fc-timegrid-now-indicator-arrow {
+  border-top-color: hsl(var(--er));
+  border-bottom-color: hsl(var(--er));
+}
+
+/* Bloc d'evenement : on supprime le style FC par defaut, notre CalendarEventBlock gere tout */
+.fc-wrapper .fc-event {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.fc-wrapper .fc-event-main {
+  padding: 0 !important;
+  height: 100%;
+}
+.fc-wrapper .fc-timegrid-event {
+  border-radius: 4px;
+  overflow: hidden;
+}
+.fc-wrapper .fc-timegrid-event-harness {
+  margin: 0 1px;
+}
+
+/* Resize handle */
+.fc-wrapper .fc-event-resizer-end {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.15);
+  cursor: s-resize;
+  border-radius: 0 0 4px 4px;
+}
+
+/* Fond de la zone hors validRange */
+.fc-wrapper .fc-non-business {
+  background: hsl(var(--b2) / 0.5);
+}
+
+/* Supprime l'outline au focus */
+.fc-wrapper .fc-event:focus {
+  outline: none;
+  box-shadow: none !important;
+}
