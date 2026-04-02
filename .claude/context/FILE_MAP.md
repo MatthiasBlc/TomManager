@@ -104,7 +104,9 @@ src/
 │   │   ├── EditTableModal.tsx     # Modal for editing tables
 │   │   ├── TableCard.tsx          # Table summary card
 │   │   ├── TagInput.tsx           # Tag autocomplete multi-select
-│   │   └── TimelineView.tsx       # Chronological table list grouped by date
+│   │   ├── TimelineView.tsx       # Chronological table list grouped by date
+│   │   ├── CalendarView.tsx       # FullCalendar timegrid (drag/resize, multi-day, mobile nav)
+│   │   └── CalendarEventBlock.tsx # Custom event block renderer for CalendarView
 │   └── boardgames/
 │       ├── BoardGameTab.tsx           # Tab integrating list + add button
 │       ├── BoardGameSearchInput.tsx   # Autocomplete search (local + BGG)
