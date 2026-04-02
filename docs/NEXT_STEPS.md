@@ -187,31 +187,110 @@ Idees de features futures, a prioriser selon les besoins :
 - [ ] **i18n** : support multi-langue (FR/EN)
 - [ ] **Commentaires** : commentaires sur les tables
 - [ ] **Votes** : systeme de vote pour choisir les jeux/tables
-- [ ] **Bot Discord** : integration Discord pour la gestion des roles par event (voir detail ci-dessous)
+- [ ] **Bot Discord** : acces aux events via roles Discord (remplace les invitations email, voir detail ci-dessous)
 
-### Detail : Bot Discord (Phase 15+)
+### Detail : Bot Discord — acces par role (Phase 15+)
 
-**Objectif** : sur le serveur Discord dedie, attribuer automatiquement un role Discord par event
-aux participants, et le retirer quand ils quittent.
+**Vision generale**
 
-**Liaison compte utilisateur**
-- Option A (recommandee) : flux OAuth Discord — l'user autorise l'app, on recupere son Discord ID
-- Option B (fragile) : saisie manuelle du Discord ID par l'admin
+Les roles Discord remplacent le systeme d'invitation email pour l'acces aux events.
+Tout reste manuel cote Discord (creation du role, assignation aux users) ;
+TomManager se contente d'ecouter les changements et de synchroniser les participations.
 
-**Gestion des roles par event**
-- Creer un role Discord dynamiquement a la creation d'un event (ex: `@Convention-Ete-2026`)
-- Assigner le role a chaque participant qui rejoint l'event
-- Retirer le role quand le participant quitte ou est retire
-- Supprimer le role Discord a la suppression de l'event (eviter les roles orphelins)
+**Impact sur Phase 9 (Mailer)**
+Phase 9 devient inutile si ce systeme est adopte. Les invitations par email peuvent rester
+pour la creation de compte initiale uniquement.
+
+---
+
+**Flux complet**
+
+1. L'admin cree l'event "Hiver 2028" dans TomManager
+2. L'admin saisit l'ID du role Discord correspondant dans TomManager
+   (le role existe deja sur le serveur Discord, cree manuellement)
+3. Sur Discord, l'admin assigne manuellement le role "Hiver 2028" a un membre
+4. Le bot detecte l'assignation → cree automatiquement l'EventParticipation dans TomManager
+5. Si le role est retire sur Discord → l'EventParticipation est supprimee (cascade propre)
+
+---
+
+**Modele de donnees (migrations necessaires)**
+
+```
+User    +-- discordId : String? (unique) -- ID Discord de l'utilisateur
+Event   +-- discordRoleId : String?      -- ID du role Discord lie a cet event
+```
+
+---
+
+**Liaison compte utilisateur → Discord ID**
+
+- Option A (recommandee) : OAuth Discord
+  - L'user clique "Lier mon compte Discord" dans son profil
+  - Flux OAuth2 Discord → on recupere le `discordId` et on le stocke sur `User`
+  - Avantage : auto-completude, pas d'erreur de saisie
+
+- Option B (admin manuel)
+  - L'admin saisit le Discord ID de l'utilisateur dans TomManager
+  - Fragile (copier-coller d'ID, pas de verification)
+  - Utile en attendant l'OAuth ou pour des cas exceptionnels
+
+---
+
+**Ce que fait le bot (lecture seule sur Discord)**
+
+- Ecoute l'event `guildMemberUpdate` (role ajoute ou retire a un membre)
+- Pour chaque changement de role :
+  - Cherche si un Event TomManager a ce `discordRoleId`
+  - Cherche si un User TomManager a ce `discordId`
+  - Si les deux existent : cree ou supprime l'EventParticipation
+- Le bot n'a besoin d'aucune permission d'ecriture sur Discord
+  (pas de `Manage Roles`, juste `Server Members Intent`)
+
+---
 
 **Infrastructure**
-- Le bot tourne en permanence : process Node.js dedie (`discord.js`), ou service Docker separe
-- Necessite un serveur Discord avec les permissions bot appropriees (Manage Roles)
-- Synchronisation TomManager → Discord via les events Socket.io existants ou une file interne
-- Credentials : `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` en variables d'environnement
 
-**Surface de complexite** : realiste mais non triviale (OAuth, gestion des permissions Discord,
-process long-running supplementaire, synchronisation d'etat). A traiter comme un sous-projet autonome.
+- Service Docker dedie : `discord-bot/` dans le repo (Node.js + `discord.js`)
+- Partage la base de donnees PostgreSQL existante (acces direct via Prisma)
+- Credentials : `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` dans les variables d'environnement
+- Le bot est stateless : il peut redemarrer sans perte (les events manques sont recuperes
+  via un endpoint de sync manuelle en cas de downtime)
+
+---
+
+**Endpoint de sync manuelle (admin)**
+
+`POST /api/admin/discord/sync`
+- Interroge l'API Discord pour tous les membres du serveur
+- Pour chaque membre : verifie ses roles vs les events lies → cree/supprime les participations manquantes
+- Utile apres un redemarrage du bot ou pour corriger des ecarts
+
+---
+
+**Question ouverte : onboarding nouveaux utilisateurs**
+
+Si l'acces passe par Discord, comment un nouveau user cree-t-il son compte TomManager ?
+- Option A : lien d'inscription unique (sans invitation specifique a un event), puis liaison Discord
+- Option B : l'admin cree le compte manuellement et envoie le lien
+- Option C : conserver les invitations par email uniquement pour la creation de compte
+
+A decider avant implementation.
+
+---
+
+**Surface de complexite**
+
+| Composant              | Complexite |
+|------------------------|------------|
+| Modele DB (2 champs)   | Faible     |
+| Bot discord.js         | Faible     |
+| Sync guildMemberUpdate | Faible     |
+| OAuth Discord          | Moyenne    |
+| Endpoint sync manuelle | Faible     |
+| Onboarding nouveaux users | A definir |
+
+Total : realiste en 1-2 sprints une fois la vision onboarding arretee.
 
 ---
 
