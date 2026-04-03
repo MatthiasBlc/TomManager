@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  request,
-  setupAdmin,
-  createTestEvent,
-  createTestInvitation,
-} from "../setup/testHelpers";
+import { request, setupAdmin, createTestEvent, createTestInvitation } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
 // Helper: setup admin + event + participant user with cookie
@@ -12,11 +7,7 @@ async function setupEventWithParticipant() {
   const admin = await setupAdmin();
   const event = await createTestEvent(admin.cookie);
 
-  const invitation = await createTestInvitation(
-    admin.cookie,
-    event.id,
-    "player@example.com"
-  );
+  const invitation = await createTestInvitation(admin.cookie, event.id, "player@example.com");
   await request.post("/api/auth/signup").send({
     email: "player@example.com",
     username: "player1",
@@ -93,7 +84,9 @@ describe("EventBoardGame API", () => {
       const bg = await createBoardGame();
 
       // Create a user who is NOT a participant
-      const { user: _outsider } = await (await import("../setup/testHelpers")).createTestUserDirectly({
+      const { user: _outsider } = await (
+        await import("../setup/testHelpers")
+      ).createTestUserDirectly({
         email: "outsider@example.com",
         username: "outsider",
       });
@@ -253,9 +246,7 @@ describe("EventBoardGame API", () => {
         .send({ boardGameId: bg.id });
 
       // Player leaves event
-      await request
-        .delete(`/api/events/${event.id}/participants/me`)
-        .set("Cookie", playerCookie);
+      await request.delete(`/api/events/${event.id}/participants/me`).set("Cookie", playerCookie);
 
       const after = await prisma.eventBoardGame.findMany({
         where: { eventId: event.id, broughtByUserId: playerId },

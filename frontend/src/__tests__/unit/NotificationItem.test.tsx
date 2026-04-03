@@ -112,11 +112,7 @@ describe("NotificationItem", () => {
     const onDelete = vi.fn();
     render(
       <MemoryRouter>
-        <NotificationItem
-          notification={makeNotif()}
-          onMarkAsRead={vi.fn()}
-          onDelete={onDelete}
-        />
+        <NotificationItem notification={makeNotif()} onMarkAsRead={vi.fn()} onDelete={onDelete} />
       </MemoryRouter>
     );
 

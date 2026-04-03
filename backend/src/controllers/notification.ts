@@ -34,10 +34,7 @@ export async function unreadCount(req: Request, res: Response, next: NextFunctio
 
 export async function markAsRead(req: Request, res: Response, next: NextFunction) {
   try {
-    const notification = await notificationService.markAsRead(
-      req.params.id,
-      req.session.userId!
-    );
+    const notification = await notificationService.markAsRead(req.params.id, req.session.userId!);
     res.json({ data: notification });
   } catch (err) {
     next(err);

@@ -9,14 +9,11 @@ import {
 import prisma from "../../util/db";
 
 async function createEventAsAdmin(cookie: string[]) {
-  const res = await request
-    .post("/api/events")
-    .set("Cookie", cookie)
-    .send({
-      name: "Test Event",
-      startDateTime: "2026-06-01T10:00:00Z",
-      endDateTime: "2026-06-01T18:00:00Z",
-    });
+  const res = await request.post("/api/events").set("Cookie", cookie).send({
+    name: "Test Event",
+    startDateTime: "2026-06-01T10:00:00Z",
+    endDateTime: "2026-06-01T18:00:00Z",
+  });
   return res.body.data;
 }
 
@@ -145,9 +142,7 @@ describe("Invitation API", () => {
         .send({ identifier: "invited@example.com" });
 
       expect(res.status).toBe(201);
-      expect(res.body.data.invitation.token).not.toBe(
-        firstRes.body.data.invitation.token
-      );
+      expect(res.body.data.invitation.token).not.toBe(firstRes.body.data.invitation.token);
     });
 
     it("should return 404 for non-existent event", async () => {

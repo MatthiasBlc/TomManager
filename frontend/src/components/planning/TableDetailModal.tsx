@@ -104,8 +104,8 @@ export default function TableDetailModal({
       onTableUpdated();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Failed to join";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to join";
       toast.error(message);
     }
   };
@@ -177,14 +177,18 @@ export default function TableDetailModal({
               )}
             </div>
             <div className="text-sm opacity-70 space-y-0.5">
-              <p>{table.type === "JDR" ? "MJ" : "Createur"} : {table.creator.username}</p>
+              <p>
+                {table.type === "JDR" ? "MJ" : "Createur"} : {table.creator.username}
+              </p>
               <p>
                 {formatDateTime(table.startDateTime)} → {formatDateTime(table.endDateTime)}
               </p>
               <p>
                 {confirmedCount}/{table.maxPlayers} joueurs
                 {waitlistCount > 0 && (
-                  <span className="ml-2 badge badge-warning badge-xs">+{waitlistCount} waitlist</span>
+                  <span className="ml-2 badge badge-warning badge-xs">
+                    +{waitlistCount} waitlist
+                  </span>
                 )}
               </p>
             </div>
@@ -313,16 +317,25 @@ export default function TableDetailModal({
                 </button>
               )}
               {currentParticipant && (
-                <button className="btn btn-outline btn-warning btn-sm flex-1 md:flex-none" onClick={handleLeave}>
+                <button
+                  className="btn btn-outline btn-warning btn-sm flex-1 md:flex-none"
+                  onClick={handleLeave}
+                >
                   {isGM ? "Supprimer la table (quitter)" : "Quitter"}
                 </button>
               )}
               {canEdit && (
                 <>
-                  <button className="btn btn-outline btn-sm flex-1 md:flex-none" onClick={() => setShowEdit(true)}>
+                  <button
+                    className="btn btn-outline btn-sm flex-1 md:flex-none"
+                    onClick={() => setShowEdit(true)}
+                  >
                     Modifier
                   </button>
-                  <button className="btn btn-outline btn-error btn-sm flex-1 md:flex-none" onClick={handleDelete}>
+                  <button
+                    className="btn btn-outline btn-error btn-sm flex-1 md:flex-none"
+                    onClick={handleDelete}
+                  >
                     Supprimer
                   </button>
                 </>

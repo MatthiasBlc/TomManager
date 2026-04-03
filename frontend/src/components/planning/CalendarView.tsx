@@ -32,7 +32,7 @@ interface EventBounds {
 }
 
 interface SlotSelection {
-  date: string;      // YYYY-MM-DD
+  date: string; // YYYY-MM-DD
   startTime: string; // HH:MM
   durationMinutes: number;
 }
@@ -112,13 +112,9 @@ export default function CalendarView({
   );
 
   // scrollTime calcule une seule fois au montage
-  const scrollTime = useRef(
-    firstTableScrollTime(tables, eventBounds.startDateTime)
-  ).current;
+  const scrollTime = useRef(firstTableScrollTime(tables, eventBounds.startDateTime)).current;
 
-  const [currentDate, setCurrentDate] = useState<Date>(
-    new Date(eventBounds.startDateTime)
-  );
+  const [currentDate, setCurrentDate] = useState<Date>(new Date(eventBounds.startDateTime));
 
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
     setCurrentDate(arg.start);
@@ -129,12 +125,7 @@ export default function CalendarView({
 
   // Appel API commun pour drag et resize
   const patchTableDates = useCallback(
-    async (
-      tableId: string,
-      newStart: Date,
-      newEnd: Date,
-      revertFunc: () => void
-    ) => {
+    async (tableId: string, newStart: Date, newEnd: Date, revertFunc: () => void) => {
       // Warning si chevauchement avec une autre table du meme GM
       const overlap = findGmOverlap(tableId, newStart, newEnd, tablesRef.current);
       if (overlap) {
@@ -150,8 +141,8 @@ export default function CalendarView({
       } catch (err: unknown) {
         revertFunc();
         const message =
-          (err as { response?: { data?: { error?: { message?: string } } } })
-            ?.response?.data?.error?.message || "Echec du deplacement";
+          (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+            ?.message || "Echec du deplacement";
         toast.error(message);
       }
     },
@@ -164,12 +155,7 @@ export default function CalendarView({
         info.revert();
         return;
       }
-      patchTableDates(
-        info.event.id,
-        info.event.start,
-        info.event.end,
-        info.revert
-      );
+      patchTableDates(info.event.id, info.event.start, info.event.end, info.revert);
     },
     [patchTableDates]
   );
@@ -180,12 +166,7 @@ export default function CalendarView({
         info.revert();
         return;
       }
-      patchTableDates(
-        info.event.id,
-        info.event.start,
-        info.event.end,
-        info.revert
-      );
+      patchTableDates(info.event.id, info.event.start, info.event.end, info.revert);
     },
     [patchTableDates]
   );
@@ -267,9 +248,7 @@ export default function CalendarView({
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="text-sm font-medium capitalize">
-            {formatMobileHeader(currentDate)}
-          </span>
+          <span className="text-sm font-medium capitalize">{formatMobileHeader(currentDate)}</span>
           <button
             className="btn btn-ghost btn-sm btn-square"
             onClick={goNext}

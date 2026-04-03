@@ -48,8 +48,8 @@ export default function SignupPage() {
       navigate(`/events/${result.eventId}`);
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Signup failed";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Signup failed";
       toast.error(message);
     }
   };

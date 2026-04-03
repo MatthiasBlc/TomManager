@@ -33,9 +33,7 @@ export async function searchBoardGames(query: string) {
 
   // Dedup par externalId : les locaux sont prioritaires
   const localExternalIds = new Set(
-    localResults
-      .filter((bg) => bg.externalId)
-      .map((bg) => bg.externalId)
+    localResults.filter((bg) => bg.externalId).map((bg) => bg.externalId)
   );
 
   const newFromBGG = bggResults

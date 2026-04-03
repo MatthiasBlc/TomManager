@@ -113,6 +113,7 @@ Composant generique `MobileSheet` qui encapsule la logique mobile/desktop.
 ### Skeletons
 
 Squelettes de chargement pour :
+
 - EventListPage : 3 cartes ghost
 - PlanningPage : 2-3 cartes ghost
 - TableDetailPage : sections ghost
@@ -124,6 +125,7 @@ Composant reutilisable `Skeleton` (DaisyUI a deja `skeleton` class).
 ### Empty states
 
 Chaque liste vide affiche :
+
 - Icone illustrative
 - Texte explicatif
 - CTA (bouton d'action) quand pertinent

@@ -2,10 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import logger from "./logger";
 
 const prisma = new PrismaClient({
-  log:
-    process.env.NODE_ENV === "development"
-      ? [{ emit: "event", level: "query" }]
-      : [],
+  log: process.env.NODE_ENV === "development" ? [{ emit: "event", level: "query" }] : [],
 });
 
 // Log des requetes SQL en dev (desactive en test et prod)

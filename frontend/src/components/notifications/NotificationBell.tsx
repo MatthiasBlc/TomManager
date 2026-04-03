@@ -20,18 +20,13 @@ function NotificationList({
       <div className="flex items-center justify-between px-3 py-2 border-b border-base-300">
         <span className="text-sm font-semibold">Notifications</span>
         {unreadCount > 0 && (
-          <button
-            className="btn btn-ghost btn-xs text-xs"
-            onClick={markAllAsRead}
-          >
+          <button className="btn btn-ghost btn-xs text-xs" onClick={markAllAsRead}>
             Tout marquer lu
           </button>
         )}
       </div>
       <div className="overflow-y-auto flex-1 divide-y divide-base-200">
-        {isLoading && notifications.length === 0 && (
-          <SkeletonNotificationList count={4} />
-        )}
+        {isLoading && notifications.length === 0 && <SkeletonNotificationList count={4} />}
         {notifications.length === 0 && !isLoading && (
           <div className="text-center py-8 animate-fade-in">
             <span className="text-3xl mb-2 block">🔔</span>

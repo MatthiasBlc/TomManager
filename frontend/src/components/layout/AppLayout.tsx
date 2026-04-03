@@ -7,11 +7,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
   if (isMobile) {
-    return (
-      <main className={`pt-12 ${user ? "pb-20" : ""}`}>
-        {children}
-      </main>
-    );
+    return <main className={`pt-12 ${user ? "pb-20" : ""}`}>{children}</main>;
   }
 
   return <main>{children}</main>;

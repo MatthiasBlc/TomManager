@@ -39,18 +39,14 @@ export default function TableCard({ table, onClick }: Props) {
 
         <p className="text-sm opacity-60">GM: {table.creator.username}</p>
 
-        {table.pitch && (
-          <p className="text-sm line-clamp-2">{table.pitch}</p>
-        )}
+        {table.pitch && <p className="text-sm line-clamp-2">{table.pitch}</p>}
 
         <div className="flex items-center gap-2 mt-2">
           <span className="badge badge-outline badge-sm">
             {table.confirmedCount}/{table.maxPlayers}
           </span>
           {table.waitlistCount > 0 && (
-            <span className="badge badge-warning badge-sm">
-              +{table.waitlistCount} waitlist
-            </span>
+            <span className="badge badge-warning badge-sm">+{table.waitlistCount} waitlist</span>
           )}
           {table.currentUserStatus && (
             <span

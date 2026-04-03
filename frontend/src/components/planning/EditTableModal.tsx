@@ -122,8 +122,8 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
       onClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Echec de la mise a jour";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Echec de la mise a jour";
       toast.error(message);
     }
   };

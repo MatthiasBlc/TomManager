@@ -63,6 +63,7 @@ Si toujours 202 apres 3 tentatives : retourner `null`/`[]` et logger un warning.
 
 BGG n'a pas documente publiquement ses limites. Historiquement : ~2 req/sec.
 En cas de 429, le service doit :
+
 - Respecter le header `Retry-After` si present
 - Sinon attendre 10s avant de reessayer
 - Ne pas reessayer plus d'une fois sur un 429 (eviter les boucles)
@@ -83,6 +84,7 @@ En cas de 429, le service doit :
 ### 5. Timeout et network errors
 
 Comportement actuel (a conserver) :
+
 - Timeout : 5 secondes
 - MAX_RETRIES : 1 (pour les erreurs reseau uniquement, pas pour 202/429)
 
@@ -92,8 +94,8 @@ Comportement actuel (a conserver) :
 
 ### Variables d'environnement
 
-| Variable | Requis | Description |
-|---|---|---|
+| Variable        | Requis    | Description                                 |
+| --------------- | --------- | ------------------------------------------- |
 | `BGG_API_TOKEN` | Optionnel | Bearer token BGG. Si absent : mode degrade. |
 
 A ajouter dans `backend/src/config/env.ts` comme `str({ default: "" })`.
@@ -127,6 +129,7 @@ Actuellement inexistants. A creer dans un fichier dedie
 `backend/src/__tests__/unit/bgg.test.ts`.
 
 Scenarios a couvrir :
+
 - Auth header present si token configure
 - Pas d'auth header si token absent
 - Retry sur 202 avec backoff
@@ -165,6 +168,7 @@ it.skipIf(!process.env.BGG_API_TOKEN)("live search returns results", async () =>
 Le test `e2e/planning.spec.ts` skippe actuellement la recherche BGG
 (note "BGG : API cassee"). Une fois la feature reparee, ajouter un test dans
 `e2e/boardgames.spec.ts` :
+
 - Rechercher "Catan" → voir au moins un resultat BGG
 - Cliquer sur un resultat → l'ajouter a l'event
 - Verifier qu'il apparait dans la liste
@@ -173,18 +177,18 @@ Le test `e2e/planning.spec.ts` skippe actuellement la recherche BGG
 
 ## Impact sur le reste du code
 
-| Fichier | Changement |
-|---|---|
-| `backend/src/services/bgg.ts` | Refactoring fetchWithRetry (auth + retry 202/429) |
-| `backend/src/config/env.ts` | Ajouter `BGG_API_TOKEN: str({ default: "" })` |
-| `backend/src/app.ts` | Warning au demarrage si token absent |
-| `backend/src/__tests__/unit/bgg.test.ts` | **NOUVEAU** — tests unitaires bgg.ts |
-| `backend/src/__tests__/manual/bgg-live.test.ts` | **NOUVEAU** — test live optionnel |
-| `e2e/boardgames.spec.ts` | **NOUVEAU** — scenario E2E search + ajout BGG |
-| `.env.example` | Ajouter `BGG_API_TOKEN=` |
-| `docker-compose.yml` | Ajouter `BGG_API_TOKEN` dans env backend |
-| `docker-compose.prod.yml` / `preprod.yml` | Idem |
-| `.github/workflows/deploy.yml` | Ajouter `BGG_API_TOKEN` dans les secrets |
+| Fichier                                         | Changement                                        |
+| ----------------------------------------------- | ------------------------------------------------- |
+| `backend/src/services/bgg.ts`                   | Refactoring fetchWithRetry (auth + retry 202/429) |
+| `backend/src/config/env.ts`                     | Ajouter `BGG_API_TOKEN: str({ default: "" })`     |
+| `backend/src/app.ts`                            | Warning au demarrage si token absent              |
+| `backend/src/__tests__/unit/bgg.test.ts`        | **NOUVEAU** — tests unitaires bgg.ts              |
+| `backend/src/__tests__/manual/bgg-live.test.ts` | **NOUVEAU** — test live optionnel                 |
+| `e2e/boardgames.spec.ts`                        | **NOUVEAU** — scenario E2E search + ajout BGG     |
+| `.env.example`                                  | Ajouter `BGG_API_TOKEN=`                          |
+| `docker-compose.yml`                            | Ajouter `BGG_API_TOKEN` dans env backend          |
+| `docker-compose.prod.yml` / `preprod.yml`       | Idem                                              |
+| `.github/workflows/deploy.yml`                  | Ajouter `BGG_API_TOKEN` dans les secrets          |
 
 ---
 

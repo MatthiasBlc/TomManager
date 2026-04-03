@@ -22,9 +22,16 @@ export async function detail(req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, yearPublished, minPlayers, maxPlayers, playingTime, description, imageUrl } = req.body;
+    const { name, yearPublished, minPlayers, maxPlayers, playingTime, description, imageUrl } =
+      req.body;
     const boardGame = await boardGameService.createBoardGame({
-      name, yearPublished, minPlayers, maxPlayers, playingTime, description, imageUrl,
+      name,
+      yearPublished,
+      minPlayers,
+      maxPlayers,
+      playingTime,
+      description,
+      imageUrl,
     });
     res.status(201).json({ data: boardGame });
   } catch (err) {

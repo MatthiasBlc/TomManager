@@ -20,17 +20,15 @@ export async function create(req: Request, res: Response, next: NextFunction) {
         select: { email: true },
       });
       if (!user) {
-        res.status(404).json({ error: { message: `Aucun utilisateur avec le pseudo "${identifier.trim()}"` } });
+        res
+          .status(404)
+          .json({ error: { message: `Aucun utilisateur avec le pseudo "${identifier.trim()}"` } });
         return;
       }
       email = user.email;
     }
 
-    const result = await invitationService.createInvitation(
-      eventId,
-      email,
-      req.session.userId!
-    );
+    const result = await invitationService.createInvitation(eventId, email, req.session.userId!);
 
     res.status(201).json({ data: result });
   } catch (err) {

@@ -45,7 +45,9 @@ export default function InvitationManager({ eventId }: Props) {
 
   const onSubmit = async (data: { identifier: string }) => {
     try {
-      const res = await api.post(`/api/events/${eventId}/invitations`, { identifier: data.identifier });
+      const res = await api.post(`/api/events/${eventId}/invitations`, {
+        identifier: data.identifier,
+      });
       const token = res.data.data.invitation.token;
       const link = `${window.location.origin}/invite/${token}`;
 
@@ -55,8 +57,8 @@ export default function InvitationManager({ eventId }: Props) {
       fetchInvitations();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Failed to send invitation";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to send invitation";
       toast.error(message);
     }
   };
@@ -99,7 +101,9 @@ export default function InvitationManager({ eventId }: Props) {
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium truncate flex-1 mr-2">{inv.email}</p>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={`badge badge-sm ${statusBadge(inv.status)}`}>{inv.status}</span>
+                    <span className={`badge badge-sm ${statusBadge(inv.status)}`}>
+                      {inv.status}
+                    </span>
                     {inv.status === "PENDING" && (
                       <button
                         className="btn btn-ghost btn-xs text-error"

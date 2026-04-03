@@ -100,18 +100,21 @@ export function useNotifications() {
     }
   }, []);
 
-  const deleteNotification = useCallback(async (id: string) => {
-    try {
-      const notif = notifications.find((n) => n.id === id);
-      await api.delete(`/api/notifications/${id}`);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-      if (notif && !notif.read) {
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+  const deleteNotification = useCallback(
+    async (id: string) => {
+      try {
+        const notif = notifications.find((n) => n.id === id);
+        await api.delete(`/api/notifications/${id}`);
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        if (notif && !notif.read) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+      } catch {
+        // silently fail
       }
-    } catch {
-      // silently fail
-    }
-  }, [notifications]);
+    },
+    [notifications]
+  );
 
   return {
     notifications,

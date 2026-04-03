@@ -31,8 +31,8 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       onChanged();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Failed to remove participant";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to remove participant";
       toast.error(message);
     }
   };
@@ -45,8 +45,8 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       onChanged();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Failed to leave event";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to leave event";
       toast.error(message);
     }
   };
@@ -66,12 +66,17 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       {isMobile ? (
         <div className="space-y-2 animate-fade-in">
           {participants.map((p) => (
-            <div key={p.userId} className="card bg-base-100 shadow-sm active:scale-[0.98] transition-transform">
+            <div
+              key={p.userId}
+              className="card bg-base-100 shadow-sm active:scale-[0.98] transition-transform"
+            >
               <div className="card-body p-3 flex-row items-center justify-between">
                 <div>
                   <p className="font-medium text-sm">{p.username}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`badge badge-sm ${p.role === "ADMIN" ? "badge-primary" : "badge-ghost"}`}>
+                    <span
+                      className={`badge badge-sm ${p.role === "ADMIN" ? "badge-primary" : "badge-ghost"}`}
+                    >
                       {p.role}
                     </span>
                     <span className="text-xs opacity-60">
@@ -107,7 +112,9 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                 <tr key={p.userId}>
                   <td>{p.username}</td>
                   <td>
-                    <span className={`badge ${p.role === "ADMIN" ? "badge-primary" : "badge-ghost"}`}>
+                    <span
+                      className={`badge ${p.role === "ADMIN" ? "badge-primary" : "badge-ghost"}`}
+                    >
                       {p.role}
                     </span>
                   </td>

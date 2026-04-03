@@ -9,6 +9,7 @@ import prisma from "./util/db";
 import logger from "./util/logger";
 import env from "./config/env";
 import apiRouter from "./routes";
+import testRouter from "./routes/test";
 import { errorHandler } from "./middleware/errorHandler";
 import { globalRateLimiter, writeRateLimiter } from "./middleware/rateLimiter";
 
@@ -32,8 +33,7 @@ if (env.NODE_ENV !== "test") {
         return crypto.randomUUID();
       },
       // Propager le request ID dans le header de reponse
-      customSuccessMessage: (req, res) =>
-        `${req.method} ${req.url} - ${res.statusCode}`,
+      customSuccessMessage: (req, res) => `${req.method} ${req.url} - ${res.statusCode}`,
     })
   );
 }
@@ -105,7 +105,6 @@ app.use("/api", globalRateLimiter, writeRateLimiter, apiRouter);
 
 // Routes de test (seed E2E) — disponibles uniquement en mode test
 if (env.NODE_ENV === "test") {
-  const testRouter = require("./routes/test").default;
   app.use("/api/test", testRouter);
 }
 

@@ -20,9 +20,9 @@ Permettre aux utilisateurs connectes a un event de voir les changements en temps
 
 ### Rooms
 
-| Room             | Usage                                    |
-| ---------------- | ---------------------------------------- |
-| `event:{eventId}` | Tous les changements lies a cet event   |
+| Room              | Usage                                 |
+| ----------------- | ------------------------------------- |
+| `event:{eventId}` | Tous les changements lies a cet event |
 
 Un client rejoint la room quand il navigue vers un event et la quitte en sortant.
 
@@ -32,26 +32,26 @@ Un client rejoint la room quand il navigue vers un event et la quitte en sortant
 
 ### Server -> Client (broadcasts dans la room event)
 
-| Event                    | Payload                                    | Declencheur                          |
-| ------------------------ | ------------------------------------------ | ------------------------------------ |
-| `table:created`          | `{ table }` (objet table complet)          | POST /tables                         |
-| `table:updated`          | `{ table }` (objet table complet)          | PATCH /tables/:id                    |
-| `table:deleted`          | `{ tableId }`                              | DELETE /tables/:id                   |
-| `table:player:joined`    | `{ tableId, participant }`                 | POST /tables/:id/join                |
-| `table:player:left`      | `{ tableId, userId }`                      | DELETE /tables/:id/leave             |
-| `table:player:kicked`    | `{ tableId, userId }`                      | DELETE /tables/:id/participants/:id  |
-| `table:player:promoted`  | `{ tableId, userId }`                      | (automatique apres leave/kick/demote)|
-| `table:player:demoted`   | `{ tableId, userId }`                      | PATCH /tables/:id (reduce maxPlayers)|
-| `participant:removed`    | `{ userId }`                               | DELETE /participants/:id ou /me      |
-| `boardgame:added`        | `{ entry }` (objet EventBoardGame complet) | POST /boardgames                     |
-| `boardgame:removed`      | `{ entryId }`                              | DELETE /boardgames/:id               |
+| Event                   | Payload                                    | Declencheur                           |
+| ----------------------- | ------------------------------------------ | ------------------------------------- |
+| `table:created`         | `{ table }` (objet table complet)          | POST /tables                          |
+| `table:updated`         | `{ table }` (objet table complet)          | PATCH /tables/:id                     |
+| `table:deleted`         | `{ tableId }`                              | DELETE /tables/:id                    |
+| `table:player:joined`   | `{ tableId, participant }`                 | POST /tables/:id/join                 |
+| `table:player:left`     | `{ tableId, userId }`                      | DELETE /tables/:id/leave              |
+| `table:player:kicked`   | `{ tableId, userId }`                      | DELETE /tables/:id/participants/:id   |
+| `table:player:promoted` | `{ tableId, userId }`                      | (automatique apres leave/kick/demote) |
+| `table:player:demoted`  | `{ tableId, userId }`                      | PATCH /tables/:id (reduce maxPlayers) |
+| `participant:removed`   | `{ userId }`                               | DELETE /participants/:id ou /me       |
+| `boardgame:added`       | `{ entry }` (objet EventBoardGame complet) | POST /boardgames                      |
+| `boardgame:removed`     | `{ entryId }`                              | DELETE /boardgames/:id                |
 
 ### Client -> Server
 
-| Event          | Payload        | Action                          |
-| -------------- | -------------- | ------------------------------- |
-| `join:event`   | `{ eventId }`  | Rejoindre la room event         |
-| `leave:event`  | `{ eventId }`  | Quitter la room event           |
+| Event         | Payload       | Action                  |
+| ------------- | ------------- | ----------------------- |
+| `join:event`  | `{ eventId }` | Rejoindre la room event |
+| `leave:event` | `{ eventId }` | Quitter la room event   |
 
 ---
 
@@ -85,6 +85,7 @@ L'instance `io` est rendue accessible via un singleton `getIO()`.
 ## Tests
 
 ### Backend (integration)
+
 - Connexion WebSocket avec session valide
 - Rejet connexion sans session
 - Join/leave room
@@ -92,5 +93,6 @@ L'instance `io` est rendue accessible via un singleton `getIO()`.
 - Reception table:player:joined/left
 
 ### Frontend
+
 - useSocket hook lifecycle
 - MAJ temps reel des tables

@@ -36,8 +36,8 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
       onClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Failed to create event";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to create event";
       toast.error(message);
     }
   };

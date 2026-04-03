@@ -74,7 +74,8 @@ describe("Accessibility (axe-core)", () => {
   });
 
   it("NotificationItem should have no critical accessibility violations", async () => {
-    const NotificationItem = (await import("../../components/notifications/NotificationItem")).default;
+    const NotificationItem = (await import("../../components/notifications/NotificationItem"))
+      .default;
     const { container } = render(
       <MemoryRouter>
         <NotificationItem

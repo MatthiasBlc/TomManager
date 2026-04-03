@@ -1,9 +1,5 @@
 import { Router } from "express";
-import {
-  requireAuth,
-  requireEventParticipant,
-  requireTableGMOrAdmin,
-} from "../middleware/auth";
+import { requireAuth, requireEventParticipant, requireTableGMOrAdmin } from "../middleware/auth";
 import * as gameTableController from "../controllers/gameTable";
 import { validateBody, validateUUID } from "../middleware/validateBody";
 import { createTableSchema, updateTableSchema } from "../schemas/gameTable";

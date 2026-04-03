@@ -24,11 +24,11 @@
 - [ ] Ajouter `BGG_API_TOKEN: str({ default: "" })` dans `backend/src/config/env.ts`
 - [ ] Ajouter `BGG_API_TOKEN=<token>` dans `.env` local
 - [ ] Ajouter `BGG_API_TOKEN=${BGG_API_TOKEN}` dans la section `environment` du
-  service `backend` de `docker-compose.yml`, `docker-compose.prod.yml`,
-  `docker-compose.preprod.yml`
+      service `backend` de `docker-compose.yml`, `docker-compose.prod.yml`,
+      `docker-compose.preprod.yml`
 - [ ] Ajouter `BGG_API_TOKEN=` (vide) dans `.env.example`
 - [ ] Ajouter `BGG_API_TOKEN` comme secret GitHub Actions
-  (`Settings > Secrets > Actions > New repository secret`)
+      (`Settings > Secrets > Actions > New repository secret`)
 - [ ] Passer le secret dans le job `test-e2e` du workflow (optionnel, pour E2E BGG)
 
 ---
@@ -66,7 +66,7 @@
 - [ ] Installer `he` : `npm install he && npm install --save-dev @types/he`
 - [ ] Dans `fetchBGGThing` : decoder les entites HTML de `description` via `he.decode()`
 - [ ] Supprimer les balises HTML residuelles avec une regex simple :
-  `str.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()`
+      `str.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()`
 
 ### 2f. Normalisation imageUrl
 
@@ -76,7 +76,7 @@
 ### 2g. Warning au demarrage
 
 - [ ] Dans `backend/src/server.ts` : si `env.BGG_API_TOKEN` est vide,
-  `logger.warn("BGG_API_TOKEN not configured — BGG search disabled")`
+      `logger.warn("BGG_API_TOKEN not configured — BGG search disabled")`
 
 ---
 
@@ -147,9 +147,9 @@ Prerequis : `BGG_API_TOKEN` disponible dans l'environnement E2E.
 **Fichier** : `.github/workflows/deploy.yml`
 
 - [ ] Ajouter `BGG_API_TOKEN: ${{ secrets.BGG_API_TOKEN }}` dans le step
-  "Start backend" du job `test-e2e`
+      "Start backend" du job `test-e2e`
 - [ ] Ajouter `BGG_API_TOKEN` dans les env du job `test-backend` si necessaire
-  (non requis, les tests unitaires/integration mockent tout)
+      (non requis, les tests unitaires/integration mockent tout)
 
 ---
 
@@ -159,7 +159,7 @@ Prerequis : `BGG_API_TOKEN` disponible dans l'environnement E2E.
 - [ ] Mettre a jour `DB_MODELS.md` si schema change (normalement non)
 - [ ] Mettre a jour `API_MAP.md` si comportement change (normalement non)
 - [ ] Ajouter `BGG_API_TOKEN` dans la section "Variables d'environnement" du README
-  quand il sera cree (Phase 13)
+      quand il sera cree (Phase 13)
 
 ---
 
@@ -185,9 +185,9 @@ en une session.
 
 ## Risques
 
-| Risque | Probabilite | Impact | Mitigation |
-|---|---|---|---|
-| Token BGG refuse / delai long | Faible | Moyen | Mode manuel reste fonctionnel |
-| BGG change encore l'API | Faible | Fort | Architecture isolee dans bgg.ts facilite les changements |
-| Rate limiting agressif en prod | Moyen | Faible | Cache local (deja en place) absorbe la majorite |
-| Token expire sans alerte | Moyen | Faible | Degraded mode + log 401 explicite |
+| Risque                         | Probabilite | Impact | Mitigation                                               |
+| ------------------------------ | ----------- | ------ | -------------------------------------------------------- |
+| Token BGG refuse / delai long  | Faible      | Moyen  | Mode manuel reste fonctionnel                            |
+| BGG change encore l'API        | Faible      | Fort   | Architecture isolee dans bgg.ts facilite les changements |
+| Rate limiting agressif en prod | Moyen       | Faible | Cache local (deja en place) absorbe la majorite          |
+| Token expire sans alerte       | Moyen       | Faible | Degraded mode + log 401 explicite                        |

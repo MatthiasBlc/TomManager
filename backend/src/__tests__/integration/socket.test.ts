@@ -4,10 +4,7 @@ import { Server } from "socket.io";
 import { io as ioClient, Socket as ClientSocket } from "socket.io-client";
 import app from "../../app";
 import { initSocket } from "../../socket";
-import {
-  setupAdmin,
-  createTestEvent,
-} from "../setup/testHelpers";
+import { setupAdmin, createTestEvent } from "../setup/testHelpers";
 
 let httpServer: http.Server;
 let ioServer: Server;
@@ -109,7 +106,9 @@ describe("Socket.io", () => {
     });
 
     // Emit from server to test room broadcast
-    ioServer.to(`event:${event.id}`).emit("table:created", { table: { id: "test", title: "Test" } });
+    ioServer
+      .to(`event:${event.id}`)
+      .emit("table:created", { table: { id: "test", title: "Test" } });
 
     const received = await receivedPromise;
     expect(received.table).toBeDefined();

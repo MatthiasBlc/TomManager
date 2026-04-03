@@ -71,12 +71,7 @@ describe("EmptyState", () => {
   });
 
   it("should render action when provided", () => {
-    render(
-      <EmptyState
-        title="No data"
-        action={<button>Create</button>}
-      />
-    );
+    render(<EmptyState title="No data" action={<button>Create</button>} />);
     expect(screen.getByText("Create")).toBeInTheDocument();
   });
 

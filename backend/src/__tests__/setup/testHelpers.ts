@@ -49,9 +49,7 @@ export async function setupAdmin(overrides?: {
 
   const { user } = await createTestUserDirectly({ email, username, password, role: "ADMIN" });
 
-  const res = await request
-    .post("/api/auth/login")
-    .send({ identifier: email, password });
+  const res = await request.post("/api/auth/login").send({ identifier: email, password });
   const cookie = [res.headers["set-cookie"]].flat() as string[];
 
   return { user, cookie, email, username, password };
@@ -78,11 +76,7 @@ export async function createTestEvent(
 /**
  * Creates an invitation and returns the token. Requires an admin cookie and an eventId.
  */
-export async function createTestInvitation(
-  cookie: string[],
-  eventId: string,
-  email: string
-) {
+export async function createTestInvitation(cookie: string[], eventId: string, email: string) {
   const res = await request
     .post(`/api/events/${eventId}/invitations`)
     .set("Cookie", cookie)
@@ -138,19 +132,13 @@ export async function createAdminUser(overrides?: {
   });
 }
 
-export async function loginTestUser(
-  identifier = "test@example.com",
-  password = "Password123!"
-) {
+export async function loginTestUser(identifier = "test@example.com", password = "Password123!") {
   const res = await request.post("/api/auth/login").send({ identifier, password });
   const cookie = [res.headers["set-cookie"]].flat() as string[];
   return { res, cookie };
 }
 
-export async function loginAdminUser(
-  identifier = "admin@example.com",
-  password = "Password123!"
-) {
+export async function loginAdminUser(identifier = "admin@example.com", password = "Password123!") {
   const res = await request.post("/api/auth/login").send({ identifier, password });
   const cookie = [res.headers["set-cookie"]].flat() as string[];
   return { res, cookie };

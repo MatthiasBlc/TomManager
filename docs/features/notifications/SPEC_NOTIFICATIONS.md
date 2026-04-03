@@ -23,17 +23,17 @@ EVENT_DELETED         # Un event auquel tu participais a ete supprime
 
 ### Model `Notification`
 
-| Champ          | Type               | Description                                  |
-| -------------- | ------------------ | -------------------------------------------- |
-| `id`           | UUID               | PK                                           |
-| `userId`       | UUID               | FK -> User (destinataire)                    |
-| `type`         | `NotificationType` | Type de notification                         |
-| `title`        | String             | Titre court (ex: "Table supprimee")          |
-| `message`      | String             | Message descriptif                            |
-| `metadata`     | Json?              | Donnees contextuelles (eventId, tableId...)  |
-| `read`         | Boolean            | default false                                |
-| `readAt`       | DateTime?          | Timestamp de lecture                         |
-| `createdAt`    | DateTime           | default now()                                |
+| Champ       | Type               | Description                                 |
+| ----------- | ------------------ | ------------------------------------------- |
+| `id`        | UUID               | PK                                          |
+| `userId`    | UUID               | FK -> User (destinataire)                   |
+| `type`      | `NotificationType` | Type de notification                        |
+| `title`     | String             | Titre court (ex: "Table supprimee")         |
+| `message`   | String             | Message descriptif                          |
+| `metadata`  | Json?              | Donnees contextuelles (eventId, tableId...) |
+| `read`      | Boolean            | default false                               |
+| `readAt`    | DateTime?          | Timestamp de lecture                        |
+| `createdAt` | DateTime           | default now()                               |
 
 **Index** : `(userId, read, createdAt DESC)` pour le listing performant.
 
@@ -43,21 +43,21 @@ EVENT_DELETED         # Un event auquel tu participais a ete supprime
 
 Tous sous `/api/notifications`, auth requise.
 
-| Methode | Route               | Description                        | Response                   |
-| ------- | ------------------- | ---------------------------------- | -------------------------- |
-| GET     | `/`                 | Liste paginee (cursor-based)       | `{ data, nextCursor }`    |
-| GET     | `/unread-count`     | Nombre de non-lues                 | `{ count }`               |
-| PATCH   | `/:id/read`         | Marquer une notification comme lue | `{ notification }`        |
-| PATCH   | `/read-all`         | Marquer toutes comme lues          | `{ count }` (nb affectees)|
-| DELETE  | `/:id`              | Supprimer une notification         | 204                        |
+| Methode | Route           | Description                        | Response                   |
+| ------- | --------------- | ---------------------------------- | -------------------------- |
+| GET     | `/`             | Liste paginee (cursor-based)       | `{ data, nextCursor }`     |
+| GET     | `/unread-count` | Nombre de non-lues                 | `{ count }`                |
+| PATCH   | `/:id/read`     | Marquer une notification comme lue | `{ notification }`         |
+| PATCH   | `/read-all`     | Marquer toutes comme lues          | `{ count }` (nb affectees) |
+| DELETE  | `/:id`          | Supprimer une notification         | 204                        |
 
 ### GET `/` - Parametres query
 
-| Param    | Type    | Default | Description                              |
-| -------- | ------- | ------- | ---------------------------------------- |
-| `cursor` | string? | -       | ID de la derniere notification recue     |
-| `limit`  | number  | 20      | Nombre par page (max 50)                 |
-| `unread` | boolean?| -       | Filtrer sur non-lues uniquement          |
+| Param    | Type     | Default | Description                          |
+| -------- | -------- | ------- | ------------------------------------ |
+| `cursor` | string?  | -       | ID de la derniere notification recue |
+| `limit`  | number   | 20      | Nombre par page (max 50)             |
+| `unread` | boolean? | -       | Filtrer sur non-lues uniquement      |
 
 ---
 
@@ -97,17 +97,17 @@ Supprime la notification. Verifie ownership.
 
 ## 4. Declencheurs (integration dans services existants)
 
-| Service             | Action                         | Type                  | Destinataires                              |
-| ------------------- | ------------------------------ | --------------------- | ------------------------------------------ |
-| `gameTable`         | `deleteTable`                  | `TABLE_DELETED`       | Tous les participants de la table          |
-| `gameTable`         | `updateTable`                  | `TABLE_UPDATED`       | Tous les participants de la table          |
-| `gameTable`         | `updateTable` (maxPlayers up)  | `WAITLIST_PROMOTED`   | Joueurs promus                             |
-| `gameTable`         | `updateTable` (maxPlayers down)| `WAITLIST_DEMOTED`    | Joueurs retrogrades                        |
-| `gameTable`         | `leaveTable` (auto-promote)    | `WAITLIST_PROMOTED`   | Joueur promu                               |
-| `gameTable`         | `kickPlayer`                   | `PLAYER_KICKED`       | Joueur expulse                             |
-| `gameTable`         | `kickPlayer` (auto-promote)    | `WAITLIST_PROMOTED`   | Joueur promu                               |
-| `participant`       | `removeParticipant`            | `PARTICIPANT_REMOVED` | Utilisateur retire                         |
-| `participant`       | `leaveEvent` (admin remove)    | `PARTICIPANT_REMOVED` | Utilisateur retire                         |
+| Service       | Action                          | Type                  | Destinataires                     |
+| ------------- | ------------------------------- | --------------------- | --------------------------------- |
+| `gameTable`   | `deleteTable`                   | `TABLE_DELETED`       | Tous les participants de la table |
+| `gameTable`   | `updateTable`                   | `TABLE_UPDATED`       | Tous les participants de la table |
+| `gameTable`   | `updateTable` (maxPlayers up)   | `WAITLIST_PROMOTED`   | Joueurs promus                    |
+| `gameTable`   | `updateTable` (maxPlayers down) | `WAITLIST_DEMOTED`    | Joueurs retrogrades               |
+| `gameTable`   | `leaveTable` (auto-promote)     | `WAITLIST_PROMOTED`   | Joueur promu                      |
+| `gameTable`   | `kickPlayer`                    | `PLAYER_KICKED`       | Joueur expulse                    |
+| `gameTable`   | `kickPlayer` (auto-promote)     | `WAITLIST_PROMOTED`   | Joueur promu                      |
+| `participant` | `removeParticipant`             | `PARTICIPANT_REMOVED` | Utilisateur retire                |
+| `participant` | `leaveEvent` (admin remove)     | `PARTICIPANT_REMOVED` | Utilisateur retire                |
 
 > **Note** : On ne notifie PAS l'auteur de l'action (ex: si tu quittes une table toi-meme, pas de notif).
 
@@ -121,9 +121,9 @@ A la connexion Socket.io, chaque utilisateur rejoint automatiquement `user:{user
 
 ### Events emis (server -> client)
 
-| Event               | Payload                              | Description           |
-| ------------------- | ------------------------------------ | --------------------- |
-| `notification:new`  | `{ notification: Notification }`     | Nouvelle notification |
+| Event              | Payload                          | Description           |
+| ------------------ | -------------------------------- | --------------------- |
+| `notification:new` | `{ notification: Notification }` | Nouvelle notification |
 
 ---
 

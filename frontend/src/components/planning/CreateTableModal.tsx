@@ -37,10 +37,18 @@ interface Props {
   eventId: string;
   prefilledSlot?: { date: string; startTime: string; durationMinutes: number };
   eventStartDate?: string; // YYYY-MM-DD — pour min/max du date picker
-  eventEndDate?: string;   // YYYY-MM-DD
+  eventEndDate?: string; // YYYY-MM-DD
 }
 
-export default function CreateTableModal({ open, onClose, onCreated, eventId, prefilledSlot, eventStartDate, eventEndDate }: Props) {
+export default function CreateTableModal({
+  open,
+  onClose,
+  onCreated,
+  eventId,
+  prefilledSlot,
+  eventStartDate,
+  eventEndDate,
+}: Props) {
   const [tags, setTags] = useState<string[]>([]);
   const {
     register,
@@ -49,7 +57,9 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId, pr
     watch,
     setValue,
     formState: { errors },
-  } = useForm<CreateTableForm>({ defaultValues: { durationMinutes: 120, type: "JDR", gmIsPlayer: false } });
+  } = useForm<CreateTableForm>({
+    defaultValues: { durationMinutes: 120, type: "JDR", gmIsPlayer: false },
+  });
 
   const tableType = watch("type");
   // Reset gmIsPlayer when switching to JDS
@@ -64,7 +74,10 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId, pr
       setValue("startTime", prefilledSlot.startTime);
       // Arrondir la duree au multiple de 30 le plus proche dans les options
       const snapped = [30, 60, 90, 120, 150, 180, 240, 300, 360].reduce((prev, cur) =>
-        Math.abs(cur - prefilledSlot.durationMinutes) < Math.abs(prev - prefilledSlot.durationMinutes) ? cur : prev
+        Math.abs(cur - prefilledSlot.durationMinutes) <
+        Math.abs(prev - prefilledSlot.durationMinutes)
+          ? cur
+          : prev
       );
       setValue("durationMinutes", snapped);
     }
@@ -94,8 +107,8 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId, pr
       onClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Echec de la creation";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Echec de la creation";
       toast.error(message);
     }
   };

@@ -104,10 +104,11 @@ describe("Validation Zod — 400 sur donnees invalides", () => {
       const event = await createTestEvent(cookie);
       const start = new Date(event.startDateTime);
       const end = new Date(start.getTime() + 3600000);
-      const res = await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", cookie)
-        .send({ maxPlayers: 4, startDateTime: start.toISOString(), endDateTime: end.toISOString() });
+      const res = await request.post(`/api/events/${event.id}/tables`).set("Cookie", cookie).send({
+        maxPlayers: 4,
+        startDateTime: start.toISOString(),
+        endDateTime: end.toISOString(),
+      });
       expect(res.status).toBe(400);
     });
 
@@ -116,10 +117,12 @@ describe("Validation Zod — 400 sur donnees invalides", () => {
       const event = await createTestEvent(cookie);
       const start = new Date(event.startDateTime);
       const end = new Date(start.getTime() + 3600000);
-      const res = await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", cookie)
-        .send({ title: "Table", maxPlayers: 99, startDateTime: start.toISOString(), endDateTime: end.toISOString() });
+      const res = await request.post(`/api/events/${event.id}/tables`).set("Cookie", cookie).send({
+        title: "Table",
+        maxPlayers: 99,
+        startDateTime: start.toISOString(),
+        endDateTime: end.toISOString(),
+      });
       expect(res.status).toBe(400);
     });
 
@@ -128,10 +131,13 @@ describe("Validation Zod — 400 sur donnees invalides", () => {
       const event = await createTestEvent(cookie);
       const start = new Date(event.startDateTime);
       const end = new Date(start.getTime() + 3600000);
-      const res = await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", cookie)
-        .send({ title: "Table", type: "INVALID", maxPlayers: 4, startDateTime: start.toISOString(), endDateTime: end.toISOString() });
+      const res = await request.post(`/api/events/${event.id}/tables`).set("Cookie", cookie).send({
+        title: "Table",
+        type: "INVALID",
+        maxPlayers: 4,
+        startDateTime: start.toISOString(),
+        endDateTime: end.toISOString(),
+      });
       expect(res.status).toBe(400);
     });
 

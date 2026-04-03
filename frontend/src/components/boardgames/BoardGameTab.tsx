@@ -64,10 +64,11 @@ export default function BoardGameTab({ eventId }: Props) {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">
-          Board Games {!loading && `(${entries.length})`}
-        </h2>
-        <button className="btn btn-primary btn-sm active:scale-95 transition-transform" onClick={() => setShowAdd(true)}>
+        <h2 className="text-lg font-semibold">Board Games {!loading && `(${entries.length})`}</h2>
+        <button
+          className="btn btn-primary btn-sm active:scale-95 transition-transform"
+          onClick={() => setShowAdd(true)}
+        >
           Add Game
         </button>
       </div>
@@ -75,12 +76,12 @@ export default function BoardGameTab({ eventId }: Props) {
       {loading ? (
         <SkeletonBoardGameList count={3} />
       ) : (
-      <BoardGameList
-        entries={entries}
-        onRemove={handleRemove}
-        currentUserId={user?.id}
-        isAdmin={user?.role === "ADMIN"}
-      />
+        <BoardGameList
+          entries={entries}
+          onRemove={handleRemove}
+          currentUserId={user?.id}
+          isAdmin={user?.role === "ADMIN"}
+        />
       )}
 
       <AddBoardGameModal

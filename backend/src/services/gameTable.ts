@@ -29,11 +29,7 @@ interface CreateTableData {
   tags?: string[];
 }
 
-export async function createTable(
-  eventId: string,
-  userId: string,
-  data: CreateTableData
-) {
+export async function createTable(eventId: string, userId: string, data: CreateTableData) {
   // Validate title
   const title = data.title?.trim();
   if (!title || title.length === 0 || title.length > 150) {

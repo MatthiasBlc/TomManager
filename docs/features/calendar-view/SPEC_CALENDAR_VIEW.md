@@ -15,6 +15,7 @@ drag & drop, redimensionnement, et mise a jour en temps reel.
 ## Perimetre
 
 ### Inclus
+
 - Vue calendrier multi-jours sur la duree de l'event
 - Toggle liste / calendrier dans `PlanningTab`
 - Drag & drop pour deplacer une table (changer startDateTime / endDateTime)
@@ -28,6 +29,7 @@ drag & drop, redimensionnement, et mise a jour en temps reel.
 - Color coding par statut (GM, inscrit, autre)
 
 ### Hors perimetre
+
 - Creation de table en cliquant un creneau vide (future feature)
 - Vue ressource / salle (pas de concept de salle dans le modele)
 - Navigation hors de la plage de l'event
@@ -36,17 +38,17 @@ drag & drop, redimensionnement, et mise a jour en temps reel.
 
 ## User Stories
 
-| Acteur       | Action                                        | Resultat attendu                              |
-|--------------|-----------------------------------------------|-----------------------------------------------|
-| Participant  | Bascule sur la vue calendrier                 | Voit toutes les tables sur un axe horaire     |
-| Participant  | Voit deux tables au meme creneau              | Elles sont affichees cote a cote              |
-| GM           | Drag sa table vers un nouveau creneau         | Table mise a jour, autres clients voient le changement |
-| GM           | Resize le bas de sa table                     | Duree modifiee, snap a 15 min                 |
-| GM           | Drag sa table hors de la plage event          | Bloque visuellement, impossible de deposer   |
-| GM           | Drag sa table vers un creneau qui chevauche une autre de ses tables | Warning toast, action autorisee |
-| Admin        | Drag n'importe quelle table                   | Meme comportement que le GM de cette table    |
-| Participant  | Un autre GM deplace une table                 | Le calendrier se met a jour en temps reel     |
-| Utilisateur  | Change de vue (liste <-> calendrier)          | Preference sauvegardee en localStorage        |
+| Acteur      | Action                                                              | Resultat attendu                                       |
+| ----------- | ------------------------------------------------------------------- | ------------------------------------------------------ |
+| Participant | Bascule sur la vue calendrier                                       | Voit toutes les tables sur un axe horaire              |
+| Participant | Voit deux tables au meme creneau                                    | Elles sont affichees cote a cote                       |
+| GM          | Drag sa table vers un nouveau creneau                               | Table mise a jour, autres clients voient le changement |
+| GM          | Resize le bas de sa table                                           | Duree modifiee, snap a 15 min                          |
+| GM          | Drag sa table hors de la plage event                                | Bloque visuellement, impossible de deposer             |
+| GM          | Drag sa table vers un creneau qui chevauche une autre de ses tables | Warning toast, action autorisee                        |
+| Admin       | Drag n'importe quelle table                                         | Meme comportement que le GM de cette table             |
+| Participant | Un autre GM deplace une table                                       | Le calendrier se met a jour en temps reel              |
+| Utilisateur | Change de vue (liste <-> calendrier)                                | Preference sauvegardee en localStorage                 |
 
 ---
 
@@ -84,6 +86,7 @@ Un toggle avec deux etats : `list` | `calendar`. Sauvegarde dans
 ### Vue calendrier (mobile)
 
 Identique a Google Calendar mobile :
+
 - Une seule journee visible a la fois
 - Swipe horizontal gauche/droite pour changer de jour
 - Indicateur de jour en haut : `< Lun 14 | Mar 15 | Mer 16 >`
@@ -102,12 +105,12 @@ Identique a Google Calendar mobile :
 
 **Color coding (couleurs DaisyUI) :**
 
-| Statut                    | Classe           |
-|---------------------------|------------------|
-| Je suis GM                | `bg-secondary`   |
-| Je suis inscrit (CONFIRMED) | `bg-success`   |
-| Je suis en waitlist       | `bg-warning`     |
-| Autre table               | `bg-primary/70`  |
+| Statut                      | Classe          |
+| --------------------------- | --------------- |
+| Je suis GM                  | `bg-secondary`  |
+| Je suis inscrit (CONFIRMED) | `bg-success`    |
+| Je suis en waitlist         | `bg-warning`    |
+| Autre table                 | `bg-primary/70` |
 
 ### Warning de chevauchement
 
@@ -128,6 +131,7 @@ apres le depot. Le PATCH est quand meme envoye (c'est l'organisateur qui gere so
 ```
 
 Justification :
+
 - MIT pour les plugins utilises (pas de plugins premium necessaires)
 - Gestion native des events simultanees en colonnes
 - Drag & resize avec snap inclus
@@ -154,13 +158,13 @@ frontend/package.json                              # Ajout des deps FullCalendar
 
 ```ts
 interface CalendarEvent {
-  id: string;                  // table.id
-  title: string;               // table.title
-  start: string;               // table.startDateTime (ISO UTC)
-  end: string;                 // table.endDateTime (ISO UTC)
-  editable: boolean;           // isGM || isAdmin
-  backgroundColor: string;     // selon statut
-  borderColor: string;         // idem
+  id: string; // table.id
+  title: string; // table.title
+  start: string; // table.startDateTime (ISO UTC)
+  end: string; // table.endDateTime (ISO UTC)
+  editable: boolean; // isGM || isAdmin
+  backgroundColor: string; // selon statut
+  borderColor: string; // idem
   extendedProps: {
     table: TableSummary;
     isGM: boolean;
@@ -199,6 +203,7 @@ interface CalendarEvent {
 ```
 
 **Nombre de jours affiche** :
+
 - Calculer `nbDays = differenceInDays(event.endDateTime, event.startDateTime)` (max 7)
 - Utiliser `initialView="timeGridDay"` si mobile avec navigation jour par jour
 - Utiliser `timeGridNDays` (view personnalisee) sur desktop pour tout afficher d'un coup :
@@ -237,6 +242,7 @@ endDateTime ajuste pour le resize bas ; si on supporte resize haut, startDateTim
 ### Optimistic update
 
 Pour fluidite maximale (important pour remplacer Google Sheets) :
+
 - Mettre a jour `tables` localement des le depot (avant l'API call)
 - Si l'API echoue : revenir a l'etat precedent + revert FullCalendar
 
@@ -250,7 +256,7 @@ et `setTables(previousTables)` sur erreur.
 ```ts
 // Dans CalendarView, pour chaque table
 const canEdit = (table: TableSummary, currentUser: User): boolean => {
-  if (currentUser.role === 'ADMIN') return true;
+  if (currentUser.role === "ADMIN") return true;
   return table.isGM; // isGM est deja calcule par le backend dans la liste
 };
 ```
@@ -272,6 +278,7 @@ Pour le resize : la poignee bas est bloquee a `event.endDateTime`.
 ## Stylisation
 
 FullCalendar injecte ses propres classes CSS. Il faut :
+
 1. Importer le CSS FC minimal : `import '@fullcalendar/common/main.css'` (ou via le bundle)
 2. Surcharger avec des classes Tailwind dans un fichier `calendar.css` :
    - Couleurs de fond/bordure des slots : `bg-base-100`, `border-base-300`
@@ -334,6 +341,7 @@ comme peer dependency).
 
 Actuellement `PlanningTab` ne connait pas les dates de l'event (necessaires pour `validRange`
 et calcul du nombre de jours). Il faudra soit :
+
 - **Option A** : passer `event` en prop depuis `EventDetailPage` / `PlanningPage`
 - **Option B** : faire un fetch `GET /api/events/:eventId` au montage de `PlanningTab`
 
@@ -345,21 +353,25 @@ Le cache HTTP (304 Not Modified) evite le surcoût.
 ## Plan d'implementation (phases)
 
 ### Phase 1 — Setup & affichage read-only (sans drag)
+
 1. Installer les deps FullCalendar
 2. Creer `CalendarView.tsx` : afficher les tables comme blocs, color coding, bloc custom
 3. Ajouter le toggle dans `PlanningTab`, fetch des dates de l'event
 4. Tester l'affichage multi-jours, simultanee, scroll auto
 
 ### Phase 2 — Drag & drop
+
 5. Activer `editable`, gerer `eventDrop` + appel PATCH
 6. Optimistic update + revert sur erreur
 7. `validRange` pour bloquer hors-event
 
 ### Phase 3 — Resize
+
 8. Activer `eventResizableFromStart: false`, gerer `eventResize`
 9. Poignee visible sur mobile
 
 ### Phase 4 — Polish
+
 10. Warning chevauchement
 11. Mobile : navigation jour par jour, swipe
 12. Persistence localStorage du toggle

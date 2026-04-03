@@ -13,11 +13,7 @@ async function setupEventWithParticipant() {
   const event = await createTestEvent(admin.cookie);
 
   // Create invitation + signup a regular user
-  const invitation = await createTestInvitation(
-    admin.cookie,
-    event.id,
-    "player@example.com"
-  );
+  const invitation = await createTestInvitation(admin.cookie, event.id, "player@example.com");
   await request.post("/api/auth/signup").send({
     email: "player@example.com",
     username: "player1",
@@ -57,7 +53,10 @@ describe("GameTable API", () => {
       expect(res.body.data.title).toBe("Curse of Strahd");
       expect(res.body.data.maxPlayers).toBe(5);
       expect(res.body.data.tags).toHaveLength(2);
-      expect(res.body.data.tags.map((t: { name: string }) => t.name).sort()).toEqual(["dnd", "horror"]);
+      expect(res.body.data.tags.map((t: { name: string }) => t.name).sort()).toEqual([
+        "dnd",
+        "horror",
+      ]);
     });
 
     it("should create a table as admin", async () => {
@@ -174,7 +173,10 @@ describe("GameTable API", () => {
         .send({ ...validTableData, tags: ["DnD", "HORROR"] });
 
       expect(res.status).toBe(201);
-      expect(res.body.data.tags.map((t: { name: string }) => t.name).sort()).toEqual(["dnd", "horror"]);
+      expect(res.body.data.tags.map((t: { name: string }) => t.name).sort()).toEqual([
+        "dnd",
+        "horror",
+      ]);
     });
   });
 
@@ -188,9 +190,7 @@ describe("GameTable API", () => {
         .set("Cookie", admin.cookie)
         .send(validTableData);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", playerCookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -205,9 +205,7 @@ describe("GameTable API", () => {
     it("should return empty array when no tables", async () => {
       const { playerCookie, event } = await setupEventWithParticipant();
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", playerCookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
@@ -309,8 +307,12 @@ describe("GameTable API", () => {
         .get(`/api/events/${event.id}/tables/${tableId}`)
         .set("Cookie", admin.cookie);
 
-      const confirmed = detail.body.data.participants.filter((p: { status: string }) => p.status === "CONFIRMED");
-      const waitlisted = detail.body.data.participants.filter((p: { status: string }) => p.status === "WAITLIST");
+      const confirmed = detail.body.data.participants.filter(
+        (p: { status: string }) => p.status === "CONFIRMED"
+      );
+      const waitlisted = detail.body.data.participants.filter(
+        (p: { status: string }) => p.status === "WAITLIST"
+      );
       expect(confirmed).toHaveLength(1);
       expect(waitlisted).toHaveLength(1);
     });
@@ -358,7 +360,9 @@ describe("GameTable API", () => {
         .get(`/api/events/${event.id}/tables/${tableId}`)
         .set("Cookie", admin.cookie);
 
-      const confirmed = detail.body.data.participants.filter((p: { status: string }) => p.status === "CONFIRMED");
+      const confirmed = detail.body.data.participants.filter(
+        (p: { status: string }) => p.status === "CONFIRMED"
+      );
       expect(confirmed).toHaveLength(2);
     });
   });
@@ -668,21 +672,22 @@ describe("Cascade Tests", () => {
         });
 
       // Shrink event to 12:00-16:00
-      await request
-        .patch(`/api/events/${event.id}`)
-        .set("Cookie", admin.cookie)
-        .send({
-          startDateTime: "2026-06-01T12:00:00Z",
-          endDateTime: "2026-06-01T16:00:00Z",
-        });
+      await request.patch(`/api/events/${event.id}`).set("Cookie", admin.cookie).send({
+        startDateTime: "2026-06-01T12:00:00Z",
+        endDateTime: "2026-06-01T16:00:00Z",
+      });
 
       const tables = await request
         .get(`/api/events/${event.id}/tables`)
         .set("Cookie", admin.cookie);
 
       expect(tables.body.data).toHaveLength(1);
-      expect(new Date(tables.body.data[0].startDateTime).toISOString()).toBe("2026-06-01T12:00:00.000Z");
-      expect(new Date(tables.body.data[0].endDateTime).toISOString()).toBe("2026-06-01T16:00:00.000Z");
+      expect(new Date(tables.body.data[0].startDateTime).toISOString()).toBe(
+        "2026-06-01T12:00:00.000Z"
+      );
+      expect(new Date(tables.body.data[0].endDateTime).toISOString()).toBe(
+        "2026-06-01T16:00:00.000Z"
+      );
     });
 
     it("should delete table when clamped dates become invalid", async () => {
@@ -797,14 +802,10 @@ describe("Cascade Tests", () => {
         .send({ ...validTableData, title: "Second Table" });
 
       // Delete event
-      await request
-        .delete(`/api/events/${event.id}`)
-        .set("Cookie", admin.cookie);
+      await request.delete(`/api/events/${event.id}`).set("Cookie", admin.cookie);
 
       // Event should be gone
-      const eventRes = await request
-        .get(`/api/events/${event.id}`)
-        .set("Cookie", admin.cookie);
+      const eventRes = await request.get(`/api/events/${event.id}`).set("Cookie", admin.cookie);
       expect(eventRes.status).toBe(404);
     });
   });
@@ -821,9 +822,7 @@ describe("Tag API", () => {
         .set("Cookie", admin.cookie)
         .send({ ...validTableData, tags: ["dnd", "horror", "dark-fantasy"] });
 
-      const res = await request
-        .get("/api/tags?q=d")
-        .set("Cookie", admin.cookie);
+      const res = await request.get("/api/tags?q=d").set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThanOrEqual(2);
@@ -834,9 +833,7 @@ describe("Tag API", () => {
     it("should return empty array for no match", async () => {
       const { admin } = await setupEventWithParticipant();
 
-      const res = await request
-        .get("/api/tags?q=zzz")
-        .set("Cookie", admin.cookie);
+      const res = await request.get("/api/tags?q=zzz").set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);

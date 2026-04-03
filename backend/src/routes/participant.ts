@@ -1,9 +1,5 @@
 import { Router } from "express";
-import {
-  requireAuth,
-  requireEventParticipant,
-  requireEventCreator,
-} from "../middleware/auth";
+import { requireAuth, requireEventParticipant, requireEventCreator } from "../middleware/auth";
 import * as participantController from "../controllers/participant";
 
 const router = Router();

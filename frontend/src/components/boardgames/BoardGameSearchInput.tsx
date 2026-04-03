@@ -69,9 +69,7 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}
       />
-      {loading && (
-        <span className="loading loading-spinner loading-xs absolute right-3 top-3" />
-      )}
+      {loading && <span className="loading loading-spinner loading-xs absolute right-3 top-3" />}
       {open && results.length > 0 && (
         <ul className="menu bg-base-200 rounded-box shadow-lg absolute z-50 w-full max-h-48 overflow-y-auto mt-1 md:max-h-60">
           {results.map((game, idx) => (

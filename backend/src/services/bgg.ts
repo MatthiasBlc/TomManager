@@ -70,18 +70,17 @@ export async function searchBGG(query: string): Promise<BGGSearchResult[]> {
     const nameField = item.name;
     let name = "";
     if (Array.isArray(nameField)) {
-      const primary = nameField.find(
-        (n: Record<string, unknown>) => n["@_type"] === "primary"
-      );
+      const primary = nameField.find((n: Record<string, unknown>) => n["@_type"] === "primary");
       name = (primary?.["@_value"] as string) || (nameField[0]?.["@_value"] as string) || "";
     } else if (nameField && typeof nameField === "object") {
-      name = (nameField as Record<string, unknown>)["@_value"] as string || "";
+      name = ((nameField as Record<string, unknown>)["@_value"] as string) || "";
     }
 
     const yearField = item.yearpublished;
-    const yearPublished = yearField && typeof yearField === "object"
-      ? parseInt((yearField as Record<string, unknown>)["@_value"] as string, 10)
-      : undefined;
+    const yearPublished =
+      yearField && typeof yearField === "object"
+        ? parseInt((yearField as Record<string, unknown>)["@_value"] as string, 10)
+        : undefined;
 
     return {
       bggId: String((item as Record<string, unknown>)["@_id"]),
@@ -108,12 +107,10 @@ export async function fetchBGGThing(bggId: string): Promise<BGGThingDetail | nul
   const nameField = item.name;
   let name = "";
   if (Array.isArray(nameField)) {
-    const primary = nameField.find(
-      (n: Record<string, unknown>) => n["@_type"] === "primary"
-    );
+    const primary = nameField.find((n: Record<string, unknown>) => n["@_type"] === "primary");
     name = (primary?.["@_value"] as string) || (nameField[0]?.["@_value"] as string) || "";
   } else if (nameField && typeof nameField === "object") {
-    name = (nameField as Record<string, unknown>)["@_value"] as string || "";
+    name = ((nameField as Record<string, unknown>)["@_value"] as string) || "";
   }
 
   const getIntAttr = (field: unknown): number | undefined => {

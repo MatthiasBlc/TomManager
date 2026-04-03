@@ -19,19 +19,35 @@ export default function AppRoutes() {
       <Route path="/invite/:token" element={<InvitationLandingPage />} />
       <Route
         path="/events"
-        element={<PrivateRoute><EventListPage /></PrivateRoute>}
+        element={
+          <PrivateRoute>
+            <EventListPage />
+          </PrivateRoute>
+        }
       />
       <Route
         path="/events/:eventId"
-        element={<PrivateRoute><EventDetailPage /></PrivateRoute>}
+        element={
+          <PrivateRoute>
+            <EventDetailPage />
+          </PrivateRoute>
+        }
       />
       <Route
         path="/events/:eventId/planning"
-        element={<PrivateRoute><PlanningPage /></PrivateRoute>}
+        element={
+          <PrivateRoute>
+            <PlanningPage />
+          </PrivateRoute>
+        }
       />
       <Route
         path="/events/:eventId/planning/:tableId"
-        element={<PrivateRoute><TableDetailPage /></PrivateRoute>}
+        element={
+          <PrivateRoute>
+            <TableDetailPage />
+          </PrivateRoute>
+        }
       />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

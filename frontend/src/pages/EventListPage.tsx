@@ -53,7 +53,10 @@ export default function EventListPage() {
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <h1 className="text-xl font-bold md:text-2xl">Events</h1>
         {user?.role === "ADMIN" && !isMobile && (
-          <button className="btn btn-primary active:scale-95 transition-transform" onClick={() => setShowCreate(true)}>
+          <button
+            className="btn btn-primary active:scale-95 transition-transform"
+            onClick={() => setShowCreate(true)}
+          >
             Create Event
           </button>
         )}
@@ -65,7 +68,9 @@ export default function EventListPage() {
         <EmptyState
           icon={<span>📅</span>}
           title="No events yet"
-          description={user?.role === "ADMIN" ? "Create your first event to get started." : undefined}
+          description={
+            user?.role === "ADMIN" ? "Create your first event to get started." : undefined
+          }
         />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 animate-fade-in">

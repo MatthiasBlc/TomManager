@@ -81,8 +81,8 @@ export default function TableDetailPage() {
       fetchTable();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Failed to join";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to join";
       toast.error(message);
     }
   };
@@ -152,9 +152,7 @@ export default function TableDetailPage() {
 
       <div className="mb-4 md:mb-6">
         <h1 className="text-lg font-bold md:text-2xl">{table.title}</h1>
-        <p className="text-xs opacity-70 mt-1 md:text-sm">
-          GM: {table.creator.username}
-        </p>
+        <p className="text-xs opacity-70 mt-1 md:text-sm">GM: {table.creator.username}</p>
         <p className="text-xs opacity-70 md:text-sm">
           {formatDateTime(table.startDateTime)} - {formatDateTime(table.endDateTime)}
         </p>
@@ -286,16 +284,25 @@ export default function TableDetailPage() {
           </button>
         )}
         {currentParticipant && (
-          <button className="btn btn-outline btn-warning flex-1 md:flex-none md:btn-sm" onClick={handleLeave}>
+          <button
+            className="btn btn-outline btn-warning flex-1 md:flex-none md:btn-sm"
+            onClick={handleLeave}
+          >
             Leave
           </button>
         )}
         {canEdit && (
           <>
-            <button className="btn btn-outline flex-1 md:flex-none md:btn-sm" onClick={() => setShowEdit(true)}>
+            <button
+              className="btn btn-outline flex-1 md:flex-none md:btn-sm"
+              onClick={() => setShowEdit(true)}
+            >
               Edit
             </button>
-            <button className="btn btn-outline btn-error flex-1 md:flex-none md:btn-sm" onClick={handleDelete}>
+            <button
+              className="btn btn-outline btn-error flex-1 md:flex-none md:btn-sm"
+              onClick={handleDelete}
+            >
               Delete
             </button>
           </>

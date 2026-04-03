@@ -64,8 +64,8 @@ export default function LoginPage() {
           {invitationInfo && (
             <div className="alert alert-info text-sm">
               <span>
-                You have been invited to <strong>{invitationInfo.eventName}</strong>.
-                Log in to join.
+                You have been invited to <strong>{invitationInfo.eventName}</strong>. Log in to
+                join.
               </span>
             </div>
           )}

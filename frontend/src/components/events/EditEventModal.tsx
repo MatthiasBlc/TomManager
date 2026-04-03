@@ -59,8 +59,8 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
       onClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-          ?.error?.message || "Failed to update event";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to update event";
       toast.error(message);
     }
   };

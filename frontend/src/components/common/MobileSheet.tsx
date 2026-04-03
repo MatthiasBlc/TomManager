@@ -110,12 +110,15 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
   if (!open) return null;
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label={title || "Dialog"}>
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-[100]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title || "Dialog"}
+    >
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 animate-fade-in"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 animate-fade-in" onClick={onClose} />
       {/* Sheet */}
       <div
         ref={sheetRef}
@@ -135,9 +138,7 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
           </div>
         )}
         {/* Content */}
-        <div className="overflow-y-auto flex-1 overscroll-contain">
-          {children}
-        </div>
+        <div className="overflow-y-auto flex-1 overscroll-contain">{children}</div>
       </div>
     </div>
   );

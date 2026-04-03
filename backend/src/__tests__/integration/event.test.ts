@@ -14,14 +14,11 @@ describe("Event API", () => {
     it("should create an event as admin", async () => {
       const { cookie } = await setupAdmin();
 
-      const res = await request
-        .post("/api/events")
-        .set("Cookie", cookie)
-        .send({
-          name: "Test Event",
-          startDateTime: "2026-06-01T10:00:00Z",
-          endDateTime: "2026-06-01T18:00:00Z",
-        });
+      const res = await request.post("/api/events").set("Cookie", cookie).send({
+        name: "Test Event",
+        startDateTime: "2026-06-01T10:00:00Z",
+        endDateTime: "2026-06-01T18:00:00Z",
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.data).toHaveProperty("id");
@@ -31,14 +28,11 @@ describe("Event API", () => {
     it("should auto-add creator as participant", async () => {
       const { cookie, user } = await setupAdmin();
 
-      const res = await request
-        .post("/api/events")
-        .set("Cookie", cookie)
-        .send({
-          name: "Test Event",
-          startDateTime: "2026-06-01T10:00:00Z",
-          endDateTime: "2026-06-01T18:00:00Z",
-        });
+      const res = await request.post("/api/events").set("Cookie", cookie).send({
+        name: "Test Event",
+        startDateTime: "2026-06-01T10:00:00Z",
+        endDateTime: "2026-06-01T18:00:00Z",
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.data.participations).toHaveLength(1);
@@ -49,14 +43,11 @@ describe("Event API", () => {
       await createTestUserDirectly();
       const { cookie } = await loginTestUser();
 
-      const res = await request
-        .post("/api/events")
-        .set("Cookie", cookie)
-        .send({
-          name: "Test Event",
-          startDateTime: "2026-06-01T10:00:00Z",
-          endDateTime: "2026-06-01T18:00:00Z",
-        });
+      const res = await request.post("/api/events").set("Cookie", cookie).send({
+        name: "Test Event",
+        startDateTime: "2026-06-01T10:00:00Z",
+        endDateTime: "2026-06-01T18:00:00Z",
+      });
 
       expect(res.status).toBe(403);
     });
@@ -74,14 +65,11 @@ describe("Event API", () => {
     it("should reject empty name", async () => {
       const { cookie } = await setupAdmin();
 
-      const res = await request
-        .post("/api/events")
-        .set("Cookie", cookie)
-        .send({
-          name: "",
-          startDateTime: "2026-06-01T10:00:00Z",
-          endDateTime: "2026-06-01T18:00:00Z",
-        });
+      const res = await request.post("/api/events").set("Cookie", cookie).send({
+        name: "",
+        startDateTime: "2026-06-01T10:00:00Z",
+        endDateTime: "2026-06-01T18:00:00Z",
+      });
 
       expect(res.status).toBe(400);
     });
@@ -104,14 +92,11 @@ describe("Event API", () => {
     it("should reject endDateTime before startDateTime", async () => {
       const { cookie } = await setupAdmin();
 
-      const res = await request
-        .post("/api/events")
-        .set("Cookie", cookie)
-        .send({
-          name: "Test Event",
-          startDateTime: "2026-06-01T18:00:00Z",
-          endDateTime: "2026-06-01T10:00:00Z",
-        });
+      const res = await request.post("/api/events").set("Cookie", cookie).send({
+        name: "Test Event",
+        startDateTime: "2026-06-01T18:00:00Z",
+        endDateTime: "2026-06-01T10:00:00Z",
+      });
 
       expect(res.status).toBe(400);
     });
@@ -119,14 +104,11 @@ describe("Event API", () => {
     it("should reject invalid dates", async () => {
       const { cookie } = await setupAdmin();
 
-      const res = await request
-        .post("/api/events")
-        .set("Cookie", cookie)
-        .send({
-          name: "Test Event",
-          startDateTime: "not-a-date",
-          endDateTime: "2026-06-01T18:00:00Z",
-        });
+      const res = await request.post("/api/events").set("Cookie", cookie).send({
+        name: "Test Event",
+        startDateTime: "not-a-date",
+        endDateTime: "2026-06-01T18:00:00Z",
+      });
 
       expect(res.status).toBe(400);
     });
@@ -175,9 +157,7 @@ describe("Event API", () => {
         endDateTime: "2020-01-01T18:00:00Z",
       });
 
-      const res = await request
-        .get("/api/events?upcoming=true")
-        .set("Cookie", adminCookie);
+      const res = await request.get("/api/events?upcoming=true").set("Cookie", adminCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -195,9 +175,7 @@ describe("Event API", () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      const res = await request
-        .get(`/api/events/${event.id}`)
-        .set("Cookie", adminCookie);
+      const res = await request.get(`/api/events/${event.id}`).set("Cookie", adminCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe("Test Event");
@@ -213,9 +191,7 @@ describe("Event API", () => {
       await createTestUserDirectly({ email: "user@example.com", username: "user" });
       const { cookie: userCookie } = await loginTestUser("user@example.com");
 
-      const res = await request
-        .get(`/api/events/${event.id}`)
-        .set("Cookie", userCookie);
+      const res = await request.get(`/api/events/${event.id}`).set("Cookie", userCookie);
 
       expect(res.status).toBe(403);
     });
@@ -284,13 +260,10 @@ describe("Event API", () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      const res = await request
-        .patch(`/api/events/${event.id}`)
-        .set("Cookie", adminCookie)
-        .send({
-          startDateTime: "2026-06-01T20:00:00Z",
-          endDateTime: "2026-06-01T10:00:00Z",
-        });
+      const res = await request.patch(`/api/events/${event.id}`).set("Cookie", adminCookie).send({
+        startDateTime: "2026-06-01T20:00:00Z",
+        endDateTime: "2026-06-01T10:00:00Z",
+      });
 
       expect(res.status).toBe(400);
     });
@@ -301,9 +274,7 @@ describe("Event API", () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      const res = await request
-        .delete(`/api/events/${event.id}`)
-        .set("Cookie", adminCookie);
+      const res = await request.delete(`/api/events/${event.id}`).set("Cookie", adminCookie);
 
       expect(res.status).toBe(204);
 
@@ -317,12 +288,12 @@ describe("Event API", () => {
       const event = await createTestEvent(adminCookie);
       await createTestInvitation(adminCookie, event.id, "test@invite.com");
 
-      await request
-        .delete(`/api/events/${event.id}`)
-        .set("Cookie", adminCookie);
+      await request.delete(`/api/events/${event.id}`).set("Cookie", adminCookie);
 
       const invitations = await prisma.eventInvitation.findMany({ where: { eventId: event.id } });
-      const participations = await prisma.eventParticipation.findMany({ where: { eventId: event.id } });
+      const participations = await prisma.eventParticipation.findMany({
+        where: { eventId: event.id },
+      });
       expect(invitations).toHaveLength(0);
       expect(participations).toHaveLength(0);
     });
@@ -336,9 +307,7 @@ describe("Event API", () => {
         username: "otheradmin",
       });
 
-      const res = await request
-        .delete(`/api/events/${event.id}`)
-        .set("Cookie", otherCookie);
+      const res = await request.delete(`/api/events/${event.id}`).set("Cookie", otherCookie);
 
       expect(res.status).toBe(403);
     });

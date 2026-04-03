@@ -7,9 +7,7 @@ const prisma = new PrismaClient();
 
 // Comptes admin crees automatiquement en local et preprod
 // Pour la prod, utiliser le script one-shot via docker exec
-const DEV_ADMINS = [
-  { email: "admin@local.dev", username: "admin", password: "admin123" },
-];
+const DEV_ADMINS = [{ email: "admin@local.dev", username: "admin", password: "admin123" }];
 
 async function seedAdmins() {
   for (const { email, username, password } of DEV_ADMINS) {
@@ -114,7 +112,8 @@ async function seedDemoData() {
   const tablesData = [
     {
       title: "Partie de Wingspan",
-      pitch: "Une partie de Wingspan pour decouvrir ce magnifique jeu d'oiseaux. Convient aux debutants.",
+      pitch:
+        "Une partie de Wingspan pour decouvrir ce magnifique jeu d'oiseaux. Convient aux debutants.",
       maxPlayers: 4,
       startDateTime: new Date("2026-07-16T14:00:00.000Z"),
       endDateTime: new Date("2026-07-16T16:00:00.000Z"),
@@ -122,7 +121,8 @@ async function seedDemoData() {
     },
     {
       title: "Spirit Island - Initiation",
-      pitch: "Introduction a Spirit Island, jeu cooperatif de defense d'ile. On jouera avec les esprits de base.",
+      pitch:
+        "Introduction a Spirit Island, jeu cooperatif de defense d'ile. On jouera avec les esprits de base.",
       triggers: "Themes de colonisation",
       maxPlayers: 4,
       startDateTime: new Date("2026-07-17T10:00:00.000Z"),
