@@ -3,41 +3,40 @@
 Les phases 1-7 sont terminees. Le coeur fonctionnel est complet :
 auth, events, planning, board games, real-time, notifications, UI mobile-first.
 
+La phase 8 (Robustesse) est en cours — 8.1 et 8.2 terminees.
+
 Ci-dessous les prochaines phases possibles, classees par priorite.
 
 ---
 
-## Phase 8 : Robustesse & Validation (Priorite haute)
+## Phase 8 : Robustesse & Validation ✅ 8.1 + 8.2 terminees
 
 **Objectif** : Securiser les entrees, ameliorer la gestion d'erreurs, rendre l'app resiliente.
 
-### 8.1 Validation des entrees avec Zod
+### 8.1 Validation des entrees avec Zod ✅ COMPLETE
 
-Zod est installe (`package.json`) mais jamais utilise. Tous les controllers font des validations manuelles dans les services. Migrer vers des schemas Zod dans les controllers.
+- [x] Middleware generique `validateBody(schema)` reutilisable (`backend/src/middleware/validateBody.ts`)
+- [x] Middleware `validateUUID(...params)` pour les params de route
+- [x] Schema Zod pour `POST /api/auth/signup` et `POST /api/auth/login`
+- [x] Schema Zod pour `POST /api/events` et `PATCH /api/events/:eventId`
+- [x] Schema Zod pour `POST` et `PATCH /api/events/:eventId/tables`
+- [x] Schema Zod pour `POST /api/events/:eventId/invitations`
+- [x] Schema Zod pour `POST /api/boardgames` et `POST /api/boardgames/from-bgg`
+- [x] Validation UUID sur les params de route (`:eventId`, `:tableId`, `:userId`, `:boardGameId`, `:invitationId`)
+- [x] Tests : 20 cas de rejet 400 sur donnees invalides (188 tests total)
 
-- [ ] Schema Zod pour `POST /api/auth/signup` (email, username, password, invitationToken)
-- [ ] Schema Zod pour `POST /api/auth/login` (identifier, password, invitationToken?)
-- [ ] Schema Zod pour `POST /api/events` (name, startDateTime, endDateTime)
-- [ ] Schema Zod pour `PATCH /api/events/:eventId` (partial)
-- [ ] Schema Zod pour `POST /api/events/:eventId/tables` (title, maxPlayers, dates, etc.)
-- [ ] Schema Zod pour `PATCH /api/events/:eventId/tables/:tableId` (partial)
-- [ ] Schema Zod pour `POST /api/events/:eventId/invitations` (email)
-- [ ] Schema Zod pour `POST /api/boardgames` (name, optionals)
-- [ ] Schema Zod pour `POST /api/boardgames/from-bgg` (bggId, name)
-- [ ] Schema Zod pour `POST /api/events/:eventId/boardgames` (boardGameId)
-- [ ] Middleware generique `validateBody(schema)` reutilisable
-- [ ] Validation UUID sur les params de route (`:eventId`, `:tableId`, etc.)
-- [ ] Tests : chaque endpoint rejette les donnees invalides avec 400
+Note : `POST /api/events/:eventId/boardgames` (boardGameId) non encore schema-valide — a faire si besoin.
 
-### 8.2 Error Boundary & pages d'erreur (Frontend)
+### 8.2 Error Boundary & pages d'erreur (Frontend) ✅ COMPLETE
 
-- [ ] Composant `ErrorBoundary` React (catch errors, affiche fallback)
-- [ ] Page `NotFoundPage` pour les routes invalides (`*` dans AppRoutes)
-- [ ] Page d'erreur generique (500, network error)
-- [ ] Gestion du 401 global : intercepteur Axios qui redirige vers `/login`
-- [ ] Gestion du 403 : message "Acces refuse" au lieu d'un ecran blanc
-- [ ] Retry automatique sur les requetes GET echouees (1 retry apres 2s)
-- [ ] Tests : ErrorBoundary affiche le fallback
+- [x] Composant `ErrorBoundary` React — catch errors, fallback "Erreur inattendue" + bouton recharger (`frontend/src/components/common/ErrorBoundary.tsx`)
+- [x] Page `NotFoundPage` pour les routes invalides (route `*` dans AppRoutes) (`frontend/src/pages/NotFoundPage.tsx`)
+- [x] Gestion du 401 global : intercepteur Axios redirige vers `/login` (sauf routes `/api/auth/`)
+- [x] Gestion du 403 : toast "Acces refuse"
+- [x] `ErrorBoundary` wrappe `AppContent` dans `App.tsx`
+- [x] Tests : 3 cas (fallback defaut, fallback custom, rendu normal sans erreur)
+
+Non fait : retry automatique sur GET (deprioritise).
 
 ### 8.3 Rate limiting etendu
 
@@ -407,10 +406,10 @@ _Ce qu'on evite deliberement_
 | ------------- | ----- | ------------------------------------------------------------- |
 | CI/CD         | 9/10  | GitHub Actions, Docker, Portainer                             |
 | Deploiement   | 9/10  | Traefik, SSL, multi-stage Docker                              |
-| Tests auto    | 7/10  | 225 tests, pas d'E2E                                          |
-| Securite      | 7/10  | Helmet, bcrypt, sessions, rate limit auth. Manque Zod         |
-| Frontend      | 9/10  | Mobile-first, a11y, skeletons, real-time                      |
-| Backend       | 8/10  | API complete, Socket.io, notifications. Manque validation Zod |
+| Tests auto    | 8/10  | 252 tests (backend 188 + frontend 61), pas d'E2E              |
+| Securite      | 8/10  | Helmet, bcrypt, sessions, rate limit auth, Zod validation     |
+| Frontend      | 9/10  | Mobile-first, a11y, skeletons, real-time, ErrorBoundary       |
+| Backend       | 9/10  | API complete, Socket.io, notifications, validation Zod        |
 | Monitoring    | 3/10  | Pino basique, pas de Sentry/APM                               |
 | Email         | 0/10  | Non implemente                                                |
 | Documentation | 7/10  | Specs + context, pas de README/Swagger                        |
