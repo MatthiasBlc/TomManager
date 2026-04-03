@@ -127,6 +127,7 @@ Non fait : correlation Socket.io ↔ HTTP (deprioritise, complexite elevee pour 
 - [x] Navigation mobile : bottom tab bar, FAB, page 404 (`e2e/mobile.spec.ts`)
 
 Non implemente :
+
 - BGG : API cassee (Phase 14 prerequis)
 - Notifications temps reel 2 browsers : complexite elevee, valeur faible pour CI
 
@@ -158,7 +159,6 @@ Non implemente :
 **Objectif** : Faciliter l'onboarding et la maintenance.
 
 - [ ] README.md a la racine (presentation, setup, commandes)
-- [ ] OpenAPI/Swagger genere depuis les schemas Zod
 - [ ] Guide de contribution (CONTRIBUTING.md)
 - [ ] Diagramme d'architecture (composants, flux de donnees)
 - [ ] CHANGELOG.md
@@ -411,14 +411,14 @@ _Ce qu'on evite deliberement_
 
 ## Etat actuel du projet
 
-| Aspect        | Score | Detail                                                        |
-| ------------- | ----- | ------------------------------------------------------------- |
-| CI/CD         | 9/10  | GitHub Actions, Docker, Portainer                             |
-| Deploiement   | 9/10  | Traefik, SSL, multi-stage Docker                              |
-| Tests auto    | 9/10  | 253 tests unitaires + 7 scenarios E2E Playwright              |
-| Securite      | 9/10  | Helmet, bcrypt, sessions, rate limit global + writes, Zod     |
-| Frontend      | 9/10  | Mobile-first, a11y, skeletons, real-time, ErrorBoundary       |
-| Backend       | 9/10  | API complete, Socket.io, notifications, validation Zod        |
-| Monitoring    | 7/10  | Sentry integre, logs rediges, health check enrichi            |
-| Email         | 0/10  | Non implemente                                                |
-| Documentation | 7/10  | Specs + context, pas de README/Swagger                        |
+| Aspect        | Score | Detail                                                    |
+| ------------- | ----- | --------------------------------------------------------- |
+| CI/CD         | 9/10  | GitHub Actions, Docker, Portainer                         |
+| Deploiement   | 9/10  | Traefik, SSL, multi-stage Docker                          |
+| Tests auto    | 9/10  | 253 tests unitaires + 7 scenarios E2E Playwright          |
+| Securite      | 9/10  | Helmet, bcrypt, sessions, rate limit global + writes, Zod |
+| Frontend      | 9/10  | Mobile-first, a11y, skeletons, real-time, ErrorBoundary   |
+| Backend       | 9/10  | API complete, Socket.io, notifications, validation Zod    |
+| Monitoring    | 7/10  | Sentry integre, logs rediges, health check enrichi        |
+| Email         | 0/10  | Non implemente                                            |
+| Documentation | 7/10  | Specs + context, pas de README/Swagger                    |
