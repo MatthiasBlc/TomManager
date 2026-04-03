@@ -76,28 +76,32 @@ On va peut être ignorer cette étape pour le moment. Voir le système auth plus
 
 ---
 
-## Phase 10 : Monitoring & Observabilite (Priorite moyenne)
+## Phase 10 : Monitoring & Observabilite ✅ COMPLETE
 
 **Objectif** : Savoir ce qui se passe en production.
 
-### 10.1 Error tracking
+### 10.1 Error tracking ✅ COMPLETE
 
-- [ ] Integrer Sentry (backend + frontend)
-- [ ] Capturer les erreurs non catchees
-- [ ] Source maps uploadees pour le frontend
-- [ ] Contexte utilisateur dans les erreurs (userId, sans PII)
+- [x] Sentry backend (`@sentry/node`) — actif uniquement si `SENTRY_DSN` est defini en env (`backend/src/util/sentry.ts`)
+- [x] Sentry frontend (`@sentry/react`) — actif uniquement si `VITE_SENTRY_DSN` est defini, uniquement en `PROD`
+- [x] Capture des erreurs 5xx dans `errorHandler` avec contexte userId (sans email) et requestId
+- [x] `tracesSampleRate: 0.2` pour limiter le volume
 
-### 10.2 Logging structure
+Non fait : source maps uploadees (necessite config CI Sentry — a faire si besoin).
 
-- [ ] Niveaux de log par environnement (debug en dev, warn en prod)
-- [ ] Redaction des donnees sensibles dans les logs (password, tokens)
-- [ ] Request ID dans chaque log (tracabilite)
-- [ ] Correlation Socket.io events ↔ HTTP requests
+### 10.2 Logging structure ✅ COMPLETE
 
-### 10.3 Health check enrichi
+- [x] Niveaux par environnement : `debug` en dev, `warn` en prod, `silent` en test
+- [x] Redaction des donnees sensibles : `body.password`, `body.invitationToken`, `req.headers.authorization`, `req.headers.cookie`
+- [x] Request ID : genere par pino-http, utilise le header `X-Request-ID` si present (Traefik), sinon `crypto.randomUUID()`
 
-- [ ] `GET /health` retourne aussi : version, uptime, DB connectivity
-- [ ] Endpoint `/health/ready` (readiness probe pour Kubernetes/Portainer)
+Non fait : correlation Socket.io ↔ HTTP (deprioritise, complexite elevee pour la valeur).
+
+### 10.3 Health check enrichi ✅ COMPLETE
+
+- [x] `GET /health` retourne `{ status, version, uptime, db }` avec connectivity check DB
+- [x] `GET /health/ready` readiness probe — 200 si DB ok, 503 sinon
+- [x] Tests : 2 cas couverts
 
 ---
 
@@ -405,10 +409,10 @@ _Ce qu'on evite deliberement_
 | ------------- | ----- | ------------------------------------------------------------- |
 | CI/CD         | 9/10  | GitHub Actions, Docker, Portainer                             |
 | Deploiement   | 9/10  | Traefik, SSL, multi-stage Docker                              |
-| Tests auto    | 8/10  | 252 tests (backend 188 + frontend 61), pas d'E2E              |
+| Tests auto    | 8/10  | 253 tests (backend 189 + frontend 61), pas d'E2E              |
 | Securite      | 9/10  | Helmet, bcrypt, sessions, rate limit global + writes, Zod     |
 | Frontend      | 9/10  | Mobile-first, a11y, skeletons, real-time, ErrorBoundary       |
 | Backend       | 9/10  | API complete, Socket.io, notifications, validation Zod        |
-| Monitoring    | 3/10  | Pino basique, pas de Sentry/APM                               |
+| Monitoring    | 7/10  | Sentry integre, logs rediges, health check enrichi            |
 | Email         | 0/10  | Non implemente                                                |
 | Documentation | 7/10  | Specs + context, pas de README/Swagger                        |

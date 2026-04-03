@@ -10,7 +10,7 @@ export const createTableSchema = z.object({
   triggers: z.string().max(1000, "Triggers must be at most 1000 characters").optional(),
   comments: z.string().max(1000, "Comments must be at most 1000 characters").optional(),
   maxPlayers: z
-    .number({ invalid_type_error: "maxPlayers must be a number" })
+    .number()
     .int("maxPlayers must be an integer")
     .min(1, "maxPlayers must be at least 1")
     .max(20, "maxPlayers must be at most 20"),

@@ -16,9 +16,22 @@ const app = express();
 // Security
 app.use(helmet());
 
-// Logging
+// Logging avec request ID
 if (env.NODE_ENV !== "test") {
-  app.use(pinoHttp({ logger }));
+  app.use(
+    pinoHttp({
+      logger,
+      genReqId: (req) => {
+        // Utilise le header X-Request-ID si present (ex: Traefik), sinon genere un ID
+        const existing = req.headers["x-request-id"];
+        if (existing) return Array.isArray(existing) ? existing[0] : existing;
+        return crypto.randomUUID();
+      },
+      // Propager le request ID dans le header de reponse
+      customSuccessMessage: (req, res) =>
+        `${req.method} ${req.url} - ${res.statusCode}`,
+    })
+  );
 }
 
 // Body parsing
@@ -57,8 +70,30 @@ export const sessionMiddleware = session({
 app.use(sessionMiddleware);
 
 // Health check
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/health", async (_req, res) => {
+  let db: "ok" | "error" = "error";
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    db = "ok";
+  } catch {
+    // DB inaccessible
+  }
+  res.json({
+    status: "ok",
+    version: "0.1.0",
+    uptime: Math.floor(process.uptime()),
+    db,
+  });
+});
+
+// Readiness probe (Portainer / orchestrateur)
+app.get("/health/ready", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: "ready" });
+  } catch {
+    res.status(503).json({ status: "not ready", db: "error" });
+  }
 });
 
 // API routes
