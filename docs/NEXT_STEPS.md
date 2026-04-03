@@ -1,11 +1,10 @@
 # Prochaines etapes - TomManager
 
-Les phases 1-7 sont terminees. Le coeur fonctionnel est complet :
-auth, events, planning, board games, real-time, notifications, UI mobile-first.
+Phases terminees : 1-8 (auth, events, planning, board games, real-time, notifications, UI, robustesse) + 10 (monitoring).
 
-La phase 8 (Robustesse) est **complete** — 8.1, 8.2 et 8.3 terminees.
+Phase 9 (Emails) intentionnellement ignoree — remplacee par le systeme Discord (Phase 15).
 
-Ci-dessous les prochaines phases possibles, classees par priorite.
+Ci-dessous les prochaines phases restantes, classees par priorite.
 
 ---
 
