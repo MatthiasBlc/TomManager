@@ -14,40 +14,38 @@ Spec complete : `docs/features/discord-bot/SPEC_DISCORD_OAUTH.md`
 - [ ] Recuperer le DISCORD_ADMIN_ROLE_ID si applicable
 - [ ] Remplir `.env` local avec les 4-5 variables Discord
 
-## Etape 2 — Migration DB
+## Etape 2 — Migration DB ✅
 
-- [ ] `npx prisma migrate dev --name add_discord_fields`
+- [x] Schema Prisma mis a jour :
   - `User.email` → nullable
   - `User.passwordHash` → nullable
   - `User.discordId` String? UNIQUE
   - `User.discordUsername` String?
   - `User.avatarUrl` String?
   - `Event.discordRoleId` String? UNIQUE
+- [ ] `npx prisma migrate dev --name add_discord_fields` (a lancer avec Docker)
 - [ ] Mettre a jour `.claude/context/DB_MODELS.md`
 
-## Etape 3 — Backend : env + types
+## Etape 3 — Backend : env + types ✅
 
-- [ ] Ajouter variables Discord dans `backend/src/config/env.ts` (optionelles sauf CLIENT_ID/SECRET/GUILD_ID/REDIRECT_URI)
-- [ ] Etendre `express-session.d.ts` : `oauthState`, `oauthReturnTo`, `oauthAction`
-- [ ] Mettre a jour les types TypeScript si besoin (Prisma regenere apres migration)
+- [x] Variables Discord dans `backend/src/config/env.ts`
+- [x] `express-session.d.ts` etendu : `oauthState`, `oauthReturnTo`, `oauthAction`
 
-## Etape 4 — Service Discord OAuth
+## Etape 4 — Service Discord OAuth ✅
 
-- [ ] `backend/src/services/discordAuth.ts`
+- [x] `backend/src/services/discordAuth.ts`
+  - `isDiscordConfigured()`, `generateState()`, `buildAuthorizeUrl()`
   - `exchangeCode(code)` → access_token
   - `fetchDiscordUser(token)` → profil
-  - `fetchGuildMember(token)` → roles
+  - `fetchGuildMember(token)` → roles (null si pas dans le guild)
   - `buildAvatarUrl(id, hash)` → URL CDN
   - `generateUniqueUsername(candidate, discordId)` → username deduplique
   - `syncDiscordParticipations(userId, roles)` → upsert/delete participations
 
-## Etape 5 — Routes et controllers
+## Etape 5 — Routes et controllers ✅
 
-- [ ] `backend/src/routes/auth.ts` : ajouter `GET /discord` et `GET /discord/callback` et `DELETE /discord/link`
-- [ ] `backend/src/controllers/discordAuth.ts` :
-  - `initiateDiscordLogin` : genere state, construit URL, retourne `{ url }`
-  - `handleDiscordCallback` : echange code, sync, session, redirect
-  - `unlinkDiscord` : validation + update
+- [x] `backend/src/routes/auth.ts` : `GET /discord`, `GET /discord/callback`, `DELETE /discord/link`
+- [x] `backend/src/controllers/discordAuth.ts` : `initiateLogin`, `handleCallback`, `unlinkDiscord`
 - [ ] `backend/src/schemas/event.ts` : ajouter `discordRoleId` dans le schema PATCH
 - [ ] `backend/src/controllers/event.ts` : passer `discordRoleId` au service
 - [ ] `backend/src/services/event.ts` : valider unicite `discordRoleId` sur PATCH

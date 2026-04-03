@@ -59,6 +59,10 @@ export async function login(identifier: string, password: string, invitationToke
     throw createError(401, "Invalid credentials");
   }
 
+  if (!user.passwordHash) {
+    throw createError(401, "Invalid credentials");
+  }
+
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
     throw createError(401, "Invalid credentials");
@@ -87,5 +91,13 @@ export async function getMe(userId: string) {
     throw createError(404, "User not found");
   }
 
-  return { id: user.id, email: user.email, username: user.username, role: user.role };
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    discordId: user.discordId,
+    discordUsername: user.discordUsername,
+    avatarUrl: user.avatarUrl,
+  };
 }

@@ -115,8 +115,17 @@ export async function getEvent(eventId: string) {
 
 export async function updateEvent(
   eventId: string,
-  data: { name?: string; startDateTime?: string; endDateTime?: string }
+  data: { name?: string; startDateTime?: string; endDateTime?: string; discordRoleId?: string | null }
 ) {
+  if (data.discordRoleId !== undefined && data.discordRoleId !== null) {
+    const conflict = await prisma.event.findFirst({
+      where: { discordRoleId: data.discordRoleId, id: { not: eventId } },
+    });
+    if (conflict) {
+      throw createError(409, "Discord role already linked to another event");
+    }
+  }
+
   const existing = await prisma.event.findUnique({ where: { id: eventId } });
   if (!existing) {
     throw createError(404, "Event not found");
@@ -146,7 +155,12 @@ export async function updateEvent(
   const event = await prisma.$transaction(async (tx) => {
     const updated = await tx.event.update({
       where: { id: eventId },
-      data: { name, startDateTime: start, endDateTime: end },
+      data: {
+        name,
+        startDateTime: start,
+        endDateTime: end,
+        ...(data.discordRoleId !== undefined ? { discordRoleId: data.discordRoleId } : {}),
+      },
     });
 
     // Update expiresAt of PENDING invitations when dates change

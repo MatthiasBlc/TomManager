@@ -51,11 +51,12 @@ export async function detail(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, startDateTime, endDateTime } = req.body;
+    const { name, startDateTime, endDateTime, discordRoleId } = req.body;
     const event = await eventService.updateEvent(req.params.eventId, {
       name,
       startDateTime,
       endDateTime,
+      discordRoleId,
     });
 
     res.json({ data: event });
