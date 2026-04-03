@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { requireAuth, requireAdmin, requireEventCreator } from "../middleware/auth";
 import * as invitationController from "../controllers/invitation";
+import { validateBody, validateUUID } from "../middleware/validateBody";
+import { createInvitationSchema } from "../schemas/invitation";
 
 const router = Router();
 
@@ -8,7 +10,9 @@ const router = Router();
 router.post(
   "/events/:eventId/invitations",
   requireAuth,
+  validateUUID("eventId"),
   requireAdmin,
+  validateBody(createInvitationSchema),
   invitationController.create
 );
 
@@ -16,6 +20,7 @@ router.post(
 router.get(
   "/events/:eventId/invitations",
   requireAuth,
+  validateUUID("eventId"),
   requireEventCreator,
   invitationController.list
 );
@@ -24,6 +29,7 @@ router.get(
 router.delete(
   "/events/:eventId/invitations/:invitationId",
   requireAuth,
+  validateUUID("eventId", "invitationId"),
   requireEventCreator,
   invitationController.revoke
 );

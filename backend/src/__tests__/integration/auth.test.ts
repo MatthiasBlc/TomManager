@@ -76,7 +76,7 @@ describe("Auth API", () => {
       expect(res.status).toBe(400);
     });
 
-    it("should reject signup with invalid token", async () => {
+    it("should reject signup with invalid token format (Zod)", async () => {
       const res = await request.post("/api/auth/signup").send({
         email: "newuser@example.com",
         username: "newuser",
@@ -84,7 +84,7 @@ describe("Auth API", () => {
         invitationToken: "invalid-token",
       });
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(400);
     });
 
     it("should reject signup when email does not match invitation", async () => {

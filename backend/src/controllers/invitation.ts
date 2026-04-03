@@ -9,11 +9,6 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     const { eventId } = req.params;
     const { identifier } = req.body;
 
-    if (!identifier || typeof identifier !== "string" || !identifier.trim()) {
-      res.status(400).json({ error: { message: "Email or username is required" } });
-      return;
-    }
-
     let email: string;
 
     if (EMAIL_REGEX.test(identifier.trim())) {

@@ -5,6 +5,8 @@ import {
   requireTableGMOrAdmin,
 } from "../middleware/auth";
 import * as gameTableController from "../controllers/gameTable";
+import { validateBody, validateUUID } from "../middleware/validateBody";
+import { createTableSchema, updateTableSchema } from "../schemas/gameTable";
 
 const router = Router();
 
@@ -12,13 +14,16 @@ const router = Router();
 router.post(
   "/:eventId/tables",
   requireAuth,
+  validateUUID("eventId"),
   requireEventParticipant,
+  validateBody(createTableSchema),
   gameTableController.create
 );
 
 router.get(
   "/:eventId/tables",
   requireAuth,
+  validateUUID("eventId"),
   requireEventParticipant,
   gameTableController.list
 );
@@ -26,6 +31,7 @@ router.get(
 router.get(
   "/:eventId/tables/:tableId",
   requireAuth,
+  validateUUID("eventId", "tableId"),
   requireEventParticipant,
   gameTableController.detail
 );
@@ -33,13 +39,16 @@ router.get(
 router.patch(
   "/:eventId/tables/:tableId",
   requireAuth,
+  validateUUID("eventId", "tableId"),
   requireTableGMOrAdmin,
+  validateBody(updateTableSchema),
   gameTableController.update
 );
 
 router.delete(
   "/:eventId/tables/:tableId",
   requireAuth,
+  validateUUID("eventId", "tableId"),
   requireTableGMOrAdmin,
   gameTableController.remove
 );
@@ -48,6 +57,7 @@ router.delete(
 router.post(
   "/:eventId/tables/:tableId/join",
   requireAuth,
+  validateUUID("eventId", "tableId"),
   requireEventParticipant,
   gameTableController.join
 );
@@ -55,12 +65,14 @@ router.post(
 router.delete(
   "/:eventId/tables/:tableId/leave",
   requireAuth,
+  validateUUID("eventId", "tableId"),
   gameTableController.leave
 );
 
 router.delete(
   "/:eventId/tables/:tableId/participants/:userId",
   requireAuth,
+  validateUUID("eventId", "tableId", "userId"),
   requireTableGMOrAdmin,
   gameTableController.kick
 );
