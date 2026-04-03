@@ -16,14 +16,17 @@ model Session {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  username     String    @unique
-  passwordHash String
-  role         Role      @default(USER)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id              String    @id @default(uuid())
+  email           String?   @unique
+  username        String    @unique
+  passwordHash    String?
+  discordId       String?   @unique
+  discordUsername String?
+  avatarUrl       String?
+  role            Role      @default(USER)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
   createdEvents          Event[]
   sentInvitations        EventInvitation[]
@@ -35,13 +38,14 @@ model User {
 }
 
 model Event {
-  id            String   @id @default(uuid())
-  name          String
-  startDateTime DateTime
-  endDateTime   DateTime
-  createdBy     String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(uuid())
+  name           String
+  startDateTime  DateTime
+  endDateTime    DateTime
+  createdBy      String
+  discordRoleId  String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   creator        User                @relation(fields: [createdBy], references: [id])
   invitations    EventInvitation[]
