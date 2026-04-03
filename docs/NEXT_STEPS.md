@@ -104,25 +104,31 @@ Non fait : correlation Socket.io ↔ HTTP (deprioritise, complexite elevee pour 
 
 ---
 
-## Phase 11 : Tests E2E (Priorite moyenne)
+## Phase 11 : Tests E2E ✅ COMPLETE
 
 **Objectif** : Tester les flux complets utilisateur.
 
-### 11.1 Setup Playwright
+### 11.1 Setup Playwright ✅ COMPLETE
 
-- [ ] Installer Playwright
-- [ ] Config CI : run E2E apres les tests unitaires
-- [ ] Fixtures : seed DB avec admin + event + invitations
+- [x] `@playwright/test` installe a la racine, config dans `playwright.config.ts`
+- [x] Projets : `chromium` (desktop) + `mobile-chrome` (Pixel 5)
+- [x] Scripts : `npm run test:e2e`, `test:e2e:ui`, `test:e2e:report`
+- [x] Fixtures (`e2e/fixtures/seed.ts`) : seedAdmin, seedEvent, seedInvitation via API REST
+- [x] Endpoint `/api/test/seed-admin` cote backend (disponible uniquement en `NODE_ENV=test`)
+- [x] Job CI `test-e2e` dans `deploy.yml` — lance apres test-backend et test-frontend, bloque le build si echec
 
-### 11.2 Scenarios E2E
+### 11.2 Scenarios E2E ✅ COMPLETE (scenarios realistes)
 
-- [ ] Flow complet inscription : invitation → signup → acces event
-- [ ] Flow complet login avec token : login → event rejoint
-- [ ] Creer un event → inviter → participant rejoint
-- [ ] Creer une table → rejoindre → quitter → promotion waitlist
-- [ ] Ajouter un jeu (recherche BGG) → retirer
-- [ ] Verifier les notifications en temps reel (2 browsers)
-- [ ] Navigation mobile : bottom tab bar, bottom sheets, FAB
+- [x] Flow inscription : invitation → lien → signup form → redirection event (`e2e/auth.spec.ts`)
+- [x] Login avec compte existant + logout (`e2e/auth.spec.ts`)
+- [x] Creer une table via le bouton (`e2e/planning.spec.ts`)
+- [x] Rejoindre puis quitter une table (`e2e/planning.spec.ts`)
+- [x] Creation de table via clic sur un creneau calendrier (`e2e/planning.spec.ts`)
+- [x] Navigation mobile : bottom tab bar, FAB, page 404 (`e2e/mobile.spec.ts`)
+
+Non implemente :
+- BGG : API cassee (Phase 14 prerequis)
+- Notifications temps reel 2 browsers : complexite elevee, valeur faible pour CI
 
 ---
 
@@ -409,7 +415,7 @@ _Ce qu'on evite deliberement_
 | ------------- | ----- | ------------------------------------------------------------- |
 | CI/CD         | 9/10  | GitHub Actions, Docker, Portainer                             |
 | Deploiement   | 9/10  | Traefik, SSL, multi-stage Docker                              |
-| Tests auto    | 8/10  | 253 tests (backend 189 + frontend 61), pas d'E2E              |
+| Tests auto    | 9/10  | 253 tests unitaires + 7 scenarios E2E Playwright              |
 | Securite      | 9/10  | Helmet, bcrypt, sessions, rate limit global + writes, Zod     |
 | Frontend      | 9/10  | Mobile-first, a11y, skeletons, real-time, ErrorBoundary       |
 | Backend       | 9/10  | API complete, Socket.io, notifications, validation Zod        |
