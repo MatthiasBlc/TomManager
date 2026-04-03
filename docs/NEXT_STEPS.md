@@ -192,11 +192,138 @@ Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 
 ---
 
-## Phase 15 : Features avancees (Priorite basse, a discuter)
+## Phase 15a : Discord OAuth2 — Auth + Acces par role (Priorite haute)
+
+**Objectif** : Remplacer les invitations email par Discord OAuth2. L'admin assigne un role Discord
+a un membre → le membre se connecte via "Login avec Discord" → TomManager lit ses roles et cree ses
+participations automatiquement. Les comptes locaux (email+password) continuent de fonctionner.
+
+Spec complete : `docs/features/discord-bot/SPEC_DISCORD_OAUTH.md`
+Roadmap detaillee : `docs/features/discord-bot/ROADMAP.md`
+
+**Points cles** :
+- Scopes OAuth2 : `identify` + `guilds.members.read` (roles lus au login, pas en temps reel)
+- Le bot Discord doit etre dans le serveur (pas actif) pour que `guilds.members.read` fonctionne
+- Migration DB : `User.email` et `passwordHash` deviennent nullable, 3 champs Discord ajoutes
+- `Event.discordRoleId` : champ optionnel qui mappe un role Discord a un event
+- Sync participations au login : idempotente, ajoute les manquantes, retire les revoquees
+- Coexistence comptes locaux et Discord, liaison possible depuis le profil
+- Mode degrade : si variables Discord absentes → bouton masque, auth locale seule
+
+**Checklist** :
+- [ ] Prerequis Discord (creer app, obtenir credentials, inviter bot sur serveur)
+- [ ] Migration DB (5 champs User + 1 champ Event)
+- [ ] Variables d'env : `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_GUILD_ID`, `DISCORD_REDIRECT_URI`, `DISCORD_ADMIN_ROLE_ID` (optionnel)
+- [ ] Service `discordAuth.ts` (exchange, fetch profil, fetch roles, sync participations)
+- [ ] Routes : `GET /api/auth/discord`, `GET /api/auth/discord/callback`, `DELETE /api/auth/discord/link`
+- [ ] `PATCH /api/events/:eventId` : accepte `discordRoleId`
+- [ ] `GET /api/auth/me` : retourne `discordId`, `discordUsername`, `avatarUrl`
+- [ ] Frontend : bouton Login Discord, section profil liaison, champ discordRoleId admin
+- [ ] Tests : mock fetch Discord, cas heureux + erreurs (state invalide, pas dans guild, compte desactive)
+- [ ] Mise a jour env, docker-compose, GitHub Secrets, MANUAL_TESTING.md
+
+---
+
+## Phase 15b : Bot Discord — Sync temps reel (Priorite basse, apres 15a)
+
+**Vision** : complement de Phase 15a. Le bot reagit aux changements de roles en temps reel :
+assignation → compte cree + participation ajoutee, retrait → participation supprimee.
+L'user n'a plus besoin de se connecter pour "activer" son acces.
+Phase 9 (Mailer) devient entierement obsolete.
+
+**Prerequis** : Phase 15a complete (OAuth, DB, sync participations deja implementee).
+
+**Ce que le bot ajoute par rapport a OAuth seul** :
+
+| Besoin                                | OAuth seul | + Bot |
+| ------------------------------------- | ---------- | ----- |
+| Login Discord                         | Oui        | Oui   |
+| Roles → participations au login       | Oui        | Oui   |
+| Sync immediate sans login             | Non        | Oui   |
+| Compte cree avant premier login       | Non        | Oui   |
+| Retrait propagé sans login            | Non        | Oui   |
+| Notifications DM Discord              | Non        | Oui   |
+
+**Infrastructure** :
+
+- Service Docker dedie : `discord-bot/` dans le mono-repo (Node.js + discord.js)
+- Partage le schema Prisma avec le backend (acces direct PostgreSQL)
+- Variables supplementaires par rapport a 15a : `DISCORD_BOT_TOKEN`
+- Privileged Gateway Intent requis : `Server Members Intent` (activer dans Discord Developer Portal)
+- Stateless : redemarrage sans perte de donnees
+
+**Ce que fait le bot** :
+
+```
+guildMemberUpdate(oldMember, newMember)
+  rolesAdded   = newMember.roles - oldMember.roles
+  rolesRemoved = oldMember.roles - newMember.roles
+
+  pour chaque role ajoute :
+    event = Event.findOne({ discordRoleId: role.id })
+    si event :
+      user = User.findOrCreate({
+        discordId:       newMember.id,
+        username:        newMember.displayName (deduplique),
+        discordUsername: newMember.user.username,
+        avatarUrl:       newMember.displayAvatarURL(),
+      })
+      EventParticipation.upsert({ eventId: event.id, userId: user.id })
+
+  pour chaque role retire :
+    event = Event.findOne({ discordRoleId: role.id })
+    user  = User.findOne({ discordId: newMember.id })
+    si event && user :
+      GameTableParticipant.deleteMany({ userId, gameTable.eventId: event.id })
+      EventParticipation.delete({ eventId: event.id, userId: user.id })
+      // compte User conserve (historique)
+
+  // Gestion role admin (si DISCORD_ADMIN_ROLE_ID defini) :
+  si roleAdded.id === DISCORD_ADMIN_ROLE_ID → User.update({ role: "ADMIN" })
+  si roleRemoved.id === DISCORD_ADMIN_ROLE_ID → User.update({ role: "USER" })
+```
+
+**Gestion du crash / reconnexion** :
+
+L'evenement `guildMemberUpdate` est perdu si le bot est down au moment de l'assignation.
+Deux mecanismes de compensation :
+1. Sync automatique au demarrage : le bot appelle `guild.members.fetch()` et reconcilie la DB
+2. Endpoint admin manuel `POST /api/admin/discord/sync` (voir ci-dessous)
+
+**Endpoint de sync manuelle (admin)** :
+
+`POST /api/admin/discord/sync`
+- Appelle `guild.members.fetch({ limit: 1000 })` avec pagination si > 1000 membres
+- Reconcilie la DB : cree les participations manquantes, supprime les invalides
+- Retourne `{ created: N, removed: N, errors: [] }`
+- Requiert `requireAuth + requireAdmin`
+
+**Notifications DM (optionnel, a decider)** :
+
+- A l'ajout a un event : DM "Tu as ete ajoute a l'event {nom}. Connecte-toi sur TomManager."
+- Au retrait : DM "Tu n'as plus acces a l'event {nom}."
+- Configurable : `DISCORD_DM_NOTIFICATIONS=true/false`
+- Si l'user bloque les DMs → echec silencieux (log uniquement)
+
+**Surface de complexite** :
+
+| Composant                         | Complexite |
+| --------------------------------- | ---------- |
+| Service docker discord-bot/       | Faible     |
+| guildMemberUpdate handler         | Faible     |
+| Sync au demarrage                 | Faible     |
+| Endpoint sync manuelle            | Faible     |
+| Notifications DM (optionnel)      | Faible     |
+
+Total : 0.5 sprint. La logique de sync est deja dans Phase 15a, le bot ne fait que l'appeler.
+
+---
+
+## Phase 16 : Features avancees (Priorite basse, a discuter)
 
 Idees de features futures, a prioriser selon les besoins :
+- [ ] Bouton de purge d'event pour les admin (avec confirmation, vide le planning et les jeux)
 
-- [ ] **Bot Discord** : acces aux events via roles Discord (remplace les invitations email, voir detail ci-dessous)
 - [ ] **Profil utilisateur** : avatar, bio, preferences
 - [ ] **Calendrier** : vue calendrier des tables (au lieu de timeline)
 - [ ] **Export** : export PDF du planning d'un event
@@ -207,214 +334,6 @@ Idees de features futures, a prioriser selon les besoins :
 - [ ] **i18n** : support multi-langue (FR/EN)
 - [ ] **Commentaires** : commentaires sur les tables
 - [ ] **Votes** : systeme de vote pour choisir les jeux/tables
-
-### Detail : Bot Discord — auth + acces par role (Phase 15+)
-
-**Vision finale arretee**
-
-Discord est le point d'entree unique : authentification, creation de compte ET acces aux events.
-Le bot lit les roles des membres (lecture seule, zero permission d'ecriture sur Discord).
-Phase 9 (Mailer) devient entierement obsolete.
-
----
-
-**Flux complet**
-
-```
-Creation de compte (automatique, sans action de l'user)
-  1. L'admin cree l'event "Hiver 2028" dans TomManager
-  2. L'admin saisit l'ID du role Discord dans TomManager
-  3. Sur Discord, l'admin assigne le role "Hiver 2028" au membre
-  4. Le bot detecte l'assignation (guildMemberUpdate)
-     → Si aucun User avec ce discordId : CREE le compte (discordId, username, avatar depuis Discord)
-     → Cree EventParticipation
-  5. L'user a un compte TomManager et l'acces a l'event sans avoir rien fait
-
-Premiere connexion (session)
-  6. L'user clique "Se connecter avec Discord" sur TomManager
-  7. OAuth2 Discord → on recupere le discordId
-  8. User.findOne({ discordId }) → compte existe deja (cree par le bot)
-  9. Session TomManager creee — pas de creation de compte ici, juste une auth
-
-Retrait d'acces
-  10. L'admin retire le role Discord au membre
-  11. Le bot detecte le retrait → supprime EventParticipation (cascade propre)
-      Note : le compte User est conserve (historique des tables, etc.)
-```
-
----
-
-**Gestion des admins TomManager**
-
-Les admins TomManager sont les membres Discord ayant le role "admin" sur le serveur. L'ID du role est configure via la variable d'environnement `DISCORD_ADMIN_ROLE_ID`.
-
-- Lors de l'assignation du role admin Discord → le bot passe le `User.role` a `ADMIN` dans la DB
-- Lors du retrait du role → le bot repasse le `User.role` a `USER`
-- Permet de gerer les droits admin directement depuis Discord, sans interface TomManager dediee
-
-```
-guildMemberUpdate — complement pour le role admin :
-  si DISCORD_ADMIN_ROLE_ID est defini :
-    si roleAdded.id === DISCORD_ADMIN_ROLE_ID → User.update({ role: "ADMIN" })
-    si roleRemoved.id === DISCORD_ADMIN_ROLE_ID → User.update({ role: "USER" })
-```
-
-**Permissions du bot (minimales)**
-
-| Permission Discord      | Raison                                                   |
-| ----------------------- | -------------------------------------------------------- |
-| `Server Members Intent` | Lire les membres et leurs roles                          |
-| Aucune autre            | Le bot ne cree, ne modifie, ne supprime rien sur Discord |
-
----
-
-**Modele de donnees (migrations)**
-
-```
-User  +-- discordId      : String?  UNIQUE  -- Snowflake Discord
-      +-- discordUsername : String?          -- Affichage (rafraichi a chaque login)
-      +-- avatarUrl       : String?          -- CDN Discord
-
-      passwordHash devient nullable (les users Discord n'ont pas de mot de passe local)
-
-Event +-- discordRoleId  : String?           -- ID du role Discord lie a cet event
-```
-
----
-
-**Auth : coexistence Discord OAuth + comptes locaux**
-
-- Les comptes existants (email/password) continuent de fonctionner → pas de migration forcee
-- Un compte local peut etre lie a Discord ulterieurement (bouton dans le profil)
-- L'admin conserve un compte local (fallback si Discord est indisponible)
-- A terme : Discord OAuth devient le flux par defaut, comptes locaux reserves aux admins
-
----
-
-**Ce que fait le bot**
-
-```
-guildMemberUpdate(oldMember, newMember)
-  rolesAdded   = newMember.roles - oldMember.roles
-  rolesRemoved = oldMember.roles - newMember.roles
-
-  pour chaque role ajoute :
-    event = Event.findOne({ discordRoleId: role.id })
-    si event :
-      user = User.findOne({ discordId: newMember.id })
-      si !user :
-        // Creation automatique du compte
-        user = User.create({
-          discordId:       newMember.id,
-          username:        newMember.displayName,
-          discordUsername: newMember.user.username,
-          avatarUrl:       newMember.displayAvatarURL(),
-          role:            "USER",
-        })
-      EventParticipation.upsert({ eventId: event.id, userId: user.id })
-
-  pour chaque role retire :
-    event = Event.findOne({ discordRoleId: role.id })
-    user  = User.findOne({ discordId: newMember.id })
-    si event && user :
-      EventParticipation.delete({ eventId: event.id, userId: user.id })
-      // cascade : participations aux tables de l'event supprimees aussi
-      // le compte User est conserve
-```
-
----
-
-**Endpoint de sync manuelle (admin)**
-
-`POST /api/admin/discord/sync`
-
-- Appelle `guild.members.fetch()` pour recuperer tous les membres et leurs roles actuels
-- Reconcilie avec la DB : cree les participations manquantes, supprime les invalides
-- Utile apres un redemarrage du bot ou pour corriger un ecart
-
----
-
-**Infrastructure**
-
-- Service Docker dedie : `discord-bot/` dans le mono-repo
-- Acces direct a PostgreSQL via Prisma (schema partage avec le backend)
-- Variables : `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_ADMIN_ROLE_ID`
-- Le bot est stateless : redemarrage sans perte de donnees
-
----
-
-**Surface de complexite**
-
-| Composant                          | Complexite |
-| ---------------------------------- | ---------- |
-| Migration DB (4 champs)            | Faible     |
-| OAuth2 Discord (login/signup)      | Moyenne    |
-| Bot guildMemberUpdate              | Faible     |
-| Endpoint sync manuelle             | Faible     |
-| Coexistence comptes locaux/Discord | Faible     |
-| Liaison compte local → Discord     | Faible     |
-
-Total : 1-2 sprints. Le seul vrai travail est l'OAuth2 Discord cote backend.
-
----
-
-**OAuth2 Discord — fonctionnement et securite**
-
-```
-Browser                    TomManager Backend           Discord
-  |                               |                        |
-  |-- clic "Login Discord" ------>|                        |
-  |                               |-- genere state (CSRF)  |
-  |<-- redirect authorize URL ----|                        |
-  |                                                        |
-  |-------- redirect vers discord.com/oauth2/authorize --->|
-  |<-- consent screen Discord ------------------------------|
-  |    "TomManager veut acceder a votre profil"            |
-  |                                                        |
-  |-- user clique "Autoriser" ---------------------------->|
-  |<-- redirect /auth/discord/callback?code=XXX&state=YYY--|
-  |                                                        |
-  |-- GET /auth/discord/callback?code=XXX --------------->|
-  |                               |-- POST /oauth2/token ->|
-  |                               |   (code + client_secret)
-  |                               |<-- access_token -------|
-  |                               |-- GET /users/@me ----->|
-  |                               |<-- { id, username... } |
-  |                               |-- User.findOrCreate()  |
-  |                               |-- session creee        |
-  |<-- redirect /events -----------|                        |
-```
-
-_Securite cote TomManager_
-
-- **Code ephemere a usage unique** : valable ~5 min, inutilisable une seconde fois
-- **Echange serveur a serveur** : le `client_secret` ne quitte jamais le backend,
-  le browser ne voit jamais le `access_token` Discord
-- **Protection CSRF via `state`** : token aleatoire genere avant la redirection,
-  verifie au retour du callback — empeche de forcer la liaison d'un compte tiers
-- **Aucun token Discord stocke** : apres recuperation du profil, le `access_token` est jete.
-  TomManager n'a pas besoin de rappeler l'API Discord ensuite
-- **Session inchangee** : cookie `connect.sid` httpOnly + secure + SameSite,
-  meme mecanique que l'auth email/password existante
-
-_Securite cote compte Discord_
-
-- **Scope minimal `identify` uniquement** : donne acces a `id`, `username`, `avatar` — rien d'autre
-- TomManager ne peut pas : lire/envoyer des messages, voir les serveurs,
-  acceder a l'email Discord, modifier quoi que ce soit
-- **Consentement explicite** : Discord affiche un ecran listant exactement ce qui est demande
-- **Revocable** : l'utilisateur peut revoquer l'acces depuis Discord > Parametres > Applis autorisees.
-  Note : cela invalide le token OAuth mais pas la session TomManager en cours
-  (comportement OAuth2 standard — a gerer avec une duree de session raisonnable)
-
-_Ce qu'on evite deliberement_
-
-| Evite                     | Raison                                      |
-| ------------------------- | ------------------------------------------- |
-| Stocker le `access_token` | Inutile, surface d'attaque supplementaire   |
-| Scope `email`             | Non necessaire                              |
-| Scope `guilds`            | Le bot lit les roles avec son propre token  |
-| PKCE                      | Non requis, client confidentiel avec secret |
 
 ---
 
