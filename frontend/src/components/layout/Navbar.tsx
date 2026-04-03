@@ -36,7 +36,12 @@ function DesktopNavbar() {
             </Link>
             <ConnectionStatus />
             <NotificationBell />
-            <span className="text-sm opacity-70">{user.username}</span>
+            <Link to="/profile" className="flex items-center gap-2 hover:opacity-80">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt="avatar" className="w-7 h-7 rounded-full" />
+              ) : null}
+              <span className="text-sm opacity-70">{user.username}</span>
+            </Link>
             <button onClick={handleLogout} className="btn btn-ghost btn-sm">
               Logout
             </button>

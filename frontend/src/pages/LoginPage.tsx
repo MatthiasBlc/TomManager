@@ -5,6 +5,14 @@ import toast from "react-hot-toast";
 import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
 
+const DISCORD_ERROR_MESSAGES: Record<string, string> = {
+  discord_denied: "Discord login cancelled",
+  invalid_state: "Session expired, please try again",
+  not_in_guild: "You must be a member of the Discord server",
+  account_disabled: "This account has been disabled",
+  discord_token_exchange: "Discord authentication failed, please try again",
+};
+
 interface LoginForm {
   identifier: string;
   password: string;
@@ -18,12 +26,13 @@ interface InvitationInfo {
 
 export default function LoginPage() {
   const { register, handleSubmit } = useForm<LoginForm>();
-  const { user, loading, login } = useAuth();
+  const { user, loading, login, initiateDiscordLogin } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
   const token = searchParams.get("token");
   const [invitationInfo, setInvitationInfo] = useState<InvitationInfo | null>(null);
+  const [discordAvailable, setDiscordAvailable] = useState(true);
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/events";
 
   useEffect(() => {
@@ -33,6 +42,13 @@ export default function LoginPage() {
   }, [user, loading, navigate, from]);
 
   useEffect(() => {
+    const error = searchParams.get("error");
+    if (error && DISCORD_ERROR_MESSAGES[error]) {
+      toast.error(DISCORD_ERROR_MESSAGES[error]);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     if (token) {
       api
         .get(`/api/invitations/${token}`)
@@ -40,6 +56,20 @@ export default function LoginPage() {
         .catch(() => toast.error("Invalid or expired invitation"));
     }
   }, [token]);
+
+  useEffect(() => {
+    api.get("/api/auth/discord").catch((err) => {
+      if (err?.response?.status === 503) setDiscordAvailable(false);
+    });
+  }, []);
+
+  const handleDiscordLogin = async () => {
+    try {
+      await initiateDiscordLogin(from);
+    } catch {
+      toast.error("Discord login unavailable");
+    }
+  };
 
   const onSubmit = async (data: LoginForm) => {
     try {
@@ -98,6 +128,22 @@ export default function LoginPage() {
               Login
             </button>
           </form>
+
+          {discordAvailable && (
+            <>
+              <div className="divider text-xs opacity-50">or</div>
+              <button
+                type="button"
+                className="btn btn-outline btn-block gap-2"
+                onClick={handleDiscordLogin}
+              >
+                <svg width="20" height="20" viewBox="0 0 127.14 96.36" fill="currentColor">
+                  <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
+                </svg>
+                Login with Discord
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -46,14 +46,14 @@ Spec complete : `docs/features/discord-bot/SPEC_DISCORD_OAUTH.md`
 
 - [x] `backend/src/routes/auth.ts` : `GET /discord`, `GET /discord/callback`, `DELETE /discord/link`
 - [x] `backend/src/controllers/discordAuth.ts` : `initiateLogin`, `handleCallback`, `unlinkDiscord`
-- [ ] `backend/src/schemas/event.ts` : ajouter `discordRoleId` dans le schema PATCH
-- [ ] `backend/src/controllers/event.ts` : passer `discordRoleId` au service
-- [ ] `backend/src/services/event.ts` : valider unicite `discordRoleId` sur PATCH
+- [x] `backend/src/schemas/event.ts` : `discordRoleId` dans le schema PATCH (regex Snowflake)
+- [x] `backend/src/controllers/event.ts` : passer `discordRoleId` au service
+- [x] `backend/src/services/event.ts` : valider unicite `discordRoleId` sur PATCH (409)
 
-## Etape 6 — `GET /api/auth/me` etendu
+## Etape 6 — `GET /api/auth/me` etendu ✅
 
-- [ ] `backend/src/services/auth.ts` : `getMe()` retourne aussi `discordId`, `discordUsername`, `avatarUrl`
-- [ ] `login()` : verifier `passwordHash !== null` avant `bcrypt.compare`
+- [x] `backend/src/services/auth.ts` : `getMe()` retourne `discordId`, `discordUsername`, `avatarUrl`
+- [x] `login()` : verifier `passwordHash !== null` avant `bcrypt.compare`
 
 ## Etape 7 — Frontend
 

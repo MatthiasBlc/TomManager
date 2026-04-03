@@ -9,6 +9,7 @@ import PlanningPage from "../pages/PlanningPage";
 import TableDetailPage from "../pages/TableDetailPage";
 import PrivateRoute from "../components/common/PrivateRoute";
 import NotFoundPage from "../pages/NotFoundPage";
+import ProfilePage from "../pages/ProfilePage";
 
 export default function AppRoutes() {
   return (
@@ -46,6 +47,14 @@ export default function AppRoutes() {
         element={
           <PrivateRoute>
             <TableDetailPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <ProfilePage />
           </PrivateRoute>
         }
       />
