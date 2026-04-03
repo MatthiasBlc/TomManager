@@ -48,6 +48,8 @@ model Event {
   participations EventParticipation[]
   gameTables     GameTable[]
   eventBoardGames EventBoardGame[]
+
+  @@index([createdBy])
 }
 
 model EventInvitation {
@@ -78,6 +80,7 @@ model EventParticipation {
   user  User  @relation(fields: [userId], references: [id])
 
   @@unique([eventId, userId])
+  @@index([eventId])
 }
 
 model GameTable {
@@ -133,6 +136,7 @@ model GameTableParticipant {
 
   @@unique([gameTableId, userId])
   @@index([gameTableId, status])
+  @@index([userId])
 }
 
 model BoardGame {

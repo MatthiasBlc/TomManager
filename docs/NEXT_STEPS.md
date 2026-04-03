@@ -126,23 +126,24 @@ Non fait : correlation Socket.io ↔ HTTP (deprioritise, complexite elevee pour 
 
 ---
 
-## Phase 12 : Optimisations DB & Performance (Priorite moyenne)
+## Phase 12 : Optimisations DB & Performance ✅ COMPLETE
 
 **Objectif** : Preparer l'app pour un usage plus intensif.
 
-### 12.1 Index manquants
+### 12.1 Index manquants ✅ COMPLETE
 
-- [ ] `EventParticipation(eventId)` - utilise dans les requetes de liste
-- [ ] `Event(createdBy)` - pour les events d'un user
-- [ ] `GameTableParticipant(userId)` - pour les tables d'un user
-- [ ] `Notification(userId, createdAt)` - pour la pagination
+- [x] `EventParticipation(eventId)` — migration `20260403074201_add_missing_indexes`
+- [x] `Event(createdBy)` — idem
+- [x] `GameTableParticipant(userId)` — idem
+- Note : `Notification(userId, createdAt)` etait deja couvert par `@@index([userId, read, createdAt(sort: Desc)])`
 
-### 12.2 Performance
+### 12.2 Performance ✅ COMPLETE (sauf Redis)
 
-- [ ] Audit des requetes N+1 (Prisma query logging)
-- [ ] Pagination sur les endpoints qui n'en ont pas (participants, invitations)
-- [ ] Cache Redis pour les sessions (remplacer Prisma session store)
-- [ ] Compression gzip sur les reponses API
+- [x] Prisma query logging en dev : `log: [{ emit: 'event', level: 'query' }]` dans `util/db.ts`, logs via pino debug
+- [x] Pagination cursor-based sur `GET /api/events/:eventId/participants` (`?limit=&cursor=`, max 100, default 50)
+- [x] Pagination cursor-based sur `GET /api/events/:eventId/invitations` (meme pattern)
+- [x] Compression gzip : package `compression` monte avant helmet dans `app.ts`
+- [ ] Cache Redis pour les sessions (Prisma session store reste en place — necessite Redis service, a faire si la charge le justifie)
 
 ---
 

@@ -1,4 +1,5 @@
 import express from "express";
+import compression from "compression";
 import cors from "cors";
 import helmet from "helmet";
 import session from "express-session";
@@ -12,6 +13,9 @@ import { errorHandler } from "./middleware/errorHandler";
 import { globalRateLimiter, writeRateLimiter } from "./middleware/rateLimiter";
 
 const app = express();
+
+// Compression gzip
+app.use(compression());
 
 // Security
 app.use(helmet());

@@ -119,15 +119,30 @@ export async function revokeInvitation(invitationId: string, eventId: string) {
   await prisma.eventInvitation.delete({ where: { id: invitationId } });
 }
 
-export async function listInvitations(eventId: string) {
-  return prisma.eventInvitation.findMany({
-    where: { eventId },
+export async function listInvitations(
+  eventId: string,
+  options: { limit?: number; cursor?: string } = {}
+) {
+  const take = Math.min(options.limit ?? 50, 100);
+
+  const invitations = await prisma.eventInvitation.findMany({
+    where: {
+      eventId,
+      ...(options.cursor ? { createdAt: { lt: new Date(options.cursor) } } : {}),
+    },
     select: {
       id: true,
       email: true,
       status: true,
       createdAt: true,
     },
+    take: take + 1,
     orderBy: { createdAt: "desc" },
   });
+
+  const hasMore = invitations.length > take;
+  const items = hasMore ? invitations.slice(0, take) : invitations;
+  const nextCursor = hasMore ? items[items.length - 1].createdAt.toISOString() : null;
+
+  return { data: items, nextCursor };
 }

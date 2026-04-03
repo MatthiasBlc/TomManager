@@ -61,8 +61,15 @@ export async function revoke(req: Request, res: Response, next: NextFunction) {
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const { eventId } = req.params;
-    const invitations = await invitationService.listInvitations(eventId);
-    res.json({ data: invitations });
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+    const cursor = req.query.cursor as string | undefined;
+
+    if (limit !== undefined && (isNaN(limit) || limit < 1)) {
+      return res.status(400).json({ error: { message: "limit must be a positive integer" } });
+    }
+
+    const result = await invitationService.listInvitations(eventId, { limit, cursor });
+    res.json({ data: result.data, nextCursor: result.nextCursor });
   } catch (err) {
     next(err);
   }
