@@ -8,6 +8,7 @@ import EventDetailPage from "../pages/EventDetailPage";
 import PlanningPage from "../pages/PlanningPage";
 import TableDetailPage from "../pages/TableDetailPage";
 import PrivateRoute from "../components/common/PrivateRoute";
+import NotFoundPage from "../pages/NotFoundPage";
 
 export default function AppRoutes() {
   return (
@@ -32,6 +33,7 @@ export default function AppRoutes() {
         path="/events/:eventId/planning/:tableId"
         element={<PrivateRoute><TableDetailPage /></PrivateRoute>}
       />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

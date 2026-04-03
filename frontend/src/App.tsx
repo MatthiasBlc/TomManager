@@ -4,6 +4,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Navbar from "./components/layout/Navbar";
 import AppLayout from "./components/layout/AppLayout";
 import AppRoutes from "./routes/AppRoutes";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 
 function AppContent() {
@@ -31,7 +32,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppContent />
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );
