@@ -3,13 +3,13 @@
 Les phases 1-7 sont terminees. Le coeur fonctionnel est complet :
 auth, events, planning, board games, real-time, notifications, UI mobile-first.
 
-La phase 8 (Robustesse) est en cours — 8.1 et 8.2 terminees.
+La phase 8 (Robustesse) est **complete** — 8.1, 8.2 et 8.3 terminees.
 
 Ci-dessous les prochaines phases possibles, classees par priorite.
 
 ---
 
-## Phase 8 : Robustesse & Validation ✅ 8.1 + 8.2 terminees
+## Phase 8 : Robustesse & Validation ✅ COMPLETE
 
 **Objectif** : Securiser les entrees, ameliorer la gestion d'erreurs, rendre l'app resiliente.
 
@@ -38,13 +38,12 @@ Note : `POST /api/events/:eventId/boardgames` (boardGameId) non encore schema-va
 
 Non fait : retry automatique sur GET (deprioritise).
 
-### 8.3 Rate limiting etendu
+### 8.3 Rate limiting etendu ✅ COMPLETE
 
-Actuellement seul `/api/auth/login` et `/signup` sont limites.
-
-- [ ] Rate limiter global sur toutes les routes API (100 req/min par IP)
-- [ ] Rate limiter specifique sur les ecritures (POST/PATCH/DELETE : 30 req/min)
-- [ ] Headers `RateLimit-*` documentes dans l'API
+- [x] Rate limiter global : 100 req/min par IP sur toutes les routes `/api`
+- [x] Rate limiter ecritures : 30 req/min par IP sur POST/PATCH/DELETE
+- [x] Headers `RateLimit-*` inclus via `standardHeaders: "draft-7"` (express-rate-limit)
+- [x] Les deux limiters sont desactives en environnement de test
 
 ---
 
@@ -407,7 +406,7 @@ _Ce qu'on evite deliberement_
 | CI/CD         | 9/10  | GitHub Actions, Docker, Portainer                             |
 | Deploiement   | 9/10  | Traefik, SSL, multi-stage Docker                              |
 | Tests auto    | 8/10  | 252 tests (backend 188 + frontend 61), pas d'E2E              |
-| Securite      | 8/10  | Helmet, bcrypt, sessions, rate limit auth, Zod validation     |
+| Securite      | 9/10  | Helmet, bcrypt, sessions, rate limit global + writes, Zod     |
 | Frontend      | 9/10  | Mobile-first, a11y, skeletons, real-time, ErrorBoundary       |
 | Backend       | 9/10  | API complete, Socket.io, notifications, validation Zod        |
 | Monitoring    | 3/10  | Pino basique, pas de Sentry/APM                               |

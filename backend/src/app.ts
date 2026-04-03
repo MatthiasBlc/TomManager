@@ -9,6 +9,7 @@ import logger from "./util/logger";
 import env from "./config/env";
 import apiRouter from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
+import { globalRateLimiter, writeRateLimiter } from "./middleware/rateLimiter";
 
 const app = express();
 
@@ -61,7 +62,7 @@ app.get("/health", (_req, res) => {
 });
 
 // API routes
-app.use("/api", apiRouter);
+app.use("/api", globalRateLimiter, writeRateLimiter, apiRouter);
 
 // Error handler
 app.use(errorHandler);
