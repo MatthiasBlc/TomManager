@@ -168,16 +168,25 @@ Non implemente :
 
 ## Phase 14 : Migration API BoardGameGeek (Priorite haute)
 
-**Contexte** : L'API XML v2 de BGG (`boardgamegeek.com/xmlapi2`) retourne desormais `Unauthorized` sur les requetes serveur-a-serveur. La recherche BGG est donc non fonctionnelle.
-Doc : https://boardgamegeek.com/wiki/page/BGG_XML_API2
+**Contexte** : Depuis juillet 2025, BGG exige un Bearer Token sur toutes les requetes `boardgamegeek.com/xmlapi2/*`.
+La structure XML v2 est inchangee — seule l'auth est nouvelle. La recherche BGG est actuellement silencieusement cassee (retourne `[]`).
 
-**Objectif** : Migrer vers l'API officielle BGG (avec authentification).
+Spec complete : `docs/features/bgg-migration/SPEC_BGG_MIGRATION.md`
+Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 
-- [ ] Creer un compte BGG et obtenir des credentials API
-- [ ] Remplacer `services/bgg.ts` pour utiliser l'API officielle BGG (OAuth ou cle API selon ce que BGG propose)
-- [ ] Mettre les credentials dans les variables d'environnement (`BGG_API_KEY` ou similaire)
-- [ ] Tester la recherche et le fetch des details d'un jeu
-- [ ] Mettre a jour les tests qui mockent BGG
+**Prerequis bloquant** : Enregistrer TomManager sur `https://boardgamegeek.com/applications/create` et obtenir le Bearer Token.
+
+**Objectif** : Refactorer `services/bgg.ts` pour ajouter l'auth + gestion des cas specifiques BGG.
+
+- [ ] Enregistrer l'app BGG et obtenir le Bearer Token
+- [ ] Ajouter `BGG_API_TOKEN` en variable d'environnement (env.ts, .env, docker-compose.yml x3, GitHub Secrets)
+- [ ] Refactorer `bgg.ts` : Bearer header, retry sur 202, backoff sur 429, log sur 401
+- [ ] Installer `he` et sanitiser les descriptions HTML de BGG avant stockage
+- [ ] Normaliser les imageUrl `//cdn...` → `https://cdn...`
+- [ ] Warning au demarrage si `BGG_API_TOKEN` absent (degraded mode)
+- [ ] Tests unitaires `bgg.test.ts` (14 scenarios avec vi.stubGlobal fetch)
+- [ ] Test live manuel avec vrai token
+- [ ] E2E `boardgames.spec.ts` : search + ajout via BGG
 
 **En attendant** : utiliser "Create manually" pour ajouter des jeux.
 
