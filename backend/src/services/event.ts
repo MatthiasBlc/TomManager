@@ -5,7 +5,8 @@ export async function createEvent(
   name: string,
   startDateTime: string,
   endDateTime: string,
-  userId: string
+  userId: string,
+  discordRoleId?: string | null
 ) {
   if (!name || name.trim().length === 0 || name.trim().length > 100) {
     throw createError(400, "Name must be between 1 and 100 characters");
@@ -24,12 +25,18 @@ export async function createEvent(
     throw createError(400, "endDateTime must be after startDateTime");
   }
 
+  if (discordRoleId) {
+    const conflict = await prisma.event.findFirst({ where: { discordRoleId } });
+    if (conflict) throw createError(409, "Discord role already linked to another event");
+  }
+
   const event = await prisma.event.create({
     data: {
       name: name.trim(),
       startDateTime: start,
       endDateTime: end,
       createdBy: userId,
+      discordRoleId: discordRoleId ?? null,
       participations: {
         create: {
           userId,
