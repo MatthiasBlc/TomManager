@@ -48,6 +48,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
   const [eventBounds, setEventBounds] = useState<EventBounds | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [createSlot, setCreateSlot] = useState<{ date: string; startTime: string; durationMinutes: number } | undefined>(undefined);
   const [viewMode, setViewMode] = useState<ViewMode>(getStoredView);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
@@ -103,6 +104,11 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
     setSelectedTableId(tableId);
   };
 
+  const handleSlotSelect = (slot: { date: string; startTime: string; durationMinutes: number }) => {
+    setCreateSlot(slot);
+    setShowCreate(true);
+  };
+
   // Toggle liste / calendrier
   const ViewToggle = (
     <div className="flex rounded-lg border border-base-300 p-0.5 gap-0.5">
@@ -137,7 +143,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         {!isMobile && (
           <button
             className="btn btn-primary btn-sm active:scale-95 transition-transform"
-            onClick={() => setShowCreate(true)}
+            onClick={() => { setCreateSlot(undefined); setShowCreate(true); }}
           >
             Create Table
           </button>
@@ -155,6 +161,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
           eventId={eventId}
           onTableClick={handleTableClick}
           onTableUpdated={fetchTables}
+          onSlotSelect={handleSlotSelect}
         />
       ) : (
         // Fallback si les bornes ne sont pas encore chargees
@@ -162,14 +169,17 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
       )}
 
       {isMobile && (
-        <FAB onClick={() => setShowCreate(true)} label="Create Table" />
+        <FAB onClick={() => { setCreateSlot(undefined); setShowCreate(true); }} label="Create Table" />
       )}
 
       <CreateTableModal
         open={showCreate}
-        onClose={() => setShowCreate(false)}
+        onClose={() => { setShowCreate(false); setCreateSlot(undefined); }}
         onCreated={fetchTables}
         eventId={eventId}
+        prefilledSlot={createSlot}
+        eventStartDate={eventBounds?.startDateTime ? eventBounds.startDateTime.slice(0, 10) : undefined}
+        eventEndDate={eventBounds?.endDateTime ? eventBounds.endDateTime.slice(0, 10) : undefined}
       />
 
       <TableDetailModal

@@ -14,6 +14,8 @@ interface TableDetail {
   eventId: string;
   createdBy: string;
   title: string;
+  type: "JDR" | "JDS";
+  gmIsPlayer: boolean;
   pitch: string | null;
   triggers: string | null;
   comments: string | null;
@@ -167,9 +169,15 @@ export default function TableDetailModal({
           </div>
         ) : (
           <div className="mt-3 space-y-3">
-            {/* Meta : GM, horaire */}
+            {/* Meta : type, GM, horaire */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="badge badge-outline badge-sm">{table.type}</span>
+              {table.type === "JDR" && table.gmIsPlayer && (
+                <span className="badge badge-ghost badge-sm">MJ joueur</span>
+              )}
+            </div>
             <div className="text-sm opacity-70 space-y-0.5">
-              <p>GM : {table.creator.username}</p>
+              <p>{table.type === "JDR" ? "MJ" : "Createur"} : {table.creator.username}</p>
               <p>
                 {formatDateTime(table.startDateTime)} → {formatDateTime(table.endDateTime)}
               </p>
@@ -306,7 +314,7 @@ export default function TableDetailModal({
               )}
               {currentParticipant && (
                 <button className="btn btn-outline btn-warning btn-sm flex-1 md:flex-none" onClick={handleLeave}>
-                  Quitter
+                  {isGM ? "Supprimer la table (quitter)" : "Quitter"}
                 </button>
               )}
               {canEdit && (

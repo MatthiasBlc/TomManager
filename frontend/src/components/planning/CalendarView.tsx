@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useMemo } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { DatesSetArg, EventDropArg, EventContentArg } from "@fullcalendar/core";
+import { DatesSetArg, EventDropArg, EventContentArg, DateSelectArg } from "@fullcalendar/core";
 import { EventResizeDoneArg } from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
 import api from "../../config/api";
@@ -31,12 +31,19 @@ interface EventBounds {
   endDateTime: string;
 }
 
+interface SlotSelection {
+  date: string;      // YYYY-MM-DD
+  startTime: string; // HH:MM
+  durationMinutes: number;
+}
+
 interface Props {
   tables: TableSummary[];
   eventBounds: EventBounds;
   eventId: string;
   onTableClick: (tableId: string) => void;
   onTableUpdated: () => void;
+  onSlotSelect?: (slot: SlotSelection) => void;
 }
 
 function calcNbDays(start: string, end: string): number {
@@ -80,6 +87,7 @@ export default function CalendarView({
   eventId,
   onTableClick,
   onTableUpdated,
+  onSlotSelect,
 }: Props) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -183,6 +191,19 @@ export default function CalendarView({
   );
 
   const isAdmin = user?.role === "ADMIN";
+
+  const handleSelect = useCallback(
+    (info: DateSelectArg) => {
+      if (!onSlotSelect) return;
+      const start = info.start;
+      const end = info.end;
+      const date = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+      const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+      const durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
+      onSlotSelect({ date, startTime, durationMinutes });
+    },
+    [onSlotSelect]
+  );
 
   const calEvents = useMemo(
     () =>
@@ -301,6 +322,11 @@ export default function CalendarView({
         eventResize={handleEventResize}
         // Permet les tables simultanees
         eventOverlap
+        // Clic/selection sur un creneau vide pour creer une table
+        selectable={!!onSlotSelect}
+        selectMirror
+        unselectAuto
+        select={handleSelect}
       />
     </div>
   );

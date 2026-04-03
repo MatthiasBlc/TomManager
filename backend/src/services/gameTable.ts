@@ -6,6 +6,7 @@ import { createNotification, createBulkNotifications } from "./notification";
 
 interface UpdateTableData {
   title?: string;
+  gmIsPlayer?: boolean;
   pitch?: string;
   triggers?: string;
   comments?: string;
@@ -17,6 +18,8 @@ interface UpdateTableData {
 
 interface CreateTableData {
   title: string;
+  type?: "JDR" | "JDS";
+  gmIsPlayer?: boolean;
   pitch?: string;
   triggers?: string;
   comments?: string;
@@ -78,12 +81,19 @@ export async function createTable(
     throw createError(400, "Table endDateTime must be within event bounds");
   }
 
+  const tableType = data.type ?? "JDR";
+  const gmIsPlayer = tableType === "JDR" ? (data.gmIsPlayer ?? false) : false;
+  // GM takes a seat if JDS (they're always a player) or JDR with gmIsPlayer checked
+  const gmTakesASeat = tableType === "JDS" || gmIsPlayer;
+
   const table = await prisma.$transaction(async (tx) => {
     const created = await tx.gameTable.create({
       data: {
         eventId,
         createdBy: userId,
         title,
+        type: tableType,
+        gmIsPlayer,
         pitch: data.pitch || null,
         triggers: data.triggers || null,
         comments: data.comments || null,
@@ -92,6 +102,13 @@ export async function createTable(
         endDateTime: end,
       },
     });
+
+    // Auto-join GM as confirmed participant if they take a seat
+    if (gmTakesASeat) {
+      await tx.gameTableParticipant.create({
+        data: { gameTableId: created.id, userId, status: "CONFIRMED" },
+      });
+    }
 
     // Handle tags
     if (data.tags && data.tags.length > 0) {
@@ -147,6 +164,8 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       id: t.id,
       eventId: t.eventId,
       title: t.title,
+      type: t.type,
+      gmIsPlayer: t.gmIsPlayer,
       pitch: t.pitch,
       maxPlayers: t.maxPlayers,
       startDateTime: t.startDateTime,
@@ -186,6 +205,8 @@ export async function getTable(tableId: string) {
     eventId: table.eventId,
     createdBy: table.createdBy,
     title: table.title,
+    type: table.type,
+    gmIsPlayer: table.gmIsPlayer,
     pitch: table.pitch,
     triggers: table.triggers,
     comments: table.comments,
@@ -313,6 +334,11 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
       }
     }
 
+    const gmIsPlayerUpdate =
+      existing.type === "JDR" && data.gmIsPlayer !== undefined
+        ? { gmIsPlayer: data.gmIsPlayer }
+        : {};
+
     return tx.gameTable.update({
       where: { id: tableId },
       data: {
@@ -323,6 +349,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
         maxPlayers,
         startDateTime: start,
         endDateTime: end,
+        ...gmIsPlayerUpdate,
       },
       include: {
         tags: { include: { tag: true } },
@@ -428,6 +455,7 @@ export async function joinTable(tableId: string, userId: string) {
       throw createError(404, "Table not found");
     }
 
+    // GM cannot join manually; they are auto-joined at creation if applicable
     if (table.createdBy === userId) {
       throw createError(400, "The GM cannot join their own table");
     }
@@ -456,7 +484,37 @@ export async function joinTable(tableId: string, userId: string) {
 }
 
 export async function leaveTable(tableId: string, userId: string) {
-  const table = await prisma.gameTable.findUnique({ where: { id: tableId } });
+  const table = await prisma.gameTable.findUnique({
+    where: { id: tableId },
+    include: { participants: true },
+  });
+
+  if (!table) {
+    throw createError(404, "Table not found");
+  }
+
+  // If the GM leaves, delete the table entirely
+  if (table.createdBy === userId) {
+    const participantUserIds = table.participants
+      .map((p) => p.userId)
+      .filter((id) => id !== userId);
+
+    await prisma.gameTable.delete({ where: { id: tableId } });
+    emitToEvent(table.eventId, "table:deleted", { tableId });
+
+    if (participantUserIds.length > 0) {
+      await createBulkNotifications(
+        participantUserIds.map((pid) => ({
+          userId: pid,
+          type: "TABLE_DELETED" as const,
+          title: "Table supprimee",
+          message: `La table "${table.title}" a ete supprimee (le MJ a quitte)`,
+          metadata: { eventId: table.eventId, tableId },
+        }))
+      );
+    }
+    return;
+  }
 
   let promotedUserId: string | null = null;
   await prisma.$transaction(async (tx) => {
@@ -486,18 +544,16 @@ export async function leaveTable(tableId: string, userId: string) {
     }
   });
 
-  if (table) {
-    emitToEvent(table.eventId, "table:player:left", { tableId, userId });
-    if (promotedUserId) {
-      emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: promotedUserId });
-      await createNotification({
-        userId: promotedUserId,
-        type: "WAITLIST_PROMOTED",
-        title: "Place confirmee",
-        message: `Tu es confirme pour la table "${table.title}"`,
-        metadata: { eventId: table.eventId, tableId },
-      });
-    }
+  emitToEvent(table.eventId, "table:player:left", { tableId, userId });
+  if (promotedUserId) {
+    emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: promotedUserId });
+    await createNotification({
+      userId: promotedUserId,
+      type: "WAITLIST_PROMOTED",
+      title: "Place confirmee",
+      message: `Tu es confirme pour la table "${table.title}"`,
+      metadata: { eventId: table.eventId, tableId },
+    });
   }
 }
 

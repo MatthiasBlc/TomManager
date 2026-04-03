@@ -41,6 +41,7 @@ function toLocalTime(iso: string): string {
 
 interface EditTableForm {
   title: string;
+  gmIsPlayer: boolean;
   pitch: string;
   triggers: string;
   comments: string;
@@ -53,6 +54,8 @@ interface EditTableForm {
 interface TableData {
   id: string;
   title: string;
+  type: "JDR" | "JDS";
+  gmIsPlayer: boolean;
   pitch: string | null;
   triggers: string | null;
   comments: string | null;
@@ -85,6 +88,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
         new Date(table.endDateTime).getTime() - new Date(table.startDateTime).getTime();
       reset({
         title: table.title,
+        gmIsPlayer: table.gmIsPlayer,
         pitch: table.pitch || "",
         triggers: table.triggers || "",
         comments: table.comments || "",
@@ -104,6 +108,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
 
       await api.patch(`/api/events/${eventId}/tables/${table.id}`, {
         title: data.title,
+        gmIsPlayer: table.type === "JDR" ? data.gmIsPlayer : undefined,
         pitch: data.pitch || null,
         triggers: data.triggers || null,
         comments: data.comments || null,
@@ -126,6 +131,26 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
   return (
     <ResponsiveModal open={open} onClose={onClose} title="Modifier la table">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
+        {/* Type — lecture seule */}
+        <div className="flex items-center gap-2">
+          <span className="badge badge-outline badge-sm">{table.type}</span>
+          <span className="text-xs opacity-60">Le type ne peut pas etre modifie</span>
+        </div>
+
+        {/* MJ joueur — uniquement pour JDR */}
+        {table.type === "JDR" && (
+          <div className="form-control">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary"
+                {...register("gmIsPlayer")}
+              />
+              <span className="label-text">Le MJ est aussi joueur (se compte dans les places)</span>
+            </label>
+          </div>
+        )}
+
         <div className="form-control">
           <label className="label" htmlFor="et-title">
             <span className="label-text">Titre</span>

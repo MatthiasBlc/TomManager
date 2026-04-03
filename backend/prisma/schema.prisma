@@ -81,18 +81,20 @@ model EventParticipation {
 }
 
 model GameTable {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   eventId       String
   createdBy     String
   title         String
+  type          TableType @default(JDR)
+  gmIsPlayer    Boolean   @default(false)
   pitch         String?
   triggers      String?
   comments      String?
   maxPlayers    Int
   startDateTime DateTime
   endDateTime   DateTime
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   event        Event                @relation(fields: [eventId], references: [id])
   creator      User                 @relation(fields: [createdBy], references: [id])
@@ -181,6 +183,11 @@ enum InvitationStatus {
 enum TableParticipantStatus {
   CONFIRMED
   WAITLIST
+}
+
+enum TableType {
+  JDR
+  JDS
 }
 
 enum NotificationType {

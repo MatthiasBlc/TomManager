@@ -14,6 +14,8 @@ interface TableDetail {
   eventId: string;
   createdBy: string;
   title: string;
+  type: "JDR" | "JDS";
+  gmIsPlayer: boolean;
   pitch: string | null;
   triggers: string | null;
   comments: string | null;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import api from "../../config/api";
@@ -19,6 +19,8 @@ const DURATION_OPTIONS = [
 
 interface CreateTableForm {
   title: string;
+  type: "JDR" | "JDS";
+  gmIsPlayer: boolean;
   pitch: string;
   triggers: string;
   comments: string;
@@ -33,16 +35,40 @@ interface Props {
   onClose: () => void;
   onCreated: () => void;
   eventId: string;
+  prefilledSlot?: { date: string; startTime: string; durationMinutes: number };
+  eventStartDate?: string; // YYYY-MM-DD — pour min/max du date picker
+  eventEndDate?: string;   // YYYY-MM-DD
 }
 
-export default function CreateTableModal({ open, onClose, onCreated, eventId }: Props) {
+export default function CreateTableModal({ open, onClose, onCreated, eventId, prefilledSlot, eventStartDate, eventEndDate }: Props) {
   const [tags, setTags] = useState<string[]>([]);
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
-  } = useForm<CreateTableForm>({ defaultValues: { durationMinutes: 120 } });
+  } = useForm<CreateTableForm>({ defaultValues: { durationMinutes: 120, type: "JDR", gmIsPlayer: false } });
+
+  const tableType = watch("type");
+  // Reset gmIsPlayer when switching to JDS
+  useEffect(() => {
+    if (tableType === "JDS") setValue("gmIsPlayer", false);
+  }, [tableType, setValue]);
+
+  // Pre-remplir date/heure depuis une selection sur le calendrier
+  useEffect(() => {
+    if (open && prefilledSlot) {
+      setValue("date", prefilledSlot.date);
+      setValue("startTime", prefilledSlot.startTime);
+      // Arrondir la duree au multiple de 30 le plus proche dans les options
+      const snapped = [30, 60, 90, 120, 150, 180, 240, 300, 360].reduce((prev, cur) =>
+        Math.abs(cur - prefilledSlot.durationMinutes) < Math.abs(prev - prefilledSlot.durationMinutes) ? cur : prev
+      );
+      setValue("durationMinutes", snapped);
+    }
+  }, [open, prefilledSlot, setValue]);
 
   const onSubmit = async (data: CreateTableForm) => {
     try {
@@ -51,6 +77,8 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
 
       await api.post(`/api/events/${eventId}/tables`, {
         title: data.title,
+        type: data.type,
+        gmIsPlayer: data.type === "JDR" ? data.gmIsPlayer : undefined,
         pitch: data.pitch || undefined,
         triggers: data.triggers || undefined,
         comments: data.comments || undefined,
@@ -94,6 +122,47 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
             </label>
           )}
         </div>
+
+        {/* Type JDR / JDS */}
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text">Type de table</span>
+          </label>
+          <div className="flex gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                className="radio radio-primary"
+                value="JDR"
+                {...register("type")}
+              />
+              <span className="text-sm">JDR (jeu de role)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                className="radio radio-primary"
+                value="JDS"
+                {...register("type")}
+              />
+              <span className="text-sm">JDS (jeu de societe)</span>
+            </label>
+          </div>
+        </div>
+
+        {/* MJ joueur — uniquement pour JDR */}
+        {tableType === "JDR" && (
+          <div className="form-control">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary"
+                {...register("gmIsPlayer")}
+              />
+              <span className="label-text">Le MJ est aussi joueur (se compte dans les places)</span>
+            </label>
+          </div>
+        )}
 
         <div className="form-control">
           <label className="label" htmlFor="ct-pitch">
@@ -171,6 +240,8 @@ export default function CreateTableModal({ open, onClose, onCreated, eventId }: 
               id="ct-date"
               type="date"
               className="input input-bordered w-full"
+              min={eventStartDate}
+              max={eventEndDate}
               {...register("date", { required: "Requis" })}
             />
             {errors.date && (

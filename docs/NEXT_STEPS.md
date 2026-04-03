@@ -52,6 +52,7 @@ Actuellement seul `/api/auth/login` et `/signup` sont limites.
 ## Phase 9 : Emails (Priorite haute)
 
 **Objectif** : Envoyer les invitations par email au lieu de partager des liens manuellement.
+On va peut être ignorer cette étape pour le moment. Voir le système auth plus optimisé avec Discord plus bas.
 
 ### 9.1 Infrastructure email
 
@@ -160,6 +161,7 @@ Actuellement seul `/api/auth/login` et `/signup` sont limites.
 ## Phase 14 : Migration API BoardGameGeek (Priorite haute)
 
 **Contexte** : L'API XML v2 de BGG (`boardgamegeek.com/xmlapi2`) retourne desormais `Unauthorized` sur les requetes serveur-a-serveur. La recherche BGG est donc non fonctionnelle.
+Doc : https://boardgamegeek.com/wiki/page/BGG_XML_API2
 
 **Objectif** : Migrer vers l'API officielle BGG (avec authentification).
 
@@ -177,6 +179,7 @@ Actuellement seul `/api/auth/login` et `/signup` sont limites.
 
 Idees de features futures, a prioriser selon les besoins :
 
+- [ ] **Bot Discord** : acces aux events via roles Discord (remplace les invitations email, voir detail ci-dessous)
 - [ ] **Profil utilisateur** : avatar, bio, preferences
 - [ ] **Calendrier** : vue calendrier des tables (au lieu de timeline)
 - [ ] **Export** : export PDF du planning d'un event
@@ -187,7 +190,6 @@ Idees de features futures, a prioriser selon les besoins :
 - [ ] **i18n** : support multi-langue (FR/EN)
 - [ ] **Commentaires** : commentaires sur les tables
 - [ ] **Votes** : systeme de vote pour choisir les jeux/tables
-- [ ] **Bot Discord** : acces aux events via roles Discord (remplace les invitations email, voir detail ci-dessous)
 
 ### Detail : Bot Discord — auth + acces par role (Phase 15+)
 
@@ -225,11 +227,26 @@ Retrait d'acces
 
 ---
 
+**Gestion des admins TomManager**
+
+Les admins TomManager sont les membres Discord ayant le role "admin" sur le serveur. L'ID du role est configure via la variable d'environnement `DISCORD_ADMIN_ROLE_ID`.
+
+- Lors de l'assignation du role admin Discord → le bot passe le `User.role` a `ADMIN` dans la DB
+- Lors du retrait du role → le bot repasse le `User.role` a `USER`
+- Permet de gerer les droits admin directement depuis Discord, sans interface TomManager dediee
+
+```
+guildMemberUpdate — complement pour le role admin :
+  si DISCORD_ADMIN_ROLE_ID est defini :
+    si roleAdded.id === DISCORD_ADMIN_ROLE_ID → User.update({ role: "ADMIN" })
+    si roleRemoved.id === DISCORD_ADMIN_ROLE_ID → User.update({ role: "USER" })
+```
+
 **Permissions du bot (minimales)**
 
-| Permission Discord      | Raison                                      |
-|-------------------------|---------------------------------------------|
-| `Server Members Intent` | Lire les membres et leurs roles             |
+| Permission Discord      | Raison                                                   |
+| ----------------------- | -------------------------------------------------------- |
+| `Server Members Intent` | Lire les membres et leurs roles                          |
 | Aucune autre            | Le bot ne cree, ne modifie, ne supprime rien sur Discord |
 
 ---
@@ -293,6 +310,7 @@ guildMemberUpdate(oldMember, newMember)
 **Endpoint de sync manuelle (admin)**
 
 `POST /api/admin/discord/sync`
+
 - Appelle `guild.members.fetch()` pour recuperer tous les membres et leurs roles actuels
 - Reconcilie avec la DB : cree les participations manquantes, supprime les invalides
 - Utile apres un redemarrage du bot ou pour corriger un ecart
@@ -303,21 +321,21 @@ guildMemberUpdate(oldMember, newMember)
 
 - Service Docker dedie : `discord-bot/` dans le mono-repo
 - Acces direct a PostgreSQL via Prisma (schema partage avec le backend)
-- Variables : `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`
+- Variables : `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_ADMIN_ROLE_ID`
 - Le bot est stateless : redemarrage sans perte de donnees
 
 ---
 
 **Surface de complexite**
 
-| Composant                        | Complexite |
-|----------------------------------|------------|
-| Migration DB (4 champs)          | Faible     |
-| OAuth2 Discord (login/signup)    | Moyenne    |
-| Bot guildMemberUpdate            | Faible     |
-| Endpoint sync manuelle           | Faible     |
-| Coexistence comptes locaux/Discord | Faible   |
-| Liaison compte local → Discord   | Faible     |
+| Composant                          | Complexite |
+| ---------------------------------- | ---------- |
+| Migration DB (4 champs)            | Faible     |
+| OAuth2 Discord (login/signup)      | Moyenne    |
+| Bot guildMemberUpdate              | Faible     |
+| Endpoint sync manuelle             | Faible     |
+| Coexistence comptes locaux/Discord | Faible     |
+| Liaison compte local → Discord     | Faible     |
 
 Total : 1-2 sprints. Le seul vrai travail est l'OAuth2 Discord cote backend.
 
@@ -350,7 +368,7 @@ Browser                    TomManager Backend           Discord
   |<-- redirect /events -----------|                        |
 ```
 
-*Securite cote TomManager*
+_Securite cote TomManager_
 
 - **Code ephemere a usage unique** : valable ~5 min, inutilisable une seconde fois
 - **Echange serveur a serveur** : le `client_secret` ne quitte jamais le backend,
@@ -362,7 +380,7 @@ Browser                    TomManager Backend           Discord
 - **Session inchangee** : cookie `connect.sid` httpOnly + secure + SameSite,
   meme mecanique que l'auth email/password existante
 
-*Securite cote compte Discord*
+_Securite cote compte Discord_
 
 - **Scope minimal `identify` uniquement** : donne acces a `id`, `username`, `avatar` — rien d'autre
 - TomManager ne peut pas : lire/envoyer des messages, voir les serveurs,
@@ -372,27 +390,27 @@ Browser                    TomManager Backend           Discord
   Note : cela invalide le token OAuth mais pas la session TomManager en cours
   (comportement OAuth2 standard — a gerer avec une duree de session raisonnable)
 
-*Ce qu'on evite deliberement*
+_Ce qu'on evite deliberement_
 
-| Evite                        | Raison                                         |
-|------------------------------|------------------------------------------------|
-| Stocker le `access_token`    | Inutile, surface d'attaque supplementaire      |
-| Scope `email`                | Non necessaire                                 |
-| Scope `guilds`               | Le bot lit les roles avec son propre token     |
-| PKCE                         | Non requis, client confidentiel avec secret    |
+| Evite                     | Raison                                      |
+| ------------------------- | ------------------------------------------- |
+| Stocker le `access_token` | Inutile, surface d'attaque supplementaire   |
+| Scope `email`             | Non necessaire                              |
+| Scope `guilds`            | Le bot lit les roles avec son propre token  |
+| PKCE                      | Non requis, client confidentiel avec secret |
 
 ---
 
 ## Etat actuel du projet
 
-| Aspect | Score | Detail |
-|--------|-------|--------|
-| CI/CD | 9/10 | GitHub Actions, Docker, Portainer |
-| Deploiement | 9/10 | Traefik, SSL, multi-stage Docker |
-| Tests auto | 7/10 | 225 tests, pas d'E2E |
-| Securite | 7/10 | Helmet, bcrypt, sessions, rate limit auth. Manque Zod |
-| Frontend | 9/10 | Mobile-first, a11y, skeletons, real-time |
-| Backend | 8/10 | API complete, Socket.io, notifications. Manque validation Zod |
-| Monitoring | 3/10 | Pino basique, pas de Sentry/APM |
-| Email | 0/10 | Non implemente |
-| Documentation | 7/10 | Specs + context, pas de README/Swagger |
+| Aspect        | Score | Detail                                                        |
+| ------------- | ----- | ------------------------------------------------------------- |
+| CI/CD         | 9/10  | GitHub Actions, Docker, Portainer                             |
+| Deploiement   | 9/10  | Traefik, SSL, multi-stage Docker                              |
+| Tests auto    | 7/10  | 225 tests, pas d'E2E                                          |
+| Securite      | 7/10  | Helmet, bcrypt, sessions, rate limit auth. Manque Zod         |
+| Frontend      | 9/10  | Mobile-first, a11y, skeletons, real-time                      |
+| Backend       | 8/10  | API complete, Socket.io, notifications. Manque validation Zod |
+| Monitoring    | 3/10  | Pino basique, pas de Sentry/APM                               |
+| Email         | 0/10  | Non implemente                                                |
+| Documentation | 7/10  | Specs + context, pas de README/Swagger                        |

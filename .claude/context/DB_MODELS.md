@@ -70,20 +70,22 @@ Relations: event (Event), user (User)
 
 ## GameTable
 
-| Field         | Type     | Notes                        |
-| ------------- | -------- | ---------------------------- |
-| id            | String   | UUID PK                      |
-| eventId       | String   | FK -> Event.id               |
-| createdBy     | String   | FK -> User.id (GM)           |
-| title         | String   | required, 1-150 chars        |
-| pitch         | String?  | max 2000 chars               |
-| triggers      | String?  | max 1000 chars               |
-| comments      | String?  | max 1000 chars               |
-| maxPlayers    | Int      | required, 1-20               |
-| startDateTime | DateTime | >= event.startDateTime       |
-| endDateTime   | DateTime | <= event.endDateTime         |
-| createdAt     | DateTime | Auto                         |
-| updatedAt     | DateTime | Auto                         |
+| Field         | Type      | Notes                        |
+| ------------- | --------- | ---------------------------- |
+| id            | String    | UUID PK                      |
+| eventId       | String    | FK -> Event.id               |
+| createdBy     | String    | FK -> User.id (GM)           |
+| title         | String    | required, 1-150 chars        |
+| type          | TableType | JDR (default) or JDS         |
+| gmIsPlayer    | Boolean   | default false (JDR only)     |
+| pitch         | String?   | max 2000 chars               |
+| triggers      | String?   | max 1000 chars               |
+| comments      | String?   | max 1000 chars               |
+| maxPlayers    | Int       | required, 1-20               |
+| startDateTime | DateTime  | >= event.startDateTime       |
+| endDateTime   | DateTime  | <= event.endDateTime         |
+| createdAt     | DateTime  | Auto                         |
+| updatedAt     | DateTime  | Auto                         |
 
 Index: (eventId, startDateTime)
 Relations: event (Event), creator (User), tags (GameTableTag[]), participants (GameTableParticipant[])
@@ -164,6 +166,10 @@ USER | ADMIN
 ## Enum InvitationStatus
 
 PENDING | ACCEPTED | EXPIRED
+
+## Enum TableType
+
+JDR | JDS
 
 ## Enum TableParticipantStatus
 
