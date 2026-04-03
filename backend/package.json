@@ -26,6 +26,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/bcrypt": "^5.0.2",
+    "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.15",
     "@types/express": "^4.17.19",
     "@types/express-session": "^1.17.10",
@@ -52,7 +53,9 @@
   "dependencies": {
     "@prisma/client": "~6.19.0",
     "@quixo3/prisma-session-store": "^3.1.13",
+    "@sentry/node": "^10.47.0",
     "bcrypt": "^6.0.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "envalid": "^8.0.0",
     "express": "^4.21.2",
