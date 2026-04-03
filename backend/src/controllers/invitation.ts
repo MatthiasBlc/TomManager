@@ -19,7 +19,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
         where: { username: identifier.trim(), deletedAt: null },
         select: { email: true },
       });
-      if (!user) {
+      if (!user || !user.email) {
         res
           .status(404)
           .json({ error: { message: `Aucun utilisateur avec le pseudo "${identifier.trim()}"` } });

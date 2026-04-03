@@ -84,7 +84,7 @@ export function buildAvatarUrl(id: string, avatar: string | null): string {
   if (avatar) {
     return `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=256`;
   }
-  const index = Number(BigInt(id) % 5n);
+  const index = parseInt(id.slice(-4), 16) % 5;
   return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
 }
 
