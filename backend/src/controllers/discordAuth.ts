@@ -22,7 +22,17 @@ export async function initiateLogin(req: Request, res: Response, next: NextFunct
 
     if (req.session.userId) req.session.oauthAction = "link";
 
-    const url = discordService.buildAuthorizeUrl(state);
+    // Skip consent screen if user already has a linked Discord account
+    let skipPrompt = false;
+    if (req.session.userId) {
+      const user = await prisma.user.findFirst({
+        where: { id: req.session.userId },
+        select: { discordId: true },
+      });
+      skipPrompt = !!user?.discordId;
+    }
+
+    const url = discordService.buildAuthorizeUrl(state, skipPrompt);
     res.json({ url });
   } catch (err) {
     next(err);
