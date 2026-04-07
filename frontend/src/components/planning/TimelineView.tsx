@@ -14,6 +14,8 @@ interface TableSummary {
   waitlistCount: number;
   currentUserStatus: string | null;
   isGM: boolean;
+  currentUserConflict: boolean;
+  conflictingPlayerCount: number;
 }
 
 interface Props {

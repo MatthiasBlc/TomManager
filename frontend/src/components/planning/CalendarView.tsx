@@ -19,11 +19,14 @@ interface TableSummary {
   startDateTime: string;
   endDateTime: string;
   creator: { id: string; username: string };
+  type: "JDR" | "JDS";
   confirmedCount: number;
   waitlistCount: number;
   maxPlayers: number;
   currentUserStatus: string | null;
   isGM: boolean;
+  currentUserConflict: boolean;
+  conflictingPlayerCount: number;
 }
 
 interface EventBounds {
@@ -200,6 +203,9 @@ export default function CalendarView({
           confirmedCount: t.confirmedCount,
           maxPlayers: t.maxPlayers,
           waitlistCount: t.waitlistCount,
+          type: t.type,
+          currentUserConflict: t.currentUserConflict,
+          conflictingPlayerCount: t.conflictingPlayerCount,
         },
       })),
     [tables, isAdmin]

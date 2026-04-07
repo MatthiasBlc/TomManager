@@ -151,10 +151,41 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
     orderBy: { startDateTime: "asc" },
   });
 
-  return tables.map((t) => {
+  // Calcul des conflits : participant CONFIRMED sur deux tables qui se chevauchent
+  // confirmedTablesByUser : userId -> indices des tables ou il est CONFIRMED
+  const confirmedTablesByUser = new Map<string, number[]>();
+  tables.forEach((t, idx) => {
+    t.participants
+      .filter((p) => p.status === "CONFIRMED")
+      .forEach((p) => {
+        if (!confirmedTablesByUser.has(p.userId)) confirmedTablesByUser.set(p.userId, []);
+        confirmedTablesByUser.get(p.userId)!.push(idx);
+      });
+  });
+
+  // conflictedUsersInTable : index table -> ensemble des userIds en conflit sur cette table
+  const conflictedUsersInTable = new Map<number, Set<string>>();
+  for (const [userId, indices] of confirmedTablesByUser) {
+    if (indices.length < 2) continue;
+    for (let i = 0; i < indices.length; i++) {
+      for (let j = i + 1; j < indices.length; j++) {
+        const a = tables[indices[i]];
+        const b = tables[indices[j]];
+        if (a.startDateTime < b.endDateTime && a.endDateTime > b.startDateTime) {
+          if (!conflictedUsersInTable.has(indices[i])) conflictedUsersInTable.set(indices[i], new Set());
+          if (!conflictedUsersInTable.has(indices[j])) conflictedUsersInTable.set(indices[j], new Set());
+          conflictedUsersInTable.get(indices[i])!.add(userId);
+          conflictedUsersInTable.get(indices[j])!.add(userId);
+        }
+      }
+    }
+  }
+
+  return tables.map((t, idx) => {
     const confirmedCount = t.participants.filter((p) => p.status === "CONFIRMED").length;
     const waitlistCount = t.participants.filter((p) => p.status === "WAITLIST").length;
     const currentUserParticipant = t.participants.find((p) => p.userId === currentUserId);
+    const conflictedUsers = conflictedUsersInTable.get(idx) ?? new Set<string>();
 
     return {
       id: t.id,
@@ -173,6 +204,8 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       waitlistCount,
       currentUserStatus: currentUserParticipant?.status || null,
       isGM: t.createdBy === currentUserId,
+      currentUserConflict: conflictedUsers.has(currentUserId),
+      conflictingPlayerCount: conflictedUsers.size,
     };
   });
 }
@@ -277,6 +310,12 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
   const demotedUserIds: string[] = [];
   const promotedUserIds: string[] = [];
 
+  // Detecte si gmIsPlayer change (JDR uniquement)
+  const gmIsPlayerChanged =
+    existing.type === "JDR" &&
+    data.gmIsPlayer !== undefined &&
+    data.gmIsPlayer !== existing.gmIsPlayer;
+
   const result = await prisma.$transaction(async (tx) => {
     // Handle maxPlayers change
     const confirmedCount = existing.participants.filter((p) => p.status === "CONFIRMED").length;
@@ -311,6 +350,40 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
             data: { status: "CONFIRMED" },
           });
           promotedUserIds.push(p.userId);
+        }
+      }
+    }
+
+    // Handle gmIsPlayer toggle
+    if (gmIsPlayerChanged) {
+      const gmId = existing.createdBy;
+      const gmParticipant = existing.participants.find((p) => p.userId === gmId);
+
+      if (data.gmIsPlayer && !gmParticipant) {
+        // MJ devient joueur : l'ajouter comme participant
+        const currentConfirmed = await tx.gameTableParticipant.count({
+          where: { gameTableId: tableId, status: "CONFIRMED" },
+        });
+        const gmStatus = currentConfirmed < maxPlayers ? "CONFIRMED" : "WAITLIST";
+        await tx.gameTableParticipant.create({
+          data: { gameTableId: tableId, userId: gmId, status: gmStatus },
+        });
+      } else if (!data.gmIsPlayer && gmParticipant) {
+        // MJ n'est plus joueur : le retirer des participants
+        await tx.gameTableParticipant.delete({ where: { id: gmParticipant.id } });
+        if (gmParticipant.status === "CONFIRMED") {
+          // Promouvoir le premier en waitlist
+          const firstWaitlisted = await tx.gameTableParticipant.findFirst({
+            where: { gameTableId: tableId, status: "WAITLIST" },
+            orderBy: { joinedAt: "asc" },
+          });
+          if (firstWaitlisted) {
+            await tx.gameTableParticipant.update({
+              where: { id: firstWaitlisted.id },
+              data: { status: "CONFIRMED" },
+            });
+            promotedUserIds.push(firstWaitlisted.userId);
+          }
         }
       }
     }
@@ -451,8 +524,9 @@ export async function joinTable(tableId: string, userId: string) {
       throw createError(404, "Table not found");
     }
 
-    // GM cannot join manually; they are auto-joined at creation if applicable
-    if (table.createdBy === userId) {
+    // GM ne peut rejoindre que s'il prend une place (JDS ou gmIsPlayer=true en JDR)
+    const gmTakesASeat = table.type === "JDS" || table.gmIsPlayer;
+    if (table.createdBy === userId && !gmTakesASeat) {
       throw createError(400, "The GM cannot join their own table");
     }
 

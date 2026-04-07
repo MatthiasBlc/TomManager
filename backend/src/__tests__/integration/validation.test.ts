@@ -3,56 +3,6 @@ import { request, setupAdmin, createTestEvent } from "../setup/testHelpers";
 
 describe("Validation Zod — 400 sur donnees invalides", () => {
   // ──────────────── AUTH ────────────────
-  describe("POST /api/auth/signup", () => {
-    it("rejette un email invalide", async () => {
-      const res = await request.post("/api/auth/signup").send({
-        email: "not-an-email",
-        username: "validuser",
-        password: "Password123!",
-        invitationToken: "550e8400-e29b-41d4-a716-446655440000",
-      });
-      expect(res.status).toBe(400);
-      expect(res.body.error.details).toEqual(
-        expect.arrayContaining([expect.objectContaining({ field: "email" })])
-      );
-    });
-
-    it("rejette un username trop court", async () => {
-      const res = await request.post("/api/auth/signup").send({
-        email: "user@example.com",
-        username: "ab",
-        password: "Password123!",
-        invitationToken: "550e8400-e29b-41d4-a716-446655440000",
-      });
-      expect(res.status).toBe(400);
-    });
-
-    it("rejette un password trop court", async () => {
-      const res = await request.post("/api/auth/signup").send({
-        email: "user@example.com",
-        username: "validuser",
-        password: "short",
-        invitationToken: "550e8400-e29b-41d4-a716-446655440000",
-      });
-      expect(res.status).toBe(400);
-    });
-
-    it("rejette un invitationToken non-UUID", async () => {
-      const res = await request.post("/api/auth/signup").send({
-        email: "user@example.com",
-        username: "validuser",
-        password: "Password123!",
-        invitationToken: "not-a-uuid",
-      });
-      expect(res.status).toBe(400);
-    });
-
-    it("rejette un body vide", async () => {
-      const res = await request.post("/api/auth/signup").send({});
-      expect(res.status).toBe(400);
-    });
-  });
-
   describe("POST /api/auth/login", () => {
     it("rejette un body vide", async () => {
       const res = await request.post("/api/auth/login").send({});
@@ -195,25 +145,4 @@ describe("Validation Zod — 400 sur donnees invalides", () => {
     });
   });
 
-  // ──────────────── INVITATIONS ────────────────
-  describe("POST /api/events/:eventId/invitations", () => {
-    it("rejette un identifier vide", async () => {
-      const { cookie } = await setupAdmin();
-      const event = await createTestEvent(cookie);
-      const res = await request
-        .post(`/api/events/${event.id}/invitations`)
-        .set("Cookie", cookie)
-        .send({ identifier: "" });
-      expect(res.status).toBe(400);
-    });
-
-    it("rejette un eventId non-UUID", async () => {
-      const { cookie } = await setupAdmin();
-      const res = await request
-        .post("/api/events/not-a-uuid/invitations")
-        .set("Cookie", cookie)
-        .send({ identifier: "user@example.com" });
-      expect(res.status).toBe(400);
-    });
-  });
 });

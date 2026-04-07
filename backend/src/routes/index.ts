@@ -1,7 +1,7 @@
 import { Router } from "express";
 import authRouter from "./auth";
+import adminRouter from "./admin";
 import eventRouter from "./event";
-import invitationRouter from "./invitation";
 import participantRouter from "./participant";
 import gameTableRouter from "./gameTable";
 import tagRouter from "./tag";
@@ -12,6 +12,7 @@ import notificationRouter from "./notification";
 const router = Router();
 
 router.use("/auth", authRouter);
+router.use("/admin", adminRouter);
 router.use("/events", eventRouter);
 router.use("/events", participantRouter);
 router.use("/events", gameTableRouter);
@@ -19,7 +20,5 @@ router.use("/events", eventBoardGameRouter);
 router.use("/tags", tagRouter);
 router.use("/boardgames", boardGameRouter);
 router.use("/notifications", notificationRouter);
-// Invitation routes are mounted at root level since they span /events and /invitations
-router.use(invitationRouter);
 
 export default router;

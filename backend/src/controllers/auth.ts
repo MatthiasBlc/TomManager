@@ -1,27 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth";
 
-export async function signup(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { email, username, password, invitationToken } = req.body;
-    const result = await authService.signup(email, username, password, invitationToken);
-
-    req.session.userId = result.user.id;
-
-    res.status(201).json({ user: result.user, eventId: result.eventId });
-  } catch (err) {
-    next(err);
-  }
-}
-
 export async function login(req: Request, res: Response, next: NextFunction) {
   try {
-    const { identifier, password, invitationToken } = req.body;
-    const result = await authService.login(identifier, password, invitationToken);
+    const { identifier, password } = req.body;
+    const result = await authService.login(identifier, password);
 
     req.session.userId = result.user.id;
 
-    res.json({ user: result.user, eventId: result.eventId });
+    res.json({ user: result.user });
   } catch (err) {
     next(err);
   }

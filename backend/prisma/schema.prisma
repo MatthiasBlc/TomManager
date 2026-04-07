@@ -16,17 +16,19 @@ model Session {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  username     String    @unique
-  passwordHash String
-  role         Role      @default(USER)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id              String    @id @default(uuid())
+  email           String?   @unique
+  username        String    @unique
+  passwordHash    String?
+  discordId       String?   @unique
+  discordUsername String?
+  avatarUrl       String?
+  role            Role      @default(USER)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
   createdEvents          Event[]
-  sentInvitations        EventInvitation[]
   eventParticipations    EventParticipation[]
   createdGameTables      GameTable[]
   gameTableParticipations GameTableParticipant[]
@@ -35,16 +37,16 @@ model User {
 }
 
 model Event {
-  id            String   @id @default(uuid())
-  name          String
-  startDateTime DateTime
-  endDateTime   DateTime
-  createdBy     String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(uuid())
+  name           String
+  startDateTime  DateTime
+  endDateTime    DateTime
+  createdBy      String
+  discordRoleId  String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   creator        User                @relation(fields: [createdBy], references: [id])
-  invitations    EventInvitation[]
   participations EventParticipation[]
   gameTables     GameTable[]
   eventBoardGames EventBoardGame[]
@@ -52,21 +54,6 @@ model Event {
   @@index([createdBy])
 }
 
-model EventInvitation {
-  id        String           @id @default(uuid())
-  eventId   String
-  email     String
-  invitedBy String
-  token     String           @unique @default(uuid())
-  expiresAt DateTime
-  status    InvitationStatus @default(PENDING)
-  createdAt DateTime         @default(now())
-
-  event   Event @relation(fields: [eventId], references: [id])
-  inviter User  @relation(fields: [invitedBy], references: [id])
-
-  @@unique([email, eventId])
-}
 
 model EventParticipation {
   id        String   @id @default(uuid())
@@ -178,11 +165,6 @@ enum Role {
   ADMIN
 }
 
-enum InvitationStatus {
-  PENDING
-  ACCEPTED
-  EXPIRED
-}
 
 enum TableParticipantStatus {
   CONFIRMED

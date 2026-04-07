@@ -4,12 +4,13 @@ import prisma from "../util/db";
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, startDateTime, endDateTime } = req.body;
+    const { name, startDateTime, endDateTime, discordRoleId } = req.body;
     const event = await eventService.createEvent(
       name,
       startDateTime,
       endDateTime,
-      req.session.userId!
+      req.session.userId!,
+      discordRoleId
     );
 
     res.status(201).json({ data: event });
@@ -51,14 +52,24 @@ export async function detail(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, startDateTime, endDateTime } = req.body;
+    const { name, startDateTime, endDateTime, discordRoleId } = req.body;
     const event = await eventService.updateEvent(req.params.eventId, {
       name,
       startDateTime,
       endDateTime,
+      discordRoleId,
     });
 
     res.json({ data: event });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function purge(req: Request, res: Response, next: NextFunction) {
+  try {
+    await eventService.purgeEvent(req.params.eventId);
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

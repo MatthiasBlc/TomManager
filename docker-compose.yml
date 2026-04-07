@@ -48,6 +48,12 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-tommanager}:${POSTGRES_PASSWORD:-tommanager_dev}@postgres:5432/${POSTGRES_DB:-tommanager_db}?schema=public
       - SESSION_SECRET=${SESSION_SECRET:-dev_session_secret_change_me}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID:-}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET:-}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID:-}
+      - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI:-http://localhost:3001/api/auth/discord/callback}
+      - DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID:-}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -92,6 +98,32 @@ services:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
       <<: *health_http
     command: sh -c "npm install && npm run dev"
+    logging: *default-logging
+
+  discord-bot:
+    build:
+      context: ./discord-bot
+      dockerfile: Dockerfile
+    container_name: tommanager-discord-bot
+    hostname: discord-bot
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-tommanager}:${POSTGRES_PASSWORD:-tommanager_dev}@postgres:5432/${POSTGRES_DB:-tommanager_db}?schema=public
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID:-}
+      - DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID:-}
+    volumes:
+      - ./discord-bot:/app
+      - /app/node_modules
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "npm install &&
+             npx prisma generate &&
+             npm run dev"
     logging: *default-logging
 
 networks:

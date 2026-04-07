@@ -3,15 +3,12 @@ import { describe, it, expect, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import HomePage from "../../pages/HomePage";
 import LoginPage from "../../pages/LoginPage";
-import SignupPage from "../../pages/SignupPage";
-import InvitationLandingPage from "../../pages/InvitationLandingPage";
 
 // Mock useAuth
 vi.mock("../../contexts/AuthContext", () => ({
   useAuth: () => ({
     user: null,
     login: vi.fn(),
-    signup: vi.fn(),
     logout: vi.fn(),
   }),
 }));
@@ -81,38 +78,5 @@ describe("LoginPage", () => {
     );
     const input = screen.getByLabelText("Email or username");
     expect(input).toHaveAttribute("inputmode", "email");
-  });
-});
-
-describe("SignupPage", () => {
-  it("should show invitation required message when no token", () => {
-    render(
-      <MemoryRouter>
-        <SignupPage />
-      </MemoryRouter>
-    );
-    expect(screen.getByText("An invitation is required to sign up.")).toBeInTheDocument();
-  });
-
-  it("should have mobile-friendly card without w-96", () => {
-    render(
-      <MemoryRouter>
-        <SignupPage />
-      </MemoryRouter>
-    );
-    const card = screen.getByText("Sign Up").closest(".card");
-    expect(card?.className).not.toContain("w-96");
-    expect(card?.className).toContain("w-full");
-  });
-});
-
-describe("InvitationLandingPage", () => {
-  it("should show loading spinner initially", () => {
-    render(
-      <MemoryRouter initialEntries={["/invite/some-token"]}>
-        <InvitationLandingPage />
-      </MemoryRouter>
-    );
-    expect(document.querySelector(".loading-spinner")).toBeInTheDocument();
   });
 });

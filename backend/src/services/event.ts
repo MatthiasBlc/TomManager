@@ -5,7 +5,8 @@ export async function createEvent(
   name: string,
   startDateTime: string,
   endDateTime: string,
-  userId: string
+  userId: string,
+  discordRoleId?: string | null
 ) {
   if (!name || name.trim().length === 0 || name.trim().length > 100) {
     throw createError(400, "Name must be between 1 and 100 characters");
@@ -24,12 +25,18 @@ export async function createEvent(
     throw createError(400, "endDateTime must be after startDateTime");
   }
 
+  if (discordRoleId) {
+    const conflict = await prisma.event.findFirst({ where: { discordRoleId } });
+    if (conflict) throw createError(409, "Discord role already linked to another event");
+  }
+
   const event = await prisma.event.create({
     data: {
       name: name.trim(),
       startDateTime: start,
       endDateTime: end,
       createdBy: userId,
+      discordRoleId: discordRoleId ?? null,
       participations: {
         create: {
           userId,
@@ -115,8 +122,17 @@ export async function getEvent(eventId: string) {
 
 export async function updateEvent(
   eventId: string,
-  data: { name?: string; startDateTime?: string; endDateTime?: string }
+  data: { name?: string; startDateTime?: string; endDateTime?: string; discordRoleId?: string | null }
 ) {
+  if (data.discordRoleId !== undefined && data.discordRoleId !== null) {
+    const conflict = await prisma.event.findFirst({
+      where: { discordRoleId: data.discordRoleId, id: { not: eventId } },
+    });
+    if (conflict) {
+      throw createError(409, "Discord role already linked to another event");
+    }
+  }
+
   const existing = await prisma.event.findUnique({ where: { id: eventId } });
   if (!existing) {
     throw createError(404, "Event not found");
@@ -146,16 +162,15 @@ export async function updateEvent(
   const event = await prisma.$transaction(async (tx) => {
     const updated = await tx.event.update({
       where: { id: eventId },
-      data: { name, startDateTime: start, endDateTime: end },
+      data: {
+        name,
+        startDateTime: start,
+        endDateTime: end,
+        ...(data.discordRoleId !== undefined ? { discordRoleId: data.discordRoleId } : {}),
+      },
     });
 
-    // Update expiresAt of PENDING invitations when dates change
     if (datesChanged) {
-      await tx.eventInvitation.updateMany({
-        where: { eventId, status: "PENDING" },
-        data: { expiresAt: end },
-      });
-
       // Cascade dates to GameTables
       const tables = await tx.gameTable.findMany({ where: { eventId } });
       for (const table of tables) {
@@ -183,6 +198,19 @@ export async function updateEvent(
   return event;
 }
 
+export async function purgeEvent(eventId: string) {
+  const existing = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!existing) {
+    throw createError(404, "Event not found");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.gameTable.deleteMany({ where: { eventId } });
+    await tx.eventParticipation.deleteMany({ where: { eventId } });
+    await tx.eventBoardGame.deleteMany({ where: { eventId } });
+  });
+}
+
 export async function deleteEvent(eventId: string) {
   const existing = await prisma.event.findUnique({ where: { id: eventId } });
   if (!existing) {
@@ -193,7 +221,6 @@ export async function deleteEvent(eventId: string) {
     // Delete GameTables (cascade handles GameTableTag + GameTableParticipant)
     await tx.gameTable.deleteMany({ where: { eventId } });
     await tx.eventParticipation.deleteMany({ where: { eventId } });
-    await tx.eventInvitation.deleteMany({ where: { eventId } });
     await tx.event.delete({ where: { id: eventId } });
   });
 }
