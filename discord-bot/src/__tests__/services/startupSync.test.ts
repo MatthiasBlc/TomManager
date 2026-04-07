@@ -29,7 +29,7 @@ import {
   handleAdminRoleChange,
 } from "../../services/syncParticipation";
 
-const db = prisma as { event: { findMany: ReturnType<typeof vi.fn> } };
+const db = prisma as unknown as { event: { findMany: ReturnType<typeof vi.fn> } };
 
 const ROLE_ID = "role-event-1";
 const EVENT = { id: "event-1", discordRoleId: ROLE_ID };

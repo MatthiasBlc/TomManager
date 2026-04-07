@@ -33,7 +33,7 @@ vi.mock("../../util/env", () => ({ default: mockEnv }));
 
 // ------------------------------------------------------------------ helpers
 import prisma from "../../util/db";
-const db = prisma as {
+const db = prisma as unknown as {
   user: {
     findFirst: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
