@@ -1,5 +1,7 @@
 # RESUME - Prochaine session
 
+ ###
+ met en place un protocole de test pour le frontend, simple, efficace et rapide et maintenable
 
 ### Une fois tout ce qui est ci-dessus terminé complètement et proprement :
 
