@@ -19,6 +19,7 @@ interface TableSummary {
   startDateTime: string;
   endDateTime: string;
   creator: { id: string; username: string };
+  type: "JDR" | "JDS";
   confirmedCount: number;
   waitlistCount: number;
   maxPlayers: number;
@@ -200,6 +201,7 @@ export default function CalendarView({
           confirmedCount: t.confirmedCount,
           maxPlayers: t.maxPlayers,
           waitlistCount: t.waitlistCount,
+          type: t.type,
         },
       })),
     [tables, isAdmin]

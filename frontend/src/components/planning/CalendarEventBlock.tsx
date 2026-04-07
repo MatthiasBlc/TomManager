@@ -6,10 +6,11 @@ interface TableExtendedProps {
   confirmedCount: number;
   maxPlayers: number;
   waitlistCount: number;
+  type: "JDR" | "JDS";
 }
 
 export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
-  const { isGM, currentUserStatus, confirmedCount, maxPlayers, waitlistCount } = arg.event
+  const { isGM, currentUserStatus, confirmedCount, maxPlayers, waitlistCount, type } = arg.event
     .extendedProps as TableExtendedProps;
 
   let classes = "bg-primary/80 border-primary text-primary-content";
@@ -25,6 +26,7 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.35)" }}
     >
       <p className="truncate text-xs font-semibold leading-tight">{arg.event.title}</p>
+      <span className="badge badge-outline badge-xs opacity-80">{type}</span>
       <p className="text-xs opacity-80">{arg.timeText}</p>
       <p className="text-xs opacity-70">
         {confirmedCount}/{maxPlayers}
