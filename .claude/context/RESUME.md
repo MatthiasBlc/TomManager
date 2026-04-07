@@ -1,7 +1,12 @@
 # RESUME - Prochaine session
 
- ###
- met en place un protocole de test pour le frontend, simple, efficace et rapide et maintenable
+### Rediger les tests frontend (priorite)
+
+Le protocole de test est en place (vitest + testing-library, lint propre, 1 exemple de test).
+Il faut maintenant rediger les tests phase par phase selon la roadmap :
+`docs/features/frontend-tests/ROADMAP.md`
+
+Phases 1 a 8. Apres chaque phase : tests verts, lint parfait, commit.
 
 ### Une fois tout ce qui est ci-dessus terminé complètement et proprement :
 

@@ -137,16 +137,8 @@ src/
 │   └── AppRoutes.tsx      # Route definitions
 ├── styles/
 │   └── index.css          # Tailwind directives
+├── test/
+│   └── setup.ts           # jest-dom setup (@testing-library/jest-dom)
 └── __tests__/
-    ├── setup/
-    │   └── vitestSetup.ts # jest-dom + matchMedia mock setup
-    └── unit/
-        ├── App.test.tsx              # App render test
-        ├── NotificationBell.test.tsx # NotificationBell component tests
-        ├── NotificationItem.test.tsx # NotificationItem component tests
-        ├── BottomTabBar.test.tsx     # BottomTabBar navigation tests
-        ├── MobileSheet.test.tsx      # MobileSheet bottom sheet tests
-        ├── AuthPages.test.tsx       # Auth pages mobile-first tests
-        ├── EventPages.test.tsx      # FAB + ResponsiveModal tests
-        └── SkeletonEmptyState.test.tsx  # Skeleton + EmptyState component tests
+    └── BoardGameCard.test.tsx  # BoardGameCard component tests (4 tests)
 ```
