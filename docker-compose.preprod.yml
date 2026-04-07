@@ -43,8 +43,15 @@ services:
       - PORT=3001
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@tommanager-dev-postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=20&pool_timeout=30
       - SESSION_SECRET=${SESSION_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN}
       - TRUST_PROXY=1
       - NODE_OPTIONS=--max-old-space-size=1024
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI}
+      - DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID:-}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
     volumes:
       - backend-logs-dev:/app/logs
     networks:
@@ -83,6 +90,23 @@ services:
       - "traefik.http.routers.tommanager-dev-web.tls.certresolver=cloudflare"
       - "traefik.http.services.tommanager-dev-web.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy"
+    logging: *default-logging
+
+  tommanager-dev-discord-bot:
+    image: ${REGISTRY_URL:-registry.matthias-bouloc.fr}/${IMAGE_NAME:-tommanager}/discord-bot:${TAG:-latest}
+    container_name: tommanager-dev-discord-bot
+    hostname: tommanager-dev-discord-bot
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@tommanager-dev-postgres:5432/${POSTGRES_DB}?schema=public
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID:-}
+    networks:
+      - internal-dev
+    depends_on:
+      tommanager-dev-postgres:
+        condition: service_healthy
     logging: *default-logging
 
 networks:
