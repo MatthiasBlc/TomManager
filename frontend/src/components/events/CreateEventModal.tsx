@@ -2,11 +2,13 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface CreateEventForm {
   name: string;
   startDateTime: string;
   endDateTime: string;
+  discordRoleId: string;
 }
 
 interface Props {
@@ -16,6 +18,7 @@ interface Props {
 }
 
 export default function CreateEventModal({ open, onClose, onCreated }: Props) {
+  const { user } = useAuth();
   const {
     register,
     handleSubmit,
@@ -29,6 +32,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
         name: data.name,
         startDateTime: new Date(data.startDateTime).toISOString(),
         endDateTime: new Date(data.endDateTime).toISOString(),
+        discordRoleId: data.discordRoleId?.trim() || null,
       });
       toast.success("Event created!");
       reset();
@@ -96,6 +100,31 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
             </label>
           )}
         </div>
+        {user?.role === "ADMIN" && (
+          <div className="form-control">
+            <label className="label" htmlFor="ce-discord-role">
+              <span className="label-text">Discord Role ID</span>
+              <span className="label-text-alt opacity-50">optional</span>
+            </label>
+            <input
+              id="ce-discord-role"
+              type="text"
+              className="input input-bordered w-full"
+              placeholder="Ex: 1234567890123456789"
+              {...register("discordRoleId", {
+                pattern: {
+                  value: /^(\d{17,20})?$/,
+                  message: "Must be a Discord Snowflake (17-20 digits) or empty",
+                },
+              })}
+            />
+            {errors.discordRoleId && (
+              <label className="label">
+                <span className="label-text-alt text-error">{errors.discordRoleId.message}</span>
+              </label>
+            )}
+          </div>
+        )}
         <div className="flex gap-2 justify-end pt-2">
           <button type="button" className="btn" onClick={onClose}>
             Cancel

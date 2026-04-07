@@ -4,12 +4,13 @@ import prisma from "../util/db";
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, startDateTime, endDateTime } = req.body;
+    const { name, startDateTime, endDateTime, discordRoleId } = req.body;
     const event = await eventService.createEvent(
       name,
       startDateTime,
       endDateTime,
-      req.session.userId!
+      req.session.userId!,
+      discordRoleId
     );
 
     res.status(201).json({ data: event });
