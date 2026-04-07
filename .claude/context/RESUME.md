@@ -14,6 +14,7 @@ Solution temporaire appliquee : ajout d'un `include` dans `frontend/vitest.confi
 restreindre le perimetre de coverage aux fichiers deja testes. Les seuils restent a 50%.
 
 Le `include` actuel couvre :
+
 - `src/App.tsx`
 - `src/routes/**`
 - `src/components/common/**`
@@ -25,11 +26,13 @@ Le `include` actuel couvre :
 ## Fichiers sans tests (a couvrir)
 
 ### Composants (0% coverage)
+
 - `src/components/boardgames/` : AddGameModal, BoardGameCard, BoardGameList, BoardGameSearchInput, BoardGameTab, BoardGameForm
 - `src/components/events/` : CreateEventModal, EditEventModal, ParticipantList
 - `src/components/planning/` : CalendarView, CreateTableModal, EditTableModal, PlanningTab, TableCard, TableDetailModal, TagInput, TimelineView, EventBlock
 
 ### Pages (0-15% coverage)
+
 - `src/pages/EventDetailPage.tsx`
 - `src/pages/EventListPage.tsx`
 - `src/pages/NotFoundPage.tsx`
@@ -38,6 +41,7 @@ Le `include` actuel couvre :
 - `src/pages/TableDetailPage.tsx`
 
 ### Autres
+
 - `src/config/api.ts` (50% mais non inclus dans perimetre)
 - `src/contexts/AuthContext.tsx` (57%)
 - `src/hooks/` : useEventSocket, useNotifications, useSocket (0-8%)
@@ -48,9 +52,11 @@ Supprimer le `include` de `frontend/vitest.config.ts` (ou l'etendre a `src/**`) 
 suffisamment de tests unitaires pour atteindre 50% globalement.
 
 Approche recommandee :
+
 1. Commencer par les composants les plus simples a tester (TableCard, BoardGameCard, ParticipantList)
 2. Puis les pages (mocking des hooks API)
 3. Enfin les hooks (mocking axios/socket)
 
 ## Fichier a modifier en fin de session
+
 - `frontend/vitest.config.ts` : supprimer le bloc `include` une fois 50% atteint globalement
