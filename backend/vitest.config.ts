@@ -24,16 +24,12 @@ export default defineConfig({
         test: {
           name: "unit",
           include: ["src/__tests__/unit/**/*.test.ts"],
-          environment: "node",
-          globals: true,
         },
       },
       {
         test: {
           name: "integration",
           include: ["src/__tests__/integration/**/*.test.ts"],
-          environment: "node",
-          globals: true,
           setupFiles: ["./src/__tests__/setup/globalSetup.ts"],
           pool: "forks",
           poolOptions: {

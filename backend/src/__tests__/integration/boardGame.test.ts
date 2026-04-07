@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { setupAdmin, createTestEvent, addTestParticipant } from "../setup/testHelpers";
+import { request, setupAdmin, createTestEvent, addTestParticipant } from "../setup/testHelpers";
 import prisma from "../../util/db";
 import * as bggService from "../../services/bgg";
 

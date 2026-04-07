@@ -220,11 +220,11 @@ describe("Event API", () => {
       expect(res.body.data.name).toBe("Updated Name");
     });
 
-    it("should reject update by non-creator", async () => {
+    it("should allow update by any admin", async () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      // Create another admin
+      // Any admin can update any event
       const { cookie: otherCookie } = await setupAdmin({
         email: "other@admin.com",
         username: "otheradmin",
@@ -233,9 +233,9 @@ describe("Event API", () => {
       const res = await request
         .patch(`/api/events/${event.id}`)
         .set("Cookie", otherCookie)
-        .send({ name: "Hacked" });
+        .send({ name: "Updated by other admin" });
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
     });
 
     it("should reject invalid date update", async () => {
@@ -265,10 +265,11 @@ describe("Event API", () => {
       expect(found).toBeNull();
     });
 
-    it("should reject delete by non-creator", async () => {
+    it("should allow delete by any admin", async () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
+      // Any admin can delete any event
       const { cookie: otherCookie } = await setupAdmin({
         email: "other@admin.com",
         username: "otheradmin",
@@ -276,7 +277,7 @@ describe("Event API", () => {
 
       const res = await request.delete(`/api/events/${event.id}`).set("Cookie", otherCookie);
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(204);
     });
   });
 });

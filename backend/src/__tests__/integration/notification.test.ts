@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import prisma from "../../util/db";
 import {
+  request,
   createTestUserDirectly,
   setupAdmin,
   createTestEvent,

@@ -89,7 +89,7 @@ describe("Participant API", () => {
       expect(res.status).toBe(400);
     });
 
-    it("should reject non-creator", async () => {
+    it("should reject non-admin non-creator", async () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
@@ -99,11 +99,13 @@ describe("Participant API", () => {
       });
       await addParticipant(event.id, regularUser.id);
 
-      // Another admin who is not the creator
-      const { cookie: otherCookie } = await setupAdmin({
-        email: "other@admin.com",
-        username: "otheradmin",
+      // A participant (non-admin) trying to remove another participant
+      const { user: otherUser } = await createTestUserDirectly({
+        email: "other@example.com",
+        username: "otheruser",
       });
+      await addParticipant(event.id, otherUser.id);
+      const { cookie: otherCookie } = await loginTestUser("other@example.com");
 
       const res = await request
         .delete(`/api/events/${event.id}/participants/${regularUser.id}`)

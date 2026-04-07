@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  request,
   setupAdmin,
   createTestEvent,
   addTestParticipant,
@@ -230,21 +231,14 @@ describe("GameTable API", () => {
       const tableId = createRes.body.data.id;
 
       // Create another participant
-      const inv = await createTestInvitation(admin.cookie, event.id, "other@example.com");
-      await request.post("/api/auth/signup").send({
+      const { cookie: otherCookie } = await addTestParticipant(event.id, {
         email: "other@example.com",
         username: "otherplayer",
-        password: "Password123!",
-        invitationToken: inv.invitation.token,
-      });
-      const loginRes = await request.post("/api/auth/login").send({
-        identifier: "other@example.com",
-        password: "Password123!",
       });
 
       const res = await request
         .patch(`/api/events/${event.id}/tables/${tableId}`)
-        .set("Cookie", loginRes.headers["set-cookie"])
+        .set("Cookie", otherCookie)
         .send({ title: "Hacked" });
 
       expect(res.status).toBe(403);
@@ -266,20 +260,13 @@ describe("GameTable API", () => {
         .set("Cookie", playerCookie);
 
       // Add a second participant
-      const inv = await createTestInvitation(admin.cookie, event.id, "p2@example.com");
-      await request.post("/api/auth/signup").send({
+      const { cookie: p2Cookie } = await addTestParticipant(event.id, {
         email: "p2@example.com",
         username: "player2",
-        password: "Password123!",
-        invitationToken: inv.invitation.token,
-      });
-      const p2Login = await request.post("/api/auth/login").send({
-        identifier: "p2@example.com",
-        password: "Password123!",
       });
       await request
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", p2Login.headers["set-cookie"]);
+        .set("Cookie", p2Cookie);
 
       // Reduce maxPlayers to 1 — last joined should be demoted
       const res = await request
@@ -320,20 +307,13 @@ describe("GameTable API", () => {
         .set("Cookie", playerCookie);
 
       // Second player joins (waitlisted)
-      const inv = await createTestInvitation(admin.cookie, event.id, "p2@example.com");
-      await request.post("/api/auth/signup").send({
+      const { cookie: p2Cookie } = await addTestParticipant(event.id, {
         email: "p2@example.com",
         username: "player2",
-        password: "Password123!",
-        invitationToken: inv.invitation.token,
-      });
-      const p2Login = await request.post("/api/auth/login").send({
-        identifier: "p2@example.com",
-        password: "Password123!",
       });
       const joinRes = await request
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", p2Login.headers["set-cookie"]);
+        .set("Cookie", p2Cookie);
       expect(joinRes.body.data.status).toBe("WAITLIST");
 
       // Increase maxPlayers to 3
@@ -423,36 +403,22 @@ describe("GameTable API", () => {
       const tableId = createRes.body.data.id;
 
       // First player joins (fills the slot)
-      const inv1 = await createTestInvitation(admin.cookie, event.id, "fill@example.com");
-      await request.post("/api/auth/signup").send({
+      const { cookie: fillCookie } = await addTestParticipant(event.id, {
         email: "fill@example.com",
         username: "filler",
-        password: "Password123!",
-        invitationToken: inv1.invitation.token,
-      });
-      const fillLogin = await request.post("/api/auth/login").send({
-        identifier: "fill@example.com",
-        password: "Password123!",
       });
       await request
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", fillLogin.headers["set-cookie"]);
+        .set("Cookie", fillCookie);
 
       // Second player joins (should be waitlisted)
-      const inv2 = await createTestInvitation(admin.cookie, event.id, "wait@example.com");
-      await request.post("/api/auth/signup").send({
+      const { cookie: waitCookie } = await addTestParticipant(event.id, {
         email: "wait@example.com",
         username: "waiter",
-        password: "Password123!",
-        invitationToken: inv2.invitation.token,
-      });
-      const waitLogin = await request.post("/api/auth/login").send({
-        identifier: "wait@example.com",
-        password: "Password123!",
       });
       const res = await request
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", waitLogin.headers["set-cookie"]);
+        .set("Cookie", waitCookie);
 
       expect(res.status).toBe(201);
       expect(res.body.data.status).toBe("WAITLIST");
@@ -532,20 +498,13 @@ describe("GameTable API", () => {
         .set("Cookie", playerCookie);
 
       // Player2 joins (waitlisted)
-      const inv = await createTestInvitation(admin.cookie, event.id, "wait@example.com");
-      await request.post("/api/auth/signup").send({
+      const { cookie: waitCookie } = await addTestParticipant(event.id, {
         email: "wait@example.com",
         username: "waiter",
-        password: "Password123!",
-        invitationToken: inv.invitation.token,
-      });
-      const waitLogin = await request.post("/api/auth/login").send({
-        identifier: "wait@example.com",
-        password: "Password123!",
       });
       await request
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", waitLogin.headers["set-cookie"]);
+        .set("Cookie", waitCookie);
 
       // Player1 leaves
       await request
@@ -743,20 +702,13 @@ describe("Cascade Tests", () => {
         .set("Cookie", playerCookie);
 
       // Add a third participant who will be waitlisted
-      const inv = await createTestInvitation(admin.cookie, event.id, "wait@example.com");
-      await request.post("/api/auth/signup").send({
+      const { cookie: waitCookie } = await addTestParticipant(event.id, {
         email: "wait@example.com",
         username: "waiter",
-        password: "Password123!",
-        invitationToken: inv.invitation.token,
-      });
-      const waitLogin = await request.post("/api/auth/login").send({
-        identifier: "wait@example.com",
-        password: "Password123!",
       });
       await request
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", waitLogin.headers["set-cookie"]);
+        .set("Cookie", waitCookie);
 
       // Remove player from event
       await request

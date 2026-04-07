@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { setupAdmin, createTestEvent, addTestParticipant } from "../setup/testHelpers";
+import { request, setupAdmin, createTestEvent, addTestParticipant } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
 // Helper: setup admin + event + participant user with cookie
@@ -175,18 +175,10 @@ describe("EventBoardGame API", () => {
         .send({ boardGameId: bg.id });
 
       // Create another participant
-      const inv = await createTestInvitation(admin.cookie, event.id, "other@example.com");
-      await request.post("/api/auth/signup").send({
+      const { cookie: otherCookie } = await addTestParticipant(event.id, {
         email: "other@example.com",
         username: "otherplayer",
-        password: "Password123!",
-        invitationToken: inv.invitation.token,
       });
-      const otherLogin = await request.post("/api/auth/login").send({
-        identifier: "other@example.com",
-        password: "Password123!",
-      });
-      const otherCookie = otherLogin.headers["set-cookie"];
 
       const res = await request
         .delete(`/api/events/${event.id}/boardgames/${addRes.body.data.id}`)
