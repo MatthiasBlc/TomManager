@@ -107,6 +107,8 @@ src/
 │   │   ├── TimelineView.tsx       # Chronological table list grouped by date
 │   │   ├── CalendarView.tsx       # FullCalendar timegrid (drag/resize, multi-day, mobile nav)
 │   │   └── CalendarEventBlock.tsx # Custom event block renderer for CalendarView
+│   │                              #   Couleur selon statut utilisateur :
+│   │                              #   secondary=GM, success=CONFIRMED, warning=WAITLIST, primary=autre
 │   └── boardgames/
 │       ├── BoardGameTab.tsx           # Tab integrating list + add button
 │       ├── BoardGameSearchInput.tsx   # Autocomplete search (local + BGG)

@@ -1,4 +1,4 @@
-import { GuildMember } from "discord.js";
+import { GuildMember, PartialGuildMember } from "discord.js";
 import env from "../util/env";
 import {
   handleRoleAdded,
@@ -8,9 +8,12 @@ import {
 } from "../services/syncParticipation";
 
 export async function onGuildMemberUpdate(
-  oldMember: GuildMember,
-  newMember: GuildMember
+  oldMember: GuildMember | PartialGuildMember,
+  newMember: GuildMember | PartialGuildMember
 ): Promise<void> {
+  // Fetch complet si partiel (bot hors ligne pendant la mise a jour)
+  if (oldMember.partial) oldMember = await oldMember.fetch();
+  if (newMember.partial) newMember = await newMember.fetch();
   const oldRoleIds = new Set(oldMember.roles.cache.keys());
   const newRoleIds = new Set(newMember.roles.cache.keys());
 
