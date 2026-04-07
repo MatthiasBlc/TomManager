@@ -33,7 +33,7 @@ describe("BoardGameCard", () => {
         onRemove={onRemove}
         removableEntries={[{ entryId: "entry1", broughtByUserId: "user1" }]}
         currentUserId="user1"
-      />,
+      />
     );
     const btn = screen.getByRole("button", { name: /Remove Catan brought by Alice/i });
     fireEvent.click(btn);
@@ -48,7 +48,7 @@ describe("BoardGameCard", () => {
         onRemove={vi.fn()}
         removableEntries={[{ entryId: "entry2", broughtByUserId: "user2" }]}
         currentUserId="user1"
-      />,
+      />
     );
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });

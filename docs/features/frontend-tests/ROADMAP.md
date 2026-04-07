@@ -18,6 +18,7 @@ Avant de passer a la phase suivante :
 - [ ] `useOnlineStatus` — ecoute les evenements `online`/`offline`
 
 **Checklist de validation :**
+
 - [ ] Tests passent
 - [ ] Lint parfait
 - [ ] Commit `test: phase 1 - utility hooks`
@@ -36,6 +37,7 @@ Avant de passer a la phase suivante :
 - [ ] `CustomEventBlock` — rendu de l'evenement dans le calendrier
 
 **Checklist de validation :**
+
 - [ ] Tests passent
 - [ ] Lint parfait
 - [ ] Commit `test: phase 2 - presentational components`
@@ -52,6 +54,7 @@ Avant de passer a la phase suivante :
 - [ ] `BoardGameSearchInput` — filtre la liste, affiche les resultats
 
 **Checklist de validation :**
+
 - [ ] Tests passent
 - [ ] Lint parfait
 - [ ] Commit `test: phase 3 - conditional logic components`
@@ -71,10 +74,13 @@ Avant de passer a la phase suivante :
 
 ```tsx
 const renderWithAuth = (ui: ReactNode, user = mockUser) =>
-  render(<AuthContext.Provider value={{ user, loading: false, ...mockFns }}>{ui}</AuthContext.Provider>);
+  render(
+    <AuthContext.Provider value={{ user, loading: false, ...mockFns }}>{ui}</AuthContext.Provider>
+  );
 ```
 
 **Checklist de validation :**
+
 - [ ] Tests passent
 - [ ] Lint parfait
 - [ ] Commit `test: phase 4 - auth-aware components`
@@ -91,6 +97,7 @@ const renderWithAuth = (ui: ReactNode, user = mockUser) =>
 - [ ] `NotificationBell` — compteur de non-lus, ouverture du panneau
 
 **Checklist de validation :**
+
 - [ ] Tests passent
 - [ ] Lint parfait
 - [ ] Commit `test: phase 5 - data display components`
@@ -116,6 +123,7 @@ it("affiche une erreur si le champ est vide", async () => {
 ```
 
 **Checklist de validation :**
+
 - [ ] Tests passent
 - [ ] Lint parfait
 - [ ] Commit `test: phase 6 - forms`
@@ -131,6 +139,7 @@ it("affiche une erreur si le champ est vide", async () => {
 - [ ] `TableDetailModal` — affichage des details, actions selon le role
 
 **Checklist de validation :**
+
 - [ ] Tests passent
 - [ ] Lint parfait
 - [ ] Commit `test: phase 7 - complex modals`
@@ -168,6 +177,7 @@ vi.mock("../config/api", () => ({
 - [ ] `TableDetailPage` — affichage de la table, ajout de jeu, gestion participants
 
 **Checklist de validation :**
+
 - [ ] Tests passent
 - [ ] Lint parfait
 - [ ] Commit `test: phase 8 - pages`
@@ -177,9 +187,9 @@ vi.mock("../config/api", () => ({
 ## Objectifs de coverage cibles
 
 | Phase complete | Coverage vise |
-|---|---|
-| Phase 1-2 | > 20% |
-| Phase 1-4 | > 40% |
-| Phase 1-6 | > 60% |
-| Phase 1-7 | > 75% |
-| Phase 1-8 | > 85% |
+| -------------- | ------------- |
+| Phase 1-2      | > 20%         |
+| Phase 1-4      | > 40%         |
+| Phase 1-6      | > 60%         |
+| Phase 1-7      | > 75%         |
+| Phase 1-8      | > 85%         |
