@@ -4,7 +4,6 @@ import {
   setupAdmin,
   createTestEvent,
   createTestUserDirectly,
-  createTestInvitation,
   loginTestUser,
 } from "../setup/testHelpers";
 import prisma from "../../util/db";
@@ -177,39 +176,3 @@ describe("Participant API", () => {
   });
 });
 
-describe("Invitation Listing API", () => {
-  describe("GET /api/events/:eventId/invitations", () => {
-    it("should list invitations for event creator", async () => {
-      const { cookie: adminCookie } = await setupAdmin();
-      const event = await createTestEvent(adminCookie);
-      await createTestInvitation(adminCookie, event.id, "a@example.com");
-      await createTestInvitation(adminCookie, event.id, "b@example.com");
-
-      const res = await request
-        .get(`/api/events/${event.id}/invitations`)
-        .set("Cookie", adminCookie);
-
-      expect(res.status).toBe(200);
-      expect(res.body.data).toHaveLength(2);
-      expect(res.body.data[0]).toHaveProperty("email");
-      expect(res.body.data[0]).toHaveProperty("status");
-      expect(res.body.data[0]).toHaveProperty("createdAt");
-    });
-
-    it("should reject non-creator", async () => {
-      const { cookie: adminCookie } = await setupAdmin();
-      const event = await createTestEvent(adminCookie);
-
-      const { cookie: otherCookie } = await setupAdmin({
-        email: "other@admin.com",
-        username: "otheradmin",
-      });
-
-      const res = await request
-        .get(`/api/events/${event.id}/invitations`)
-        .set("Cookie", otherCookie);
-
-      expect(res.status).toBe(403);
-    });
-  });
-});

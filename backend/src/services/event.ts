@@ -170,13 +170,7 @@ export async function updateEvent(
       },
     });
 
-    // Update expiresAt of PENDING invitations when dates change
     if (datesChanged) {
-      await tx.eventInvitation.updateMany({
-        where: { eventId, status: "PENDING" },
-        data: { expiresAt: end },
-      });
-
       // Cascade dates to GameTables
       const tables = await tx.gameTable.findMany({ where: { eventId } });
       for (const table of tables) {
@@ -213,7 +207,6 @@ export async function purgeEvent(eventId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.gameTable.deleteMany({ where: { eventId } });
     await tx.eventParticipation.deleteMany({ where: { eventId } });
-    await tx.eventInvitation.deleteMany({ where: { eventId } });
     await tx.eventBoardGame.deleteMany({ where: { eventId } });
   });
 }
@@ -228,7 +221,6 @@ export async function deleteEvent(eventId: string) {
     // Delete GameTables (cascade handles GameTableTag + GameTableParticipant)
     await tx.gameTable.deleteMany({ where: { eventId } });
     await tx.eventParticipation.deleteMany({ where: { eventId } });
-    await tx.eventInvitation.deleteMany({ where: { eventId } });
     await tx.event.delete({ where: { id: eventId } });
   });
 }

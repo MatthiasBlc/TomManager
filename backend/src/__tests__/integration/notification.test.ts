@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
 import prisma from "../../util/db";
 import {
-  request,
   createTestUserDirectly,
   setupAdmin,
   createTestEvent,
-  createTestInvitation,
+  addTestParticipant,
 } from "../setup/testHelpers";
 import * as notificationService from "../../services/notification";
 
@@ -610,36 +609,20 @@ describe("Notification API", () => {
 async function setupEventWithPlayer() {
   const admin = await setupAdmin();
   const event = await createTestEvent(admin.cookie);
-
-  const invitation = await createTestInvitation(admin.cookie, event.id, "player@notif.com");
-  await request.post("/api/auth/signup").send({
+  const { user, cookie: playerCookie } = await addTestParticipant(event.id, {
     email: "player@notif.com",
     username: "notifplayer",
-    password: "Password123!",
-    invitationToken: invitation.invitation.token,
   });
-  const loginRes = await request
-    .post("/api/auth/login")
-    .send({ identifier: "player@notif.com", password: "Password123!" });
-  const playerCookie = loginRes.headers["set-cookie"];
-  const playerId = loginRes.body.user.id;
-
-  return { admin, event, playerCookie, playerId };
+  return { admin, event, playerCookie, playerId: user.id };
 }
 
 // Helper: add a second player
-async function addSecondPlayer(adminCookie: string[], eventId: string) {
-  const invitation = await createTestInvitation(adminCookie, eventId, "player2@notif.com");
-  await request.post("/api/auth/signup").send({
+async function addSecondPlayer(_adminCookie: string[], eventId: string) {
+  const { user, cookie } = await addTestParticipant(eventId, {
     email: "player2@notif.com",
     username: "notifplayer2",
-    password: "Password123!",
-    invitationToken: invitation.invitation.token,
   });
-  const loginRes = await request
-    .post("/api/auth/login")
-    .send({ identifier: "player2@notif.com", password: "Password123!" });
-  return { cookie: loginRes.headers["set-cookie"], userId: loginRes.body.user.id };
+  return { cookie, userId: user.id };
 }
 
 describe("Notification Triggers", () => {
@@ -705,18 +688,11 @@ describe("Notification Triggers", () => {
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
         .set("Cookie", player2.cookie);
 
-      const invitation3 = await createTestInvitation(admin.cookie, event.id, "player3@notif.com");
-      await request.post("/api/auth/signup").send({
+      const { user: player3User, cookie: player3Cookie } = await addTestParticipant(event.id, {
         email: "player3@notif.com",
         username: "notifplayer3",
-        password: "Password123!",
-        invitationToken: invitation3.invitation.token,
       });
-      const login3 = await request
-        .post("/api/auth/login")
-        .send({ identifier: "player3@notif.com", password: "Password123!" });
-      const player3Cookie = login3.headers["set-cookie"];
-      const player3Id = login3.body.user.id;
+      const player3Id = player3User.id;
 
       await request
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
@@ -791,18 +767,11 @@ describe("Notification Triggers", () => {
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
         .set("Cookie", player2.cookie);
 
-      const invitation3 = await createTestInvitation(admin.cookie, event.id, "player3@notif.com");
-      await request.post("/api/auth/signup").send({
+      const { user: player3User, cookie: player3Cookie } = await addTestParticipant(event.id, {
         email: "player3@notif.com",
         username: "notifplayer3",
-        password: "Password123!",
-        invitationToken: invitation3.invitation.token,
       });
-      const login3 = await request
-        .post("/api/auth/login")
-        .send({ identifier: "player3@notif.com", password: "Password123!" });
-      const player3Cookie = login3.headers["set-cookie"];
-      const player3Id = login3.body.user.id;
+      const player3Id = player3User.id;
 
       await request
         .post(`/api/events/${event.id}/tables/${tableId}/join`)

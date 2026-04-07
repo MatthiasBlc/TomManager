@@ -4,11 +4,10 @@ import * as discordAuthController from "../controllers/discordAuth";
 import { authRateLimiter } from "../middleware/rateLimiter";
 import { requireAuth } from "../middleware/auth";
 import { validateBody } from "../middleware/validateBody";
-import { signupSchema, loginSchema } from "../schemas/auth";
+import { loginSchema } from "../schemas/auth";
 
 const router = Router();
 
-router.post("/signup", authRateLimiter, validateBody(signupSchema), authController.signup);
 router.post("/login", authRateLimiter, validateBody(loginSchema), authController.login);
 router.post("/logout", authController.logout);
 router.get("/me", authController.me);

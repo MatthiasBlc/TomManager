@@ -18,20 +18,12 @@ interface LoginForm {
   password: string;
 }
 
-interface InvitationInfo {
-  email: string;
-  eventName: string;
-  eventId: string;
-}
-
 export default function LoginPage() {
   const { register, handleSubmit } = useForm<LoginForm>();
   const { user, loading, login, initiateDiscordLogin } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const token = searchParams.get("token");
-  const [invitationInfo, setInvitationInfo] = useState<InvitationInfo | null>(null);
   const [discordAvailable, setDiscordAvailable] = useState(true);
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/events";
 
@@ -49,15 +41,6 @@ export default function LoginPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (token) {
-      api
-        .get(`/api/invitations/${token}`)
-        .then((res) => setInvitationInfo(res.data.data))
-        .catch(() => toast.error("Invalid or expired invitation"));
-    }
-  }, [token]);
-
-  useEffect(() => {
     api.get("/api/auth/discord").catch((err) => {
       if (err?.response?.status === 503) setDiscordAvailable(false);
     });
@@ -73,13 +56,9 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      const result = await login(data.identifier, data.password, token || undefined);
+      await login(data.identifier, data.password);
       toast.success("Logged in!");
-      if (result.eventId) {
-        navigate(`/events/${result.eventId}`);
-      } else {
-        navigate(from, { replace: true });
-      }
+      navigate(from, { replace: true });
     } catch {
       toast.error("Invalid credentials");
     }
@@ -90,15 +69,6 @@ export default function LoginPage() {
       <div className="card w-full bg-base-100 shadow-xl sm:max-w-sm">
         <div className="card-body">
           <h2 className="card-title justify-center">Login</h2>
-
-          {invitationInfo && (
-            <div className="alert alert-info text-sm">
-              <span>
-                You have been invited to <strong>{invitationInfo.eventName}</strong>. Log in to
-                join.
-              </span>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="form-control">

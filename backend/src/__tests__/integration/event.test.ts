@@ -5,7 +5,6 @@ import {
   createTestEvent,
   createTestUserDirectly,
   loginTestUser,
-  createTestInvitation,
 } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
@@ -221,23 +220,6 @@ describe("Event API", () => {
       expect(res.body.data.name).toBe("Updated Name");
     });
 
-    it("should update dates and adjust pending invitation expiresAt", async () => {
-      const { cookie: adminCookie } = await setupAdmin();
-      const event = await createTestEvent(adminCookie);
-      const invitation = await createTestInvitation(adminCookie, event.id, "test@invite.com");
-
-      const newEnd = "2026-07-01T18:00:00Z";
-      await request
-        .patch(`/api/events/${event.id}`)
-        .set("Cookie", adminCookie)
-        .send({ endDateTime: newEnd });
-
-      const updated = await prisma.eventInvitation.findUnique({
-        where: { id: invitation.invitation.id },
-      });
-      expect(updated!.expiresAt.toISOString()).toBe(new Date(newEnd).toISOString());
-    });
-
     it("should reject update by non-creator", async () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
@@ -281,21 +263,6 @@ describe("Event API", () => {
       // Verify event is gone
       const found = await prisma.event.findUnique({ where: { id: event.id } });
       expect(found).toBeNull();
-    });
-
-    it("should cascade delete invitations and participations", async () => {
-      const { cookie: adminCookie } = await setupAdmin();
-      const event = await createTestEvent(adminCookie);
-      await createTestInvitation(adminCookie, event.id, "test@invite.com");
-
-      await request.delete(`/api/events/${event.id}`).set("Cookie", adminCookie);
-
-      const invitations = await prisma.eventInvitation.findMany({ where: { eventId: event.id } });
-      const participations = await prisma.eventParticipation.findMany({
-        where: { eventId: event.id },
-      });
-      expect(invitations).toHaveLength(0);
-      expect(participations).toHaveLength(0);
     });
 
     it("should reject delete by non-creator", async () => {

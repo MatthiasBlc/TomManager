@@ -5,7 +5,6 @@ import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
 import EditEventModal from "../components/events/EditEventModal";
 import ParticipantList from "../components/events/ParticipantList";
-import InvitationManager from "../components/events/InvitationManager";
 import BoardGameTab from "../components/boardgames/BoardGameTab";
 import PlanningTab from "../components/planning/PlanningTab";
 
@@ -23,7 +22,7 @@ interface EventDetail {
   }[];
 }
 
-type Tab = "info" | "participants" | "invitations" | "planning" | "games";
+type Tab = "info" | "participants" | "planning" | "games";
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -167,14 +166,6 @@ export default function EventDetailPage() {
           >
             Participants ({event.participants.length})
           </button>
-          {isCreator && (
-            <button
-              className={`tab ${tab === "invitations" ? "tab-active" : ""}`}
-              onClick={() => setTab("invitations")}
-            >
-              Invitations
-            </button>
-          )}
         </div>
       </div>
 
@@ -207,8 +198,6 @@ export default function EventDetailPage() {
           }}
         />
       )}
-
-      {tab === "invitations" && isCreator && <InvitationManager eventId={event.id} />}
 
       {tab === "planning" && <PlanningTab eventId={event.id} />}
 

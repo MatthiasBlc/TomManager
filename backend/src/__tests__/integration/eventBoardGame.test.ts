@@ -1,27 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { request, setupAdmin, createTestEvent, createTestInvitation } from "../setup/testHelpers";
+import { setupAdmin, createTestEvent, addTestParticipant } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
 // Helper: setup admin + event + participant user with cookie
 async function setupEventWithParticipant() {
   const admin = await setupAdmin();
   const event = await createTestEvent(admin.cookie);
-
-  const invitation = await createTestInvitation(admin.cookie, event.id, "player@example.com");
-  await request.post("/api/auth/signup").send({
+  const { user, cookie: playerCookie } = await addTestParticipant(event.id, {
     email: "player@example.com",
     username: "player1",
-    password: "Password123!",
-    invitationToken: invitation.invitation.token,
   });
-  const loginRes = await request.post("/api/auth/login").send({
-    identifier: "player@example.com",
-    password: "Password123!",
-  });
-  const playerCookie = loginRes.headers["set-cookie"];
-  const playerId = loginRes.body.user.id;
-
-  return { admin, event, playerCookie, playerId };
+  return { admin, event, playerCookie, playerId: user.id };
 }
 
 async function createBoardGame(name = "Catan") {

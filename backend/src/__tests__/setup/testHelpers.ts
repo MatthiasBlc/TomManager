@@ -74,40 +74,24 @@ export async function createTestEvent(
 }
 
 /**
- * Creates an invitation and returns the token. Requires an admin cookie and an eventId.
+ * Ajoute un user comme participant a un event directement en DB.
+ * Remplace l'ancien flow invitation+signup.
  */
-export async function createTestInvitation(cookie: string[], eventId: string, email: string) {
-  const res = await request
-    .post(`/api/events/${eventId}/invitations`)
-    .set("Cookie", cookie)
-    .send({ identifier: email });
-  return res.body.data;
-}
-
-/**
- * Full flow: creates admin, event, invitation, and signs up a user via the invitation.
- */
-export async function signupViaInvitation(overrides?: {
-  email?: string;
-  username?: string;
-  password?: string;
-}) {
-  const email = overrides?.email || "invited@example.com";
-  const username = overrides?.username || "inviteduser";
-  const password = overrides?.password || "Password123!";
-
-  const { cookie: adminCookie } = await setupAdmin();
-  const event = await createTestEvent(adminCookie);
-  const invitation = await createTestInvitation(adminCookie, event.id, email);
-
-  const res = await request.post("/api/auth/signup").send({
-    email,
-    username,
-    password,
-    invitationToken: invitation.invitation.token,
+export async function addTestParticipant(
+  eventId: string,
+  overrides?: { email?: string; username?: string; password?: string }
+) {
+  const { user, email, username, password } = await createTestUserDirectly({
+    email: overrides?.email || "player@example.com",
+    username: overrides?.username || "player1",
+    password: overrides?.password || "Password123!",
   });
-
-  return { res, event, email, username, password, adminCookie };
+  await prisma.eventParticipation.create({
+    data: { eventId, userId: user.id },
+  });
+  const loginRes = await request.post("/api/auth/login").send({ identifier: email, password });
+  const cookie = [loginRes.headers["set-cookie"]].flat() as string[];
+  return { user, cookie, email, username, password };
 }
 
 // Legacy helpers kept for backward compatibility during transition

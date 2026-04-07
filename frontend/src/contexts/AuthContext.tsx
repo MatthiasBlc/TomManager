@@ -14,17 +14,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (
-    identifier: string,
-    password: string,
-    invitationToken?: string
-  ) => Promise<{ eventId?: string }>;
-  signup: (
-    email: string,
-    username: string,
-    password: string,
-    invitationToken: string
-  ) => Promise<{ eventId: string }>;
+  login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   initiateDiscordLogin: (returnTo?: string) => Promise<void>;
   unlinkDiscord: () => Promise<void>;
@@ -52,21 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
-  const login = async (identifier: string, password: string, invitationToken?: string) => {
-    const res = await api.post("/api/auth/login", { identifier, password, invitationToken });
+  const login = async (identifier: string, password: string) => {
+    const res = await api.post("/api/auth/login", { identifier, password });
     setUser(res.data.user);
-    return { eventId: res.data.eventId };
-  };
-
-  const signup = async (
-    email: string,
-    username: string,
-    password: string,
-    invitationToken: string
-  ) => {
-    const res = await api.post("/api/auth/signup", { email, username, password, invitationToken });
-    setUser(res.data.user);
-    return { eventId: res.data.eventId };
   };
 
   const logout = async () => {
@@ -89,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = checkAuth;
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, initiateDiscordLogin, unlinkDiscord, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, initiateDiscordLogin, unlinkDiscord, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
