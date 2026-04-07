@@ -20,7 +20,10 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
     classes = "bg-warning border-warning text-warning-content";
 
   return (
-    <div className={`h-full w-full overflow-hidden rounded border-l-[3px] px-1 py-0.5 ${classes}`}>
+    <div
+      className={`h-full w-full overflow-hidden rounded border-l-[3px] px-1 py-0.5 ${classes}`}
+      style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.35)" }}
+    >
       <p className="truncate text-xs font-semibold leading-tight">{arg.event.title}</p>
       <p className="text-xs opacity-80">{arg.timeText}</p>
       <p className="text-xs opacity-70">
