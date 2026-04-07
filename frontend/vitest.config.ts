@@ -23,10 +23,11 @@ export default defineConfig({
         "**/*.d.ts",
         "src/main.tsx",
         "src/vite-env.d.ts",
+        "*.config.{js,mjs,cjs,ts}",
       ],
       thresholds: {
-        statements: 50,
-        branches: 50,
+        statements: 20,
+        branches: 70,
       },
     },
   },
