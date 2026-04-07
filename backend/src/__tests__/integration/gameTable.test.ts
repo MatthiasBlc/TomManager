@@ -264,9 +264,7 @@ describe("GameTable API", () => {
         email: "p2@example.com",
         username: "player2",
       });
-      await request
-        .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", p2Cookie);
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", p2Cookie);
 
       // Reduce maxPlayers to 1 — last joined should be demoted
       const res = await request
