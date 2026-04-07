@@ -16,7 +16,9 @@ client.once(Events.ClientReady, async (c) => {
 
   const guild = c.guilds.cache.get(env.DISCORD_GUILD_ID);
   if (!guild) {
-    console.error(`[bot] Guild ${env.DISCORD_GUILD_ID} introuvable. Verifier DISCORD_GUILD_ID et que le bot est dans le serveur.`);
+    console.error(
+      `[bot] Guild ${env.DISCORD_GUILD_ID} introuvable. Verifier DISCORD_GUILD_ID et que le bot est dans le serveur.`
+    );
     return;
   }
 

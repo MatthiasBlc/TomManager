@@ -15,9 +15,10 @@ export async function initiateLogin(req: Request, res: Response, next: NextFunct
     const state = discordService.generateState();
     req.session.oauthState = state;
 
-    const returnTo = typeof req.query.returnTo === "string" && req.query.returnTo.startsWith("/")
-      ? req.query.returnTo
-      : undefined;
+    const returnTo =
+      typeof req.query.returnTo === "string" && req.query.returnTo.startsWith("/")
+        ? req.query.returnTo
+        : undefined;
     if (returnTo) req.session.oauthReturnTo = returnTo;
 
     if (req.session.userId) req.session.oauthAction = "link";
@@ -76,7 +77,16 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
     const displayName = guildMember.nick ?? discordUser.global_name ?? discordUser.username;
 
     if (action === "link" && req.session.userId) {
-      return handleLink(req, res, next, discordUser.id, discordUser.username, avatarUrl, memberRoles, returnTo);
+      return handleLink(
+        req,
+        res,
+        next,
+        discordUser.id,
+        discordUser.username,
+        avatarUrl,
+        memberRoles,
+        returnTo
+      );
     }
 
     const existing = await prisma.user.findFirst({
@@ -130,7 +140,7 @@ async function handleLink(
   discordUsername: string,
   avatarUrl: string,
   memberRoles: string[],
-  returnTo: string,
+  returnTo: string
 ) {
   const conflict = await prisma.user.findFirst({
     where: { discordId },
@@ -162,7 +172,9 @@ export async function unlinkDiscord(req: Request, res: Response, next: NextFunct
     }
 
     if (!user.passwordHash) {
-      res.status(400).json({ error: { message: "Cannot unlink Discord from a Discord-only account" } });
+      res
+        .status(400)
+        .json({ error: { message: "Cannot unlink Discord from a Discord-only account" } });
       return;
     }
 

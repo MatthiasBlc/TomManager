@@ -24,7 +24,8 @@ export default function TableCard({ table, onClick }: Props) {
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
-  const hasGmPlayerConflict = table.isGM && !table.currentUserConflict && table.conflictingPlayerCount > 0;
+  const hasGmPlayerConflict =
+    table.isGM && !table.currentUserConflict && table.conflictingPlayerCount > 0;
 
   return (
     <div
@@ -43,7 +44,8 @@ export default function TableCard({ table, onClick }: Props) {
             )}
             {hasGmPlayerConflict && (
               <span className="badge badge-error badge-sm">
-                ⚠ {table.conflictingPlayerCount} conflit{table.conflictingPlayerCount > 1 ? "s" : ""}
+                ⚠ {table.conflictingPlayerCount} conflit
+                {table.conflictingPlayerCount > 1 ? "s" : ""}
               </span>
             )}
           </div>

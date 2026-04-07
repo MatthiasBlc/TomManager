@@ -165,7 +165,11 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
         )}
         <div className="flex items-center justify-between pt-2">
           {user?.role === "ADMIN" && (
-            <button type="button" className="btn btn-error btn-outline btn-sm" onClick={handlePurge}>
+            <button
+              type="button"
+              className="btn btn-error btn-outline btn-sm"
+              onClick={handlePurge}
+            >
               Purger l'event
             </button>
           )}

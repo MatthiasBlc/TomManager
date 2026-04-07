@@ -14,7 +14,7 @@
 | POST   | `/login`            | Login with identifier (email/username), optional token                   |
 | POST   | `/logout`           | Destroy session                                                          |
 | GET    | `/me`               | Get current user (inclut discordId, discordUsername, avatarUrl)          |
-| GET    | `/discord`          | Initie OAuth Discord — retourne `{ url }` (503 si non configure)        |
+| GET    | `/discord`          | Initie OAuth Discord — retourne `{ url }` (503 si non configure)         |
 | GET    | `/discord/callback` | Callback OAuth — echange code, sync roles, cree session, redirect        |
 | DELETE | `/discord/link`     | Dissocie Discord du compte local (requireAuth, interdit si Discord-only) |
 
@@ -84,9 +84,9 @@
 
 ## Admin (`/api/admin`)
 
-| Method | Path              | Auth                         | Description                              |
-| ------ | ----------------- | ---------------------------- | ---------------------------------------- |
-| POST   | `/discord/sync`   | requireAuth + requireAdmin   | Sync manuelle membres Discord → DB       |
+| Method | Path            | Auth                       | Description                        |
+| ------ | --------------- | -------------------------- | ---------------------------------- |
+| POST   | `/discord/sync` | requireAuth + requireAdmin | Sync manuelle membres Discord → DB |
 
 ## Event Board Games (`/api/events/:eventId/boardgames`)
 

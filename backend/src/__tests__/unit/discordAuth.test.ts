@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { generateState, buildAuthorizeUrl, buildAvatarUrl, isDiscordConfigured } from "../../services/discordAuth";
+import {
+  generateState,
+  buildAuthorizeUrl,
+  buildAvatarUrl,
+  isDiscordConfigured,
+} from "../../services/discordAuth";
 
 vi.mock("../../config/env", () => ({
   default: {

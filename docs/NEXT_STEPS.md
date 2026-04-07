@@ -202,6 +202,7 @@ Spec complete : `docs/features/discord-bot/SPEC_DISCORD_OAUTH.md`
 Roadmap detaillee : `docs/features/discord-bot/ROADMAP.md`
 
 **Points cles** :
+
 - Scopes OAuth2 : `identify` + `guilds.members.read` (roles lus au login, pas en temps reel)
 - Le bot Discord doit etre dans le serveur (pas actif) pour que `guilds.members.read` fonctionne
 - Migration DB : `User.email` et `passwordHash` deviennent nullable, 3 champs Discord ajoutes
@@ -211,6 +212,7 @@ Roadmap detaillee : `docs/features/discord-bot/ROADMAP.md`
 - Mode degrade : si variables Discord absentes → bouton masque, auth locale seule
 
 **Checklist** :
+
 - [ ] Prerequis Discord (creer app, obtenir credentials, inviter bot sur serveur)
 - [ ] Migration DB (5 champs User + 1 champ Event)
 - [ ] Variables d'env : `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_GUILD_ID`, `DISCORD_REDIRECT_URI`, `DISCORD_ADMIN_ROLE_ID` (optionnel)
@@ -235,14 +237,14 @@ Phase 9 (Mailer) devient entierement obsolete.
 
 **Ce que le bot ajoute par rapport a OAuth seul** :
 
-| Besoin                                | OAuth seul | + Bot |
-| ------------------------------------- | ---------- | ----- |
-| Login Discord                         | Oui        | Oui   |
-| Roles → participations au login       | Oui        | Oui   |
-| Sync immediate sans login             | Non        | Oui   |
-| Compte cree avant premier login       | Non        | Oui   |
-| Retrait propagé sans login            | Non        | Oui   |
-| Notifications DM Discord              | Non        | Oui   |
+| Besoin                          | OAuth seul | + Bot |
+| ------------------------------- | ---------- | ----- |
+| Login Discord                   | Oui        | Oui   |
+| Roles → participations au login | Oui        | Oui   |
+| Sync immediate sans login       | Non        | Oui   |
+| Compte cree avant premier login | Non        | Oui   |
+| Retrait propagé sans login      | Non        | Oui   |
+| Notifications DM Discord        | Non        | Oui   |
 
 **Infrastructure** :
 
@@ -287,12 +289,14 @@ guildMemberUpdate(oldMember, newMember)
 
 L'evenement `guildMemberUpdate` est perdu si le bot est down au moment de l'assignation.
 Deux mecanismes de compensation :
+
 1. Sync automatique au demarrage : le bot appelle `guild.members.fetch()` et reconcilie la DB
 2. Endpoint admin manuel `POST /api/admin/discord/sync` (voir ci-dessous)
 
 **Endpoint de sync manuelle (admin)** :
 
 `POST /api/admin/discord/sync`
+
 - Appelle `guild.members.fetch({ limit: 1000 })` avec pagination si > 1000 membres
 - Reconcilie la DB : cree les participations manquantes, supprime les invalides
 - Retourne `{ created: N, removed: N, errors: [] }`
@@ -307,13 +311,13 @@ Deux mecanismes de compensation :
 
 **Surface de complexite** :
 
-| Composant                         | Complexite |
-| --------------------------------- | ---------- |
-| Service docker discord-bot/       | Faible     |
-| guildMemberUpdate handler         | Faible     |
-| Sync au demarrage                 | Faible     |
-| Endpoint sync manuelle            | Faible     |
-| Notifications DM (optionnel)      | Faible     |
+| Composant                    | Complexite |
+| ---------------------------- | ---------- |
+| Service docker discord-bot/  | Faible     |
+| guildMemberUpdate handler    | Faible     |
+| Sync au demarrage            | Faible     |
+| Endpoint sync manuelle       | Faible     |
+| Notifications DM (optionnel) | Faible     |
 
 Total : 0.5 sprint. La logique de sync est deja dans Phase 15a, le bot ne fait que l'appeler.
 
@@ -322,6 +326,7 @@ Total : 0.5 sprint. La logique de sync est deja dans Phase 15a, le bot ne fait q
 ## Phase 16 : Features avancees (Priorite basse, a discuter)
 
 Idees de features futures, a prioriser selon les besoins :
+
 - [ ] Bouton de purge d'event pour les admin (avec confirmation, vide le planning et les jeux)
 
 - [ ] **Profil utilisateur** : avatar, bio, preferences

@@ -43,11 +43,11 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
         {confirmedCount}/{maxPlayers}
         {waitlistCount > 0 && ` +${waitlistCount}`}
       </p>
-      {currentUserConflict && (
-        <p className="text-xs font-semibold">⚠ Conflit</p>
-      )}
+      {currentUserConflict && <p className="text-xs font-semibold">⚠ Conflit</p>}
       {!currentUserConflict && isGM && conflictingPlayerCount > 0 && (
-        <p className="text-xs font-semibold">⚠ {conflictingPlayerCount} conflit{conflictingPlayerCount > 1 ? "s" : ""}</p>
+        <p className="text-xs font-semibold">
+          ⚠ {conflictingPlayerCount} conflit{conflictingPlayerCount > 1 ? "s" : ""}
+        </p>
       )}
     </div>
   );

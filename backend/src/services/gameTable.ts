@@ -172,8 +172,10 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
         const a = tables[indices[i]];
         const b = tables[indices[j]];
         if (a.startDateTime < b.endDateTime && a.endDateTime > b.startDateTime) {
-          if (!conflictedUsersInTable.has(indices[i])) conflictedUsersInTable.set(indices[i], new Set());
-          if (!conflictedUsersInTable.has(indices[j])) conflictedUsersInTable.set(indices[j], new Set());
+          if (!conflictedUsersInTable.has(indices[i]))
+            conflictedUsersInTable.set(indices[i], new Set());
+          if (!conflictedUsersInTable.has(indices[j]))
+            conflictedUsersInTable.set(indices[j], new Set());
           conflictedUsersInTable.get(indices[i])!.add(userId);
           conflictedUsersInTable.get(indices[j])!.add(userId);
         }

@@ -144,5 +144,4 @@ describe("Validation Zod — 400 sur donnees invalides", () => {
       expect(res.status).toBe(400);
     });
   });
-
 });

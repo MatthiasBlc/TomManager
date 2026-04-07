@@ -122,7 +122,12 @@ export async function getEvent(eventId: string) {
 
 export async function updateEvent(
   eventId: string,
-  data: { name?: string; startDateTime?: string; endDateTime?: string; discordRoleId?: string | null }
+  data: {
+    name?: string;
+    startDateTime?: string;
+    endDateTime?: string;
+    discordRoleId?: string | null;
+  }
 ) {
   if (data.discordRoleId !== undefined && data.discordRoleId !== null) {
     const conflict = await prisma.event.findFirst({

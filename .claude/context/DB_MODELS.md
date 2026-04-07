@@ -11,19 +11,19 @@
 
 ## User
 
-| Field           | Type      | Notes                                          |
-| --------------- | --------- | ---------------------------------------------- |
-| id              | String    | UUID PK                                        |
+| Field           | Type      | Notes                                                |
+| --------------- | --------- | ---------------------------------------------------- |
+| id              | String    | UUID PK                                              |
 | email           | String?   | Unique, nullable (comptes Discord n'ont pas d'email) |
-| username        | String    | Unique                                         |
-| passwordHash    | String?   | Bcrypt hash, nullable (comptes Discord-only)   |
-| discordId       | String?   | Snowflake Discord, UNIQUE                      |
-| discordUsername | String?   | Handle global Discord (ex: tomdu35)            |
-| avatarUrl       | String?   | URL CDN Discord, mise a jour au login          |
-| role            | Role      | USER (default) or ADMIN                        |
-| createdAt       | DateTime  | Auto                                           |
-| updatedAt       | DateTime  | Auto                                           |
-| deletedAt       | DateTime? | Soft delete                                    |
+| username        | String    | Unique                                               |
+| passwordHash    | String?   | Bcrypt hash, nullable (comptes Discord-only)         |
+| discordId       | String?   | Snowflake Discord, UNIQUE                            |
+| discordUsername | String?   | Handle global Discord (ex: tomdu35)                  |
+| avatarUrl       | String?   | URL CDN Discord, mise a jour au login                |
+| role            | Role      | USER (default) or ADMIN                              |
+| createdAt       | DateTime  | Auto                                                 |
+| updatedAt       | DateTime  | Auto                                                 |
+| deletedAt       | DateTime? | Soft delete                                          |
 
 Invariant : un User a soit (email + passwordHash) soit discordId, soit les deux (compte hybride).
 
@@ -31,16 +31,16 @@ Relations: createdEvents, sentInvitations, eventParticipations, createdGameTable
 
 ## Event
 
-| Field         | Type     | Notes                                      |
-| ------------- | -------- | ------------------------------------------ |
-| id            | String   | UUID PK                                    |
-| name          | String   | required                                   |
-| startDateTime | DateTime | UTC                                        |
-| endDateTime   | DateTime | UTC                                        |
-| createdBy     | String   | FK -> User.id                              |
-| discordRoleId | String?  | ID role Discord lie a cet event, UNIQUE    |
-| createdAt     | DateTime | Auto                                       |
-| updatedAt     | DateTime | Auto                                       |
+| Field         | Type     | Notes                                   |
+| ------------- | -------- | --------------------------------------- |
+| id            | String   | UUID PK                                 |
+| name          | String   | required                                |
+| startDateTime | DateTime | UTC                                     |
+| endDateTime   | DateTime | UTC                                     |
+| createdBy     | String   | FK -> User.id                           |
+| discordRoleId | String?  | ID role Discord lie a cet event, UNIQUE |
+| createdAt     | DateTime | Auto                                    |
+| updatedAt     | DateTime | Auto                                    |
 
 Relations: creator (User), invitations, participations, gameTables
 

@@ -7,7 +7,12 @@ const DISCORD_API = "https://discord.com/api/v10";
 const DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token";
 
 export function isDiscordConfigured(): boolean {
-  return !!(env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET && env.DISCORD_GUILD_ID && env.DISCORD_REDIRECT_URI);
+  return !!(
+    env.DISCORD_CLIENT_ID &&
+    env.DISCORD_CLIENT_SECRET &&
+    env.DISCORD_GUILD_ID &&
+    env.DISCORD_REDIRECT_URI
+  );
 }
 
 export function generateState(): string {
@@ -89,10 +94,11 @@ export function buildAvatarUrl(id: string, avatar: string | null): string {
   return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
 }
 
-export async function generateUniqueUsername(candidate: string, discordId: string): Promise<string> {
-  let base = candidate
-    .slice(0, 30)
-    .replace(/[^a-zA-Z0-9_-]/g, "_");
+export async function generateUniqueUsername(
+  candidate: string,
+  discordId: string
+): Promise<string> {
+  let base = candidate.slice(0, 30).replace(/[^a-zA-Z0-9_-]/g, "_");
 
   if (base.length < 3) base = `user_${discordId.slice(-5)}`;
 
@@ -106,7 +112,10 @@ export async function generateUniqueUsername(candidate: string, discordId: strin
   return `${base.slice(0, 21)}_${crypto.randomBytes(3).toString("hex")}`;
 }
 
-export async function syncDiscordParticipations(userId: string, memberRoles: string[]): Promise<void> {
+export async function syncDiscordParticipations(
+  userId: string,
+  memberRoles: string[]
+): Promise<void> {
   const events = await prisma.event.findMany({
     where: { discordRoleId: { not: null } },
     select: { id: true, discordRoleId: true },

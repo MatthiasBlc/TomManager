@@ -67,7 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = checkAuth;
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, initiateDiscordLogin, unlinkDiscord, refreshUser }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, logout, initiateDiscordLogin, unlinkDiscord, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

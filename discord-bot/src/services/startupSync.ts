@@ -1,7 +1,12 @@
 import { Guild } from "discord.js";
 import prisma from "../util/db";
 import env from "../util/env";
-import { handleRoleAdded, handleRoleRemoved, handleAdminRoleChange, buildAvatarUrl } from "./syncParticipation";
+import {
+  handleRoleAdded,
+  handleRoleRemoved,
+  handleAdminRoleChange,
+  buildAvatarUrl,
+} from "./syncParticipation";
 
 // Sync complete au demarrage : reconcilie la DB avec l'etat actuel du guild
 export async function startupSync(guild: Guild): Promise<void> {

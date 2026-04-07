@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  request,
-  createTestUserDirectly,
-  loginTestUser,
-} from "../setup/testHelpers";
+import { request, createTestUserDirectly, loginTestUser } from "../setup/testHelpers";
 
 describe("Auth API", () => {
   describe("POST /api/auth/login", () => {

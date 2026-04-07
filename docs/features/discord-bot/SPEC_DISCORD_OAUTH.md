@@ -16,13 +16,13 @@ Les comptes locaux (email+password) continuent de fonctionner. Les deux systemes
 
 ## Perimetre de cette phase
 
-| Inclus                                          | Hors scope              |
-| ----------------------------------------------- | ----------------------- |
-| Login / creation de compte via Discord OAuth2   | Bot Discord             |
-| Sync roles → EventParticipation au login        | Sync temps reel         |
-| Liaison compte local existant ↔ Discord         | Notifications DM        |
-| Role admin Discord → User.role = ADMIN          | Multi-serveur Discord   |
-| Champ `discordRoleId` sur Event (admin UI + API)| Revocation OAuth active |
+| Inclus                                           | Hors scope              |
+| ------------------------------------------------ | ----------------------- |
+| Login / creation de compte via Discord OAuth2    | Bot Discord             |
+| Sync roles → EventParticipation au login         | Sync temps reel         |
+| Liaison compte local existant ↔ Discord          | Notifications DM        |
+| Role admin Discord → User.role = ADMIN           | Multi-serveur Discord   |
+| Champ `discordRoleId` sur Event (admin UI + API) | Revocation OAuth active |
 
 ---
 
@@ -30,13 +30,13 @@ Les comptes locaux (email+password) continuent de fonctionner. Les deux systemes
 
 ### Table `User` — champs modifies
 
-| Champ          | Avant        | Apres         | Notes                                    |
-| -------------- | ------------ | ------------- | ---------------------------------------- |
-| `email`        | `String`     | `String?`     | Nullable : comptes Discord sans email    |
-| `passwordHash` | `String`     | `String?`     | Nullable : comptes Discord sans password |
-| `discordId`    | —            | `String?`     | Snowflake Discord, UNIQUE                |
-| `discordUsername` | —         | `String?`     | Handle global Discord (ex: `tomdu35`)    |
-| `avatarUrl`    | —            | `String?`     | URL CDN Discord, mise a jour au login    |
+| Champ             | Avant    | Apres     | Notes                                    |
+| ----------------- | -------- | --------- | ---------------------------------------- |
+| `email`           | `String` | `String?` | Nullable : comptes Discord sans email    |
+| `passwordHash`    | `String` | `String?` | Nullable : comptes Discord sans password |
+| `discordId`       | —        | `String?` | Snowflake Discord, UNIQUE                |
+| `discordUsername` | —        | `String?` | Handle global Discord (ex: `tomdu35`)    |
+| `avatarUrl`       | —        | `String?` | URL CDN Discord, mise a jour au login    |
 
 **Note sur `email` UNIQUE + nullable** : PostgreSQL traite les NULLs comme distincts dans une
 contrainte UNIQUE. Plusieurs comptes Discord sans email ne generent pas de conflit. La contrainte
@@ -50,9 +50,9 @@ Seul le flux OAuth cree des comptes avec `email = null`.
 
 ### Table `Event` — champ ajoute
 
-| Champ           | Type      | Notes                                          |
-| --------------- | --------- | ---------------------------------------------- |
-| `discordRoleId` | `String?` | ID du role Discord lie a cet event, UNIQUE     |
+| Champ           | Type      | Notes                                      |
+| --------------- | --------- | ------------------------------------------ |
+| `discordRoleId` | `String?` | ID du role Discord lie a cet event, UNIQUE |
 
 Contrainte UNIQUE : un role Discord = au plus un event. Nullable : la plupart des events existants
 n'ont pas de role Discord.
@@ -61,19 +61,19 @@ n'ont pas de role Discord.
 
 ## Variables d'environnement
 
-| Variable                | Requis   | Notes                                                       |
-| ----------------------- | -------- | ----------------------------------------------------------- |
-| `DISCORD_CLIENT_ID`     | Oui      | ID de l'application Discord Developer Portal               |
-| `DISCORD_CLIENT_SECRET` | Oui      | Secret OAuth2, ne quitte jamais le backend                  |
-| `DISCORD_GUILD_ID`      | Oui      | ID du serveur Discord (Snowflake)                           |
-| `DISCORD_REDIRECT_URI`  | Oui      | URL de callback backend (env-dependante, voir ci-dessous)   |
-| `DISCORD_ADMIN_ROLE_ID` | Non      | Si defini, les porteurs de ce role ont `User.role = ADMIN`  |
+| Variable                | Requis | Notes                                                      |
+| ----------------------- | ------ | ---------------------------------------------------------- |
+| `DISCORD_CLIENT_ID`     | Oui    | ID de l'application Discord Developer Portal               |
+| `DISCORD_CLIENT_SECRET` | Oui    | Secret OAuth2, ne quitte jamais le backend                 |
+| `DISCORD_GUILD_ID`      | Oui    | ID du serveur Discord (Snowflake)                          |
+| `DISCORD_REDIRECT_URI`  | Oui    | URL de callback backend (env-dependante, voir ci-dessous)  |
+| `DISCORD_ADMIN_ROLE_ID` | Non    | Si defini, les porteurs de ce role ont `User.role = ADMIN` |
 
 **Valeurs selon l'environnement** :
 
-| Env        | `DISCORD_REDIRECT_URI`                             |
-| ---------- | -------------------------------------------------- |
-| Dev        | `http://localhost:3001/api/auth/discord/callback`  |
+| Env        | `DISCORD_REDIRECT_URI`                                     |
+| ---------- | ---------------------------------------------------------- |
+| Dev        | `http://localhost:3001/api/auth/discord/callback`          |
 | Production | `https://tommanager.example.com/api/auth/discord/callback` |
 
 Le callback est toujours cote **backend**. Le frontend ne voit jamais le `code` OAuth ni
@@ -101,10 +101,10 @@ le backend log un warning et desactive les routes Discord. Le frontend masque le
 
 ## Scopes OAuth2
 
-| Scope                | Raison                                                           |
-| -------------------- | ---------------------------------------------------------------- |
-| `identify`           | id, username, avatar de l'utilisateur                            |
-| `guilds.members.read`| Roles du membre sur le serveur — necessite le bot dans le guild  |
+| Scope                 | Raison                                                          |
+| --------------------- | --------------------------------------------------------------- |
+| `identify`            | id, username, avatar de l'utilisateur                           |
+| `guilds.members.read` | Roles du membre sur le serveur — necessite le bot dans le guild |
 
 Scopes explicitement exclus : `email`, `guilds`, `messages.read`, `bot`.
 
@@ -117,6 +117,7 @@ Scopes explicitement exclus : `email`, `guilds`, `messages.read`, `bot`.
 Initie le flux OAuth.
 
 **Comportement** :
+
 1. Genere un token `state` aleatoire (16 bytes hex via `crypto.randomBytes`)
 2. Stocke dans la session : `req.session.oauthState = state`
 3. Si query param `returnTo` present et valide (URL relative) : `req.session.oauthReturnTo = returnTo`
@@ -249,6 +250,7 @@ Les EventParticipation liees a des discordRoleId sont conservees (l'admin devra 
 Accepte desormais `discordRoleId` (optionnel) dans le body.
 
 **Validation Zod** :
+
 - `discordRoleId` : `z.string().regex(/^\d{17,20}$/).nullable().optional()`
   (Discord Snowflake : 17 a 20 chiffres)
 
@@ -331,13 +333,13 @@ Si User.findFirst({ username: candidat }) existe :
 
 ## Coexistence comptes locaux / Discord
 
-| Scenario                           | Comportement                                          |
-| ---------------------------------- | ----------------------------------------------------- |
-| Compte local, pas de Discord       | Inchange. Login email+password.                       |
-| Compte Discord only                | Login Discord uniquement. Pas de mot de passe local.  |
-| Compte hybride (local + Discord)   | Les deux methodes fonctionnent.                       |
-| Tentative login local sur Discord-only | `passwordHash === null` → 401 "Invalid credentials" |
-| Compte soft-deleted, login Discord | 401 "Account disabled"                                |
+| Scenario                               | Comportement                                         |
+| -------------------------------------- | ---------------------------------------------------- |
+| Compte local, pas de Discord           | Inchange. Login email+password.                      |
+| Compte Discord only                    | Login Discord uniquement. Pas de mot de passe local. |
+| Compte hybride (local + Discord)       | Les deux methodes fonctionnent.                      |
+| Tentative login local sur Discord-only | `passwordHash === null` → 401 "Invalid credentials"  |
+| Compte soft-deleted, login Discord     | 401 "Account disabled"                               |
 
 **Fallback admin** : l'admin doit toujours avoir `email + passwordHash`. Si Discord est
 indisponible, il peut toujours se connecter. Recommandation documentee : ne pas supprimer
@@ -347,14 +349,14 @@ le mot de passe local du compte admin.
 
 ## Securite OAuth2
 
-| Mecanisme            | Implementation                                                         |
-| -------------------- | ---------------------------------------------------------------------- |
-| CSRF via `state`     | 16 bytes aleatoires, stockes en session, usage unique, verifie au callback |
-| Echange serveur→serveur | `client_secret` jamais expose au browser, code echange cote backend  |
-| `access_token` ephemere | Jete apres recuperation du profil, jamais stocke en DB ni en session |
-| Scope minimal        | `identify` + `guilds.members.read` uniquement                         |
-| Session inchangee    | Cookie `connect.sid` httpOnly + secure + SameSite, duree 1h           |
-| `returnTo` valide    | Accepte uniquement les chemins relatifs (`/...`), rejette URLs absolues |
+| Mecanisme               | Implementation                                                             |
+| ----------------------- | -------------------------------------------------------------------------- |
+| CSRF via `state`        | 16 bytes aleatoires, stockes en session, usage unique, verifie au callback |
+| Echange serveur→serveur | `client_secret` jamais expose au browser, code echange cote backend        |
+| `access_token` ephemere | Jete apres recuperation du profil, jamais stocke en DB ni en session       |
+| Scope minimal           | `identify` + `guilds.members.read` uniquement                              |
+| Session inchangee       | Cookie `connect.sid` httpOnly + secure + SameSite, duree 1h                |
+| `returnTo` valide       | Accepte uniquement les chemins relatifs (`/...`), rejette URLs absolues    |
 
 ---
 
@@ -403,6 +405,7 @@ Masque si le backend repond 503 sur `/api/auth/discord` (mode degrade).
 ### Bouton "Lier mon compte Discord" / "Dissocier"
 
 Page `/profile` :
+
 - Si `user.discordId === null` : bouton "Lier mon compte Discord"
   → `GET /api/auth/discord?returnTo=/profile&action=link`
 - Si `user.discordId !== null` : afficher le handle Discord + avatar + bouton "Dissocier"
@@ -412,6 +415,7 @@ Page `/profile` :
 ### Champ `discordRoleId` sur Event (admin)
 
 Formulaire de creation/edition d'event (admin uniquement) :
+
 - Champ texte optionnel "ID Role Discord"
 - Placeholder : "Ex: 1234567890123456789"
 - Validation frontend : regex `^\d{17,20}$` ou vide
@@ -427,12 +431,12 @@ et le profil. Fallback : initiales si `avatarUrl === null`.
 ```json
 {
   "id": "uuid",
-  "email": "tom@mail.com",      // null pour comptes Discord-only
+  "email": "tom@mail.com", // null pour comptes Discord-only
   "username": "Tom",
   "role": "USER",
-  "discordId": "123456789",     // null si non lie
+  "discordId": "123456789", // null si non lie
   "discordUsername": "tomdu35", // null si non lie
-  "avatarUrl": "https://cdn.discordapp.com/..."  // null si absent
+  "avatarUrl": "https://cdn.discordapp.com/..." // null si absent
 }
 ```
 
@@ -442,27 +446,27 @@ et le profil. Fallback : initiales si `avatarUrl === null`.
 
 ### Tests unitaires (backend)
 
-| Fichier                         | Cas                                                             |
-| ------------------------------- | --------------------------------------------------------------- |
-| `auth.discord.test.ts`          | generateState, validateState, buildAvatarUrl, generateUsername  |
-| `discordParticipation.test.ts`  | syncDiscordParticipations : ajout, suppression, idempotence     |
+| Fichier                        | Cas                                                            |
+| ------------------------------ | -------------------------------------------------------------- |
+| `auth.discord.test.ts`         | generateState, validateState, buildAvatarUrl, generateUsername |
+| `discordParticipation.test.ts` | syncDiscordParticipations : ajout, suppression, idempotence    |
 
 Mocking : `vi.stubGlobal('fetch', ...)` pour mocker les appels Discord API.
 
 ### Tests integration (backend)
 
-| Scenario                            | Assertion                                           |
-| ----------------------------------- | --------------------------------------------------- |
-| Callback valide → nouveau compte    | User cree, session, redirect /events                |
-| Callback valide → compte existant   | User mis a jour, session creee                      |
-| State invalide                      | redirect /login?error=invalid_state                 |
-| User pas dans le guild              | redirect /login?error=not_in_guild                  |
-| Compte soft-deleted                 | redirect /login?error=account_disabled              |
-| Liaison avec discordId deja utilise | redirect /profile?error=discord_already_linked      |
-| Dissociation sans passwordHash      | 400                                                 |
-| Login local sur compte Discord-only | 401                                                 |
-| discordRoleId invalide sur Event    | 422                                                 |
-| discordRoleId deja pris             | 409                                                 |
+| Scenario                            | Assertion                                      |
+| ----------------------------------- | ---------------------------------------------- |
+| Callback valide → nouveau compte    | User cree, session, redirect /events           |
+| Callback valide → compte existant   | User mis a jour, session creee                 |
+| State invalide                      | redirect /login?error=invalid_state            |
+| User pas dans le guild              | redirect /login?error=not_in_guild             |
+| Compte soft-deleted                 | redirect /login?error=account_disabled         |
+| Liaison avec discordId deja utilise | redirect /profile?error=discord_already_linked |
+| Dissociation sans passwordHash      | 400                                            |
+| Login local sur compte Discord-only | 401                                            |
+| discordRoleId invalide sur Event    | 422                                            |
+| discordRoleId deja pris             | 409                                            |
 
 ### Tests E2E (Playwright)
 
@@ -472,17 +476,17 @@ Hors scope CI (necessite un vrai compte Discord). Tests manuels documentes dans 
 
 ## Surface de complexite
 
-| Composant                         | Complexite | Notes                                      |
-| --------------------------------- | ---------- | ------------------------------------------ |
-| Migration DB (5 champs + 1 event) | Faible     | Champs nullable, pas de donnees a migrer   |
-| Route GET /api/auth/discord       | Faible     | Generation URL + state                     |
-| Route GET /api/auth/discord/callback | Moyenne | 3 appels HTTP Discord, 3 cas de figure     |
-| syncDiscordParticipations         | Faible     | Logique set-difference simple              |
-| DELETE /api/auth/discord/link     | Faible     | Validation + update                        |
-| PATCH Event discordRoleId         | Faible     | Zod + contrainte unique                    |
-| Frontend bouton login             | Faible     | Un appel GET + redirect                    |
-| Frontend page profil liaison      | Faible     | Affichage conditionnel + 2 boutons         |
-| Frontend champ discordRoleId      | Faible     | Champ texte avec validation regex          |
+| Composant                            | Complexite | Notes                                    |
+| ------------------------------------ | ---------- | ---------------------------------------- |
+| Migration DB (5 champs + 1 event)    | Faible     | Champs nullable, pas de donnees a migrer |
+| Route GET /api/auth/discord          | Faible     | Generation URL + state                   |
+| Route GET /api/auth/discord/callback | Moyenne    | 3 appels HTTP Discord, 3 cas de figure   |
+| syncDiscordParticipations            | Faible     | Logique set-difference simple            |
+| DELETE /api/auth/discord/link        | Faible     | Validation + update                      |
+| PATCH Event discordRoleId            | Faible     | Zod + contrainte unique                  |
+| Frontend bouton login                | Faible     | Un appel GET + redirect                  |
+| Frontend page profil liaison         | Faible     | Affichage conditionnel + 2 boutons       |
+| Frontend champ discordRoleId         | Faible     | Champ texte avec validation regex        |
 
 **Total : 1 sprint.** Le vrai travail est le callback OAuth (echange de code, appels Discord,
 sync participations). Tout le reste est trivial.
@@ -492,6 +496,7 @@ sync participations). Tout le reste est trivial.
 ## Variables a ajouter
 
 Fichiers a mettre a jour :
+
 - `backend/src/config/env.ts` : 4 nouvelles variables (5 avec DISCORD_ADMIN_ROLE_ID optionnel)
 - `.env` (local dev)
 - `.env.example`
