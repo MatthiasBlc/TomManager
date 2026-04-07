@@ -102,7 +102,7 @@ services:
     networks:
       - internal
     depends_on:
-      tommanager-postgres:
+      tommanager-backend:
         condition: service_healthy
     logging: *default-logging
 
