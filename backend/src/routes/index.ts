@@ -1,5 +1,6 @@
 import { Router } from "express";
 import authRouter from "./auth";
+import adminRouter from "./admin";
 import eventRouter from "./event";
 import participantRouter from "./participant";
 import gameTableRouter from "./gameTable";
@@ -11,6 +12,7 @@ import notificationRouter from "./notification";
 const router = Router();
 
 router.use("/auth", authRouter);
+router.use("/admin", adminRouter);
 router.use("/events", eventRouter);
 router.use("/events", participantRouter);
 router.use("/events", gameTableRouter);

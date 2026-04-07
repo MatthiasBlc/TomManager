@@ -82,6 +82,12 @@
 | PATCH  | `/read-all`     | requireAuth | Mark all as read            |
 | DELETE | `/:id`          | requireAuth | Delete notification         |
 
+## Admin (`/api/admin`)
+
+| Method | Path              | Auth                         | Description                              |
+| ------ | ----------------- | ---------------------------- | ---------------------------------------- |
+| POST   | `/discord/sync`   | requireAuth + requireAdmin   | Sync manuelle membres Discord → DB       |
+
 ## Event Board Games (`/api/events/:eventId/boardgames`)
 
 | Method | Path   | Auth                                  | Description                |
