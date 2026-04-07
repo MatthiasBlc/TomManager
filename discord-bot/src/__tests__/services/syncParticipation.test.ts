@@ -28,7 +28,7 @@ vi.mock("../../util/db", () => ({
   },
 }));
 
-const mockEnv = { DISCORD_ADMIN_ROLE_ID: "admin-role-id" };
+const mockEnv = vi.hoisted(() => ({ DISCORD_ADMIN_ROLE_ID: "admin-role-id" }));
 vi.mock("../../util/env", () => ({ default: mockEnv }));
 
 // ------------------------------------------------------------------ helpers

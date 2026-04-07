@@ -8,7 +8,10 @@ vi.mock("../../util/db", () => ({
   },
 }));
 
-const mockEnv = { DISCORD_ADMIN_ROLE_ID: "admin-role-id", DISCORD_GUILD_ID: "guild-id" };
+const mockEnv = vi.hoisted(() => ({
+  DISCORD_ADMIN_ROLE_ID: "admin-role-id",
+  DISCORD_GUILD_ID: "guild-id",
+}));
 vi.mock("../../util/env", () => ({ default: mockEnv }));
 
 vi.mock("../../services/syncParticipation", () => ({
