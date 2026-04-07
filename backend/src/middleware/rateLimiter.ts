@@ -1,8 +1,7 @@
 import rateLimit from "express-rate-limit";
 import env from "../config/env";
 
-const skipInTest = () =>
-  env.NODE_ENV === "test" || process.env.ENABLE_TEST_ROUTES === "true";
+const skipInTest = () => env.NODE_ENV === "test" || process.env.ENABLE_TEST_ROUTES === "true";
 
 // Auth : 10 tentatives / 15 min
 export const authRateLimiter = rateLimit({
