@@ -7,14 +7,25 @@ interface TableExtendedProps {
   maxPlayers: number;
   waitlistCount: number;
   type: "JDR" | "JDS";
+  currentUserConflict: boolean;
+  conflictingPlayerCount: number;
 }
 
 export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
-  const { isGM, currentUserStatus, confirmedCount, maxPlayers, waitlistCount, type } = arg.event
-    .extendedProps as TableExtendedProps;
+  const {
+    isGM,
+    currentUserStatus,
+    confirmedCount,
+    maxPlayers,
+    waitlistCount,
+    type,
+    currentUserConflict,
+    conflictingPlayerCount,
+  } = arg.event.extendedProps as TableExtendedProps;
 
   let classes = "bg-primary/80 border-primary text-primary-content";
-  if (isGM) classes = "bg-secondary border-secondary text-secondary-content";
+  if (currentUserConflict) classes = "bg-error border-error text-error-content";
+  else if (isGM) classes = "bg-secondary border-secondary text-secondary-content";
   else if (currentUserStatus === "CONFIRMED")
     classes = "bg-success border-success text-success-content";
   else if (currentUserStatus === "WAITLIST")
@@ -32,6 +43,12 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
         {confirmedCount}/{maxPlayers}
         {waitlistCount > 0 && ` +${waitlistCount}`}
       </p>
+      {currentUserConflict && (
+        <p className="text-xs font-semibold">⚠ Conflit</p>
+      )}
+      {!currentUserConflict && isGM && conflictingPlayerCount > 0 && (
+        <p className="text-xs font-semibold">⚠ {conflictingPlayerCount} conflit{conflictingPlayerCount > 1 ? "s" : ""}</p>
+      )}
     </div>
   );
 }

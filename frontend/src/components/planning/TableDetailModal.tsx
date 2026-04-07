@@ -311,7 +311,7 @@ export default function TableDetailModal({
 
             {/* Actions */}
             <div className={`flex flex-wrap gap-2 pt-1 ${isMobile ? "pb-2" : ""}`}>
-              {!isGM && !currentParticipant && (
+              {!currentParticipant && (!isGM || table.type === "JDS" || table.gmIsPlayer) && (
                 <button className="btn btn-primary btn-sm flex-1 md:flex-none" onClick={handleJoin}>
                   Rejoindre
                 </button>

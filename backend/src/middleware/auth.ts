@@ -102,10 +102,19 @@ export async function requireEventCreator(req: Request, res: Response, next: Nex
       return;
     }
 
-    if (event.createdBy !== userId) {
+    if (event.createdBy === userId) {
+      next();
+      return;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
+
+    if (!user || user.role !== "ADMIN") {
       res
         .status(403)
-        .json({ error: { message: "Only the event creator can perform this action" } });
+        .json({ error: { message: "Only the event creator or an admin can perform this action" } });
       return;
     }
 

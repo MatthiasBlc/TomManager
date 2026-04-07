@@ -55,7 +55,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     if (!event) return;
     if (
       !confirm(
-        "Purger cet event ?\n\nCela supprimera definitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Toutes les invitations\n- Tous les jeux\n\nL'event lui-meme sera conserve."
+        "Purger cet event ?\n\nCela supprimera definitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-meme sera conserve."
       )
     )
       return;

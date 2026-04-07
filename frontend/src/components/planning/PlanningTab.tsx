@@ -24,6 +24,8 @@ interface TableSummary {
   currentUserStatus: string | null;
   isGM: boolean;
   type: "JDR" | "JDS";
+  currentUserConflict: boolean;
+  conflictingPlayerCount: number;
 }
 
 interface EventBounds {

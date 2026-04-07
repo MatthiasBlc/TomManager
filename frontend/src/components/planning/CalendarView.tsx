@@ -25,6 +25,8 @@ interface TableSummary {
   maxPlayers: number;
   currentUserStatus: string | null;
   isGM: boolean;
+  currentUserConflict: boolean;
+  conflictingPlayerCount: number;
 }
 
 interface EventBounds {
@@ -202,6 +204,8 @@ export default function CalendarView({
           maxPlayers: t.maxPlayers,
           waitlistCount: t.waitlistCount,
           type: t.type,
+          currentUserConflict: t.currentUserConflict,
+          conflictingPlayerCount: t.conflictingPlayerCount,
         },
       })),
     [tables, isAdmin]

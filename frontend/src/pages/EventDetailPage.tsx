@@ -34,6 +34,8 @@ export default function EventDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
 
   const isCreator = user?.id === event?.createdBy;
+  const isAdmin = user?.role === "ADMIN";
+  const canManageEvent = isCreator || isAdmin;
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -92,7 +94,7 @@ export default function EventDetailPage() {
             {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
           </p>
         </div>
-        {isCreator && (
+        {canManageEvent && (
           <div className="flex gap-2 ml-2 shrink-0">
             <button
               className="btn btn-outline btn-sm btn-square md:btn-wide"
