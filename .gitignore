@@ -31,6 +31,10 @@ Thumbs.db
 # Coverage
 coverage/
 
+# Playwright
+test-results/
+playwright-report/
+
 # Claude memory (user-local)
 .claude/projects/
 

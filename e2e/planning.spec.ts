@@ -1,36 +1,13 @@
 import { test, expect, Page } from "@playwright/test";
-import { seedAdmin, seedEvent, seedInvitation, AdminContext, EventContext } from "./fixtures/seed";
+import { seedAdmin, seedEvent, seedParticipant } from "./fixtures/seed";
 
 const API = process.env.E2E_API_URL || "http://localhost:3001";
-
-/** Cree un user participant et retourne sa session (cookie) */
-async function seedParticipant(
-  admin: AdminContext,
-  event: EventContext
-): Promise<{ cookie: string; email: string; password: string; username: string }> {
-  const email = `player_e2e_${Date.now()}@test.com`;
-  const username = `player_${Date.now()}`;
-  const password = "PlayerPassword123!";
-
-  // Seed user admin pour creer l'invitation
-  const { token } = await seedInvitation(admin.cookie, event.id, email);
-
-  // Signup via l'API
-  const res = await fetch(`${API}/api/auth/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, username, password, invitationToken: token }),
-  });
-  if (!res.ok) throw new Error(`seedParticipant signup failed: ${res.status}`);
-
-  return { cookie: "", email, password, username };
-}
 
 async function loginAs(page: Page, email: string, password: string) {
   await page.goto("/login");
   await page.getByLabel(/email|identifiant/i).fill(email);
   await page.getByLabel(/mot de passe|password/i).fill(password);
-  await page.getByRole("button", { name: /connexion|login/i }).click();
+  await page.getByRole("button", { name: /^(connexion|login)$/i }).click();
   await expect(page).toHaveURL("/events");
 }
 
@@ -43,7 +20,7 @@ test.describe("Planning — tables", () => {
     await page.goto(`/events/${event.id}`);
 
     // Aller sur l'onglet planning
-    await page.getByRole("tab", { name: /planning/i }).click();
+    await page.getByRole("button", { name: "Planning", exact: true }).click();
 
     // Clic sur "Create Table"
     await page.getByRole("button", { name: /create table/i }).click();
@@ -60,7 +37,7 @@ test.describe("Planning — tables", () => {
     await page.getByLabel(/date/i).fill(dateStr);
     await page.getByLabel(/heure de debut/i).fill("14:00");
 
-    await page.getByRole("button", { name: /creer|create/i }).click();
+    await page.getByRole("button", { name: "Creer", exact: true }).click();
 
     // La table apparait dans la liste
     await expect(page.getByText("Table E2E")).toBeVisible();
@@ -69,7 +46,7 @@ test.describe("Planning — tables", () => {
   test("rejoindre puis quitter une table", async ({ page, browser }) => {
     const admin = await seedAdmin();
     const event = await seedEvent(admin.cookie);
-    const player = await seedParticipant(admin, event);
+    const player = await seedParticipant(event.id);
 
     // Admin cree une table via API
     const start = new Date();
@@ -94,13 +71,14 @@ test.describe("Planning — tables", () => {
     // Player se connecte et rejoint la table
     await loginAs(page, player.email, player.password);
     await page.goto(`/events/${event.id}`);
-    await page.getByRole("tab", { name: /planning/i }).click();
+    await page.getByRole("button", { name: "Planning", exact: true }).click();
 
     await page.getByText("Table Rejoindre").click();
     await page.getByRole("button", { name: /rejoindre/i }).click();
-    await expect(page.getByText(/confirme|joined/i)).toBeVisible();
+    await expect(page.getByText("Joined", { exact: true })).toBeVisible();
 
-    // Quitter
+    // Quitter (accepter le dialog confirm)
+    page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: /quitter/i }).click();
     await expect(page.getByRole("button", { name: /rejoindre/i })).toBeVisible();
   });
@@ -115,7 +93,7 @@ test.describe("Planning — creation via clic calendrier", () => {
     await page.goto(`/events/${event.id}`);
 
     // Passer en vue calendrier
-    await page.getByRole("tab", { name: /planning/i }).click();
+    await page.getByRole("button", { name: "Planning", exact: true }).click();
     await page.getByRole("button", { name: /vue calendrier/i }).click();
 
     // Cliquer sur un creneau du calendrier (zone vide)

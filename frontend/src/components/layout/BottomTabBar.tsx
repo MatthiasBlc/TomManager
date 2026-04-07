@@ -1,4 +1,4 @@
-import { NavLink, useParams, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 interface TabItem {
@@ -25,7 +25,8 @@ function TabIcon({ d }: { d: string }) {
 
 export default function BottomTabBar() {
   const { user, logout } = useAuth();
-  const { eventId } = useParams<{ eventId?: string }>();
+  const location = useLocation();
+  const eventId = location.pathname.match(/\/events\/([^/]+)/)?.[1];
   const navigate = useNavigate();
 
   if (!user) return null;

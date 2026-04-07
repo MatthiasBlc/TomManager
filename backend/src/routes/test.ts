@@ -33,4 +33,33 @@ router.post("/seed-admin", async (req, res, next) => {
   }
 });
 
+// POST /api/test/seed-participant — cree un user USER et l'ajoute comme participant a un event
+router.post("/seed-participant", async (req, res, next) => {
+  try {
+    const { eventId } = req.body;
+    if (!eventId) {
+      res.status(400).json({ error: { message: "eventId requis" } });
+      return;
+    }
+
+    const ts = Date.now();
+    const email = `player_e2e_${ts}@test.com`;
+    const username = `player_e2e_${ts}`;
+    const password = "PlayerPassword123!";
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: { email, username, passwordHash },
+    });
+
+    await prisma.eventParticipation.create({
+      data: { eventId, userId: user.id },
+    });
+
+    res.status(201).json({ userId: user.id, email, username, password });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

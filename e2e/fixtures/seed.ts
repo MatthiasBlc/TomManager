@@ -21,9 +21,10 @@ export interface EventContext {
   endDateTime: string;
 }
 
-export interface InvitationContext {
-  token: string;
-  inviteLink: string;
+export interface ParticipantContext {
+  email: string;
+  username: string;
+  password: string;
 }
 
 /**
@@ -56,7 +57,8 @@ export async function seedAdmin(): Promise<AdminContext> {
     redirect: "manual",
   });
 
-  const cookie = loginRes.headers.get("set-cookie") ?? "";
+  // Extraire uniquement "name=value" — les attributs (Path, HttpOnly...) ne doivent pas etre envoyes dans le header Cookie
+  const cookie = (loginRes.headers.get("set-cookie") ?? "").split(";")[0];
 
   return { cookie, userId: data.userId, username, email, password };
 }
@@ -84,18 +86,17 @@ export async function seedEvent(adminCookie: string): Promise<EventContext> {
   return data.data;
 }
 
-export async function seedInvitation(
-  adminCookie: string,
-  eventId: string,
-  email: string
-): Promise<InvitationContext> {
-  const res = await fetch(`${API}/api/events/${eventId}/invitations`, {
+/**
+ * Cree un participant pour un event via l'API de seed interne (reservee aux tests).
+ */
+export async function seedParticipant(eventId: string): Promise<ParticipantContext> {
+  const res = await fetch(`${API}/api/test/seed-participant`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Cookie: adminCookie },
-    body: JSON.stringify({ identifier: email }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ eventId }),
   });
 
-  if (!res.ok) throw new Error(`seedInvitation failed: ${res.status}`);
+  if (!res.ok) throw new Error(`seedParticipant failed: ${res.status}`);
   const data = await res.json();
-  return { token: data.data.invitation.token, inviteLink: data.data.inviteLink };
+  return { email: data.email, username: data.username, password: data.password };
 }

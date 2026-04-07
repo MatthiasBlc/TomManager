@@ -103,8 +103,8 @@ app.get("/health/ready", async (_req, res) => {
 // API routes
 app.use("/api", globalRateLimiter, writeRateLimiter, apiRouter);
 
-// Routes de test (seed E2E) — disponibles uniquement en mode test
-if (env.NODE_ENV === "test") {
+// Routes de test (seed E2E) — disponibles en mode test ou si ENABLE_TEST_ROUTES=true (dev local)
+if (env.NODE_ENV === "test" || process.env.ENABLE_TEST_ROUTES === "true") {
   app.use("/api/test", testRouter);
 }
 
