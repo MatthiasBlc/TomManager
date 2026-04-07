@@ -6,6 +6,7 @@ import {
   requireEventCreator,
 } from "../middleware/auth";
 import * as eventController from "../controllers/event";
+
 import { validateBody, validateUUID } from "../middleware/validateBody";
 import { createEventSchema, updateEventSchema } from "../schemas/event";
 
@@ -33,6 +34,13 @@ router.patch(
   requireEventCreator,
   validateBody(updateEventSchema),
   eventController.update
+);
+router.post(
+  "/:eventId/purge",
+  requireAuth,
+  validateUUID("eventId"),
+  requireAdmin,
+  eventController.purge
 );
 router.delete(
   "/:eventId",

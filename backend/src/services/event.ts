@@ -204,6 +204,20 @@ export async function updateEvent(
   return event;
 }
 
+export async function purgeEvent(eventId: string) {
+  const existing = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!existing) {
+    throw createError(404, "Event not found");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.gameTable.deleteMany({ where: { eventId } });
+    await tx.eventParticipation.deleteMany({ where: { eventId } });
+    await tx.eventInvitation.deleteMany({ where: { eventId } });
+    await tx.eventBoardGame.deleteMany({ where: { eventId } });
+  });
+}
+
 export async function deleteEvent(eventId: string) {
   const existing = await prisma.event.findUnique({ where: { id: eventId } });
   if (!existing) {

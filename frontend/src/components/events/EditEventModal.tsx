@@ -51,6 +51,27 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     }
   }, [event, open, reset]);
 
+  const handlePurge = async () => {
+    if (!event) return;
+    if (
+      !confirm(
+        "Purger cet event ?\n\nCela supprimera definitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Toutes les invitations\n- Tous les jeux\n\nL'event lui-meme sera conserve."
+      )
+    )
+      return;
+    try {
+      await api.post(`/api/events/${event.id}/purge`);
+      toast.success("Event purge !");
+      onUpdated();
+      onClose();
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Echec de la purge";
+      toast.error(message);
+    }
+  };
+
   const onSubmit = async (data: EditEventForm) => {
     if (!event) return;
     try {
@@ -142,13 +163,20 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
             )}
           </div>
         )}
-        <div className="flex gap-2 justify-end pt-2">
-          <button type="button" className="btn" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary">
-            Save
-          </button>
+        <div className="flex items-center justify-between pt-2">
+          {user?.role === "ADMIN" && (
+            <button type="button" className="btn btn-error btn-outline btn-sm" onClick={handlePurge}>
+              Purger l'event
+            </button>
+          )}
+          <div className="flex gap-2 ml-auto">
+            <button type="button" className="btn" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Save
+            </button>
+          </div>
         </div>
       </form>
     </ResponsiveModal>

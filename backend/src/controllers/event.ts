@@ -66,6 +66,15 @@ export async function update(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function purge(req: Request, res: Response, next: NextFunction) {
+  try {
+    await eventService.purgeEvent(req.params.eventId);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     await eventService.deleteEvent(req.params.eventId);
