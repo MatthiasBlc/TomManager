@@ -54,7 +54,7 @@ npx vitest run                    # Tous les tests
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
 
-### Frontend (118 tests)
+### Frontend (138 tests)
 
 - `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton remove own entry, masquage pour autre utilisateur
 - `useIsMobile.test.tsx` - Hook : valeur initiale matchMedia, mise a jour sur change, cleanup listener
@@ -79,8 +79,11 @@ npx vitest run                    # Tous les tests
 - `ManualBoardGameForm.test.tsx` - Champs requis, validation Name, soumission valeurs numeriques, cancel
 - `TagInput.test.tsx` - Badges, ajout (Enter/comma), suppression, dedupe, backspace, suggestions API
 - `LoginPage.test.tsx` - Render, submit success/fail, redirect si connecte, Discord 503, OAuth click, error param
+- `AddBoardGameModal.test.tsx` - Modes search/manual, ajout local, import BGG, close
+- `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel
+- `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API
 
-Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phases 7-8)
+Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phase 8 - pages)
 
 ### Couverture (seuils CI)
 

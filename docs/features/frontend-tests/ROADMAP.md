@@ -134,15 +134,15 @@ it("affiche une erreur si le champ est vide", async () => {
 
 > Modales avec plusieurs etapes ou interactions. A prioriser si elles portent de la logique metier.
 
-- [ ] `CreateTableModal` — flux complet de creation, champs conditionnels (type JDR)
-- [ ] `AddBoardGameModal` — recherche BGG, selection, ajout
-- [ ] `TableDetailModal` — affichage des details, actions selon le role
+- [x] `CreateTableModal` — render, validation, JDR/JDS conditional, submit
+- [x] `AddBoardGameModal` — search/manual modes, local select, BGG import, manual create
+- [x] `TableDetailModal` — fetch, render, actions selon role (join, leave, edit, delete)
 
 **Checklist de validation :**
 
-- [ ] Tests passent
-- [ ] Lint parfait
-- [ ] Commit `test: phase 7 - complex modals`
+- [x] Tests passent
+- [x] Lint parfait
+- [x] Commit `test: phase 7 - complex modals`
 
 ---
 

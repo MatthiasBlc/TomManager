@@ -1,12 +1,13 @@
 # RESUME - Prochaine session
 
-### Rediger les tests frontend (priorite)
+### Tests frontend - reprendre a la phase 8
 
-Le protocole de test est en place (vitest + testing-library, lint propre, 1 exemple de test).
-Il faut maintenant rediger les tests phase par phase selon la roadmap :
-`docs/features/frontend-tests/ROADMAP.md`
+Phases 1 a 7 completes (138 tests verts, lint propre).
+Reste la phase 8 (Pages) selon `docs/features/frontend-tests/ROADMAP.md` :
+NotFoundPage, HomePage, LoginPage (deja partiellement teste en phase 6), ProfilePage,
+EventListPage, EventDetailPage, TableDetailPage.
 
-Phases 1 a 8. Apres chaque phase : tests verts, lint parfait, commit.
+Apres la phase : tests verts, lint parfait, commit `test: phase 8 - pages`.
 
 ### Une fois tout ce qui est ci-dessus terminé complètement et proprement :
 
