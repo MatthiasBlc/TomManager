@@ -1,6 +1,6 @@
 # Prochaines etapes - TomManager
 
-Phases terminees : 1-8 (auth, events, planning, board games, real-time, notifications, UI, robustesse) + 10 (monitoring) + 11 (E2E) + 12 (perf DB) + 15a (Discord OAuth).
+Phases terminees : 1-8 (auth, events, planning, board games, real-time, notifications, UI, robustesse) + 10 (monitoring) + 11 (E2E) + 12 (perf DB) + 15a (Discord OAuth) + 15b (Bot Discord).
 
 Phase 9 (Emails) intentionnellement ignoree — remplacee par le systeme Discord (Phase 15).
 
@@ -180,14 +180,18 @@ participations automatiquement. Les comptes locaux (email+password) continuent d
 
 ---
 
-## Phase 15b : Bot Discord — Sync temps reel (Priorite basse, apres 15a)
+## Phase 15b : Bot Discord — Sync temps reel ✅ COMPLETE
 
 **Vision** : complement de Phase 15a. Le bot reagit aux changements de roles en temps reel :
 assignation → compte cree + participation ajoutee, retrait → participation supprimee.
 L'user n'a plus besoin de se connecter pour "activer" son acces.
 Phase 9 (Mailer) devient entierement obsolete.
 
-**Prerequis** : Phase 15a complete (OAuth, DB, sync participations deja implementee).
+- [x] Service Docker dedie `discord-bot/` (Node.js + discord.js)
+- [x] Handler `guildMemberUpdate` : sync participations sur ajout/retrait de role
+- [x] Sync au demarrage (`startupSync.ts`) : reconciliation DB au boot
+- [x] Endpoint admin `POST /api/admin/discord/sync` (sync manuelle)
+- [x] Tests unitaires (guildMemberUpdate, startupSync, syncParticipation)
 
 **Ce que le bot ajoute par rapport a OAuth seul** :
 
