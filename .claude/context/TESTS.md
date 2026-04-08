@@ -41,7 +41,7 @@ npx vitest run                    # Tous les tests
 
 ## Inventaire des tests
 
-### Backend (~167 tests)
+### Backend (172 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me, error format consistency)
@@ -56,7 +56,7 @@ npx vitest run                    # Tous les tests
 
 ### Frontend (162 tests - ROADMAP COMPLETE)
 
-- `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton remove own entry, masquage pour autre utilisateur
+- `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton Remove (aria-label "Remove <game>"), masquage pour autre utilisateur
 - `useIsMobile.test.tsx` - Hook : valeur initiale matchMedia, mise a jour sur change, cleanup listener
 - `useOnlineStatus.test.tsx` - Hook : valeur initiale navigator.onLine, evenements online/offline, cleanup listeners
 - `EmptyState.test.tsx` - Rendu titre, description optionnelle, icone, action

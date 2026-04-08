@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-04
+
+### Dark/Light mode
+
+- Hook `useTheme` (themes DaisyUI `coffee`/`winter`) avec persistence localStorage
+- Prevention du flash au chargement via inline script dans `index.html`
+- Toggle dark/light accessible depuis la page Profile (card Appearance)
+
+### Board Games - onglets All / My List
+
+- Onglet "All" : liste unifiee de tous les jeux (lecture seule, pas de suppression)
+- Onglet "My List" : jeux apportes par l'utilisateur avec bouton Remove dedie (btn-error)
+- Compteur sur chaque onglet
+
+### Corrections
+
+- Fix erreur TS dans `discordAuth.ts` (argument superflu passe a `buildAuthorizeUrl`)
+- Fix test `discordAuth.test.ts` : mock de `isDiscordConfigured` pour isoler l'env
+
 ## [1.0.0] - 2026-04
 
 ### Phase 15b - Bot Discord

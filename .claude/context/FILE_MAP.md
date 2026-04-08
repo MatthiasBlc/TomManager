@@ -110,9 +110,9 @@ src/
 │   │                              #   Couleur selon statut utilisateur :
 │   │                              #   secondary=GM, success=CONFIRMED, warning=WAITLIST, primary=autre
 │   └── boardgames/
-│       ├── BoardGameTab.tsx           # Tab integrating list + add button
+│       ├── BoardGameTab.tsx           # Onglets All (lecture seule) / My List (avec bouton Remove)
 │       ├── BoardGameSearchInput.tsx   # Autocomplete search (local + BGG)
-│       ├── BoardGameCard.tsx          # Game card (image, name, players, who brings it)
+│       ├── BoardGameCard.tsx          # Game card (image, name, players, who brings it, bouton Remove dans My List)
 │       ├── BoardGameList.tsx          # List grouped by game
 │       ├── AddBoardGameModal.tsx      # Modal: search + add or create manually
 │       └── ManualBoardGameForm.tsx    # Manual creation form
@@ -121,7 +121,8 @@ src/
 │   ├── useEventSocket.ts    # Join/leave event room, listen to events
 │   ├── useNotifications.ts  # Notification fetch, socket, mark read, pagination
 │   ├── useIsMobile.ts       # matchMedia hook for mobile breakpoint detection
-│   └── useOnlineStatus.ts   # Browser online/offline detection hook
+│   ├── useOnlineStatus.ts   # Browser online/offline detection hook
+│   └── useTheme.ts          # Dark/light mode (coffee/winter), localStorage, applique data-theme sur <html>
 ├── contexts/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/
