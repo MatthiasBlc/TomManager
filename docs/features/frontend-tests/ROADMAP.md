@@ -65,10 +65,10 @@ Avant de passer a la phase suivante :
 
 > Composants qui consomment `useAuth`. Necessitent un wrapper `AuthProvider` mocke.
 
-- [ ] `Navbar` — affiche les liens selon le role (USER / ADMIN)
-- [ ] `BottomTabBar` — navigation mobile, onglet actif
-- [ ] `MobileHeader` — titre de page, bouton retour conditionnel
-- [ ] `AppLayout` — structure generale avec auth
+- [x] `Navbar` — desktop/mobile, login/logout, liens visibles selon auth
+- [x] `BottomTabBar` — tabs Events/Planning/Games selon route, logout button
+- [x] `MobileHeader` — logo TM, bell + status visibles si auth
+- [x] `AppLayout` — padding mobile/desktop selon auth
 
 **Pattern a suivre :**
 
@@ -81,9 +81,9 @@ const renderWithAuth = (ui: ReactNode, user = mockUser) =>
 
 **Checklist de validation :**
 
-- [ ] Tests passent
-- [ ] Lint parfait
-- [ ] Commit `test: phase 4 - auth-aware components`
+- [x] Tests passent
+- [x] Lint parfait
+- [x] Commit `test: phase 4 - auth-aware components`
 
 ---
 
