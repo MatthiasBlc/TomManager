@@ -300,6 +300,54 @@ Idees de features futures, a prioriser selon les besoins :
 
 ---
 
+## Optionnel : remplacer axios par un wrapper fetch custom
+
+**Modele reco : Sonnet 4.6 | Effort : 2h**
+
+**Context** : Le projet utilise axios (`src/config/api.ts`) pour les requetes HTTP.
+Axios apporte surtout de la convenance (timeouts, intercepteurs, etc.), mais fetch moderne
+peut faire 95% des memes choses sans dependance externe.
+
+**Refacto proposee** :
+
+1. Creer un wrapper fetch minimaliste (30 lignes) avec les memes methodes : `get()`, `post()`, `delete()`, `put()`
+2. Garder `src/config/api.ts` comme point d'entree (meme interface)
+3. Ajouter une couche d'intercepteurs auth au niveau du Provider React si besoin
+4. Supprimer `axios` de `package.json`
+5. Tests existants resteront valides (les mocks de `../config/api` restent identiques)
+
+**Avantages** : une dependance de moins, moins de surface d'attaque, code plus clair.
+**Mise en garde** : `.data` utilise en 80+ endroits — le wrapper doit preserver cette interface.
+
+---
+
+## Optionnel (futur) : etudier le remplacement de @fullcalendar par une solution custom
+
+**Modele reco : Opus 4.6 | Effort : 4-6h**
+
+**Context** : FullCalendar est une dependance lourde utilisee dans CalendarView/PlanningTab.
+Le projet ne l'exploite qu'a 10% : affichage d'une timeline simple d'evenements.
+Un composant React custom + CSS grid pourrait faire la meme chose avec beaucoup moins de poids.
+
+**Avant de commencer** :
+
+- Creer une branche dediee (`feature/custom-calendar` ou similaire)
+- Documenter exactement ce que FullCalendar fait actuellement (render, interactions, drag-drop, etc.)
+- Verifier les tests e2e (`docs/MANUAL_TESTING.md` ou tests Playwright)
+
+**Criteres de validation** (avant merge) :
+
+- Affichage identique (meme layout, meme style, meme responsivite)
+- Toutes les interactions fonctionnent (click, navigation, selection de slots)
+- Aucune perte de feature (agenda view, time grid, filtering, etc.)
+- Tests e2e passent
+- Aucune regression sur les pages qui l'utilisent
+
+**Effort estime** : ~4-6h (exploration + impl + tests). A faire seulement si vraiment necessaire.
+**Risque** : refacto complexe, facile de casser quelque chose. Valider en tests avant le moindre commit final.
+
+---
+
 ## Etat actuel du projet
 
 | Aspect        | Score | Detail                                                    |
