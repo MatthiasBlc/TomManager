@@ -91,16 +91,16 @@ const renderWithAuth = (ui: ReactNode, user = mockUser) =>
 
 > Composants qui recoivent des tableaux de donnees et les rendent.
 
-- [ ] `BoardGameList` — liste vide, liste avec items, pagination
-- [ ] `ParticipantList` — affichage des participants, bouton rejoindre/quitter
-- [ ] `TimelineView` — rendu des evenements sur la timeline
-- [ ] `NotificationBell` — compteur de non-lus, ouverture du panneau
+- [x] `BoardGameList` — liste vide, liste avec items, regroupement par jeu
+- [x] `ParticipantList` — affichage des participants, remove/leave selon role
+- [x] `TimelineView` — empty state, rendu cartes, regroupement par date
+- [x] `NotificationBell` — compteur de non-lus, dropdown desktop, sheet mobile
 
 **Checklist de validation :**
 
-- [ ] Tests passent
-- [ ] Lint parfait
-- [ ] Commit `test: phase 5 - data display components`
+- [x] Tests passent
+- [x] Lint parfait
+- [x] Commit `test: phase 5 - data display components`
 
 ---
 

@@ -54,7 +54,7 @@ npx vitest run                    # Tous les tests
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
 
-### Frontend (79 tests)
+### Frontend (100 tests)
 
 - `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton remove own entry, masquage pour autre utilisateur
 - `useIsMobile.test.tsx` - Hook : valeur initiale matchMedia, mise a jour sur change, cleanup listener
@@ -72,8 +72,12 @@ npx vitest run                    # Tous les tests
 - `BottomTabBar.test.tsx` - Pas de rendu sans user, tabs Events/Planning/Games selon route, logout
 - `MobileHeader.test.tsx` - Logo TM, bell + status visibles si auth
 - `AppLayout.test.tsx` - Padding mobile/desktop selon auth
+- `BoardGameList.test.tsx` - Empty state, liste, regroupement par jeu
+- `ParticipantList.test.tsx` - Empty state, table desktop / cards mobile, remove/leave selon role
+- `TimelineView.test.tsx` - Empty state, cartes, regroupement par date, click handler
+- `NotificationBell.test.tsx` - Bell badge, cap 99+, dropdown desktop, sheet mobile, mark all read
 
-Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phases 5-8)
+Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phases 6-8)
 
 ### Couverture (seuils CI)
 
