@@ -506,12 +506,12 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
           CORS_ORIGIN: ${{ secrets.PREPROD_CORS_ORIGIN }}
-          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
-          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+          DISCORD_CLIENT_ID: ${{ secrets.PREPROD_DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.PREPROD_DISCORD_CLIENT_SECRET }}
+          DISCORD_GUILD_ID: ${{ secrets.PREPROD_DISCORD_GUILD_ID }}
           DISCORD_REDIRECT_URI: ${{ secrets.PREPROD_DISCORD_REDIRECT_URI }}
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_ADMIN_ROLE_ID: ${{ secrets.DISCORD_ADMIN_ROLE_ID }}
+          DISCORD_BOT_TOKEN: ${{ secrets.PREPROD_DISCORD_BOT_TOKEN }}
+          DISCORD_ADMIN_ROLE_ID: ${{ secrets.PREPROD_DISCORD_ADMIN_ROLE_ID }}
 
   # ========================================
   # Cleanup old images
