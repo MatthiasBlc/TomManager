@@ -1,21 +1,25 @@
 # RESUME - Prochaine session
 
-### Tests frontend - ROADMAP COMPLÈTE ✅
+### Optionnel (apres phase 8) : supprimer @sentry/react si inutilisé
 
-**Phases 1-8 terminées (162 tests, 100% couverture roadmap)**
+**Modele reco : Haiku 4.5 | Effort : 15min**
 
-- Phase 1: Hooks utilitaires (8 tests)
-- Phase 2: Composants presentationnels (35 tests)
-- Phase 3: Logique conditionnelle (15 tests)
-- Phase 4: Auth-aware components (17 tests)
-- Phase 5: Listes & affichage (21 tests)
-- Phase 6: Formulaires (18 tests)
-- Phase 7: Modales complexes (20 tests)
-- Phase 8: Pages (16 tests) ✅
+**Context** : Sentry est importé dans `src/main.tsx` mais activé seulement si `VITE_SENTRY_DSN` est défini
+(variable d'env). Si tu ne l'utilises pas (pas de DSN configuré en prod), c'est une dépendance morte.
 
-Tous les tests passent, lint clean, roadmap `docs/features/frontend-tests/ROADMAP.md` complètement terminée.
+**Check préalable** :
 
-Prochaines tâches au choix (voir ci-dessous).
+- Vérifier si `VITE_SENTRY_DSN` est défini quelque part (CI env, .env.production, etc.)
+- Si non utilisé : supprimer est trivial
+
+**Refacto proposée** (si inutilisé) :
+
+1. Supprimer `@sentry/react` du `package.json`
+2. Supprimer les 8 lignes Sentry du `src/main.tsx`
+3. Garder la structure app intacte
+
+**Avantages** : une grosse dépendance de moins (Sentry est lourd), plus léger à déployer.
+**Effort** : ~15 min (trivial, si vraiment inutilisé).
 
 ### Une fois tout ce qui est ci-dessus terminé complètement et proprement :
 
@@ -51,25 +55,6 @@ peut faire 95% des mêmes choses sans dépendance externe.
 **Avantages** : une dépendance de moins, moins de surface d'attaque, code plus clair.
 **Effort** : ~2h refacto + vérifier l'app au complet (pas de breaking change esperé).
 
-### Optionnel (apres phase 8) : supprimer @sentry/react si inutilisé
-
-**Modele reco : Haiku 4.5 | Effort : 15min**
-
-**Context** : Sentry est importé dans `src/main.tsx` mais activé seulement si `VITE_SENTRY_DSN` est défini
-(variable d'env). Si tu ne l'utilises pas (pas de DSN configuré en prod), c'est une dépendance morte.
-
-**Check préalable** :
-- Vérifier si `VITE_SENTRY_DSN` est défini quelque part (CI env, .env.production, etc.)
-- Si non utilisé : supprimer est trivial
-
-**Refacto proposée** (si inutilisé) :
-1. Supprimer `@sentry/react` du `package.json`
-2. Supprimer les 8 lignes Sentry du `src/main.tsx`
-3. Garder la structure app intacte
-
-**Avantages** : une grosse dépendance de moins (Sentry est lourd), plus léger à déployer.
-**Effort** : ~15 min (trivial, si vraiment inutilisé).
-
 ### Optionnel (futur) : étudier le remplacement de @fullcalendar par une solution custom
 
 **Modele reco : Opus 4.6 | Effort : 4-6h**
@@ -79,11 +64,13 @@ Le projet ne l'exploite qu'à 10% : affichage d'une timeline simple d'événemen
 Un composant React custom + CSS grid pourrait faire la même chose avec beaucoup moins de poids.
 
 **Avant de commencer** :
+
 - Créer une branche dédiée (`feature/custom-calendar` ou similaire)
 - Documenter **exactement** ce que FullCalendar fait actuellement (render, interactions, drag-drop, etc.)
 - Vérifier les tests e2e (`docs/MANUAL_TESTING.md` ou tests Playwright)
 
 **Critères de validation** (avant merge) :
+
 - ✓ Affichage identique (même layout, même style, même responsivité)
 - ✓ Toutes les interactions fonctionnent (click, navigation, sélection de slots)
 - ✓ Aucune perte de feature (agenda view, time grid, filtering, etc.)
