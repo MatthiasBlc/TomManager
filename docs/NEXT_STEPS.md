@@ -125,15 +125,14 @@ Non implemente :
 
 ---
 
-## Phase 13 : Documentation & DX (Priorite basse)
+## Phase 13 : Documentation & DX ✅ COMPLETE (sauf CONTRIBUTING)
 
 **Objectif** : Faciliter l'onboarding et la maintenance.
 
-- [ ] README.md a la racine (presentation, setup, commandes)
-- [ ] Guide de contribution (CONTRIBUTING.md)
-- [ ] Diagramme d'architecture (composants, flux de donnees)
-- [ ] CHANGELOG.md
-- [ ] Guide de deploiement (etapes manuelles documentees)
+- [x] README.md a la racine (presentation, setup, commandes, diagramme Mermaid)
+- [x] CHANGELOG.md (historique des phases)
+- [ ] Guide de contribution (CONTRIBUTING.md) — non pertinent (projet solo/prive)
+- [ ] Guide de deploiement detaille (etapes manuelles — a faire si besoin)
 
 ---
 

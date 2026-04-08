@@ -1,6 +1,6 @@
 # Avancement du projet
 
-## Phase actuelle : Phases 1-12 + 15a + 15b completes. Phase 13 (docs) et 14 (BGG) restantes.
+## Phase actuelle : Phases 1-12 + 13 + 15a + 15b completes. Phase 14 (BGG) restante.
 
 Phase 1 (Auth Rework) : complete. Detail : `docs/features/auth-rework/ROADMAP.md`
 Phase 2 (Event Management) : complete. Detail : `docs/features/event-management/ROADMAP.md`
