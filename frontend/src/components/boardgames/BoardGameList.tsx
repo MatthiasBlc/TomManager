@@ -29,7 +29,13 @@ interface GroupedGame {
   removableEntries: { entryId: string; broughtByUserId: string }[];
 }
 
-export default function BoardGameList({ entries, onRemove, currentUserId, isAdmin, emptyDescription }: Props) {
+export default function BoardGameList({
+  entries,
+  onRemove,
+  currentUserId,
+  isAdmin,
+  emptyDescription,
+}: Props) {
   if (entries.length === 0) {
     return (
       <EmptyState

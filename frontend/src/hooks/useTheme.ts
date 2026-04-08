@@ -14,10 +14,7 @@ function getStoredTheme(): "dark" | "light" {
 }
 
 function applyTheme(mode: "dark" | "light") {
-  document.documentElement.setAttribute(
-    "data-theme",
-    mode === "dark" ? DARK_THEME : LIGHT_THEME
-  );
+  document.documentElement.setAttribute("data-theme", mode === "dark" ? DARK_THEME : LIGHT_THEME);
 }
 
 export function useTheme() {

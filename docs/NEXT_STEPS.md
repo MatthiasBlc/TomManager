@@ -29,6 +29,25 @@ Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 
 ---
 
+## Discord OAuth popup (Priorite basse)
+
+**Modele reco : Sonnet 4.6 | Effort : 1-2h**
+
+**Contexte** : La page Discord s'affiche 1-2s meme quand l'utilisateur est deja connecte (incontournable cote Discord). L'approche popup evite la navigation complete hors de TomManager.
+
+**Comportement cible** :
+
+- Desktop : ouvre un popup Discord, la page principale reste visible, le popup se ferme une fois connecte
+- Mobile / popup bloque : fallback automatique vers le flux redirect actuel (comportement inchange)
+
+**Implementation** :
+
+- Frontend : tenter `window.open()`, si bloque ou echec → `window.location.href` (redirect normal)
+- Backend callback : detecter si appel depuis popup (param `?popup=1`), renvoyer une page HTML minimale avec `window.opener.postMessage` + `window.close()` au lieu de rediriger
+- Frontend : ecouter `postMessage`, mettre a jour l'AuthContext, rediriger vers la destination
+
+---
+
 ## Phase 16 : Features avancees (Priorite basse, a discuter)
 
 - [ ] **Export** : export PDF du planning d'un event
