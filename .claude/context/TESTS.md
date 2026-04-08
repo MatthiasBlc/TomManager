@@ -54,13 +54,18 @@ npx vitest run                    # Tous les tests
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
 
-### Frontend (12 tests)
+### Frontend (47 tests)
 
 - `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton remove own entry, masquage pour autre utilisateur
 - `useIsMobile.test.tsx` - Hook : valeur initiale matchMedia, mise a jour sur change, cleanup listener
 - `useOnlineStatus.test.tsx` - Hook : valeur initiale navigator.onLine, evenements online/offline, cleanup listeners
+- `EmptyState.test.tsx` - Rendu titre, description optionnelle, icone, action
+- `FAB.test.tsx` - Rendu bouton, aria-label, click handler
+- `Skeleton.test.tsx` - Variantes (Text, Card, CardGrid, BoardGame, Notification, TableDetail)
+- `TableCard.test.tsx` - Rendu titre/GM/pitch/tags, badges (GM, conflit, waitlist, joined), click
+- `NotificationItem.test.tsx` - Rendu contenu, lu/non-lu, navigation eventId, mark as read, delete, icones par type
 
-Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phases 2-8)
+Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phases 3-8)
 
 ### Couverture (seuils CI)
 

@@ -29,18 +29,18 @@ Avant de passer a la phase suivante :
 
 > Composants sans etat propre ni appels API. Rendu pur base sur les props.
 
-- [ ] `EmptyState` — rendu du message et de l'icone
-- [ ] `FAB` — rendu du bouton, click handler
-- [ ] `Skeleton` — rendu des variantes (card, list, etc.)
-- [ ] `TableCard` — rendu des donnees de table, badges de tags
-- [ ] `NotificationItem` — rendu du contenu, etat lu/non-lu
-- [ ] `CustomEventBlock` — rendu de l'evenement dans le calendrier
+- [x] `EmptyState` — rendu du message et de l'icone
+- [x] `FAB` — rendu du bouton, click handler
+- [x] `Skeleton` — rendu des variantes (card, list, etc.)
+- [x] `TableCard` — rendu des donnees de table, badges de tags
+- [x] `NotificationItem` — rendu du contenu, etat lu/non-lu
+- [ ] ~~`CustomEventBlock`~~ — composant inexistant dans la codebase, ignore
 
 **Checklist de validation :**
 
-- [ ] Tests passent
-- [ ] Lint parfait
-- [ ] Commit `test: phase 2 - presentational components`
+- [x] Tests passent
+- [x] Lint parfait
+- [x] Commit `test: phase 2 - presentational components`
 
 ---
 
