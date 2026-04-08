@@ -50,7 +50,7 @@ services:
       - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
       - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI}
-      - DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID:-}
+      - DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
     volumes:
       - backend-logs:/app/logs
@@ -98,7 +98,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@tommanager-postgres:5432/${POSTGRES_DB}?schema=public
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
-      - DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID:-}
+      - DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID}
     networks:
       - internal
     depends_on:
