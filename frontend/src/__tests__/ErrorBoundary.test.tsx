@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import ErrorBoundary from "../components/common/ErrorBoundary";
 
-function Boom() {
+function Boom(): JSX.Element {
   throw new Error("kaboom");
 }
 
