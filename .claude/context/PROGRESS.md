@@ -1,13 +1,17 @@
 # Avancement du projet
 
-## Phase actuelle : Pre-developpement (spec & roadmap)
+## Phase actuelle : Phases 1-14 completes (sauf 13 docs). Phase 15a (Discord OAuth) : prete a implementer.
 
-Boilerplate en place. Spec et roadmap rediges.
+Phase 1 (Auth Rework) : complete. Detail : `docs/features/auth-rework/ROADMAP.md`
+Phase 2 (Event Management) : complete. Detail : `docs/features/event-management/ROADMAP.md`
+Phase 3 (Planning System) : complete. Detail : `docs/features/planning-system/ROADMAP.md`
+Phase 4 (Board Games) : complete. Detail : `docs/features/board-games/ROADMAP.md`
+Phase 5 (Real-Time) : complete. Detail : `docs/features/real-time/ROADMAP.md`
+Phase 6 (Notifications) : complete. Detail : `docs/features/notifications/ROADMAP.md`
+Phase 7 (UI Mobile-First) : complete. Detail : `docs/features/ui-mobile-first/ROADMAP.md`
 
-- `docs/SPEC.md` : specification technique complete (37 endpoints, 12 entites, tous edge cases)
-- `docs/ROADMAP.md` : roadmap 7 phases (auth -> events -> planning -> boardgames -> realtime -> notifications -> polish)
-
-Prochaine etape : Phase 1 (Auth Rework - inscription par invitation).
+Prochaines etapes : `docs/NEXT_STEPS.md`
+Test manuel complet : `docs/MANUAL_TESTING.md`
 
 ## Resume de reprise
 

@@ -16,17 +16,189 @@ model Session {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  username     String    @unique
-  passwordHash String
-  role         Role      @default(USER)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id              String    @id @default(uuid())
+  email           String?   @unique
+  username        String    @unique
+  passwordHash    String?
+  discordId       String?   @unique
+  discordUsername String?
+  avatarUrl       String?
+  role            Role      @default(USER)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  createdEvents          Event[]
+  eventParticipations    EventParticipation[]
+  createdGameTables      GameTable[]
+  gameTableParticipations GameTableParticipant[]
+  eventBoardGames        EventBoardGame[]
+  notifications          Notification[]
+}
+
+model Event {
+  id             String   @id @default(uuid())
+  name           String
+  startDateTime  DateTime
+  endDateTime    DateTime
+  createdBy      String
+  discordRoleId  String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  creator        User                @relation(fields: [createdBy], references: [id])
+  participations EventParticipation[]
+  gameTables     GameTable[]
+  eventBoardGames EventBoardGame[]
+
+  @@index([createdBy])
+}
+
+
+model EventParticipation {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  status    String   @default("CONFIRMED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+}
+
+model GameTable {
+  id            String    @id @default(uuid())
+  eventId       String
+  createdBy     String
+  title         String
+  type          TableType @default(JDR)
+  gmIsPlayer    Boolean   @default(false)
+  pitch         String?
+  triggers      String?
+  comments      String?
+  maxPlayers    Int
+  startDateTime DateTime
+  endDateTime   DateTime
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  event        Event                @relation(fields: [eventId], references: [id])
+  creator      User                 @relation(fields: [createdBy], references: [id])
+  tags         GameTableTag[]
+  participants GameTableParticipant[]
+
+  @@index([eventId, startDateTime])
+}
+
+model Tag {
+  id   String @id @default(uuid())
+  name String @unique
+
+  gameTables GameTableTag[]
+}
+
+model GameTableTag {
+  gameTableId String
+  tagId       String
+
+  gameTable GameTable @relation(fields: [gameTableId], references: [id], onDelete: Cascade)
+  tag       Tag       @relation(fields: [tagId], references: [id])
+
+  @@id([gameTableId, tagId])
+}
+
+model GameTableParticipant {
+  id          String                @id @default(uuid())
+  gameTableId String
+  userId      String
+  status      TableParticipantStatus @default(CONFIRMED)
+  joinedAt    DateTime              @default(now())
+
+  gameTable GameTable @relation(fields: [gameTableId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([gameTableId, userId])
+  @@index([gameTableId, status])
+  @@index([userId])
+}
+
+model BoardGame {
+  id             String   @id @default(uuid())
+  name           String
+  externalSource String?
+  externalId     String?
+  yearPublished  Int?
+  minPlayers     Int?
+  maxPlayers     Int?
+  playingTime    Int?
+  description    String?
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+
+  eventBoardGames EventBoardGame[]
+
+  @@unique([externalSource, externalId])
+  @@index([name])
+}
+
+model EventBoardGame {
+  id              String   @id @default(uuid())
+  eventId         String
+  boardGameId     String
+  broughtByUserId String
+  createdAt       DateTime @default(now())
+
+  event     Event     @relation(fields: [eventId], references: [id])
+  boardGame BoardGame @relation(fields: [boardGameId], references: [id])
+  broughtBy User     @relation(fields: [broughtByUserId], references: [id])
+
+  @@unique([eventId, boardGameId, broughtByUserId])
+  @@index([eventId])
 }
 
 enum Role {
   USER
   ADMIN
+}
+
+
+enum TableParticipantStatus {
+  CONFIRMED
+  WAITLIST
+}
+
+enum TableType {
+  JDR
+  JDS
+}
+
+enum NotificationType {
+  TABLE_DELETED
+  TABLE_UPDATED
+  WAITLIST_PROMOTED
+  WAITLIST_DEMOTED
+  PLAYER_KICKED
+  PARTICIPANT_REMOVED
+  EVENT_UPDATED
+  EVENT_DELETED
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  metadata  Json?
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, read, createdAt(sort: Desc)])
 }

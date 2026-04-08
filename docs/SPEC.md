@@ -8,13 +8,13 @@
 
 ### 1.1 Stack technique
 
-| Couche | Technologies |
-|--------|-------------|
-| Frontend | React 18, TypeScript, Vite, TailwindCSS, DaisyUI |
-| Backend | Node.js, Express, TypeScript, Prisma ORM |
-| Base de donnees | PostgreSQL 15 |
-| Real-time | Socket.io |
-| Infra | Docker, GitHub Actions, Portainer, Traefik |
+| Couche          | Technologies                                     |
+| --------------- | ------------------------------------------------ |
+| Frontend        | React 18, TypeScript, Vite, TailwindCSS, DaisyUI |
+| Backend         | Node.js, Express, TypeScript, Prisma ORM         |
+| Base de donnees | PostgreSQL 15                                    |
+| Real-time       | Socket.io                                        |
+| Infra           | Docker, GitHub Actions, Portainer, Traefik       |
 
 ### 1.2 Regles generales
 
@@ -28,30 +28,32 @@
 ### 1.3 Format des reponses API
 
 **Succes :**
+
 ```json
 { "data": { ... } }
 ```
 
 **Erreur :**
+
 ```json
 { "error": { "message": "Description lisible", "code": "ERROR_CODE" } }
 ```
 
 ### 1.4 Codes HTTP utilises
 
-| Code | Usage |
-|------|-------|
-| 200 | Succes (lecture, modification) |
-| 201 | Ressource creee |
-| 204 | Succes sans contenu (suppression) |
-| 400 | Requete invalide (validation) |
-| 401 | Non authentifie |
-| 403 | Non autorise (permissions) |
-| 404 | Ressource introuvable |
-| 409 | Conflit (doublon, deja utilise) |
-| 410 | Ressource expiree (invitation) |
-| 422 | Entite non traitable (regles metier) |
-| 500 | Erreur serveur |
+| Code | Usage                                |
+| ---- | ------------------------------------ |
+| 200  | Succes (lecture, modification)       |
+| 201  | Ressource creee                      |
+| 204  | Succes sans contenu (suppression)    |
+| 400  | Requete invalide (validation)        |
+| 401  | Non authentifie                      |
+| 403  | Non autorise (permissions)           |
+| 404  | Ressource introuvable                |
+| 409  | Conflit (doublon, deja utilise)      |
+| 410  | Ressource expiree (invitation)       |
+| 422  | Entite non traitable (regles metier) |
+| 500  | Erreur serveur                       |
 
 ---
 
@@ -84,27 +86,27 @@ Notification ─── User (userId)
 
 ### 2.2 Enums
 
-| Enum | Valeurs | Utilise par |
-|------|---------|-------------|
-| `Role` | `USER`, `ADMIN` | `User.role` |
-| `InvitationStatus` | `PENDING`, `ACCEPTED`, `EXPIRED` | `EventInvitation.status` |
-| `TableParticipantStatus` | `CONFIRMED`, `WAITLIST` | `GameTableParticipant.status` |
-| `NotificationType` | `TABLE_DELETED`, `TABLE_DATE_CLAMPED`, `WAITLIST_PROMOTED`, `WAITLIST_DEMOTED`, `PLAYER_KICKED`, `PARTICIPANT_REMOVED`, `EVENT_UPDATED` | `Notification.type` |
+| Enum                     | Valeurs                                                                                                                                 | Utilise par                   |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `Role`                   | `USER`, `ADMIN`                                                                                                                         | `User.role`                   |
+| `InvitationStatus`       | `PENDING`, `ACCEPTED`, `EXPIRED`                                                                                                        | `EventInvitation.status`      |
+| `TableParticipantStatus` | `CONFIRMED`, `WAITLIST`                                                                                                                 | `GameTableParticipant.status` |
+| `NotificationType`       | `TABLE_DELETED`, `TABLE_DATE_CLAMPED`, `WAITLIST_PROMOTED`, `WAITLIST_DEMOTED`, `PLAYER_KICKED`, `PARTICIPANT_REMOVED`, `EVENT_UPDATED` | `Notification.type`           |
 
 ### 2.3 Modeles detailles
 
 #### 2.3.1 User
 
-| Champ | Type | Contraintes | Notes |
-|-------|------|-------------|-------|
-| `id` | UUID | PK, default uuid() | |
-| `email` | String | unique, required | |
-| `username` | String | unique, required, 3-30 chars, alphanum + underscore | Ancien libere au changement, pas d'historique |
-| `passwordHash` | String | required | bcrypt |
-| `role` | Role | default USER | ADMIN ou USER |
-| `createdAt` | DateTime | default now() | |
-| `updatedAt` | DateTime | @updatedAt | |
-| `deletedAt` | DateTime? | nullable | Soft delete |
+| Champ          | Type      | Contraintes                                         | Notes                                         |
+| -------------- | --------- | --------------------------------------------------- | --------------------------------------------- |
+| `id`           | UUID      | PK, default uuid()                                  |                                               |
+| `email`        | String    | unique, required                                    |                                               |
+| `username`     | String    | unique, required, 3-30 chars, alphanum + underscore | Ancien libere au changement, pas d'historique |
+| `passwordHash` | String    | required                                            | bcrypt                                        |
+| `role`         | Role      | default USER                                        | ADMIN ou USER                                 |
+| `createdAt`    | DateTime  | default now()                                       |                                               |
+| `updatedAt`    | DateTime  | @updatedAt                                          |                                               |
+| `deletedAt`    | DateTime? | nullable                                            | Soft delete                                   |
 
 **Relations :** createdEvents, sentInvitations, eventParticipations, createdGameTables, gameTableParticipations, eventBoardGames, notifications
 
@@ -112,50 +114,52 @@ Notification ─── User (userId)
 
 #### 2.3.2 Session
 
-| Champ | Type | Contraintes |
-|-------|------|-------------|
-| `id` | String | PK |
-| `sid` | String | unique |
-| `data` | String | JSON serialise |
-| `expiresAt` | DateTime | |
+| Champ       | Type     | Contraintes    |
+| ----------- | -------- | -------------- |
+| `id`        | String   | PK             |
+| `sid`       | String   | unique         |
+| `data`      | String   | JSON serialise |
+| `expiresAt` | DateTime |                |
 
 Geree automatiquement par `@quixo3/prisma-session-store`.
 
 #### 2.3.3 Event
 
-| Champ | Type | Contraintes | Notes |
-|-------|------|-------------|-------|
-| `id` | UUID | PK | |
-| `name` | String | required, 1-100 chars | |
-| `startDateTime` | DateTime | required | Stocke en UTC |
-| `endDateTime` | DateTime | required, > startDateTime | Stocke en UTC |
-| `createdBy` | UUID | FK -> User.id | Admin createur |
-| `createdAt` | DateTime | default now() | |
-| `updatedAt` | DateTime | @updatedAt | |
+| Champ           | Type     | Contraintes               | Notes          |
+| --------------- | -------- | ------------------------- | -------------- |
+| `id`            | UUID     | PK                        |                |
+| `name`          | String   | required, 1-100 chars     |                |
+| `startDateTime` | DateTime | required                  | Stocke en UTC  |
+| `endDateTime`   | DateTime | required, > startDateTime | Stocke en UTC  |
+| `createdBy`     | UUID     | FK -> User.id             | Admin createur |
+| `createdAt`     | DateTime | default now()             |                |
+| `updatedAt`     | DateTime | @updatedAt                |                |
 
 **Relations :** creator (User), invitations, participations, gameTables, eventBoardGames
 
 **Regles :**
+
 - Plusieurs events peuvent coexister simultanement.
 - La duree est calculee, jamais stockee.
 - Le createur est automatiquement ajoute en EventParticipation CONFIRMED a la creation.
 
 #### 2.3.4 EventInvitation
 
-| Champ | Type | Contraintes | Notes |
-|-------|------|-------------|-------|
-| `id` | UUID | PK | |
-| `eventId` | UUID | FK -> Event.id | |
-| `email` | String | required, email valide | |
-| `invitedBy` | UUID | FK -> User.id | Admin qui invite |
-| `token` | String | unique | UUID v4, single-use |
-| `expiresAt` | DateTime | | = event.endDateTime a la creation |
-| `status` | InvitationStatus | default PENDING | |
-| `createdAt` | DateTime | default now() | |
+| Champ       | Type             | Contraintes            | Notes                             |
+| ----------- | ---------------- | ---------------------- | --------------------------------- |
+| `id`        | UUID             | PK                     |                                   |
+| `eventId`   | UUID             | FK -> Event.id         |                                   |
+| `email`     | String           | required, email valide |                                   |
+| `invitedBy` | UUID             | FK -> User.id          | Admin qui invite                  |
+| `token`     | String           | unique                 | UUID v4, single-use               |
+| `expiresAt` | DateTime         |                        | = event.endDateTime a la creation |
+| `status`    | InvitationStatus | default PENDING        |                                   |
+| `createdAt` | DateTime         | default now()          |                                   |
 
 **Contrainte unique :** `(email, eventId)`
 
 **Regles :**
+
 - Le token est partage manuellement par l'admin (pas d'envoi email MVP).
 - Token single-use : apres acceptation, status = ACCEPTED, token conserve mais inutilisable.
 - Si invitation EXPIRED existe pour meme (email, eventId) : supprimer l'ancienne, en creer une nouvelle.
@@ -164,42 +168,44 @@ Geree automatiquement par `@quixo3/prisma-session-store`.
 
 #### 2.3.5 EventParticipation
 
-| Champ | Type | Contraintes | Notes |
-|-------|------|-------------|-------|
-| `id` | UUID | PK | |
-| `eventId` | UUID | FK -> Event.id | |
-| `userId` | UUID | FK -> User.id | |
-| `status` | String | toujours CONFIRMED | Pas d'enum, valeur fixe |
-| `createdAt` | DateTime | default now() | |
-| `updatedAt` | DateTime | @updatedAt | |
+| Champ       | Type     | Contraintes        | Notes                   |
+| ----------- | -------- | ------------------ | ----------------------- |
+| `id`        | UUID     | PK                 |                         |
+| `eventId`   | UUID     | FK -> Event.id     |                         |
+| `userId`    | UUID     | FK -> User.id      |                         |
+| `status`    | String   | toujours CONFIRMED | Pas d'enum, valeur fixe |
+| `createdAt` | DateTime | default now()      |                         |
+| `updatedAt` | DateTime | @updatedAt         |                         |
 
 **Contrainte unique :** `(eventId, userId)`
 
 **Regles :**
+
 - Cree automatiquement quand une invitation est acceptee (signup ou login via token).
 - Si la participation existe deja (re-clic sur lien) : succes idempotent.
 - Seuls les participants CONFIRMED peuvent : creer des tables, rejoindre des tables, ajouter des jeux.
 
 #### 2.3.6 GameTable
 
-| Champ | Type | Contraintes | Notes |
-|-------|------|-------------|-------|
-| `id` | UUID | PK | |
-| `eventId` | UUID | FK -> Event.id | |
-| `createdBy` | UUID | FK -> User.id | Le MJ (GM) |
-| `title` | String | required, 1-150 chars | |
-| `pitch` | String? | max 2000 chars | Description de la partie |
-| `triggers` | String? | max 1000 chars | Avertissements de contenu |
-| `comments` | String? | max 1000 chars | Notes additionnelles |
-| `maxPlayers` | Int | required, 1-20 | Joueurs hors GM |
-| `startDateTime` | DateTime | required | >= event.startDateTime |
-| `endDateTime` | DateTime | required | <= event.endDateTime, > startDateTime |
-| `createdAt` | DateTime | default now() | |
-| `updatedAt` | DateTime | @updatedAt | |
+| Champ           | Type     | Contraintes           | Notes                                 |
+| --------------- | -------- | --------------------- | ------------------------------------- |
+| `id`            | UUID     | PK                    |                                       |
+| `eventId`       | UUID     | FK -> Event.id        |                                       |
+| `createdBy`     | UUID     | FK -> User.id         | Le MJ (GM)                            |
+| `title`         | String   | required, 1-150 chars |                                       |
+| `pitch`         | String?  | max 2000 chars        | Description de la partie              |
+| `triggers`      | String?  | max 1000 chars        | Avertissements de contenu             |
+| `comments`      | String?  | max 1000 chars        | Notes additionnelles                  |
+| `maxPlayers`    | Int      | required, 1-20        | Joueurs hors GM                       |
+| `startDateTime` | DateTime | required              | >= event.startDateTime                |
+| `endDateTime`   | DateTime | required              | <= event.endDateTime, > startDateTime |
+| `createdAt`     | DateTime | default now()         |                                       |
+| `updatedAt`     | DateTime | @updatedAt            |                                       |
 
 **Relations :** event, creator (GM), tags (via GameTableTag), participants (via GameTableParticipant)
 
 **Regles :**
+
 - `maxPlayers` = nombre de places joueurs, le GM n'est PAS compte dedans.
 - Les dates doivent rester dans les bornes de l'event.
 - Le chevauchement entre tables pour un meme utilisateur est autorise (warning UI, pas de blocage).
@@ -209,22 +215,23 @@ Geree automatiquement par `@quixo3/prisma-session-store`.
 
 #### 2.3.7 Tag
 
-| Champ | Type | Contraintes |
-|-------|------|-------------|
-| `id` | UUID | PK |
+| Champ  | Type   | Contraintes                             |
+| ------ | ------ | --------------------------------------- |
+| `id`   | UUID   | PK                                      |
 | `name` | String | unique, 1-50 chars, stocke en lowercase |
 
 **Regles :**
+
 - Pool global partage entre tous les events.
 - Crees a la volee quand un GM ajoute un nouveau nom de tag.
 - Pas de suppression de tags pour le MVP (accumulation).
 
 #### 2.3.8 GameTableTag
 
-| Champ | Type | Contraintes |
-|-------|------|-------------|
+| Champ         | Type | Contraintes        |
+| ------------- | ---- | ------------------ |
 | `gameTableId` | UUID | FK -> GameTable.id |
-| `tagId` | UUID | FK -> Tag.id |
+| `tagId`       | UUID | FK -> Tag.id       |
 
 **PK composite :** `(gameTableId, tagId)`
 
@@ -232,17 +239,18 @@ Table de jointure pure, pas de champs supplementaires.
 
 #### 2.3.9 GameTableParticipant
 
-| Champ | Type | Contraintes | Notes |
-|-------|------|-------------|-------|
-| `id` | UUID | PK | |
-| `gameTableId` | UUID | FK -> GameTable.id | |
-| `userId` | UUID | FK -> User.id | |
-| `status` | TableParticipantStatus | required | CONFIRMED ou WAITLIST |
-| `joinedAt` | DateTime | default now() | Determine l'ordre FIFO/LIFO |
+| Champ         | Type                   | Contraintes        | Notes                       |
+| ------------- | ---------------------- | ------------------ | --------------------------- |
+| `id`          | UUID                   | PK                 |                             |
+| `gameTableId` | UUID                   | FK -> GameTable.id |                             |
+| `userId`      | UUID                   | FK -> User.id      |                             |
+| `status`      | TableParticipantStatus | required           | CONFIRMED ou WAITLIST       |
+| `joinedAt`    | DateTime               | default now()      | Determine l'ordre FIFO/LIFO |
 
 **Contrainte unique :** `(gameTableId, userId)`
 
 **Regles :**
+
 - Le GM ne peut PAS rejoindre sa propre table comme participant.
 - Status determine par la capacite au moment du join (transaction).
 - `joinedAt` utilise pour : promotion waitlist (FIFO, ASC), demotion overflow (LIFO, DESC).
@@ -251,23 +259,24 @@ Table de jointure pure, pas de champs supplementaires.
 
 #### 2.3.10 BoardGame
 
-| Champ | Type | Contraintes | Notes |
-|-------|------|-------------|-------|
-| `id` | UUID | PK | |
-| `name` | String | required | |
-| `externalSource` | String? | nullable | Ex: "BGG" |
-| `externalId` | String? | nullable | ID sur la source externe |
-| `yearPublished` | Int? | nullable | |
-| `minPlayers` | Int? | nullable | |
-| `maxPlayers` | Int? | nullable | |
-| `playingTime` | Int? | nullable | En minutes |
-| `description` | String? | nullable | Peut contenir du HTML (sanitiser cote front) |
-| `imageUrl` | String? | nullable | URL de l'image |
-| `createdAt` | DateTime | default now() | |
+| Champ            | Type     | Contraintes   | Notes                                        |
+| ---------------- | -------- | ------------- | -------------------------------------------- |
+| `id`             | UUID     | PK            |                                              |
+| `name`           | String   | required      |                                              |
+| `externalSource` | String?  | nullable      | Ex: "BGG"                                    |
+| `externalId`     | String?  | nullable      | ID sur la source externe                     |
+| `yearPublished`  | Int?     | nullable      |                                              |
+| `minPlayers`     | Int?     | nullable      |                                              |
+| `maxPlayers`     | Int?     | nullable      |                                              |
+| `playingTime`    | Int?     | nullable      | En minutes                                   |
+| `description`    | String?  | nullable      | Peut contenir du HTML (sanitiser cote front) |
+| `imageUrl`       | String?  | nullable      | URL de l'image                               |
+| `createdAt`      | DateTime | default now() |                                              |
 
 **Contrainte unique partielle :** `(externalSource, externalId)` WHERE both NOT NULL
 
 **Regles :**
+
 - Entrees manuelles : `externalSource` et `externalId` sont NULL, pas de contrainte d'unicite (doublons OK).
 - Cache depuis l'API BGG au premier fetch, jamais re-fetche apres.
 - Sert a la fois de cache API et de source d'autocomplete.
@@ -276,17 +285,18 @@ Table de jointure pure, pas de champs supplementaires.
 
 #### 2.3.11 EventBoardGame
 
-| Champ | Type | Contraintes | Notes |
-|-------|------|-------------|-------|
-| `id` | UUID | PK | |
-| `eventId` | UUID | FK -> Event.id | |
-| `boardGameId` | UUID | FK -> BoardGame.id | |
-| `broughtByUserId` | UUID | FK -> User.id | |
-| `createdAt` | DateTime | default now() | |
+| Champ             | Type     | Contraintes        | Notes |
+| ----------------- | -------- | ------------------ | ----- |
+| `id`              | UUID     | PK                 |       |
+| `eventId`         | UUID     | FK -> Event.id     |       |
+| `boardGameId`     | UUID     | FK -> BoardGame.id |       |
+| `broughtByUserId` | UUID     | FK -> User.id      |       |
+| `createdAt`       | DateTime | default now()      |       |
 
 **Contrainte unique :** `(eventId, boardGameId, broughtByUserId)` — un meme utilisateur ne peut pas amener le meme jeu deux fois au meme event. Mais deux utilisateurs differents peuvent amener le meme jeu.
 
 **Regles :**
+
 - 1 exemplaire par entree (pas de champ quantite pour le MVP).
 - Seuls les participants de l'event peuvent ajouter des jeux.
 - Suppression d'un participant -> cascade delete de ses EventBoardGame.
@@ -295,16 +305,16 @@ Table de jointure pure, pas de champs supplementaires.
 
 #### 2.3.12 Notification
 
-| Champ | Type | Contraintes | Notes |
-|-------|------|-------------|-------|
-| `id` | UUID | PK | |
-| `userId` | UUID | FK -> User.id | Destinataire |
-| `type` | NotificationType | required | |
-| `title` | String | required | |
-| `message` | String | required | |
-| `data` | Json? | nullable | Ex: `{ eventId, tableId }` |
-| `readAt` | DateTime? | nullable | null = non lu |
-| `createdAt` | DateTime | default now() | |
+| Champ       | Type             | Contraintes   | Notes                      |
+| ----------- | ---------------- | ------------- | -------------------------- |
+| `id`        | UUID             | PK            |                            |
+| `userId`    | UUID             | FK -> User.id | Destinataire               |
+| `type`      | NotificationType | required      |                            |
+| `title`     | String           | required      |                            |
+| `message`   | String           | required      |                            |
+| `data`      | Json?            | nullable      | Ex: `{ eventId, tableId }` |
+| `readAt`    | DateTime?        | nullable      | null = non lu              |
+| `createdAt` | DateTime         | default now() |                            |
 
 ---
 
@@ -330,19 +340,20 @@ Table de jointure pure, pas de champs supplementaires.
 
 ### 3.2 Edge cases auth
 
-| Situation | Reponse |
-|-----------|---------|
-| Token expire | 410 Gone, "Invitation expiree" |
-| Token deja utilise (ACCEPTED) | 409, "Invitation deja utilisee" |
-| Token pour email X mais connecte en tant que email Y | 403, "Vous devez vous connecter avec le bon compte" |
-| User deja participant de l'event | Succes idempotent, redirection vers event |
-| User soft-deleted tente d'utiliser une invitation | 403, "Compte desactive" |
-| Signup sans token | 400, "Token d'invitation requis" |
-| Login normal (sans token) | Fonctionne normalement, pas de creation de participation |
+| Situation                                            | Reponse                                                  |
+| ---------------------------------------------------- | -------------------------------------------------------- |
+| Token expire                                         | 410 Gone, "Invitation expiree"                           |
+| Token deja utilise (ACCEPTED)                        | 409, "Invitation deja utilisee"                          |
+| Token pour email X mais connecte en tant que email Y | 403, "Vous devez vous connecter avec le bon compte"      |
+| User deja participant de l'event                     | Succes idempotent, redirection vers event                |
+| User soft-deleted tente d'utiliser une invitation    | 403, "Compte desactive"                                  |
+| Signup sans token                                    | 400, "Token d'invitation requis"                         |
+| Login normal (sans token)                            | Fonctionne normalement, pas de creation de participation |
 
 ### 3.3 Login
 
 Le login accepte **email OU username** + password :
+
 ```
 POST /api/auth/login
 Body: { identifier: "email-ou-username", password: "...", invitationToken?: "..." }
@@ -360,31 +371,31 @@ Body: { identifier: "email-ou-username", password: "...", invitationToken?: "...
 
 ### 3.5 Matrice d'autorisation
 
-| Action | USER non-participant | USER participant | GM de la table | ADMIN |
-|--------|:-------------------:|:----------------:|:--------------:|:-----:|
-| Creer event | - | - | - | Oui |
-| Editer event | - | - | - | Createur |
-| Supprimer event | - | - | - | Createur |
-| Envoyer invitation | - | - | - | Createur |
-| Voir planning event | - | Oui | Oui | Oui |
-| Creer table | - | Oui | N/A | Oui (si participant) |
-| Editer table | - | - | Oui | Oui |
-| Supprimer table | - | - | Oui | Oui |
-| Rejoindre table | - | Oui | N/A | Oui (si participant) |
-| Quitter table | - | Si inscrit | N/A (doit supprimer) | Si inscrit |
-| Ajouter jeu de societe | - | Oui | Oui | Oui (si participant) |
-| Supprimer jeu | - | Le sien | Le sien | N'importe lequel |
-| Retirer participant | - | - | - | Createur |
+| Action                 | USER non-participant | USER participant |    GM de la table    |        ADMIN         |
+| ---------------------- | :------------------: | :--------------: | :------------------: | :------------------: |
+| Creer event            |          -           |        -         |          -           |         Oui          |
+| Editer event           |          -           |        -         |          -           |       Createur       |
+| Supprimer event        |          -           |        -         |          -           |       Createur       |
+| Envoyer invitation     |          -           |        -         |          -           |       Createur       |
+| Voir planning event    |          -           |       Oui        |         Oui          |         Oui          |
+| Creer table            |          -           |       Oui        |         N/A          | Oui (si participant) |
+| Editer table           |          -           |        -         |         Oui          |         Oui          |
+| Supprimer table        |          -           |        -         |         Oui          |         Oui          |
+| Rejoindre table        |          -           |       Oui        |         N/A          | Oui (si participant) |
+| Quitter table          |          -           |    Si inscrit    | N/A (doit supprimer) |      Si inscrit      |
+| Ajouter jeu de societe |          -           |       Oui        |         Oui          | Oui (si participant) |
+| Supprimer jeu          |          -           |     Le sien      |       Le sien        |   N'importe lequel   |
+| Retirer participant    |          -           |        -         |          -           |       Createur       |
 
 ### 3.6 Middlewares
 
-| Middleware | Role | Erreur |
-|-----------|------|--------|
-| `requireAuth` | Verifie `session.userId` existe | 401 |
-| `requireAdmin` | Verifie `user.role === ADMIN` | 403 |
-| `requireEventParticipant(eventId)` | Verifie EventParticipation existe | 403 |
-| `requireEventCreator(eventId)` | Verifie `event.createdBy === userId` | 403 |
-| `requireTableGMOrAdmin(tableId)` | Verifie GM ou admin | 403 |
+| Middleware                         | Role                                 | Erreur |
+| ---------------------------------- | ------------------------------------ | ------ |
+| `requireAuth`                      | Verifie `session.userId` existe      | 401    |
+| `requireAdmin`                     | Verifie `user.role === ADMIN`        | 403    |
+| `requireEventParticipant(eventId)` | Verifie EventParticipation existe    | 403    |
+| `requireEventCreator(eventId)`     | Verifie `event.createdBy === userId` | 403    |
+| `requireTableGMOrAdmin(tableId)`   | Verifie GM ou admin                  | 403    |
 
 ---
 
@@ -660,6 +671,7 @@ COMMIT
 Le chevauchement entre tables pour un meme utilisateur est **autorise** mais signale visuellement.
 
 **Condition de chevauchement :**
+
 ```
 new.startDateTime < existing.endDateTime
 AND
@@ -758,27 +770,27 @@ Les deux appellent l'API BGG et tentent d'INSERT le meme BoardGame.
 
 ### 7.2 Events emis par le serveur
 
-| Event | Payload | Declencheur |
-|-------|---------|-------------|
-| `table:created` | `{ table }` | Nouvelle GameTable creee |
-| `table:updated` | `{ table }` | GameTable modifiee |
-| `table:deleted` | `{ tableId }` | GameTable supprimee |
-| `table:player:joined` | `{ tableId, userId, username, status }` | Joueur rejoint une table |
-| `table:player:left` | `{ tableId, userId }` | Joueur quitte une table |
-| `table:player:promoted` | `{ tableId, userId, username }` | Promotion depuis waitlist |
-| `table:player:demoted` | `{ tableId, userId, username }` | Demotion vers waitlist |
-| `participant:joined` | `{ userId, username }` | Nouveau participant a l'event |
-| `participant:removed` | `{ userId }` | Participant retire de l'event |
-| `boardgame:added` | `{ eventBoardGame }` | Jeu ajoute a l'event |
-| `boardgame:removed` | `{ eventBoardGameId }` | Jeu retire de l'event |
-| `notification:new` | `{ notification }` | Nouvelle notification (room `user:{userId}`) |
+| Event                   | Payload                                 | Declencheur                                  |
+| ----------------------- | --------------------------------------- | -------------------------------------------- |
+| `table:created`         | `{ table }`                             | Nouvelle GameTable creee                     |
+| `table:updated`         | `{ table }`                             | GameTable modifiee                           |
+| `table:deleted`         | `{ tableId }`                           | GameTable supprimee                          |
+| `table:player:joined`   | `{ tableId, userId, username, status }` | Joueur rejoint une table                     |
+| `table:player:left`     | `{ tableId, userId }`                   | Joueur quitte une table                      |
+| `table:player:promoted` | `{ tableId, userId, username }`         | Promotion depuis waitlist                    |
+| `table:player:demoted`  | `{ tableId, userId, username }`         | Demotion vers waitlist                       |
+| `participant:joined`    | `{ userId, username }`                  | Nouveau participant a l'event                |
+| `participant:removed`   | `{ userId }`                            | Participant retire de l'event                |
+| `boardgame:added`       | `{ eventBoardGame }`                    | Jeu ajoute a l'event                         |
+| `boardgame:removed`     | `{ eventBoardGameId }`                  | Jeu retire de l'event                        |
+| `notification:new`      | `{ notification }`                      | Nouvelle notification (room `user:{userId}`) |
 
 ### 7.3 Events emis par le client
 
-| Event | Payload | But |
-|-------|---------|-----|
-| `join:event` | `{ eventId }` | Rejoindre la room d'un event |
-| `leave:event` | `{ eventId }` | Quitter la room d'un event |
+| Event         | Payload       | But                          |
+| ------------- | ------------- | ---------------------------- |
+| `join:event`  | `{ eventId }` | Rejoindre la room d'un event |
+| `leave:event` | `{ eventId }` | Quitter la room d'un event   |
 
 ### 7.4 Cycle de vie de connexion
 
@@ -802,15 +814,15 @@ Les deux appellent l'API BGG et tentent d'INSERT le meme BoardGame.
 
 ### 8.1 Types de notifications
 
-| Type | Destinataires | Message template |
-|------|--------------|-----------------|
-| `TABLE_DELETED` | Tous les participants de la table | "La table '{title}' a ete supprimee" |
-| `TABLE_DATE_CLAMPED` | GM de la table | "Les horaires de votre table '{title}' ont ete ajustes" |
-| `WAITLIST_PROMOTED` | Joueur promu | "Vous avez ete promu sur la table '{title}'" |
-| `WAITLIST_DEMOTED` | Joueur deplace | "Vous avez ete deplace en liste d'attente sur '{title}'" |
-| `PLAYER_KICKED` | Joueur expulse | "Vous avez ete retire de la table '{title}'" |
-| `PARTICIPANT_REMOVED` | Utilisateur retire | "Vous avez ete retire de l'evenement '{name}'" |
-| `EVENT_UPDATED` | Tous les participants | "L'evenement '{name}' a ete modifie" |
+| Type                  | Destinataires                     | Message template                                         |
+| --------------------- | --------------------------------- | -------------------------------------------------------- |
+| `TABLE_DELETED`       | Tous les participants de la table | "La table '{title}' a ete supprimee"                     |
+| `TABLE_DATE_CLAMPED`  | GM de la table                    | "Les horaires de votre table '{title}' ont ete ajustes"  |
+| `WAITLIST_PROMOTED`   | Joueur promu                      | "Vous avez ete promu sur la table '{title}'"             |
+| `WAITLIST_DEMOTED`    | Joueur deplace                    | "Vous avez ete deplace en liste d'attente sur '{title}'" |
+| `PLAYER_KICKED`       | Joueur expulse                    | "Vous avez ete retire de la table '{title}'"             |
+| `PARTICIPANT_REMOVED` | Utilisateur retire                | "Vous avez ete retire de l'evenement '{name}'"           |
+| `EVENT_UPDATED`       | Tous les participants             | "L'evenement '{name}' a ete modifie"                     |
 
 ### 8.2 Delivery
 
@@ -893,35 +905,35 @@ Les deux appellent l'API BGG et tentent d'INSERT le meme BoardGame.
 
 ## 10. Regles de validation
 
-| Entite | Champ | Regles |
-|--------|-------|--------|
-| User | email | Format email valide |
-| User | username | 3-30 chars, alphanum + underscore |
-| User | password | Min 8 caracteres |
-| Event | name | 1-100 caracteres |
-| Event | dates | start < end, start dans le futur (creation) |
-| GameTable | title | 1-150 caracteres |
-| GameTable | pitch | Max 2000 caracteres |
-| GameTable | triggers | Max 1000 caracteres |
-| GameTable | comments | Max 1000 caracteres |
-| GameTable | maxPlayers | Entier, 1-20 |
-| GameTable | dates | Dans les bornes de l'event, end > start |
-| Tag | name | 1-50 caracteres, stocke lowercase |
-| EventInvitation | email | Format email valide |
+| Entite          | Champ      | Regles                                      |
+| --------------- | ---------- | ------------------------------------------- |
+| User            | email      | Format email valide                         |
+| User            | username   | 3-30 chars, alphanum + underscore           |
+| User            | password   | Min 8 caracteres                            |
+| Event           | name       | 1-100 caracteres                            |
+| Event           | dates      | start < end, start dans le futur (creation) |
+| GameTable       | title      | 1-150 caracteres                            |
+| GameTable       | pitch      | Max 2000 caracteres                         |
+| GameTable       | triggers   | Max 1000 caracteres                         |
+| GameTable       | comments   | Max 1000 caracteres                         |
+| GameTable       | maxPlayers | Entier, 1-20                                |
+| GameTable       | dates      | Dans les bornes de l'event, end > start     |
+| Tag             | name       | 1-50 caracteres, stocke lowercase           |
+| EventInvitation | email      | Format email valide                         |
 
 ---
 
 ## 11. Transactions requises
 
-| Operation | Isolation | Rows verrouilees | Raison |
-|-----------|-----------|-----------------|--------|
-| Rejoindre table | Serialisable | GameTable row | Empecher overbooking |
-| Quitter table | Serialisable | GameTable row | Promotion correcte |
-| Expulser joueur | Serialisable | GameTable row | Promotion correcte |
-| Reduire maxPlayers | Serialisable | GameTable row | Etat coherent |
-| Augmenter maxPlayers | Serialisable | GameTable row | Promotion correcte |
-| Changer dates event | Serialisable | Event + toutes ses GameTables | Cascade complexe |
-| Retirer participant | Serialisable | Multiples tables | Cascade multi-entites |
+| Operation            | Isolation    | Rows verrouilees              | Raison                |
+| -------------------- | ------------ | ----------------------------- | --------------------- |
+| Rejoindre table      | Serialisable | GameTable row                 | Empecher overbooking  |
+| Quitter table        | Serialisable | GameTable row                 | Promotion correcte    |
+| Expulser joueur      | Serialisable | GameTable row                 | Promotion correcte    |
+| Reduire maxPlayers   | Serialisable | GameTable row                 | Etat coherent         |
+| Augmenter maxPlayers | Serialisable | GameTable row                 | Promotion correcte    |
+| Changer dates event  | Serialisable | Event + toutes ses GameTables | Cascade complexe      |
+| Retirer participant  | Serialisable | Multiples tables              | Cascade multi-entites |
 
 Toutes les transactions utilisent `prisma.$transaction()` en mode interactif avec isolation serialisable.
 
@@ -929,55 +941,55 @@ Toutes les transactions utilisent `prisma.$transaction()` en mode interactif ave
 
 ## 12. Table complete des endpoints API
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/health` | - | Health check |
-| **Auth** | | | |
-| POST | `/api/auth/signup` | - (token requis) | Inscription via invitation |
-| POST | `/api/auth/login` | - | Connexion (token optionnel) |
-| POST | `/api/auth/logout` | Auth | Deconnexion |
-| GET | `/api/auth/me` | Auth | Profil courant |
-| **Users** | | | |
-| PATCH | `/api/users/me` | Auth | Modifier son profil |
-| GET | `/api/admin/users` | Admin | Lister les utilisateurs |
-| DELETE | `/api/admin/users/:userId` | Admin | Soft delete utilisateur |
-| **Events** | | | |
-| POST | `/api/events` | Admin | Creer un event |
-| GET | `/api/events` | Auth | Lister mes events |
-| GET | `/api/events/:eventId` | Participant | Detail d'un event |
-| PATCH | `/api/events/:eventId` | Createur | Modifier un event |
-| DELETE | `/api/events/:eventId` | Createur | Supprimer un event |
-| **Invitations** | | | |
-| POST | `/api/events/:eventId/invitations` | Createur | Envoyer une invitation |
-| GET | `/api/events/:eventId/invitations` | Createur | Lister les invitations |
-| GET | `/api/invitations/:token` | - | Valider un token |
-| POST | `/api/invitations/:token/accept` | Auth | Accepter une invitation |
-| **Participants** | | | |
-| GET | `/api/events/:eventId/participants` | Participant | Lister les participants |
-| DELETE | `/api/events/:eventId/participants/:userId` | Createur | Retirer un participant |
-| DELETE | `/api/events/:eventId/participants/me` | Participant | Quitter l'event |
-| **GameTables** | | | |
-| POST | `/api/events/:eventId/tables` | Participant | Creer une table |
-| GET | `/api/events/:eventId/tables` | Participant | Lister les tables |
-| GET | `/api/events/:eventId/tables/:tableId` | Participant | Detail d'une table |
-| PATCH | `/api/events/:eventId/tables/:tableId` | GM/Admin | Modifier une table |
-| DELETE | `/api/events/:eventId/tables/:tableId` | GM/Admin | Supprimer une table |
-| POST | `/api/events/:eventId/tables/:tableId/join` | Participant | Rejoindre une table |
-| DELETE | `/api/events/:eventId/tables/:tableId/leave` | Table participant | Quitter une table |
-| DELETE | `/api/events/:eventId/tables/:tableId/participants/:userId` | GM/Admin | Expulser un joueur |
-| **Tags** | | | |
-| GET | `/api/tags` | Auth | Rechercher des tags |
-| **Board Games** | | | |
-| GET | `/api/boardgames/search` | Auth | Rechercher des jeux |
-| GET | `/api/boardgames/:boardGameId` | Auth | Detail d'un jeu |
-| POST | `/api/boardgames` | Auth | Creer un jeu manuellement |
-| POST | `/api/events/:eventId/boardgames` | Participant | Ajouter un jeu a l'event |
-| GET | `/api/events/:eventId/boardgames` | Participant | Lister les jeux de l'event |
-| DELETE | `/api/events/:eventId/boardgames/:id` | Owner/Admin | Retirer un jeu de l'event |
-| **Notifications** | | | |
-| GET | `/api/notifications` | Auth | Lister les notifications |
-| PATCH | `/api/notifications/:id/read` | Auth | Marquer comme lue |
-| POST | `/api/notifications/read-all` | Auth | Marquer toutes comme lues |
-| GET | `/api/notifications/unread-count` | Auth | Compteur non lues |
+| Method            | Path                                                        | Auth              | Description                 |
+| ----------------- | ----------------------------------------------------------- | ----------------- | --------------------------- |
+| GET               | `/health`                                                   | -                 | Health check                |
+| **Auth**          |                                                             |                   |                             |
+| POST              | `/api/auth/signup`                                          | - (token requis)  | Inscription via invitation  |
+| POST              | `/api/auth/login`                                           | -                 | Connexion (token optionnel) |
+| POST              | `/api/auth/logout`                                          | Auth              | Deconnexion                 |
+| GET               | `/api/auth/me`                                              | Auth              | Profil courant              |
+| **Users**         |                                                             |                   |                             |
+| PATCH             | `/api/users/me`                                             | Auth              | Modifier son profil         |
+| GET               | `/api/admin/users`                                          | Admin             | Lister les utilisateurs     |
+| DELETE            | `/api/admin/users/:userId`                                  | Admin             | Soft delete utilisateur     |
+| **Events**        |                                                             |                   |                             |
+| POST              | `/api/events`                                               | Admin             | Creer un event              |
+| GET               | `/api/events`                                               | Auth              | Lister mes events           |
+| GET               | `/api/events/:eventId`                                      | Participant       | Detail d'un event           |
+| PATCH             | `/api/events/:eventId`                                      | Createur          | Modifier un event           |
+| DELETE            | `/api/events/:eventId`                                      | Createur          | Supprimer un event          |
+| **Invitations**   |                                                             |                   |                             |
+| POST              | `/api/events/:eventId/invitations`                          | Createur          | Envoyer une invitation      |
+| GET               | `/api/events/:eventId/invitations`                          | Createur          | Lister les invitations      |
+| GET               | `/api/invitations/:token`                                   | -                 | Valider un token            |
+| POST              | `/api/invitations/:token/accept`                            | Auth              | Accepter une invitation     |
+| **Participants**  |                                                             |                   |                             |
+| GET               | `/api/events/:eventId/participants`                         | Participant       | Lister les participants     |
+| DELETE            | `/api/events/:eventId/participants/:userId`                 | Createur          | Retirer un participant      |
+| DELETE            | `/api/events/:eventId/participants/me`                      | Participant       | Quitter l'event             |
+| **GameTables**    |                                                             |                   |                             |
+| POST              | `/api/events/:eventId/tables`                               | Participant       | Creer une table             |
+| GET               | `/api/events/:eventId/tables`                               | Participant       | Lister les tables           |
+| GET               | `/api/events/:eventId/tables/:tableId`                      | Participant       | Detail d'une table          |
+| PATCH             | `/api/events/:eventId/tables/:tableId`                      | GM/Admin          | Modifier une table          |
+| DELETE            | `/api/events/:eventId/tables/:tableId`                      | GM/Admin          | Supprimer une table         |
+| POST              | `/api/events/:eventId/tables/:tableId/join`                 | Participant       | Rejoindre une table         |
+| DELETE            | `/api/events/:eventId/tables/:tableId/leave`                | Table participant | Quitter une table           |
+| DELETE            | `/api/events/:eventId/tables/:tableId/participants/:userId` | GM/Admin          | Expulser un joueur          |
+| **Tags**          |                                                             |                   |                             |
+| GET               | `/api/tags`                                                 | Auth              | Rechercher des tags         |
+| **Board Games**   |                                                             |                   |                             |
+| GET               | `/api/boardgames/search`                                    | Auth              | Rechercher des jeux         |
+| GET               | `/api/boardgames/:boardGameId`                              | Auth              | Detail d'un jeu             |
+| POST              | `/api/boardgames`                                           | Auth              | Creer un jeu manuellement   |
+| POST              | `/api/events/:eventId/boardgames`                           | Participant       | Ajouter un jeu a l'event    |
+| GET               | `/api/events/:eventId/boardgames`                           | Participant       | Lister les jeux de l'event  |
+| DELETE            | `/api/events/:eventId/boardgames/:id`                       | Owner/Admin       | Retirer un jeu de l'event   |
+| **Notifications** |                                                             |                   |                             |
+| GET               | `/api/notifications`                                        | Auth              | Lister les notifications    |
+| PATCH             | `/api/notifications/:id/read`                               | Auth              | Marquer comme lue           |
+| POST              | `/api/notifications/read-all`                               | Auth              | Marquer toutes comme lues   |
+| GET               | `/api/notifications/unread-count`                           | Auth              | Compteur non lues           |
 
 **Total : 37 endpoints** (+ 1 health check)

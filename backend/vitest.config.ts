@@ -4,8 +4,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    setupFiles: ["./src/__tests__/setup/globalSetup.ts"],
-    include: ["src/__tests__/**/*.test.ts"],
     exclude: ["node_modules", "dist"],
     testTimeout: 30000,
     hookTimeout: 30000,
@@ -21,11 +19,26 @@ export default defineConfig({
         branches: 50,
       },
     },
-    pool: "forks",
-    poolOptions: {
-      forks: {
-        singleFork: true,
+    projects: [
+      {
+        test: {
+          name: "unit",
+          include: ["src/__tests__/unit/**/*.test.ts"],
+        },
       },
-    },
+      {
+        test: {
+          name: "integration",
+          include: ["src/__tests__/integration/**/*.test.ts"],
+          setupFiles: ["./src/__tests__/setup/globalSetup.ts"],
+          pool: "forks",
+          poolOptions: {
+            forks: {
+              singleFork: true,
+            },
+          },
+        },
+      },
+    ],
   },
 });

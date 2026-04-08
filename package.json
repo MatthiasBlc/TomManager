@@ -24,6 +24,9 @@
     "test:coverage": "npm run test:coverage:backend && npm run test:coverage:frontend",
     "test:coverage:backend": "docker compose exec backend npm run test:coverage",
     "test:coverage:frontend": "docker compose exec frontend npm run test:coverage",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:report": "npx playwright show-report",
     "format": "npx prettier --write .",
     "format:check": "npx prettier --check .",
     "prepare": "husky"
@@ -41,6 +44,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "prettier": "^3.8.1"

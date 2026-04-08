@@ -1,5 +1,9 @@
 name: Build and Deploy
 
+permissions:
+  contents: read
+  pull-requests: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -22,9 +26,13 @@ jobs:
   # ========================================
   changes:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      bot: ${{ steps.filter.outputs.bot }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,6 +48,10 @@ jobs:
               - 'docker-compose.preprod.yml'
             frontend:
               - 'frontend/**'
+              - 'docker-compose.prod.yml'
+              - 'docker-compose.preprod.yml'
+            bot:
+              - 'discord-bot/**'
               - 'docker-compose.prod.yml'
               - 'docker-compose.preprod.yml'
 
@@ -167,15 +179,190 @@ jobs:
         run: npx vitest run --coverage
 
   # ========================================
+  # Tests Discord Bot
+  # ========================================
+  test-discord-bot:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.bot == 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: discord-bot/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./discord-bot
+        run: npm ci
+
+      - name: Security audit
+        working-directory: ./discord-bot
+        run: npm audit --audit-level=high
+
+      - name: Generate Prisma Client
+        working-directory: ./discord-bot
+        run: npx prisma generate
+
+      - name: Lint
+        working-directory: ./discord-bot
+        run: npx eslint .
+
+      - name: Run tests with coverage
+        working-directory: ./discord-bot
+        run: npx vitest run --coverage
+
+  # ========================================
+  # Tests E2E (Playwright)
+  # ========================================
+  test-e2e:
+    runs-on: ubuntu-latest
+    needs: [format-check, test-backend, test-frontend]
+    if: |
+      always() &&
+      needs['format-check'].result == 'success' &&
+      (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped') &&
+      (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped')
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: tommanager
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: tommanager_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install root dependencies (Playwright)
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: ./backend
+        run: npx prisma generate
+
+      - name: Run migrations
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://tommanager:test_password@localhost:5432/tommanager_e2e?schema=public
+        run: npx prisma migrate deploy
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        env:
+          VITE_BACKEND_URL: http://localhost:3001
+        run: npm run build
+
+      - name: Start backend
+        working-directory: ./backend
+        env:
+          DATABASE_URL: postgresql://tommanager:test_password@localhost:5432/tommanager_e2e?schema=public
+          NODE_ENV: test
+          PORT: 3001
+          SESSION_SECRET: e2e_session_secret
+          CORS_ORIGIN: http://localhost:3000
+        run: node -r ts-node/register src/server.ts &
+
+      - name: Start frontend (preview)
+        working-directory: ./frontend
+        run: npx vite preview --port 3000 &
+
+      - name: Wait for services
+        run: |
+          npx wait-on http://localhost:3001/health http://localhost:3000 --timeout 30000
+
+      - name: Run E2E tests
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_API_URL: http://localhost:3001
+        run: npx playwright test --project=chromium
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ========================================
+  # Build Discord Bot Image
+  # ========================================
+  build-discord-bot:
+    runs-on: ubuntu-latest
+    needs: [changes, test-discord-bot, test-e2e]
+    if: |
+      github.event.inputs.skip_build != 'true' &&
+      needs.changes.outputs.bot == 'true' &&
+      (needs.test-discord-bot.result == 'success' || needs.test-discord-bot.result == 'skipped') &&
+      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push Discord Bot image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./discord-bot
+          file: ./discord-bot/Dockerfile
+          push: true
+          tags: ${{ secrets.REGISTRY_URL }}/${{ secrets.IMAGE_NAME }}/discord-bot:latest
+          cache-from: type=gha,scope=discord-bot
+          cache-to: type=gha,mode=max,scope=discord-bot
+
+  # ========================================
   # Build Backend Image
   # ========================================
   build-backend:
     runs-on: ubuntu-latest
-    needs: [changes, test-backend]
+    needs: [changes, test-backend, test-e2e]
     if: |
       github.event.inputs.skip_build != 'true' &&
       needs.changes.outputs.backend == 'true' &&
-      (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped')
+      (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped') &&
+      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped')
 
     steps:
       - name: Checkout repository
@@ -206,11 +393,12 @@ jobs:
   # ========================================
   build-frontend:
     runs-on: ubuntu-latest
-    needs: [changes, test-frontend]
+    needs: [changes, test-frontend, test-e2e]
     if: |
       github.event.inputs.skip_build != 'true' &&
       needs.changes.outputs.frontend == 'true' &&
-      (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped')
+      (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') &&
+      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped')
 
     steps:
       - name: Checkout repository
@@ -242,11 +430,12 @@ jobs:
   # ========================================
   deploy-prod:
     runs-on: ubuntu-latest
-    needs: [changes, build-backend, build-frontend]
+    needs: [changes, build-backend, build-frontend, build-discord-bot]
     if: |
       github.event_name == 'push' &&
       (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
-      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped')
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped') &&
+      (needs['build-discord-bot'].result == 'success' || needs['build-discord-bot'].result == 'skipped')
 
     steps:
       - name: Checkout repository
@@ -272,17 +461,25 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+          DISCORD_REDIRECT_URI: ${{ secrets.DISCORD_REDIRECT_URI }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_ADMIN_ROLE_ID: ${{ secrets.DISCORD_ADMIN_ROLE_ID }}
 
   # ========================================
   # Deploy to Portainer (Preprod)
   # ========================================
   deploy-preprod:
     runs-on: ubuntu-latest
-    needs: [changes, build-backend, build-frontend]
+    needs: [changes, build-backend, build-frontend, build-discord-bot]
     if: |
       github.event_name == 'pull_request' &&
       (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
-      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped')
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped') &&
+      (needs['build-discord-bot'].result == 'success' || needs['build-discord-bot'].result == 'skipped')
 
     steps:
       - name: Checkout repository
@@ -308,13 +505,20 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          CORS_ORIGIN: ${{ secrets.PREPROD_CORS_ORIGIN }}
+          DISCORD_CLIENT_ID: ${{ secrets.PREPROD_DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.PREPROD_DISCORD_CLIENT_SECRET }}
+          DISCORD_GUILD_ID: ${{ secrets.PREPROD_DISCORD_GUILD_ID }}
+          DISCORD_REDIRECT_URI: ${{ secrets.PREPROD_DISCORD_REDIRECT_URI }}
+          DISCORD_BOT_TOKEN: ${{ secrets.PREPROD_DISCORD_BOT_TOKEN }}
+          DISCORD_ADMIN_ROLE_ID: ${{ secrets.PREPROD_DISCORD_ADMIN_ROLE_ID }}
 
   # ========================================
   # Cleanup old images
   # ========================================
   cleanup:
     runs-on: ubuntu-latest
-    needs: [deploy-prod, deploy-preprod]
+    needs: [deploy-prod, deploy-preprod, build-discord-bot]
     if: |
       always() &&
       (needs.deploy-prod.result == 'success' || needs.deploy-preprod.result == 'success')

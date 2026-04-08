@@ -24,6 +24,12 @@ required_vars=(
     "SESSION_SECRET"
     "REGISTRY_URL"
     "IMAGE_NAME"
+    "CORS_ORIGIN"
+    "DISCORD_CLIENT_ID"
+    "DISCORD_CLIENT_SECRET"
+    "DISCORD_GUILD_ID"
+    "DISCORD_REDIRECT_URI"
+    "DISCORD_BOT_TOKEN"
 )
 
 echo "Validating environment variables..."
@@ -49,6 +55,13 @@ export SESSION_SECRET
 export REGISTRY_URL
 export IMAGE_NAME
 export TAG=${TAG:-latest}
+export CORS_ORIGIN
+export DISCORD_CLIENT_ID
+export DISCORD_CLIENT_SECRET
+export DISCORD_GUILD_ID
+export DISCORD_REDIRECT_URI
+export DISCORD_BOT_TOKEN
+export DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID:-}
 
 # ========================================
 # Process docker-compose file
