@@ -64,7 +64,7 @@ export const sessionMiddleware = session({
     maxAge: 60 * 60 * 1000, // 1h
     httpOnly: true,
     secure: env.NODE_ENV === "production",
-    sameSite: env.NODE_ENV === "production" ? "strict" : "lax",
+    sameSite: "lax",
   },
   store: new PrismaSessionStore(prisma, {
     checkPeriod: 2 * 60 * 1000,
