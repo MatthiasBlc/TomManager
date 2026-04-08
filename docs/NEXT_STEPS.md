@@ -1,6 +1,6 @@
 # Prochaines etapes - TomManager
 
-Phases terminees : 1-8 (auth, events, planning, board games, real-time, notifications, UI, robustesse) + 10 (monitoring).
+Phases terminees : 1-8 (auth, events, planning, board games, real-time, notifications, UI, robustesse) + 10 (monitoring) + 11 (E2E) + 12 (perf DB) + 15a (Discord OAuth).
 
 Phase 9 (Emails) intentionnellement ignoree — remplacee par le systeme Discord (Phase 15).
 
@@ -163,37 +163,20 @@ Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 
 ---
 
-## Phase 15a : Discord OAuth2 — Auth + Acces par role (Priorite haute)
+## Phase 15a : Discord OAuth2 — Auth + Acces par role ✅ COMPLETE
 
 **Objectif** : Remplacer les invitations email par Discord OAuth2. L'admin assigne un role Discord
 a un membre → le membre se connecte via "Login avec Discord" → TomManager lit ses roles et cree ses
 participations automatiquement. Les comptes locaux (email+password) continuent de fonctionner.
 
-Spec complete : `docs/features/discord-bot/SPEC_DISCORD_OAUTH.md`
-Roadmap detaillee : `docs/features/discord-bot/ROADMAP.md`
-
-**Points cles** :
-
-- Scopes OAuth2 : `identify` + `guilds.members.read` (roles lus au login, pas en temps reel)
-- Le bot Discord doit etre dans le serveur (pas actif) pour que `guilds.members.read` fonctionne
-- Migration DB : `User.email` et `passwordHash` deviennent nullable, 3 champs Discord ajoutes
-- `Event.discordRoleId` : champ optionnel qui mappe un role Discord a un event
-- Sync participations au login : idempotente, ajoute les manquantes, retire les revoquees
-- Coexistence comptes locaux et Discord, liaison possible depuis le profil
-- Mode degrade : si variables Discord absentes → bouton masque, auth locale seule
-
-**Checklist** :
-
-- [ ] Prerequis Discord (creer app, obtenir credentials, inviter bot sur serveur)
-- [ ] Migration DB (5 champs User + 1 champ Event)
-- [ ] Variables d'env : `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_GUILD_ID`, `DISCORD_REDIRECT_URI`, `DISCORD_ADMIN_ROLE_ID` (optionnel)
-- [ ] Service `discordAuth.ts` (exchange, fetch profil, fetch roles, sync participations)
-- [ ] Routes : `GET /api/auth/discord`, `GET /api/auth/discord/callback`, `DELETE /api/auth/discord/link`
-- [ ] `PATCH /api/events/:eventId` : accepte `discordRoleId`
-- [ ] `GET /api/auth/me` : retourne `discordId`, `discordUsername`, `avatarUrl`
-- [ ] Frontend : bouton Login Discord, section profil liaison, champ discordRoleId admin
-- [ ] Tests : mock fetch Discord, cas heureux + erreurs (state invalide, pas dans guild, compte desactive)
-- [ ] Mise a jour env, docker-compose, GitHub Secrets, MANUAL_TESTING.md
+- [x] Migration DB (5 champs User + `Event.discordRoleId`)
+- [x] Variables d'env : `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_GUILD_ID`, `DISCORD_REDIRECT_URI`, `DISCORD_ADMIN_ROLE_ID`
+- [x] Service `discordAuth.ts` (exchange, fetch profil, fetch roles, sync participations)
+- [x] Routes : `GET /api/auth/discord`, `GET /api/auth/discord/callback`, `DELETE /api/auth/discord/link`
+- [x] `PATCH /api/events/:eventId` : accepte `discordRoleId`
+- [x] `GET /api/auth/me` : retourne `discordId`, `discordUsername`, `avatarUrl`
+- [x] Frontend : bouton Login Discord, section profil liaison, champ discordRoleId admin
+- [x] Tests : mock fetch Discord, cas heureux + erreurs (state invalide, pas dans guild, compte desactive)
 
 ---
 

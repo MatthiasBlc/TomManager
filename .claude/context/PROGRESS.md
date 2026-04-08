@@ -1,6 +1,6 @@
 # Avancement du projet
 
-## Phase actuelle : Phases 1-14 completes (sauf 13 docs). Phase 15a (Discord OAuth) : prete a implementer.
+## Phase actuelle : Phases 1-12 + 15a completes. Phase 13 (docs) et 14 (BGG) restantes.
 
 Phase 1 (Auth Rework) : complete. Detail : `docs/features/auth-rework/ROADMAP.md`
 Phase 2 (Event Management) : complete. Detail : `docs/features/event-management/ROADMAP.md`

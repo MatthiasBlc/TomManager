@@ -23,17 +23,9 @@ export async function initiateLogin(req: Request, res: Response, next: NextFunct
 
     if (req.session.userId) req.session.oauthAction = "link";
 
-    // Skip consent screen if user already has a linked Discord account
-    let skipPrompt = false;
-    if (req.session.userId) {
-      const user = await prisma.user.findFirst({
-        where: { id: req.session.userId },
-        select: { discordId: true },
-      });
-      skipPrompt = !!user?.discordId;
-    }
-
-    const url = discordService.buildAuthorizeUrl(state, skipPrompt);
+    // prompt=none par defaut : Discord n'affiche la fenetre de consentement qu'a la premiere autorisation.
+    // prompt=consent force l'affichage a chaque fois (comportement indesirable).
+    const url = discordService.buildAuthorizeUrl(state, true);
     res.json({ url });
   } catch (err) {
     next(err);

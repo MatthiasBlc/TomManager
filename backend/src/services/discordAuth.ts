@@ -19,14 +19,14 @@ export function generateState(): string {
   return crypto.randomBytes(16).toString("hex");
 }
 
-export function buildAuthorizeUrl(state: string, skipPrompt = false): string {
+export function buildAuthorizeUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: env.DISCORD_CLIENT_ID,
     redirect_uri: env.DISCORD_REDIRECT_URI,
     response_type: "code",
     scope: "identify guilds.members.read",
     state,
-    prompt: skipPrompt ? "none" : "consent",
+    prompt: "none",
   });
   return `https://discord.com/oauth2/authorize?${params.toString()}`;
 }
