@@ -20,6 +20,7 @@ interface Props {
   onRemove: (entryId: string) => void;
   currentUserId?: string;
   isAdmin?: boolean;
+  emptyDescription?: string;
 }
 
 interface GroupedGame {
@@ -28,13 +29,13 @@ interface GroupedGame {
   removableEntries: { entryId: string; broughtByUserId: string }[];
 }
 
-export default function BoardGameList({ entries, onRemove, currentUserId, isAdmin }: Props) {
+export default function BoardGameList({ entries, onRemove, currentUserId, isAdmin, emptyDescription }: Props) {
   if (entries.length === 0) {
     return (
       <EmptyState
         icon={<span>🎲</span>}
         title="No board games added yet"
-        description="Add a board game to share with the group."
+        description={emptyDescription ?? "Add a board game to share with the group."}
       />
     );
   }

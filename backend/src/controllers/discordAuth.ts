@@ -25,7 +25,7 @@ export async function initiateLogin(req: Request, res: Response, next: NextFunct
 
     // prompt=none par defaut : Discord n'affiche la fenetre de consentement qu'a la premiere autorisation.
     // prompt=consent force l'affichage a chaque fois (comportement indesirable).
-    const url = discordService.buildAuthorizeUrl(state, true);
+    const url = discordService.buildAuthorizeUrl(state);
     res.json({ url });
   } catch (err) {
     next(err);
