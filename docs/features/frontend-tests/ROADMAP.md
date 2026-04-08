@@ -48,16 +48,16 @@ Avant de passer a la phase suivante :
 
 > Composants qui affichent ou masquent des elements selon les props/etat.
 
-- [ ] `PrivateRoute` — redirige si non authentifie, affiche le contenu sinon
-- [ ] `ErrorBoundary` — affiche le fallback quand une erreur est lancee
-- [ ] `ConnectionStatus` — affiche le bon etat selon `isOnline`
-- [ ] `BoardGameSearchInput` — filtre la liste, affiche les resultats
+- [x] `PrivateRoute` — redirige si non authentifie, affiche le contenu sinon
+- [x] `ErrorBoundary` — affiche le fallback quand une erreur est lancee
+- [x] `ConnectionStatus` — affiche le bon etat selon le socket
+- [x] `BoardGameSearchInput` — filtre la liste, affiche les resultats
 
 **Checklist de validation :**
 
-- [ ] Tests passent
-- [ ] Lint parfait
-- [ ] Commit `test: phase 3 - conditional logic components`
+- [x] Tests passent
+- [x] Lint parfait
+- [x] Commit `test: phase 3 - conditional logic components`
 
 ---
 
