@@ -203,6 +203,9 @@ export async function updateEvent(
   return event;
 }
 
+// Purge silencieuse : suppression directe en DB sans passer par removeParticipant/kickPlayer.
+// Ne pas ajouter de notifications ni d'emissions socket ici — la purge est une operation admin
+// qui ne doit pas alerter les utilisateurs concernes.
 export async function purgeEvent(eventId: string) {
   const existing = await prisma.event.findUnique({ where: { id: eventId } });
   if (!existing) {
