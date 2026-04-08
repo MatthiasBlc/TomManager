@@ -17,7 +17,7 @@ interface EventBoardGameEntry {
 
 interface Props {
   entries: EventBoardGameEntry[];
-  onRemove: (entryId: string) => void;
+  onRemove?: (entryId: string) => void;
   currentUserId?: string;
   isAdmin?: boolean;
   emptyDescription?: string;
