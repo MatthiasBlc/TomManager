@@ -60,7 +60,7 @@ RUN echo 'gzip on; \
     \
     server { \
     listen 80; \
-    add_header Content-Security-Policy "default-src '"'"'self'"'"'; script-src '"'"'self'"'"'; style-src '"'"'self'"'"' '"'"'unsafe-inline'"'"'; img-src '"'"'self'"'"' data: https: blob:; connect-src '"'"'self'"'"'; font-src '"'"'self'"'"'; object-src '"'"'none'"'"'; frame-src '"'"'none'"'"'; frame-ancestors '"'"'none'"'"';" always; \
+    add_header Content-Security-Policy "default-src '"'"'self'"'"'; script-src '"'"'self'"'"'; style-src '"'"'self'"'"' '"'"'unsafe-inline'"'"'; img-src '"'"'self'"'"' data: https: blob:; connect-src '"'"'self'"'"' wss:; font-src '"'"'self'"'"' data:; object-src '"'"'none'"'"'; frame-src '"'"'none'"'"'; frame-ancestors '"'"'none'"'"';" always; \
     add_header X-Content-Type-Options "nosniff" always; \
     add_header X-Frame-Options "DENY" always; \
     add_header Referrer-Policy "strict-origin-when-cross-origin" always; \
@@ -77,6 +77,16 @@ RUN echo 'gzip on; \
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
         proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto; \
         proxy_set_header X-Forwarded-Host $host; \
+    } \
+    location /socket.io/ { \
+        proxy_pass http://tommanager-backend:3001/socket.io/; \
+        proxy_http_version 1.1; \
+        proxy_set_header Upgrade $http_upgrade; \
+        proxy_set_header Connection "upgrade"; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto; \
     } \
 }' > /etc/nginx/conf.d/default.conf
 

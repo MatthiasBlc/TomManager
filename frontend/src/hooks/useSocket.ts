@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "../contexts/AuthContext";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? "";
 
 let globalSocket: Socket | null = null;
 
@@ -21,7 +21,7 @@ export function useSocket(): Socket | null {
     }
 
     if (!globalSocket) {
-      globalSocket = io(BACKEND_URL, {
+      globalSocket = io(BACKEND_URL || undefined, {
         withCredentials: true,
         transports: ["websocket", "polling"],
       });
