@@ -109,7 +109,12 @@ describe("ProfilePage", () => {
   it("calls unlinkDiscord when Unlink button is clicked", async () => {
     unlinkDiscordMock.mockResolvedValue(undefined);
     useAuthMock.mockReturnValue({
-      user: { ...baseUser, discordId: "discord123", discordUsername: "AliceDiscord", email: "alice@example.com" },
+      user: {
+        ...baseUser,
+        discordId: "discord123",
+        discordUsername: "AliceDiscord",
+        email: "alice@example.com",
+      },
       initiateDiscordLogin: initiateDiscordLoginMock,
       unlinkDiscord: unlinkDiscordMock,
     });

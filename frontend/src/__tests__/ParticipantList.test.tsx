@@ -17,7 +17,10 @@ vi.mock("../config/api", () => ({
   default: { delete: (...args: unknown[]) => apiDeleteMock(...args) },
 }));
 vi.mock("react-hot-toast", () => ({
-  default: { success: (...a: unknown[]) => toastSuccess(...a), error: (...a: unknown[]) => toastError(...a) },
+  default: {
+    success: (...a: unknown[]) => toastSuccess(...a),
+    error: (...a: unknown[]) => toastError(...a),
+  },
 }));
 
 const baseParticipants = [
@@ -41,9 +44,7 @@ describe("ParticipantList", () => {
 
   it("renders the empty state when no participants", () => {
     useAuthMock.mockReturnValue({ user: { id: "u1" } });
-    render(
-      <ParticipantList eventId="ev1" createdBy="u1" participants={[]} onChanged={vi.fn()} />
-    );
+    render(<ParticipantList eventId="ev1" createdBy="u1" participants={[]} onChanged={vi.fn()} />);
     expect(screen.getByText("No participants yet")).toBeInTheDocument();
   });
 

@@ -20,7 +20,10 @@ function LocationProbe() {
   return <div data-testid="location">{loc.pathname}</div>;
 }
 
-function renderItem(notification: Notification, handlers = { onMarkAsRead: vi.fn(), onDelete: vi.fn() }) {
+function renderItem(
+  notification: Notification,
+  handlers = { onMarkAsRead: vi.fn(), onDelete: vi.fn() }
+) {
   return {
     ...handlers,
     ...render(

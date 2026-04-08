@@ -21,7 +21,12 @@ vi.mock("../components/common/MobileSheet", () => ({
     children: React.ReactNode;
     title: string;
     onClose: () => void;
-  }) => (open ? <div data-testid="mobile-sheet" aria-label={title}>{children}</div> : null),
+  }) =>
+    open ? (
+      <div data-testid="mobile-sheet" aria-label={title}>
+        {children}
+      </div>
+    ) : null,
 }));
 
 const baseNotifData = {

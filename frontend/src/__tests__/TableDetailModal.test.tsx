@@ -32,8 +32,20 @@ vi.mock("react-hot-toast", () => ({
   },
 }));
 vi.mock("../components/common/ResponsiveModal", () => ({
-  default: ({ open, children, title }: { open: boolean; children: React.ReactNode; title: string }) =>
-    open ? <div role="dialog" aria-label={title}>{children}</div> : null,
+  default: ({
+    open,
+    children,
+    title,
+  }: {
+    open: boolean;
+    children: React.ReactNode;
+    title: string;
+  }) =>
+    open ? (
+      <div role="dialog" aria-label={title}>
+        {children}
+      </div>
+    ) : null,
 }));
 vi.mock("../components/planning/EditTableModal", () => ({
   default: ({ open }: { open: boolean }) => (open ? <div data-testid="edit-modal" /> : null),

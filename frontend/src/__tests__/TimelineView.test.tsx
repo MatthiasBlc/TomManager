@@ -1,7 +1,9 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import TimelineView from "../components/planning/TimelineView";
 
-const makeTable = (overrides: Partial<{ id: string; startDateTime: string; title: string }> = {}) => ({
+const makeTable = (
+  overrides: Partial<{ id: string; startDateTime: string; title: string }> = {}
+) => ({
   id: "t1",
   title: "Donjon",
   pitch: null,
@@ -64,7 +66,10 @@ describe("TimelineView", () => {
   it("calls onTableClick with the table id when a card is clicked", () => {
     const onTableClick = vi.fn();
     render(
-      <TimelineView tables={[makeTable({ id: "t-xyz", title: "Donjon" })]} onTableClick={onTableClick} />
+      <TimelineView
+        tables={[makeTable({ id: "t-xyz", title: "Donjon" })]}
+        onTableClick={onTableClick}
+      />
     );
     fireEvent.click(screen.getByText("Donjon"));
     expect(onTableClick).toHaveBeenCalledWith("t-xyz");

@@ -70,7 +70,9 @@ export async function seedAdmin(): Promise<AdminContext> {
   const rawSetCookie = loginRes.headers.get("set-cookie") ?? "";
   const cookie = rawSetCookie.split(";")[0];
   if (!cookie) {
-    throw new Error(`seedAdmin: aucun cookie de session renvoye par /api/auth/login (set-cookie="${rawSetCookie}")`);
+    throw new Error(
+      `seedAdmin: aucun cookie de session renvoye par /api/auth/login (set-cookie="${rawSetCookie}")`
+    );
   }
 
   return { cookie, userId: data.userId, username, email, password };
