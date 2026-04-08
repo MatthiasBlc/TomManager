@@ -1,11 +1,19 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { request, setupAdmin, createTestEvent } from "../setup/testHelpers";
+import * as discordService from "../../services/discordAuth";
 
 // Note: tests requiring DB migration (discordId, discordRoleId fields) are marked
 // and will fully pass once `prisma migrate dev --name add_discord_fields` is run.
 
 describe("Discord OAuth — GET /api/auth/discord", () => {
-  it("returns 503 when Discord not configured (test env has empty vars)", async () => {
+  beforeEach(() => {
+    vi.spyOn(discordService, "isDiscordConfigured").mockReturnValue(false);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns 503 when Discord not configured", async () => {
     const res = await request.get("/api/auth/discord");
     expect(res.status).toBe(503);
   });
