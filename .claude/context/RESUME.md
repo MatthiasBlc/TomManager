@@ -1,25 +1,8 @@
 # RESUME - Prochaine session
 
-### Optionnel (apres phase 8) : supprimer @sentry/react si inutilisé
+### ✅ Sentry cleanup terminé
 
-**Modele reco : Haiku 4.5 | Effort : 15min**
-
-**Context** : Sentry est importé dans `src/main.tsx` mais activé seulement si `VITE_SENTRY_DSN` est défini
-(variable d'env). Si tu ne l'utilises pas (pas de DSN configuré en prod), c'est une dépendance morte.
-
-**Check préalable** :
-
-- Vérifier si `VITE_SENTRY_DSN` est défini quelque part (CI env, .env.production, etc.)
-- Si non utilisé : supprimer est trivial
-
-**Refacto proposée** (si inutilisé) :
-
-1. Supprimer `@sentry/react` du `package.json`
-2. Supprimer les 8 lignes Sentry du `src/main.tsx`
-3. Garder la structure app intacte
-
-**Avantages** : une grosse dépendance de moins (Sentry est lourd), plus léger à déployer.
-**Effort** : ~15 min (trivial, si vraiment inutilisé).
+Supprimé @sentry/react (dépendance morte, jamais configurée). 8 lignes de code mort ôtées. Bundle plus léger.
 
 ### Une fois tout ce qui est ci-dessus terminé complètement et proprement :
 
@@ -36,7 +19,7 @@ DISCORD_ADMIN_ROLE_ID
 
 différents pour la prod et la preprod
 
-### Optionnel (apres phase 8) : remplacer axios par un wrapper fetch custom
+### Optionnel : remplacer axios par un wrapper fetch custom
 
 **Modele reco : Sonnet 4.6 | Effort : 2h**
 
