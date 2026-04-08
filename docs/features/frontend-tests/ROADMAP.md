@@ -108,9 +108,9 @@ const renderWithAuth = (ui: ReactNode, user = mockUser) =>
 
 > Composants avec `react-hook-form`. Tester la validation et la soumission.
 
-- [ ] `BoardGameForm` — validation des champs requis, soumission
-- [ ] `TagInput` — ajout/suppression de tags, validation
-- [ ] `LoginPage` — validation email/password, affichage des erreurs
+- [x] `ManualBoardGameForm` — validation champs, soumission, cancel (composant existant : ManualBoardGameForm, pas BoardGameForm)
+- [x] `TagInput` — ajout (Enter/comma), suppression, suggestions API, dedupe, backspace
+- [x] `LoginPage` — submit, redirect post-login, erreur, Discord OAuth
 
 **Pattern a suivre :**
 
@@ -124,9 +124,9 @@ it("affiche une erreur si le champ est vide", async () => {
 
 **Checklist de validation :**
 
-- [ ] Tests passent
-- [ ] Lint parfait
-- [ ] Commit `test: phase 6 - forms`
+- [x] Tests passent
+- [x] Lint parfait
+- [x] Commit `test: phase 6 - forms`
 
 ---
 
