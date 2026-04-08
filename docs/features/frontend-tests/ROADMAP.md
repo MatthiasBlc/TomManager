@@ -168,19 +168,19 @@ vi.mock("../config/api", () => ({
 }));
 ```
 
-- [ ] `NotFoundPage` — rendu statique, lien retour accueil
-- [ ] `HomePage` — rendu selon role (USER / ADMIN)
-- [ ] `LoginPage` — soumission du formulaire, redirection apres login
-- [ ] `ProfilePage` — affichage des donnees utilisateur, deconnexion Discord
-- [ ] `EventListPage` — liste des evenements, etat vide
-- [ ] `EventDetailPage` — affichage du detail, actions selon participation
-- [ ] `TableDetailPage` — affichage de la table, ajout de jeu, gestion participants
+- [x] `NotFoundPage` — rendu statique, lien retour accueil
+- [x] `HomePage` — rendu selon role (USER / ADMIN)
+- [x] `LoginPage` — soumission du formulaire, redirection apres login (phase 6)
+- [x] `ProfilePage` — affichage des donnees utilisateur, deconnexion Discord
+- [x] `EventListPage` — liste des evenements, etat vide, role-aware buttons
+- [x] `EventDetailPage` — render, params handling, tab rendering
+- [x] `TableDetailPage` — render, params handling, participants display
 
 **Checklist de validation :**
 
-- [ ] Tests passent
-- [ ] Lint parfait
-- [ ] Commit `test: phase 8 - pages`
+- [x] Tests passent
+- [x] Lint parfait
+- [x] Commit `test: phase 8 - pages`
 
 ---
 
