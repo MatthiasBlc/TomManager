@@ -2,6 +2,8 @@
 
 ### Tests frontend - reprendre a la phase 8
 
+**Modele reco : Haiku 4.5 | Effort : 1-2h**
+
 Phases 1 a 7 completes (138 tests verts, lint propre).
 Reste la phase 8 (Pages) selon `docs/features/frontend-tests/ROADMAP.md` :
 NotFoundPage, HomePage, LoginPage (deja partiellement teste en phase 6), ProfilePage,
@@ -10,6 +12,8 @@ EventListPage, EventDetailPage, TableDetailPage.
 Apres la phase : tests verts, lint parfait, commit `test: phase 8 - pages`.
 
 ### Une fois tout ce qui est ci-dessus terminé complètement et proprement :
+
+**Modele reco : Sonnet 4.6 | Effort : 2-3h**
 
 il faudrait modifier la CI / les variables de docker compose pour que la prod et la preprod ne pointent pas sur le même bot discord
 
@@ -23,6 +27,8 @@ DISCORD_ADMIN_ROLE_ID
 différents pour la prod et la preprod
 
 ### Optionnel (apres phase 8) : remplacer axios par un wrapper fetch custom
+
+**Modele reco : Sonnet 4.6 | Effort : 2h**
 
 **Context** : Le projet utilise axios (`src/config/api.ts`) pour les requêtes HTTP.
 Axios apporte surtout de la convenance (timeouts, intercepteurs, etc.), mais fetch moderne
@@ -41,6 +47,8 @@ peut faire 95% des mêmes choses sans dépendance externe.
 
 ### Optionnel (apres phase 8) : supprimer @sentry/react si inutilisé
 
+**Modele reco : Haiku 4.5 | Effort : 15min**
+
 **Context** : Sentry est importé dans `src/main.tsx` mais activé seulement si `VITE_SENTRY_DSN` est défini
 (variable d'env). Si tu ne l'utilises pas (pas de DSN configuré en prod), c'est une dépendance morte.
 
@@ -57,6 +65,8 @@ peut faire 95% des mêmes choses sans dépendance externe.
 **Effort** : ~15 min (trivial, si vraiment inutilisé).
 
 ### Optionnel (futur) : étudier le remplacement de @fullcalendar par une solution custom
+
+**Modele reco : Opus 4.6 | Effort : 4-6h**
 
 **Context** : FullCalendar est une dépendance lourde utilisée dans CalendarView/PlanningTab.
 Le projet ne l'exploite qu'à 10% : affichage d'une timeline simple d'événements.
