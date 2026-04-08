@@ -14,14 +14,14 @@ Avant de passer a la phase suivante :
 
 > Logique pure sans dependances externes. Les plus simples a tester.
 
-- [ ] `useIsMobile` — retourne `true`/`false` selon `window.innerWidth`
-- [ ] `useOnlineStatus` — ecoute les evenements `online`/`offline`
+- [x] `useIsMobile` — retourne `true`/`false` selon `window.innerWidth`
+- [x] `useOnlineStatus` — ecoute les evenements `online`/`offline`
 
 **Checklist de validation :**
 
-- [ ] Tests passent
-- [ ] Lint parfait
-- [ ] Commit `test: phase 1 - utility hooks`
+- [x] Tests passent
+- [x] Lint parfait
+- [x] Commit `test: phase 1 - utility hooks`
 
 ---
 
