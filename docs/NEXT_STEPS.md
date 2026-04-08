@@ -31,17 +31,10 @@ Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 
 ## Phase 16 : Features avancees (Priorite basse, a discuter)
 
-- [ ] Bouton de purge d'event pour les admin (avec confirmation, vide le planning et les jeux)
-- [ ] **Profil utilisateur** : avatar, bio, preferences
-- [ ] **Calendrier** : vue calendrier des tables (au lieu de timeline)
 - [ ] **Export** : export PDF du planning d'un event
-- [ ] **Recherche globale** : recherche unifiee events + tables + jeux
 - [ ] **Historique** : log des actions sur un event
 - [ ] **PWA avancee** : service worker, cache offline, push notifications
 - [ ] **Dark/Light mode** : toggle theme DaisyUI
-- [ ] **i18n** : support multi-langue (FR/EN)
-- [ ] **Commentaires** : commentaires sur les tables
-- [ ] **Votes** : systeme de vote pour choisir les jeux/tables
 
 ---
 

@@ -2,9 +2,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../hooks/useTheme";
 
 export default function ProfilePage() {
   const { user, initiateDiscordLogin, unlinkDiscord } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -63,6 +65,33 @@ export default function ProfilePage() {
               {user.email && <p className="text-sm opacity-60">{user.email}</p>}
               <span className="badge badge-sm">{user.role}</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card bg-base-100 shadow">
+        <div className="card-body">
+          <h2 className="card-title text-base">Appearance</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {theme === "dark" ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                </svg>
+              )}
+              <span className="text-sm">{theme === "dark" ? "Dark mode" : "Light mode"}</span>
+            </div>
+            <input
+              type="checkbox"
+              className="toggle toggle-sm"
+              checked={theme === "light"}
+              onChange={toggleTheme}
+              aria-label="Toggle theme"
+            />
           </div>
         </div>
       </div>
