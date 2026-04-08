@@ -1,9 +1,5 @@
 # RESUME - Prochaine session
 
-### ✅ Sentry cleanup terminé
-
-Supprimé @sentry/react (dépendance morte, jamais configurée). 8 lignes de code mort ôtées. Bundle plus léger.
-
 ### Une fois tout ce qui est ci-dessus terminé complètement et proprement :
 
 **Modele reco : Sonnet 4.6 | Effort : 2-3h**

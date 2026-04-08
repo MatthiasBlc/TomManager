@@ -46,35 +46,6 @@ Non fait : retry automatique sur GET (deprioritise).
 
 ---
 
-## Phase 9 : Emails (Priorite haute)
-
-**Objectif** : Envoyer les invitations par email au lieu de partager des liens manuellement.
-On va peut être ignorer cette étape pour le moment. Voir le système auth plus optimisé avec Discord plus bas.
-
-### 9.1 Infrastructure email
-
-- [ ] Choisir un provider (Resend, SendGrid, ou SMTP generique via nodemailer)
-- [ ] Service `email.ts` avec methode `sendEmail(to, subject, html)`
-- [ ] Templates HTML pour les emails (inline CSS)
-- [ ] Config env : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`
-- [ ] Mode dev : log les emails dans la console (pas d'envoi reel)
-
-### 9.2 Emails d'invitation
-
-- [ ] A la creation d'une invitation → email envoye au destinataire
-- [ ] Template : nom de l'event, lien d'invitation, nom de l'invitant
-- [ ] Bouton CTA "Rejoindre l'evenement" dans l'email
-- [ ] Gestion des erreurs d'envoi (log + ne pas bloquer la creation)
-
-### 9.3 Emails de notification (optionnel)
-
-- [ ] Email a l'expulsion d'un joueur
-- [ ] Email quand un event est modifie (dates)
-- [ ] Preference utilisateur : activer/desactiver les emails
-- [ ] Tests : mock du service email, verification des appels
-
----
-
 ## Phase 10 : Monitoring & Observabilite ✅ COMPLETE
 
 **Objectif** : Savoir ce qui se passe en production.
