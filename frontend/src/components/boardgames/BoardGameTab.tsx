@@ -97,7 +97,7 @@ export default function BoardGameTab({ eventId }: Props) {
       ) : (
         <BoardGameList
           entries={visibleEntries}
-          onRemove={handleRemove}
+          onRemove={tab === "mine" ? handleRemove : undefined}
           currentUserId={user?.id}
           isAdmin={user?.role === "ADMIN"}
           emptyDescription={tab === "mine" ? "You haven't added any games yet." : undefined}
