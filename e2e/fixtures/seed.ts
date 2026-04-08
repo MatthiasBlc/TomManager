@@ -6,6 +6,11 @@
 
 const API = process.env.E2E_API_URL || "http://localhost:3001";
 
+// Doit rester synchronise avec SEED_PARTICIPANT_PASSWORD dans
+// backend/src/routes/test.ts — le backend ne renvoie plus le password
+// en clair dans la reponse de /api/test/seed-participant.
+const SEED_PARTICIPANT_PASSWORD = "PlayerPassword123!";
+
 export interface AdminContext {
   cookie: string;
   userId: string;
@@ -57,8 +62,16 @@ export async function seedAdmin(): Promise<AdminContext> {
     redirect: "manual",
   });
 
+  if (!loginRes.ok) {
+    throw new Error(`seedAdmin login failed: ${loginRes.status} ${await loginRes.text()}`);
+  }
+
   // Extraire uniquement "name=value" — les attributs (Path, HttpOnly...) ne doivent pas etre envoyes dans le header Cookie
-  const cookie = (loginRes.headers.get("set-cookie") ?? "").split(";")[0];
+  const rawSetCookie = loginRes.headers.get("set-cookie") ?? "";
+  const cookie = rawSetCookie.split(";")[0];
+  if (!cookie) {
+    throw new Error(`seedAdmin: aucun cookie de session renvoye par /api/auth/login (set-cookie="${rawSetCookie}")`);
+  }
 
   return { cookie, userId: data.userId, username, email, password };
 }
@@ -98,5 +111,5 @@ export async function seedParticipant(eventId: string): Promise<ParticipantConte
 
   if (!res.ok) throw new Error(`seedParticipant failed: ${res.status}`);
   const data = await res.json();
-  return { email: data.email, username: data.username, password: data.password };
+  return { email: data.email, username: data.username, password: SEED_PARTICIPANT_PASSWORD };
 }

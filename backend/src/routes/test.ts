@@ -6,7 +6,21 @@ import { Router } from "express";
 import prisma from "../util/db";
 import bcrypt from "bcrypt";
 
+// Mot de passe partage pour les participants seeds. Constant cote tests : les
+// fixtures E2E le connaissent, inutile donc de le renvoyer dans la reponse.
+export const SEED_PARTICIPANT_PASSWORD = "PlayerPassword123!";
+
 const router = Router();
+
+// Double-garde runtime : meme si les routes sont montees par erreur en prod
+// (ex: ENABLE_TEST_ROUTES mal configure), on refuse categoriquement en prod.
+router.use((req, res, next) => {
+  if (process.env.NODE_ENV === "production") {
+    res.status(404).end();
+    return;
+  }
+  next();
+});
 
 // POST /api/test/seed-admin — cree un user ADMIN directement en DB
 router.post("/seed-admin", async (req, res, next) => {
@@ -45,9 +59,8 @@ router.post("/seed-participant", async (req, res, next) => {
     const ts = Date.now();
     const email = `player_e2e_${ts}@test.com`;
     const username = `player_e2e_${ts}`;
-    const password = "PlayerPassword123!";
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(SEED_PARTICIPANT_PASSWORD, 10);
     const user = await prisma.user.create({
       data: { email, username, passwordHash },
     });
@@ -56,7 +69,8 @@ router.post("/seed-participant", async (req, res, next) => {
       data: { eventId, userId: user.id },
     });
 
-    res.status(201).json({ userId: user.id, email, username, password });
+    // Pas de password dans la reponse : la fixture E2E connait la constante.
+    res.status(201).json({ userId: user.id, email, username });
   } catch (err) {
     next(err);
   }

@@ -22,11 +22,11 @@ test.describe("Navigation mobile", () => {
 
     // Naviguer vers l'onglet Planning
     await tabBar.getByText(/planning/i).click();
-    await expect(page.getByRole("button", { name: /create table/i })).toBeHidden(); // FAB visible, pas le bouton desktop
-    const fab = page
-      .locator("[aria-label='Create Table']")
-      .or(page.getByRole("button", { name: /\+/i }));
+    // En mobile, le bouton desktop "Create Table" n'est pas rendu :
+    // seul le FAB (aria-label="Create Table") est present.
+    const fab = page.locator("[aria-label='Create Table']");
     await expect(fab).toBeVisible();
+    await expect(fab).toHaveClass(/fixed/); // garantit que c'est bien le FAB positionne fixed
   });
 
   test("page 404 affichee pour une route inconnue", async ({ page }) => {
