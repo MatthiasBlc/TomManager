@@ -1,10 +1,9 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import BottomTabBar from "../components/layout/BottomTabBar";
 
 const useAuthMock = vi.fn();
 const navigateMock = vi.fn();
-const logoutMock = vi.fn();
 
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => useAuthMock(),
@@ -24,13 +23,12 @@ function renderAt(route: string) {
 
 describe("BottomTabBar", () => {
   beforeEach(() => {
-    logoutMock.mockReset().mockResolvedValue(undefined);
     navigateMock.mockReset();
     useAuthMock.mockReset();
   });
 
   it("renders nothing when no user is authenticated", () => {
-    useAuthMock.mockReturnValue({ user: null, logout: logoutMock });
+    useAuthMock.mockReturnValue({ user: null });
     const { container } = renderAt("/");
     expect(container.firstChild).toBeNull();
   });
@@ -38,7 +36,6 @@ describe("BottomTabBar", () => {
   it("renders only Events tab and username when not on an event route", () => {
     useAuthMock.mockReturnValue({
       user: { id: "u1", username: "Alice" },
-      logout: logoutMock,
     });
     renderAt("/");
     expect(screen.getByRole("link", { name: /Events/ })).toBeInTheDocument();
@@ -50,7 +47,6 @@ describe("BottomTabBar", () => {
   it("shows Planning and Games tabs when on an event route", () => {
     useAuthMock.mockReturnValue({
       user: { id: "u1", username: "Alice" },
-      logout: logoutMock,
     });
     renderAt("/events/ev42/planning");
     expect(screen.getByRole("link", { name: /Events/ })).toBeInTheDocument();
@@ -60,16 +56,12 @@ describe("BottomTabBar", () => {
     expect(games).toHaveAttribute("href", "/events/ev42");
   });
 
-  it("logs out and navigates home when the username button is clicked", async () => {
+  it("navigates to /profile when the username button is clicked", () => {
     useAuthMock.mockReturnValue({
       user: { id: "u1", username: "Alice" },
-      logout: logoutMock,
     });
     renderAt("/");
     fireEvent.click(screen.getByRole("button", { name: /Alice/ }));
-    await waitFor(() => {
-      expect(logoutMock).toHaveBeenCalled();
-      expect(navigateMock).toHaveBeenCalledWith("/");
-    });
+    expect(navigateMock).toHaveBeenCalledWith("/profile");
   });
 });

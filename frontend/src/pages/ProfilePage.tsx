@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../hooks/useTheme";
 
 export default function ProfilePage() {
-  const { user, initiateDiscordLogin, unlinkDiscord } = useAuth();
+  const { user, logout, initiateDiscordLogin, unlinkDiscord } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -164,6 +164,14 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+      </div>
+      <div className="md:hidden">
+        <button
+          className="btn btn-outline btn-error w-full"
+          onClick={() => logout().then(() => navigate("/"))}
+        >
+          Sign out
+        </button>
       </div>
     </div>
   );
