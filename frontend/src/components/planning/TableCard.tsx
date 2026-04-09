@@ -29,8 +29,10 @@ export default function TableCard({ table, onClick }: Props) {
 
   return (
     <div
-      className={`card bg-base-100 shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer ${
-        table.currentUserConflict ? "border-2 border-error" : ""
+      className={`card bg-base-100 border transition-all cursor-pointer hover:shadow-lg active:scale-[0.98] ${
+        table.currentUserConflict
+          ? "border-error border-2"
+          : "border-base-content/15 hover:border-base-content/30"
       }`}
       onClick={onClick}
     >
