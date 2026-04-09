@@ -51,7 +51,7 @@ function tablesOverlap(a: TableSummary, b: TableSummary): boolean {
 // Exemple :
 //   A 10h-12h | B 11h-16h   ->  A col0 row1    B col1 row1 span2
 //   C 14h-16h | B 11h-16h   ->  C col0 row2
-function computeLayout(tables: TableSummary[]): LayoutItem[] {
+export function computeLayout(tables: TableSummary[]): LayoutItem[] {
   const sorted = [...tables].sort(
     (a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime()
   );

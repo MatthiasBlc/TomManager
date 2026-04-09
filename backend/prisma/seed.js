@@ -246,6 +246,16 @@ async function seedDemoData() {
       endDateTime: new Date("2026-07-20T16:00:00.000Z"),
       tags: ["jdr"],
     },
+    // Session jds de nuit sur le dernier jour
+    {
+      title: "Spirit Island - Nuit des Esprits",
+      pitch:
+        "Defense cooperative de l'ile contre les colonisateurs. Complexite elevee, session de nuit.",
+      maxPlayers: 4,
+      startDateTime: new Date("2026-07-20T00:30:00.000Z"),
+      endDateTime: new Date("2026-07-20T03:30:00.000Z"),
+      tags: ["coopératif", "strategie"],
+    },
   ];
 
   for (const t of tablesData) {
