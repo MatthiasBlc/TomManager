@@ -323,10 +323,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes, test-discord-bot, test-e2e]
     if: |
+      always() &&
       github.event.inputs.skip_build != 'true' &&
       needs.changes.outputs.bot == 'true' &&
-      (needs.test-discord-bot.result == 'success' || needs.test-discord-bot.result == 'skipped') &&
-      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped') &&
+      needs.test-discord-bot.result == 'success' &&
+      needs.test-e2e.result == 'success' &&
       (github.event_name == 'push' || github.event_name == 'pull_request')
 
     steps:
@@ -361,10 +362,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes, test-backend, test-e2e]
     if: |
+      always() &&
       github.event.inputs.skip_build != 'true' &&
       needs.changes.outputs.backend == 'true' &&
-      (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped') &&
-      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped') &&
+      needs.test-backend.result == 'success' &&
+      needs.test-e2e.result == 'success' &&
       (github.event_name == 'push' || github.event_name == 'pull_request')
 
     steps:
@@ -399,10 +401,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes, test-frontend, test-e2e]
     if: |
+      always() &&
       github.event.inputs.skip_build != 'true' &&
       needs.changes.outputs.frontend == 'true' &&
-      (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') &&
-      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped') &&
+      needs.test-frontend.result == 'success' &&
+      needs.test-e2e.result == 'success' &&
       (github.event_name == 'push' || github.event_name == 'pull_request')
 
     steps:
