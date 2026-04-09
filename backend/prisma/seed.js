@@ -120,7 +120,8 @@ async function seedDemoData() {
     // --- Jour 16 : sequentielles, pas de conflit ---
     {
       title: "L'Appel de Cthulhu - Scenario debutant",
-      pitch: "Un scenario d'introduction au jeu de role lovecraftien. Personnages pre-tires fournis.",
+      pitch:
+        "Un scenario d'introduction au jeu de role lovecraftien. Personnages pre-tires fournis.",
       maxPlayers: 5,
       startDateTime: new Date("2026-07-16T08:00:00.000Z"),
       endDateTime: new Date("2026-07-16T11:00:00.000Z"),
@@ -156,7 +157,7 @@ async function seedDemoData() {
     // --- Jour 18 : B longue chevauche A et C ---
     // Resultat attendu : A|B  puis  C|B (B avec rowSpan=2)
     {
-      title: "Vampire la Mascarade - Nuit de sang",  // A : 10h-12h
+      title: "Vampire la Mascarade - Nuit de sang", // A : 10h-12h
       pitch: "Intrigues politiques entre clans vampiriques dans une ville moderne.",
       maxPlayers: 4,
       startDateTime: new Date("2026-07-18T08:00:00.000Z"),
@@ -164,7 +165,7 @@ async function seedDemoData() {
       tags: ["jdr"],
     },
     {
-      title: "Warhammer 40k RPG - Requiem Infernal",  // B : 10h-17h (longue)
+      title: "Warhammer 40k RPG - Requiem Infernal", // B : 10h-17h (longue)
       pitch: "Campagne en espace lointain. Duree estimee 7h. Univers sombre et brutal.",
       maxPlayers: 5,
       startDateTime: new Date("2026-07-18T08:00:00.000Z"),
@@ -172,7 +173,7 @@ async function seedDemoData() {
       tags: ["jdr"],
     },
     {
-      title: "Star Wars Edge of the Empire - La Kessel Run",  // C : 14h-17h
+      title: "Star Wars Edge of the Empire - La Kessel Run", // C : 14h-17h
       pitch: "Du contrebandier a l'hero de la Rebellion. Univers Star Wars canonique.",
       maxPlayers: 5,
       startDateTime: new Date("2026-07-18T13:00:00.000Z"),
@@ -229,8 +230,9 @@ async function seedDemoData() {
       tags: ["jdr"],
     },
     {
-      title: "Dungeon World - La Tour du Sorcier",  // longue, chevauche tout
-      pitch: "JDR narratif fantasy leger. Ideal pour joueurs voulant un rythme rapide et cinematique.",
+      title: "Dungeon World - La Tour du Sorcier", // longue, chevauche tout
+      pitch:
+        "JDR narratif fantasy leger. Ideal pour joueurs voulant un rythme rapide et cinematique.",
       maxPlayers: 5,
       startDateTime: new Date("2026-07-20T08:00:00.000Z"),
       endDateTime: new Date("2026-07-20T16:00:00.000Z"),
