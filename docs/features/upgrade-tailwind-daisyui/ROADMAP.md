@@ -35,13 +35,13 @@ export default defineConfig({
 - [ ] Ajouter le bloc `@plugin "daisyui/theme"` avec le theme ToM exact (cf. spec)
 - [ ] Migrer les variables CSS FullCalendar : `hsl(var(--b1))` -> `oklch(var(--color-base-100))` etc.
 
-  | Ancien          | Nouveau                     |
-  | --------------- | --------------------------- |
-  | `var(--b1)`     | `var(--color-base-100)`     |
-  | `var(--b2)`     | `var(--color-base-200)`     |
-  | `var(--b3)`     | `var(--color-base-300)`     |
-  | `var(--bc)`     | `var(--color-base-content)` |
-  | `var(--er)`     | `var(--color-error)`        |
+  | Ancien      | Nouveau                     |
+  | ----------- | --------------------------- |
+  | `var(--b1)` | `var(--color-base-100)`     |
+  | `var(--b2)` | `var(--color-base-200)`     |
+  | `var(--b3)` | `var(--color-base-300)`     |
+  | `var(--bc)` | `var(--color-base-content)` |
+  | `var(--er)` | `var(--color-error)`        |
 
 ## Etape 5 - Audit classes composants
 

@@ -7,12 +7,12 @@ le theme personnalise "ToM" via la syntaxe native `@plugin "daisyui/theme"`.
 
 ## Contexte
 
-| Package      | Actuel    | Cible     |
-| ------------ | --------- | --------- |
-| tailwindcss  | ^3.4.17   | ^4.x      |
-| daisyui      | ^4.12.23  | ^5.x      |
-| postcss      | ^8.5.1    | ^8.x (OK) |
-| @tailwindcss/vite | absent | ^4.x  |
+| Package           | Actuel   | Cible     |
+| ----------------- | -------- | --------- |
+| tailwindcss       | ^3.4.17  | ^4.x      |
+| daisyui           | ^4.12.23 | ^5.x      |
+| postcss           | ^8.5.1   | ^8.x (OK) |
+| @tailwindcss/vite | absent   | ^4.x      |
 
 ## Breaking changes majeurs
 
@@ -49,7 +49,7 @@ le theme personnalise "ToM" via la syntaxe native `@plugin "daisyui/theme"`.
   --color-primary-content: oklch(13.454% 0.033 35.791);
   --color-secondary: oklch(86.19% 0.047 102.15);
   --color-secondary-content: oklch(12.818% 0.005 229.389);
-  --color-accent: oklch(79% 0.076 298.300);
+  --color-accent: oklch(79% 0.076 298.3);
   --color-accent-content: oklch(13.454% 0.033 35.791);
   --color-neutral: oklch(30.1% 0 253.041);
   --color-neutral-content: oklch(85.5% 0 253.041);
