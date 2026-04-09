@@ -54,7 +54,7 @@ Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 - [ ] **Export** : export PDF du planning d'un event
 - [ ] **Historique** : log des actions sur un event
 - [ ] **PWA avancee** : service worker, cache offline, push notifications
-- [ ] **Dark/Light mode** : toggle theme DaisyUI
+- [x] **Dark/Light mode** : toggle theme DaisyUI (complete : useTheme.ts, themes coffee/winter)
 
 ---
 
