@@ -30,21 +30,11 @@ Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 
 ---
 
-## Discord OAuth popup (complete)
-
-- Desktop : popup centree, se ferme apres auth, page principale mise a jour sans reload
-- Mobile / popup bloquee : fallback automatique vers le flux redirect
-- Backend redirige vers `/oauth-popup` (page React) qui emet le postMessage → pas de CSP
-- `checkAuth()` appele en fallback si popup fermee manuellement apres auth reussie
-
----
-
 ## Phase 16 : Features avancees (Priorite basse, a discuter)
 
 - [ ] **Export** : export PDF du planning d'un event
 - [ ] **Historique** : log des actions sur un event
 - [ ] **PWA avancee** : service worker, cache offline, push notifications
-- [x] **Dark/Light mode** : toggle theme DaisyUI (complete : useTheme.ts, themes coffee/winter)
 
 ---
 
