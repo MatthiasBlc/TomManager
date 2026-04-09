@@ -1,4 +1,3 @@
-import { randomBytes } from "crypto";
 import { Request, Response, NextFunction } from "express";
 import prisma from "../util/db";
 import * as discordService from "../services/discordAuth";
@@ -37,19 +36,11 @@ export async function initiateLogin(req: Request, res: Response, next: NextFunct
   }
 }
 
-// Envoie une page HTML minimale qui poste un message a l'opener et se ferme.
-// Utilise uniquement en mode popup (oauthPopup=true en session).
-// Le nonce permet de contourner le CSP strict applique par helmet sur les scripts inline.
+// Redirige la popup vers une page frontend dediee qui emet le postMessage
+// depuis le bundle React (pas de script inline → pas de probleme CSP).
 function sendPopupResponse(res: Response, payload: Record<string, string>) {
-  const nonce = randomBytes(16).toString("base64");
-  const data = JSON.stringify(payload);
-  // targetOrigin = FRONTEND_URL pour limiter la portee du postMessage
-  res.setHeader("Content-Security-Policy", `script-src 'nonce-${nonce}'`);
-  res.send(`<!DOCTYPE html>
-<html><head><script nonce="${nonce}">
-try { window.opener && window.opener.postMessage(${data}, ${JSON.stringify(FRONTEND_URL)}); } catch(e) {}
-window.close();
-</script></head><body></body></html>`);
+  const params = new URLSearchParams(payload).toString();
+  res.redirect(`${FRONTEND_URL}/oauth-popup?${params}`);
 }
 
 export async function handleCallback(req: Request, res: Response, next: NextFunction) {

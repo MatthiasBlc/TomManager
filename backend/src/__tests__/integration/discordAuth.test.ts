@@ -53,7 +53,7 @@ describe("Discord OAuth — GET /api/auth/discord/callback (mode popup)", () => 
     vi.restoreAllMocks();
   });
 
-  it("retourne du HTML avec postMessage DISCORD_AUTH_ERROR sur erreur Discord", async () => {
+  it("redirige vers /oauth-popup avec DISCORD_AUTH_ERROR sur erreur Discord", async () => {
     vi.spyOn(discordService, "isDiscordConfigured").mockReturnValue(true);
     vi.spyOn(discordService, "generateState").mockReturnValue("popup-state-abc");
 
@@ -65,14 +65,13 @@ describe("Discord OAuth — GET /api/auth/discord/callback (mode popup)", () => 
       "/api/auth/discord/callback?error=access_denied&state=popup-state-abc"
     );
 
-    expect(res.status).toBe(200);
-    expect(res.text).toContain("DISCORD_AUTH_ERROR");
-    expect(res.text).toContain("discord_denied");
-    expect(res.text).toContain("window.opener");
-    expect(res.text).toContain("window.close()");
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toContain("/oauth-popup");
+    expect(res.headers.location).toContain("DISCORD_AUTH_ERROR");
+    expect(res.headers.location).toContain("discord_denied");
   });
 
-  it("retourne du HTML avec postMessage DISCORD_AUTH_ERROR sur state invalide", async () => {
+  it("redirige vers /oauth-popup avec DISCORD_AUTH_ERROR sur state invalide", async () => {
     vi.spyOn(discordService, "isDiscordConfigured").mockReturnValue(true);
     vi.spyOn(discordService, "generateState").mockReturnValue("popup-state-xyz");
 
@@ -80,9 +79,10 @@ describe("Discord OAuth — GET /api/auth/discord/callback (mode popup)", () => 
 
     const res = await agent.get("/api/auth/discord/callback?code=abc&state=wrong-state");
 
-    expect(res.status).toBe(200);
-    expect(res.text).toContain("DISCORD_AUTH_ERROR");
-    expect(res.text).toContain("invalid_state");
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toContain("/oauth-popup");
+    expect(res.headers.location).toContain("DISCORD_AUTH_ERROR");
+    expect(res.headers.location).toContain("invalid_state");
   });
 
   it("retourne un redirect (302) quand pas de popup en session", async () => {

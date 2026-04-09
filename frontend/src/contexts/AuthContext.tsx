@@ -2,16 +2,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import api from "../config/api";
 
-// Origine du backend pour valider les postMessage recus depuis la popup OAuth
-const BACKEND_ORIGIN = (() => {
-  const url = import.meta.env.VITE_BACKEND_URL as string | undefined;
-  try {
-    return url ? new URL(url).origin : window.location.origin;
-  } catch {
-    return window.location.origin;
-  }
-})();
-
 // Detection mobile par media query (coherent avec useIsMobile)
 function isMobileDevice(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
@@ -117,7 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         const onMessage = (event: MessageEvent) => {
-          if (event.origin !== BACKEND_ORIGIN) return;
+          // Le message vient de /oauth-popup, qui est sur la meme origine que le frontend
+          if (event.origin !== window.location.origin) return;
           if (event.data?.type === "DISCORD_AUTH_SUCCESS") {
             done = true;
             cleanup();
@@ -129,12 +120,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         };
 
-        // Detecte si l'utilisateur ferme la popup manuellement
+        // Detecte si l'utilisateur ferme la popup manuellement.
+        // On appelle checkAuth() dans tous les cas : si l'auth a reussi mais que le
+        // postMessage n'a pas encore ete recu, l'etat sera mis a jour quand meme.
         const pollInterval = setInterval(() => {
           if (!done && popup.closed) {
             done = true;
             cleanup();
-            resolve(false);
+            checkAuth().then(() => resolve(false));
           }
         }, 500);
 
