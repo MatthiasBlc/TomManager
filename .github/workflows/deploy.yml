@@ -441,9 +441,10 @@ jobs:
       (needs['test-backend'].result == 'success' || needs['test-backend'].result == 'skipped') &&
       (needs['test-frontend'].result == 'success' || needs['test-frontend'].result == 'skipped') &&
       (needs['test-e2e'].result == 'success' || needs['test-e2e'].result == 'skipped') &&
-      (needs['build-backend'].result == 'success' || needs['build-backend'].result == 'skipped') &&
-      (needs['build-frontend'].result == 'success' || needs['build-frontend'].result == 'skipped') &&
-      (needs['build-discord-bot'].result == 'success' || needs['build-discord-bot'].result == 'skipped')
+      needs['build-backend'].result != 'failure' &&
+      needs['build-frontend'].result != 'failure' &&
+      needs['build-discord-bot'].result != 'failure' &&
+      (needs['build-backend'].result == 'success' || needs['build-frontend'].result == 'success' || needs['build-discord-bot'].result == 'success')
 
     steps:
       - name: Checkout repository
@@ -490,9 +491,10 @@ jobs:
       (needs['test-backend'].result == 'success' || needs['test-backend'].result == 'skipped') &&
       (needs['test-frontend'].result == 'success' || needs['test-frontend'].result == 'skipped') &&
       (needs['test-e2e'].result == 'success' || needs['test-e2e'].result == 'skipped') &&
-      (needs['build-backend'].result == 'success' || needs['build-backend'].result == 'skipped') &&
-      (needs['build-frontend'].result == 'success' || needs['build-frontend'].result == 'skipped') &&
-      (needs['build-discord-bot'].result == 'success' || needs['build-discord-bot'].result == 'skipped')
+      needs['build-backend'].result != 'failure' &&
+      needs['build-frontend'].result != 'failure' &&
+      needs['build-discord-bot'].result != 'failure' &&
+      (needs['build-backend'].result == 'success' || needs['build-frontend'].result == 'success' || needs['build-discord-bot'].result == 'success')
 
     steps:
       - name: Checkout repository
