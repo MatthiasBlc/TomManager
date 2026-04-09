@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import TimelineView, { computeLayout } from "../components/planning/TimelineView";
+import TimelineView from "../components/planning/TimelineView";
+import { computeLayout } from "../components/planning/computeLayout";
 
 const makeTable = (
   overrides: Partial<{ id: string; startDateTime: string; title: string }> = {}
