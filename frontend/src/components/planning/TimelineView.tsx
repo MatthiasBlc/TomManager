@@ -40,9 +40,10 @@ function tablesOverlap(a: TableSummary, b: TableSummary): boolean {
 
 // Calcule le layout interne d'un groupe de tables qui se chevauchent toutes (au moins transitivement).
 // Retourne les items avec col/cssRow/rowSpan locaux (cssRow commence a 1) et le nombre de colonnes.
-function computeGroupLayout(
-  tables: TableSummary[]
-): { items: Omit<LayoutItem, "colSpan">[]; numCols: number } {
+function computeGroupLayout(tables: TableSummary[]): {
+  items: Omit<LayoutItem, "colSpan">[];
+  numCols: number;
+} {
   const sorted = [...tables].sort(
     (a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime()
   );
