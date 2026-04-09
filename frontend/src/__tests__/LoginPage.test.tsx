@@ -130,4 +130,26 @@ describe("LoginPage", () => {
       expect(toastError).toHaveBeenCalledWith("Discord login cancelled");
     });
   });
+
+  it("shows the correct Discord error toast when popup rejects with a known error key", async () => {
+    setUpAuth();
+    initiateDiscordLoginMock.mockRejectedValue(new Error("not_in_guild"));
+    renderLogin();
+    const btn = await screen.findByRole("button", { name: /login with discord/i });
+    fireEvent.click(btn);
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith("You must be a member of the Discord server");
+    });
+  });
+
+  it("shows a generic error toast when popup rejects with an unknown error key", async () => {
+    setUpAuth();
+    initiateDiscordLoginMock.mockRejectedValue(new Error("unexpected_error"));
+    renderLogin();
+    const btn = await screen.findByRole("button", { name: /login with discord/i });
+    fireEvent.click(btn);
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith("Discord login unavailable");
+    });
+  });
 });

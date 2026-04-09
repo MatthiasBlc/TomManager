@@ -25,9 +25,16 @@ export default function ProfilePage() {
 
   const handleLink = async () => {
     try {
-      await initiateDiscordLogin("/profile");
-    } catch {
-      toast.error("Discord login unavailable");
+      const completed = await initiateDiscordLogin("/profile");
+      // En mode popup : afficher le toast de succes ici (le redirect le gere via searchParams)
+      if (completed) toast.success("Discord account linked!");
+    } catch (err) {
+      const errorKey = (err as Error).message;
+      if (errorKey === "discord_already_linked") {
+        toast.error("This Discord account is already linked to another user");
+      } else {
+        toast.error("Discord login unavailable");
+      }
     }
   };
 

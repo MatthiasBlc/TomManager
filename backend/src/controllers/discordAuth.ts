@@ -23,6 +23,10 @@ export async function initiateLogin(req: Request, res: Response, next: NextFunct
 
     if (req.session.userId) req.session.oauthAction = "link";
 
+    // popup=1 : le callback renverra une page HTML avec postMessage au lieu d'un redirect
+    if (req.query.popup === "1") req.session.oauthPopup = true;
+    else delete req.session.oauthPopup;
+
     // prompt=none par defaut : Discord n'affiche la fenetre de consentement qu'a la premiere autorisation.
     // prompt=consent force l'affichage a chaque fois (comportement indesirable).
     const url = discordService.buildAuthorizeUrl(state);
@@ -32,16 +36,36 @@ export async function initiateLogin(req: Request, res: Response, next: NextFunct
   }
 }
 
+// Envoie une page HTML minimale qui poste un message a l'opener et se ferme.
+// Utilise uniquement en mode popup (oauthPopup=true en session).
+function sendPopupResponse(res: Response, payload: Record<string, string>) {
+  const data = JSON.stringify(payload);
+  // targetOrigin = FRONTEND_URL pour limiter la portee du postMessage
+  res.send(`<!DOCTYPE html>
+<html><head><script>
+try { window.opener && window.opener.postMessage(${data}, ${JSON.stringify(FRONTEND_URL)}); } catch(e) {}
+window.close();
+</script></head><body></body></html>`);
+}
+
 export async function handleCallback(req: Request, res: Response, next: NextFunction) {
   try {
     const { code, state, error } = req.query as Record<string, string>;
 
+    const isPopup = !!req.session.oauthPopup;
+    delete req.session.oauthPopup;
+
+    const authError = (errorKey: string) => {
+      if (isPopup) return sendPopupResponse(res, { type: "DISCORD_AUTH_ERROR", error: errorKey });
+      return res.redirect(`${FRONTEND_URL}/login?error=${errorKey}`);
+    };
+
     if (error) {
-      return res.redirect(`${FRONTEND_URL}/login?error=discord_denied`);
+      return authError("discord_denied");
     }
 
     if (!state || state !== req.session.oauthState) {
-      return res.redirect(`${FRONTEND_URL}/login?error=invalid_state`);
+      return authError("invalid_state");
     }
     delete req.session.oauthState;
 
@@ -54,14 +78,14 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
     try {
       accessToken = await discordService.exchangeCode(code);
     } catch {
-      return res.redirect(`${FRONTEND_URL}/login?error=discord_token_exchange`);
+      return authError("discord_token_exchange");
     }
 
     const discordUser = await discordService.fetchDiscordUser(accessToken);
     const guildMember = await discordService.fetchGuildMember(accessToken);
 
     if (!guildMember) {
-      return res.redirect(`${FRONTEND_URL}/login?error=not_in_guild`);
+      return authError("not_in_guild");
     }
 
     const memberRoles = guildMember.roles;
@@ -72,12 +96,12 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
       return handleLink(
         req,
         res,
-        next,
         discordUser.id,
         discordUser.username,
         avatarUrl,
         memberRoles,
-        returnTo
+        returnTo,
+        isPopup
       );
     }
 
@@ -87,7 +111,7 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
 
     if (existing) {
       if (existing.deletedAt) {
-        return res.redirect(`${FRONTEND_URL}/login?error=account_disabled`);
+        return authError("account_disabled");
       }
 
       await prisma.user.update({
@@ -99,6 +123,7 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
       await discordService.syncDiscordParticipations(existing.id, memberRoles);
 
       req.session.userId = existing.id;
+      if (isPopup) return sendPopupResponse(res, { type: "DISCORD_AUTH_SUCCESS" });
       return res.redirect(`${FRONTEND_URL}${returnTo}`);
     }
 
@@ -118,6 +143,7 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
     await discordService.syncDiscordParticipations(user.id, memberRoles);
 
     req.session.userId = user.id;
+    if (isPopup) return sendPopupResponse(res, { type: "DISCORD_AUTH_SUCCESS" });
     res.redirect(`${FRONTEND_URL}${returnTo}`);
   } catch (err) {
     next(err);
@@ -127,18 +153,23 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
 async function handleLink(
   req: Request,
   res: Response,
-  _next: NextFunction,
   discordId: string,
   discordUsername: string,
   avatarUrl: string,
   memberRoles: string[],
-  returnTo: string
+  returnTo: string,
+  isPopup: boolean
 ) {
   const conflict = await prisma.user.findFirst({
     where: { discordId },
   });
 
   if (conflict && conflict.id !== req.session.userId) {
+    if (isPopup)
+      return sendPopupResponse(res, {
+        type: "DISCORD_AUTH_ERROR",
+        error: "discord_already_linked",
+      });
     return res.redirect(`${FRONTEND_URL}${returnTo}?error=discord_already_linked`);
   }
 
@@ -149,6 +180,7 @@ async function handleLink(
 
   await discordService.syncDiscordParticipations(req.session.userId!, memberRoles);
 
+  if (isPopup) return sendPopupResponse(res, { type: "DISCORD_AUTH_SUCCESS" });
   return res.redirect(`${FRONTEND_URL}${returnTo}?success=discord_linked`);
 }
 

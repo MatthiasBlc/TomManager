@@ -126,6 +126,66 @@ describe("ProfilePage", () => {
     });
   });
 
+  it("shows success toast when Discord link completes via popup", async () => {
+    initiateDiscordLoginMock.mockResolvedValue(true);
+    useAuthMock.mockReturnValue({
+      user: baseUser,
+      initiateDiscordLogin: initiateDiscordLoginMock,
+      unlinkDiscord: unlinkDiscordMock,
+    });
+    renderWithRouter(<ProfilePage />);
+    fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
+    await waitFor(() => {
+      expect(toastSuccess).toHaveBeenCalledWith("Discord account linked!");
+    });
+  });
+
+  it("does not show success toast when popup is cancelled (resolves false)", async () => {
+    initiateDiscordLoginMock.mockResolvedValue(false);
+    useAuthMock.mockReturnValue({
+      user: baseUser,
+      initiateDiscordLogin: initiateDiscordLoginMock,
+      unlinkDiscord: unlinkDiscordMock,
+    });
+    renderWithRouter(<ProfilePage />);
+    fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
+    await waitFor(() => {
+      expect(initiateDiscordLoginMock).toHaveBeenCalled();
+    });
+    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("shows specific error when Discord account is already linked to another user", async () => {
+    initiateDiscordLoginMock.mockRejectedValue(new Error("discord_already_linked"));
+    useAuthMock.mockReturnValue({
+      user: baseUser,
+      initiateDiscordLogin: initiateDiscordLoginMock,
+      unlinkDiscord: unlinkDiscordMock,
+    });
+    renderWithRouter(<ProfilePage />);
+    fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith(
+        "This Discord account is already linked to another user"
+      );
+    });
+  });
+
+  it("shows generic error when Discord link fails with unknown error", async () => {
+    initiateDiscordLoginMock.mockRejectedValue(new Error("unexpected"));
+    useAuthMock.mockReturnValue({
+      user: baseUser,
+      initiateDiscordLogin: initiateDiscordLoginMock,
+      unlinkDiscord: unlinkDiscordMock,
+    });
+    renderWithRouter(<ProfilePage />);
+    fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith("Discord login unavailable");
+    });
+  });
+
   it("disables Unlink button when user has no email", () => {
     useAuthMock.mockReturnValue({
       user: { ...baseUser, email: null, discordId: "discord123", discordUsername: "AliceDiscord" },
