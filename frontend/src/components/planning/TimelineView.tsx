@@ -21,6 +21,7 @@ interface TableSummary {
 interface LayoutItem {
   table: TableSummary;
   col: number;
+  colSpan: number;
   cssRow: number;
   rowSpan: number;
 }
@@ -37,24 +38,18 @@ function tablesOverlap(a: TableSummary, b: TableSummary): boolean {
   );
 }
 
-// Calcule la position et le rowSpan de chaque table dans une grille CSS.
-//
-// Principe :
-//   - Les tables sont triees par heure de debut.
-//   - Affectation greedy des colonnes : une table rejoint la premiere colonne
-//     dont la derniere table ne chevauche pas la sienne ; sinon nouvelle colonne.
-//   - rowSpan d'une table = nombre max de tables sequentielles dans une autre
-//     colonne qu'elle chevauche (permet a une longue table de "couvrir" plusieurs
-//     tables courtes dans la colonne voisine).
-//   - cssRow d'une table = cumul des rowSpan des tables precedentes dans sa colonne.
-//
-// Exemple :
-//   A 10h-12h | B 11h-16h   ->  A col0 row1    B col1 row1 span2
-//   C 14h-16h | B 11h-16h   ->  C col0 row2
-export function computeLayout(tables: TableSummary[]): LayoutItem[] {
+// Calcule le layout interne d'un groupe de tables qui se chevauchent toutes (au moins transitivement).
+// Retourne les items avec col/cssRow/rowSpan locaux (cssRow commence a 1) et le nombre de colonnes.
+function computeGroupLayout(
+  tables: TableSummary[]
+): { items: Omit<LayoutItem, "colSpan">[]; numCols: number } {
   const sorted = [...tables].sort(
     (a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime()
   );
+
+  if (tables.length === 1) {
+    return { items: [{ table: tables[0], col: 0, cssRow: 1, rowSpan: 1 }], numCols: 1 };
+  }
 
   // Affectation greedy des colonnes
   const columns: TableSummary[][] = [];
@@ -70,12 +65,14 @@ export function computeLayout(tables: TableSummary[]): LayoutItem[] {
     colOf.set(table.id, col);
   }
 
-  // Cas simple : toutes les tables sont sequentielles
   if (columns.length === 1) {
-    return sorted.map((table, i) => ({ table, col: 0, cssRow: i + 1, rowSpan: 1 }));
+    return {
+      items: sorted.map((table, i) => ({ table, col: 0, cssRow: i + 1, rowSpan: 1 })),
+      numCols: 1,
+    };
   }
 
-  // Calcul du rowSpan pour chaque table
+  // rowSpan = max de tables sequentielles dans une autre colonne qui chevauchent cette table
   const rowSpanOf = new Map<string, number>();
   for (const table of sorted) {
     const col = colOf.get(table.id)!;
@@ -88,7 +85,7 @@ export function computeLayout(tables: TableSummary[]): LayoutItem[] {
     rowSpanOf.set(table.id, maxSpan);
   }
 
-  // Calcul de la ligne CSS : cumul des rowSpan dans chaque colonne
+  // cssRow = cumul des rowSpan dans chaque colonne
   const cssRowOf = new Map<string, number>();
   for (const col of columns) {
     let row = 1;
@@ -98,12 +95,87 @@ export function computeLayout(tables: TableSummary[]): LayoutItem[] {
     }
   }
 
-  return sorted.map((table) => ({
-    table,
-    col: colOf.get(table.id)!,
-    cssRow: cssRowOf.get(table.id)!,
-    rowSpan: rowSpanOf.get(table.id)!,
-  }));
+  return {
+    items: sorted.map((table) => ({
+      table,
+      col: colOf.get(table.id)!,
+      cssRow: cssRowOf.get(table.id)!,
+      rowSpan: rowSpanOf.get(table.id)!,
+    })),
+    numCols: columns.length,
+  };
+}
+
+// Calcule la position de chaque table dans une grille CSS.
+//
+// Principe :
+//   1. Trouver les composantes connexes par chevauchement (union-find).
+//   2. Les groupes d'une seule table (pas de chevauchement) s'etirent sur toute la largeur.
+//   3. Les groupes avec plusieurs tables utilisent l'algorithme greedy par colonnes.
+//   4. Les groupes sont empiles verticalement par ordre chronologique (offset de ligne global).
+//
+// Exemple July 20 :
+//   Spirit Island 02h-05h (seul) → pleine largeur, ligne 1
+//   Alien | Delta Green | Dungeon World → lignes 2-3
+//   Mothership | (vide) | Dungeon World (suite)
+export function computeLayout(tables: TableSummary[]): LayoutItem[] {
+  if (tables.length === 0) return [];
+
+  // Union-find pour les composantes connexes
+  const parent = new Map<string, string>(tables.map((t) => [t.id, t.id]));
+  const find = (id: string): string => {
+    if (parent.get(id) !== id) parent.set(id, find(parent.get(id)!));
+    return parent.get(id)!;
+  };
+  const union = (a: string, b: string) => parent.set(find(a), find(b));
+
+  for (let i = 0; i < tables.length; i++) {
+    for (let j = i + 1; j < tables.length; j++) {
+      if (tablesOverlap(tables[i], tables[j])) union(tables[i].id, tables[j].id);
+    }
+  }
+
+  const groupMap = new Map<string, TableSummary[]>();
+  for (const t of tables) {
+    const root = find(t.id);
+    if (!groupMap.has(root)) groupMap.set(root, []);
+    groupMap.get(root)!.push(t);
+  }
+
+  // Trier les groupes par heure de debut
+  const groups = [...groupMap.values()].sort(
+    (a, b) =>
+      Math.min(...a.map((t) => new Date(t.startDateTime).getTime())) -
+      Math.min(...b.map((t) => new Date(t.startDateTime).getTime()))
+  );
+
+  // Layout de chaque groupe
+  const groupLayouts = groups.map((group) => computeGroupLayout(group));
+
+  // Nombre de colonnes global = max sur tous les groupes
+  const globalNumCols = Math.max(...groupLayouts.map((g) => g.numCols));
+
+  // Assembler avec offset de ligne global
+  const result: LayoutItem[] = [];
+  let rowOffset = 0;
+
+  for (const { items, numCols } of groupLayouts) {
+    const localMaxRow = Math.max(...items.map((i) => i.cssRow + i.rowSpan - 1));
+    // Un groupe d'une seule table sans chevauchement s'etire sur toute la largeur
+    const isIsolated = items.length === 1 && numCols === 1;
+
+    for (const item of items) {
+      result.push({
+        ...item,
+        cssRow: item.cssRow + rowOffset,
+        colSpan: isIsolated ? globalNumCols : 1,
+      });
+    }
+
+    rowOffset += localMaxRow;
+  }
+
+  return result;
 }
 
 export default function TimelineView({ tables, onTableClick }: Props) {
@@ -133,7 +205,8 @@ export default function TimelineView({ tables, onTableClick }: Props) {
     <div className="space-y-6 animate-fade-in">
       {Object.entries(grouped).map(([date, dateTables]) => {
         const items = computeLayout(dateTables);
-        const numCols = Math.max(...items.map((i) => i.col)) + 1;
+        // Nombre de colonnes = max(col + colSpan) sur tous les items
+        const gridCols = Math.max(1, ...items.map((i) => i.col + i.colSpan));
 
         return (
           <div key={date}>
@@ -143,15 +216,15 @@ export default function TimelineView({ tables, onTableClick }: Props) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: `repeat(${numCols}, 1fr)`,
+                gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
                 gap: "0.75rem",
               }}
             >
-              {items.map(({ table, col, cssRow, rowSpan }) => (
+              {items.map(({ table, col, colSpan, cssRow, rowSpan }) => (
                 <div
                   key={table.id}
                   style={{
-                    gridColumn: col + 1,
+                    gridColumn: colSpan > 1 ? "1 / -1" : col + 1,
                     gridRow: `${cssRow} / span ${rowSpan}`,
                   }}
                 >
