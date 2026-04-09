@@ -20,8 +20,8 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-tommanager}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-tommanager_dev}
       - POSTGRES_DB=${POSTGRES_DB:-tommanager_db}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    tmpfs:
+      - /var/lib/postgresql/data
     networks:
       - internal
     healthcheck:
@@ -132,5 +132,3 @@ networks:
     driver: bridge
     name: ${COMPOSE_PROJECT_NAME:-tommanager}_internal
 
-volumes:
-  postgres_data:

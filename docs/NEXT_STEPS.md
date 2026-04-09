@@ -1,6 +1,7 @@
 # Prochaines etapes - TomManager
 
 Phases terminees : 1-13, 15a, 15b. Phase 9 (Emails) ignoree — remplacee par Discord.
+Feature `waitlist-manual-control` : complete. Spec : `docs/features/waitlist-manual-control/SPEC_WAITLIST_MANUAL_CONTROL.md`
 Historique des phases : `CHANGELOG.md`
 
 ---

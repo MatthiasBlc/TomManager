@@ -566,6 +566,138 @@ describe("GameTable API", () => {
     });
   });
 
+  describe("PATCH /api/events/:eventId/tables/:tableId/participants/:userId/status", () => {
+    async function setupTableWithWaitlistedPlayer() {
+      const admin = await setupAdmin();
+      const event = await createTestEvent(admin.cookie);
+
+      // Table avec maxPlayers=1
+      const createRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({ ...validTableData, maxPlayers: 1 });
+      const tableId = createRes.body.data.id;
+
+      // Joueur1 rejoint (confirme)
+      const { user: player1, cookie: cookie1 } = await addTestParticipant(event.id, {
+        email: "setp1@example.com",
+        username: "setp1user",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", cookie1);
+
+      // Joueur2 rejoint (waitlist)
+      const { user: player2, cookie: cookie2 } = await addTestParticipant(event.id, {
+        email: "setp2@example.com",
+        username: "setp2user",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", cookie2);
+
+      return { admin, event, tableId, player1, cookie1, player2, cookie2 };
+    }
+
+    it("should promote a WAITLIST player to CONFIRMED when a slot is available", async () => {
+      const { admin, event, tableId, player1, player2 } = await setupTableWithWaitlistedPlayer();
+
+      // Retrograder player1 d'abord pour liberer une place
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "WAITLIST" });
+
+      // Promouvoir player2
+      const res = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player2.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "CONFIRMED" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe("CONFIRMED");
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+      const p2 = detail.body.data.participants.find(
+        (p: { userId: string }) => p.userId === player2.id
+      );
+      expect(p2.status).toBe("CONFIRMED");
+    });
+
+    it("should reject promote with 409 when table is full", async () => {
+      const { admin, event, tableId, player2 } = await setupTableWithWaitlistedPlayer();
+
+      // Table pleine (player1 est confirme, maxPlayers=1)
+      const res = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player2.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "CONFIRMED" });
+
+      expect(res.status).toBe(409);
+    });
+
+    it("should demote a CONFIRMED player to WAITLIST", async () => {
+      const { admin, event, tableId, player1 } = await setupTableWithWaitlistedPlayer();
+
+      const res = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "WAITLIST" });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.status).toBe("WAITLIST");
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+      const p1 = detail.body.data.participants.find(
+        (p: { userId: string }) => p.userId === player1.id
+      );
+      expect(p1.status).toBe("WAITLIST");
+    });
+
+    it("should NOT auto-promote the next waitlist player after a demote", async () => {
+      const { admin, event, tableId, player1, player2 } = await setupTableWithWaitlistedPlayer();
+
+      // Retrograder player1 (confirme) -> waitlist
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "WAITLIST" });
+
+      // player2 doit rester WAITLIST (pas de promotion automatique)
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+      const p2 = detail.body.data.participants.find(
+        (p: { userId: string }) => p.userId === player2.id
+      );
+      expect(p2.status).toBe("WAITLIST");
+    });
+
+    it("should reject status change with 403 if not GM or admin", async () => {
+      const { event, tableId, player1, cookie2 } = await setupTableWithWaitlistedPlayer();
+
+      const res = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`)
+        .set("Cookie", cookie2)
+        .send({ status: "WAITLIST" });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("should return 404 for non-existent participant", async () => {
+      const { admin, event, tableId } = await setupTableWithWaitlistedPlayer();
+
+      const res = await request
+        .patch(
+          `/api/events/${event.id}/tables/${tableId}/participants/00000000-0000-0000-0000-000000000000/status`
+        )
+        .set("Cookie", admin.cookie)
+        .send({ status: "WAITLIST" });
+
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe("GET /api/events/:eventId/tables/:tableId", () => {
     it("should return table detail with participants", async () => {
       const { admin, playerCookie, event } = await setupEventWithParticipant();

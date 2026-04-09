@@ -123,6 +123,37 @@ export default function TableDetailModal({
     }
   };
 
+  const handlePromote = async (userId: string) => {
+    if (!table) return;
+    try {
+      await api.patch(`/api/events/${eventId}/tables/${table.id}/participants/${userId}/status`, {
+        status: "CONFIRMED",
+      });
+      toast.success("Joueur promu");
+      fetchTable();
+      onTableUpdated();
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to promote player";
+      toast.error(message);
+    }
+  };
+
+  const handleDemote = async (userId: string) => {
+    if (!table) return;
+    try {
+      await api.patch(`/api/events/${eventId}/tables/${table.id}/participants/${userId}/status`, {
+        status: "WAITLIST",
+      });
+      toast.success("Joueur rétrogradé");
+      fetchTable();
+      onTableUpdated();
+    } catch {
+      toast.error("Failed to demote player");
+    }
+  };
+
   const handleKick = async (userId: string, username: string) => {
     if (!table) return;
     if (!confirm(`Remove ${username} from this table?`)) return;
@@ -257,12 +288,36 @@ export default function TableDetailModal({
                           </span>
                         </div>
                         {canEdit && (
-                          <button
-                            className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                            onClick={() => handleKick(p.userId, p.username)}
-                          >
-                            Retirer
-                          </button>
+                          <div className="flex items-center gap-1">
+                            {p.status === "WAITLIST" && (
+                              <button
+                                className="btn btn-ghost btn-xs text-success min-h-[44px]"
+                                onClick={() => handlePromote(p.userId)}
+                                disabled={confirmedCount >= table.maxPlayers}
+                                title={
+                                  confirmedCount >= table.maxPlayers
+                                    ? "Table pleine — retrogradez un joueur d'abord"
+                                    : "Promouvoir"
+                                }
+                              >
+                                Promouvoir
+                              </button>
+                            )}
+                            {p.status === "CONFIRMED" && (
+                              <button
+                                className="btn btn-ghost btn-xs text-warning min-h-[44px]"
+                                onClick={() => handleDemote(p.userId)}
+                              >
+                                Retrograder
+                              </button>
+                            )}
+                            <button
+                              className="btn btn-ghost btn-xs text-error min-h-[44px]"
+                              onClick={() => handleKick(p.userId, p.username)}
+                            >
+                              Retirer
+                            </button>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -291,7 +346,29 @@ export default function TableDetailModal({
                               </span>
                             </td>
                             {canEdit && (
-                              <td>
+                              <td className="flex gap-1">
+                                {p.status === "WAITLIST" && (
+                                  <button
+                                    className="btn btn-ghost btn-xs text-success"
+                                    onClick={() => handlePromote(p.userId)}
+                                    disabled={confirmedCount >= table.maxPlayers}
+                                    title={
+                                      confirmedCount >= table.maxPlayers
+                                        ? "Table pleine — retrogradez un joueur d'abord"
+                                        : "Promouvoir"
+                                    }
+                                  >
+                                    Promouvoir
+                                  </button>
+                                )}
+                                {p.status === "CONFIRMED" && (
+                                  <button
+                                    className="btn btn-ghost btn-xs text-warning"
+                                    onClick={() => handleDemote(p.userId)}
+                                  >
+                                    Retrograder
+                                  </button>
+                                )}
                                 <button
                                   className="btn btn-ghost btn-xs text-error"
                                   onClick={() => handleKick(p.userId, p.username)}

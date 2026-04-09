@@ -629,6 +629,62 @@ export async function leaveTable(tableId: string, userId: string) {
   }
 }
 
+export async function setParticipantStatus(
+  tableId: string,
+  targetUserId: string,
+  newStatus: "CONFIRMED" | "WAITLIST"
+) {
+  const table = await prisma.gameTable.findUnique({
+    where: { id: tableId },
+    include: { participants: true },
+  });
+
+  if (!table) {
+    throw createError(404, "Table not found");
+  }
+
+  const participant = table.participants.find((p) => p.userId === targetUserId);
+  if (!participant) {
+    throw createError(404, "Participant not found");
+  }
+
+  if (newStatus === "CONFIRMED") {
+    const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
+    if (confirmedCount >= table.maxPlayers) {
+      throw createError(409, "Table is full");
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.gameTableParticipant.update({
+      where: { id: participant.id },
+      data: { status: newStatus },
+    });
+  });
+
+  if (newStatus === "CONFIRMED") {
+    emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: targetUserId });
+    await createNotification({
+      userId: targetUserId,
+      type: "WAITLIST_PROMOTED",
+      title: "Place confirmee",
+      message: `Tu es confirme pour la table "${table.title}"`,
+      metadata: { eventId: table.eventId, tableId },
+    });
+  } else {
+    emitToEvent(table.eventId, "table:player:demoted", { tableId, userId: targetUserId });
+    await createNotification({
+      userId: targetUserId,
+      type: "WAITLIST_DEMOTED",
+      title: "Place en liste d'attente",
+      message: `Tu as ete place en liste d'attente pour la table "${table.title}"`,
+      metadata: { eventId: table.eventId, tableId },
+    });
+  }
+
+  return { userId: targetUserId, status: newStatus };
+}
+
 export async function kickPlayer(tableId: string, userId: string) {
   const table = await prisma.gameTable.findUnique({ where: { id: tableId } });
 

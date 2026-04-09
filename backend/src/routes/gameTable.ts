@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireAuth, requireEventParticipant, requireTableGMOrAdmin } from "../middleware/auth";
 import * as gameTableController from "../controllers/gameTable";
 import { validateBody, validateUUID } from "../middleware/validateBody";
-import { createTableSchema, updateTableSchema } from "../schemas/gameTable";
+import { createTableSchema, updateTableSchema, setStatusSchema } from "../schemas/gameTable";
 
 const router = Router();
 
@@ -71,6 +71,15 @@ router.delete(
   validateUUID("eventId", "tableId", "userId"),
   requireTableGMOrAdmin,
   gameTableController.kick
+);
+
+router.patch(
+  "/:eventId/tables/:tableId/participants/:userId/status",
+  requireAuth,
+  validateUUID("eventId", "tableId", "userId"),
+  requireTableGMOrAdmin,
+  validateBody(setStatusSchema),
+  gameTableController.setStatus
 );
 
 export default router;
