@@ -326,7 +326,8 @@ jobs:
       github.event.inputs.skip_build != 'true' &&
       needs.changes.outputs.bot == 'true' &&
       (needs.test-discord-bot.result == 'success' || needs.test-discord-bot.result == 'skipped') &&
-      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped')
+      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped') &&
+      (github.event_name == 'push' || github.event_name == 'pull_request')
 
     steps:
       - name: Checkout repository
@@ -363,7 +364,8 @@ jobs:
       github.event.inputs.skip_build != 'true' &&
       needs.changes.outputs.backend == 'true' &&
       (needs.test-backend.result == 'success' || needs.test-backend.result == 'skipped') &&
-      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped')
+      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped') &&
+      (github.event_name == 'push' || github.event_name == 'pull_request')
 
     steps:
       - name: Checkout repository
@@ -400,7 +402,8 @@ jobs:
       github.event.inputs.skip_build != 'true' &&
       needs.changes.outputs.frontend == 'true' &&
       (needs.test-frontend.result == 'success' || needs.test-frontend.result == 'skipped') &&
-      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped')
+      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped') &&
+      (github.event_name == 'push' || github.event_name == 'pull_request')
 
     steps:
       - name: Checkout repository
