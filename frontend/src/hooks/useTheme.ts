@@ -1,7 +1,7 @@
 import { useState, useLayoutEffect } from "react";
 
 const THEME_KEY = "app_theme";
-const DARK_THEME = "coffee";
+const DARK_THEME = "ToM";
 const LIGHT_THEME = "winter";
 
 function getStoredTheme(): "dark" | "light" {
