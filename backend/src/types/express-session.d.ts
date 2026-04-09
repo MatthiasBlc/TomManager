@@ -6,5 +6,6 @@ declare module "express-session" {
     oauthState: string;
     oauthReturnTo: string;
     oauthAction: "link";
+    oauthPopup: boolean;
   }
 }

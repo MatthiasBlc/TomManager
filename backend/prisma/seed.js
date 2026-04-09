@@ -109,33 +109,152 @@ async function seedDemoData() {
   }
 
   // --- Tables ---
+  // Les tables couvrent differents cas de chevauchement pour tester la vue liste :
+  //
+  // Jour 16 : sequentielles (pas de conflit) → 2 colonnes pleine largeur empilees
+  // Jour 17 : 2 tables simultanees (cote a cote) → grid 2 colonnes
+  // Jour 18 : B longue chevauche A et C → A|B / C|B (B avec rowSpan=2)
+  // Jour 19 : 3 tables simultanees → grid 3 colonnes
+  // Jour 20 : mix complexe (sequentielles + simultanees + longue qui span)
   const tablesData = [
+    // --- Jour 16 : sequentielles, pas de conflit ---
     {
-      title: "Partie de Wingspan",
+      title: "L'Appel de Cthulhu - Scenario debutant",
       pitch:
-        "Une partie de Wingspan pour decouvrir ce magnifique jeu d'oiseaux. Convient aux debutants.",
-      maxPlayers: 4,
-      startDateTime: new Date("2026-07-16T14:00:00.000Z"),
-      endDateTime: new Date("2026-07-16T16:00:00.000Z"),
-      tags: ["strategie", "initiation"],
+        "Un scenario d'introduction au jeu de role lovecraftien. Personnages pre-tires fournis.",
+      maxPlayers: 5,
+      startDateTime: new Date("2026-07-16T08:00:00.000Z"),
+      endDateTime: new Date("2026-07-16T11:00:00.000Z"),
+      tags: ["jdr", "initiation"],
     },
     {
-      title: "Spirit Island - Initiation",
-      pitch:
-        "Introduction a Spirit Island, jeu cooperatif de defense d'ile. On jouera avec les esprits de base.",
-      triggers: "Themes de colonisation",
+      title: "Donjons & Dragons 5e - La Crypte Oubliee",
+      pitch: "Donjon classique pour 4-5 aventuriers. Niveau 3 recommande.",
+      maxPlayers: 5,
+      startDateTime: new Date("2026-07-16T13:00:00.000Z"),
+      endDateTime: new Date("2026-07-16T17:00:00.000Z"),
+      tags: ["jdr"],
+    },
+
+    // --- Jour 17 : 2 tables vraiment simultanees ---
+    {
+      title: "Pathfinder 2e - Quete des Anciens",
+      pitch: "Aventure heroique dans un monde de haute fantasy. Regles completes.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-17T10:00:00.000Z"),
+      startDateTime: new Date("2026-07-17T09:00:00.000Z"),
       endDateTime: new Date("2026-07-17T13:00:00.000Z"),
-      tags: ["coopératif", "initiation"],
+      tags: ["jdr"],
     },
     {
-      title: "Ark Nova - Partie complete",
-      pitch: "Construction de zoo, gestion de ressources. Pour joueurs experimentes.",
+      title: "Shadowrun 6e - Run de nuit",
+      pitch: "Mission dans les rues de Seattle 2080. Infiltration et action garanties.",
+      maxPlayers: 4,
+      startDateTime: new Date("2026-07-17T09:00:00.000Z"),
+      endDateTime: new Date("2026-07-17T13:00:00.000Z"),
+      tags: ["jdr"],
+    },
+
+    // --- Jour 18 : B longue chevauche A et C ---
+    // Resultat attendu : A|B  puis  C|B (B avec rowSpan=2)
+    {
+      title: "Vampire la Mascarade - Nuit de sang", // A : 10h-12h
+      pitch: "Intrigues politiques entre clans vampiriques dans une ville moderne.",
+      maxPlayers: 4,
+      startDateTime: new Date("2026-07-18T08:00:00.000Z"),
+      endDateTime: new Date("2026-07-18T11:00:00.000Z"),
+      tags: ["jdr"],
+    },
+    {
+      title: "Warhammer 40k RPG - Requiem Infernal", // B : 10h-17h (longue)
+      pitch: "Campagne en espace lointain. Duree estimee 7h. Univers sombre et brutal.",
+      maxPlayers: 5,
+      startDateTime: new Date("2026-07-18T08:00:00.000Z"),
+      endDateTime: new Date("2026-07-18T16:00:00.000Z"),
+      tags: ["jdr"],
+    },
+    {
+      title: "Star Wars Edge of the Empire - La Kessel Run", // C : 14h-17h
+      pitch: "Du contrebandier a l'hero de la Rebellion. Univers Star Wars canonique.",
+      maxPlayers: 5,
+      startDateTime: new Date("2026-07-18T13:00:00.000Z"),
+      endDateTime: new Date("2026-07-18T16:00:00.000Z"),
+      tags: ["jdr", "initiation"],
+    },
+
+    // --- Jour 19 : 3 tables vraiment simultanees ---
+    {
+      title: "Blades in the Dark - Le Gang des Cendres",
+      pitch: "Jeu de braquage dans une ville victorienne fantasmagorique.",
+      maxPlayers: 4,
+      startDateTime: new Date("2026-07-19T08:00:00.000Z"),
+      endDateTime: new Date("2026-07-19T12:00:00.000Z"),
+      tags: ["jdr"],
+    },
+    {
+      title: "Monster of the Week - Nuit des Createurs",
+      pitch: "Chasseurs de monstres dans l'Amerique contemporaine. Inspire de Supernatural.",
+      maxPlayers: 4,
+      startDateTime: new Date("2026-07-19T08:00:00.000Z"),
+      endDateTime: new Date("2026-07-19T12:00:00.000Z"),
+      tags: ["jdr", "initiation"],
+    },
+    {
+      title: "Ironsworn - Terres de Fer",
+      pitch: "JDR solo ou cooperatif sans MJ dans un monde de fantasy nordique.",
       maxPlayers: 3,
-      startDateTime: new Date("2026-07-18T15:00:00.000Z"),
-      endDateTime: new Date("2026-07-18T17:30:00.000Z"),
-      tags: ["strategie"],
+      startDateTime: new Date("2026-07-19T08:00:00.000Z"),
+      endDateTime: new Date("2026-07-19T12:00:00.000Z"),
+      tags: ["jdr"],
+    },
+
+    // --- Jour 20 : mix complexe ---
+    // Alien : 10h-12h (col 0)    Delta Green : 10h-12h (col 1)    Dungeon World : 10h-17h (col 2, span)
+    // Mothership : 14h-17h (col 0)
+    // Resultat attendu :
+    //   Alien | Delta Green | Dungeon World
+    //   Mothership | (vide) | Dungeon World
+    {
+      title: "Alien RPG - Chariot des Dieux",
+      pitch: "Survival horror dans l'espace. Scenario officiel. Deconseille aux ames sensibles.",
+      maxPlayers: 5,
+      startDateTime: new Date("2026-07-20T08:00:00.000Z"),
+      endDateTime: new Date("2026-07-20T11:00:00.000Z"),
+      tags: ["jdr"],
+    },
+    {
+      title: "Delta Green - Operation OUTLOOK",
+      pitch: "Agents gouvernementaux face a l'indicible. Horreur lovecraftienne contemporaine.",
+      maxPlayers: 4,
+      startDateTime: new Date("2026-07-20T08:00:00.000Z"),
+      endDateTime: new Date("2026-07-20T11:00:00.000Z"),
+      tags: ["jdr"],
+    },
+    {
+      title: "Dungeon World - La Tour du Sorcier", // longue, chevauche tout
+      pitch:
+        "JDR narratif fantasy leger. Ideal pour joueurs voulant un rythme rapide et cinematique.",
+      maxPlayers: 5,
+      startDateTime: new Date("2026-07-20T08:00:00.000Z"),
+      endDateTime: new Date("2026-07-20T16:00:00.000Z"),
+      tags: ["jdr", "initiation"],
+    },
+    {
+      title: "Mothership - Station Terreur",
+      pitch: "Sci-fi horror old school. Equipage en perdition sur une station abandonnee.",
+      maxPlayers: 4,
+      startDateTime: new Date("2026-07-20T13:00:00.000Z"),
+      endDateTime: new Date("2026-07-20T16:00:00.000Z"),
+      tags: ["jdr"],
+    },
+    // Session jds de nuit sur le dernier jour
+    {
+      title: "Spirit Island - Nuit des Esprits",
+      pitch:
+        "Defense cooperative de l'ile contre les colonisateurs. Complexite elevee, session de nuit.",
+      maxPlayers: 4,
+      startDateTime: new Date("2026-07-20T00:30:00.000Z"),
+      endDateTime: new Date("2026-07-20T03:30:00.000Z"),
+      tags: ["coopératif", "strategie"],
     },
   ];
 

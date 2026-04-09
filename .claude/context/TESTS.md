@@ -41,14 +41,14 @@ npx vitest run                    # Tous les tests
 
 ## Inventaire des tests
 
-### Backend (~167 tests)
+### Backend (178 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me, error format consistency)
 - `integration/event.test.ts` - Event API (CRUD: create, list, detail, update, delete + auth + cascade)
 - `integration/invitation.test.ts` - Invitation API (create, resend, validate token)
 - `integration/participant.test.ts` - Participant API (list, remove, leave) + Invitation listing
-- `integration/gameTable.test.ts` - GameTable API (CRUD, join/leave/kick, waitlist, demotion/promotion) + Tag autocomplete
+- `integration/gameTable.test.ts` - GameTable API (CRUD, join/leave/kick, waitlist, demotion/promotion, promote/demote manuel GM) + Tag autocomplete
 - `integration/boardGame.test.ts` - BoardGame API (CRUD, search local + BGG fallback, lazy fetch, from-bgg, error format) + BGG XML parsing
 - `integration/eventBoardGame.test.ts` - EventBoardGame API (add, list, remove, duplicate, non-participant, cascade)
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
@@ -56,7 +56,7 @@ npx vitest run                    # Tous les tests
 
 ### Frontend (162 tests - ROADMAP COMPLETE)
 
-- `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton remove own entry, masquage pour autre utilisateur
+- `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton Remove (aria-label "Remove <game>"), masquage pour autre utilisateur
 - `useIsMobile.test.tsx` - Hook : valeur initiale matchMedia, mise a jour sur change, cleanup listener
 - `useOnlineStatus.test.tsx` - Hook : valeur initiale navigator.onLine, evenements online/offline, cleanup listeners
 - `EmptyState.test.tsx` - Rendu titre, description optionnelle, icone, action

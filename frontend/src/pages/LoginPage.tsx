@@ -49,8 +49,12 @@ export default function LoginPage() {
   const handleDiscordLogin = async () => {
     try {
       await initiateDiscordLogin(from);
-    } catch {
-      toast.error("Discord login unavailable");
+      // Si popup : l'utilisateur a annule silencieusement, rien a faire
+      // Si redirect : la page navigue, on n'arrive jamais ici
+    } catch (err) {
+      const errorKey = (err as Error).message;
+      const message = DISCORD_ERROR_MESSAGES[errorKey] ?? "Discord login unavailable";
+      toast.error(message);
     }
   };
 

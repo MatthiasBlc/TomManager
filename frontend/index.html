@@ -2,6 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try {
+        var t = localStorage.getItem("app_theme");
+        document.documentElement.setAttribute("data-theme", t === "light" ? "winter" : "coffee");
+      } catch (e) {
+        document.documentElement.setAttribute("data-theme", "coffee");
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Gestionnaire d'evenements et de tables de jeu" />
     <meta name="theme-color" content="#570df8" />

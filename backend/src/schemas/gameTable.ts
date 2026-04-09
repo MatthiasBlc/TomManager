@@ -19,6 +19,10 @@ export const createTableSchema = z.object({
   tags: z.array(z.string().min(1).max(50)).max(10, "At most 10 tags").optional(),
 });
 
+export const setStatusSchema = z.object({
+  status: z.enum(["CONFIRMED", "WAITLIST"]),
+});
+
 export const updateTableSchema = z.object({
   title: z.string().min(1).max(150).optional(),
   gmIsPlayer: z.boolean().optional(),

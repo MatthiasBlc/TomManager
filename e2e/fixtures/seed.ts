@@ -27,9 +27,11 @@ export interface EventContext {
 }
 
 export interface ParticipantContext {
+  userId: string;
   email: string;
   username: string;
   password: string;
+  cookie: string;
 }
 
 /**
@@ -37,8 +39,9 @@ export interface ParticipantContext {
  * Fallback : utilise l'endpoint /api/auth/signup si un token est fourni.
  */
 export async function seedAdmin(): Promise<AdminContext> {
-  const email = `admin_e2e_${Date.now()}@test.com`;
-  const username = `admin_e2e_${Date.now()}`;
+  const uid = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const email = `admin_e2e_${uid}@test.com`;
+  const username = `admin_e2e_${uid}`;
   const password = "AdminPassword123!";
 
   // Endpoint de seed interne (disponible uniquement en NODE_ENV=test)
@@ -73,6 +76,13 @@ export async function seedAdmin(): Promise<AdminContext> {
     throw new Error(
       `seedAdmin: aucun cookie de session renvoye par /api/auth/login (set-cookie="${rawSetCookie}")`
     );
+  }
+
+  // Attendre que la session soit persistee dans le store (race condition possible avec Prisma session store)
+  for (let i = 0; i < 5; i++) {
+    const verify = await fetch(`${API}/api/auth/me`, { headers: { Cookie: cookie } });
+    if (verify.ok) break;
+    await new Promise((r) => setTimeout(r, 100));
   }
 
   return { cookie, userId: data.userId, username, email, password };
@@ -113,5 +123,29 @@ export async function seedParticipant(eventId: string): Promise<ParticipantConte
 
   if (!res.ok) throw new Error(`seedParticipant failed: ${res.status}`);
   const data = await res.json();
-  return { email: data.email, username: data.username, password: SEED_PARTICIPANT_PASSWORD };
+
+  const loginRes = await fetch(`${API}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identifier: data.email, password: SEED_PARTICIPANT_PASSWORD }),
+    redirect: "manual",
+  });
+  if (!loginRes.ok) throw new Error(`seedParticipant login failed: ${loginRes.status}`);
+  const rawSetCookie = loginRes.headers.get("set-cookie") ?? "";
+  const cookie = rawSetCookie.split(";")[0];
+
+  // Attendre que la session soit persistee
+  for (let i = 0; i < 5; i++) {
+    const verify = await fetch(`${API}/api/auth/me`, { headers: { Cookie: cookie } });
+    if (verify.ok) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+
+  return {
+    userId: data.userId,
+    email: data.email,
+    username: data.username,
+    password: SEED_PARTICIPANT_PASSWORD,
+    cookie,
+  };
 }

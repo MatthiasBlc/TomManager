@@ -7,6 +7,7 @@ import PlanningPage from "../pages/PlanningPage";
 import TableDetailPage from "../pages/TableDetailPage";
 import PrivateRoute from "../components/common/PrivateRoute";
 import NotFoundPage from "../pages/NotFoundPage";
+import OAuthPopupCallbackPage from "../pages/OAuthPopupCallbackPage";
 import ProfilePage from "../pages/ProfilePage";
 
 export default function AppRoutes() {
@@ -14,6 +15,7 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/oauth-popup" element={<OAuthPopupCallbackPage />} />
       <Route
         path="/events"
         element={

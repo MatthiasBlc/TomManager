@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import TimelineView from "../components/planning/TimelineView";
+import TimelineView, { computeLayout } from "../components/planning/TimelineView";
 
 const makeTable = (
   overrides: Partial<{ id: string; startDateTime: string; title: string }> = {}
@@ -19,6 +19,81 @@ const makeTable = (
   currentUserConflict: false,
   conflictingPlayerCount: 0,
   ...overrides,
+});
+
+// Helper to build minimal TableSummary objects for computeLayout tests
+const makeSlot = (id: string, start: string, end: string) => ({
+  id,
+  title: id,
+  pitch: null,
+  maxPlayers: 4,
+  startDateTime: start,
+  endDateTime: end,
+  creator: { id: "u1", username: "gm" },
+  tags: [],
+  confirmedCount: 0,
+  waitlistCount: 0,
+  currentUserStatus: null,
+  isGM: false,
+  currentUserConflict: false,
+  conflictingPlayerCount: 0,
+});
+
+describe("computeLayout", () => {
+  it("tables sequentielles : toutes en col 0, rowSpan 1", () => {
+    const A = makeSlot("A", "2026-07-16T08:00:00Z", "2026-07-16T11:00:00Z");
+    const B = makeSlot("B", "2026-07-16T13:00:00Z", "2026-07-16T17:00:00Z");
+    const items = computeLayout([A, B]);
+    const byId = Object.fromEntries(items.map((i) => [i.table.id, i]));
+    expect(byId["A"].col).toBe(0);
+    expect(byId["B"].col).toBe(0);
+    expect(byId["A"].rowSpan).toBe(1);
+    expect(byId["B"].rowSpan).toBe(1);
+  });
+
+  it("2 tables simultanees : colonnes differentes, rowSpan 1", () => {
+    const A = makeSlot("A", "2026-07-17T09:00:00Z", "2026-07-17T13:00:00Z");
+    const B = makeSlot("B", "2026-07-17T09:00:00Z", "2026-07-17T13:00:00Z");
+    const items = computeLayout([A, B]);
+    const cols = items.map((i) => i.col);
+    expect(new Set(cols).size).toBe(2); // chacune dans sa colonne
+    items.forEach((i) => expect(i.rowSpan).toBe(1));
+  });
+
+  it("cas A|B / C|B : B longue chevauche A et C", () => {
+    // A : 8h-11h, B : 8h-16h, C : 13h-16h
+    const A = makeSlot("A", "2026-07-18T08:00:00Z", "2026-07-18T11:00:00Z");
+    const B = makeSlot("B", "2026-07-18T08:00:00Z", "2026-07-18T16:00:00Z");
+    const C = makeSlot("C", "2026-07-18T13:00:00Z", "2026-07-18T16:00:00Z");
+    const items = computeLayout([A, B, C]);
+    const byId = Object.fromEntries(items.map((i) => [i.table.id, i]));
+
+    // A et C dans la meme colonne, B dans l'autre
+    expect(byId["A"].col).toBe(byId["C"].col);
+    expect(byId["B"].col).not.toBe(byId["A"].col);
+
+    // B couvre A et C => rowSpan 2
+    expect(byId["B"].rowSpan).toBe(2);
+
+    // A et C rowSpan 1
+    expect(byId["A"].rowSpan).toBe(1);
+    expect(byId["C"].rowSpan).toBe(1);
+
+    // cssRow de B = 1 (premiere de sa colonne)
+    expect(byId["B"].cssRow).toBe(1);
+
+    // cssRow de C = 2 (apres A qui a rowSpan 1)
+    expect(byId["C"].cssRow).toBe(2);
+  });
+
+  it("3 tables simultanees : 3 colonnes differentes", () => {
+    const A = makeSlot("A", "2026-07-19T08:00:00Z", "2026-07-19T12:00:00Z");
+    const B = makeSlot("B", "2026-07-19T08:00:00Z", "2026-07-19T12:00:00Z");
+    const C = makeSlot("C", "2026-07-19T08:00:00Z", "2026-07-19T12:00:00Z");
+    const items = computeLayout([A, B, C]);
+    const cols = items.map((i) => i.col);
+    expect(new Set(cols).size).toBe(3);
+  });
 });
 
 describe("TimelineView", () => {

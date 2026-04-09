@@ -130,3 +130,16 @@ export async function kick(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
+
+export async function setStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await gameTableService.setParticipantStatus(
+      req.params.tableId,
+      req.params.userId,
+      req.body.status
+    );
+    res.json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+}

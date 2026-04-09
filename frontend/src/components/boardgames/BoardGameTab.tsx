@@ -25,11 +25,17 @@ interface Props {
   eventId: string;
 }
 
+type TabMode = "all" | "mine";
+
 export default function BoardGameTab({ eventId }: Props) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<EventBoardGameEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [tab, setTab] = useState<TabMode>("all");
+
+  const visibleEntries =
+    tab === "mine" ? entries.filter((e) => e.broughtBy.id === user?.id) : entries;
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -64,7 +70,20 @@ export default function BoardGameTab({ eventId }: Props) {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Board Games {!loading && `(${entries.length})`}</h2>
+        <div className="tabs tabs-boxed">
+          <button
+            className={`tab tab-sm ${tab === "all" ? "tab-active" : ""}`}
+            onClick={() => setTab("all")}
+          >
+            All {!loading && `(${entries.length})`}
+          </button>
+          <button
+            className={`tab tab-sm ${tab === "mine" ? "tab-active" : ""}`}
+            onClick={() => setTab("mine")}
+          >
+            My List {!loading && `(${entries.filter((e) => e.broughtBy.id === user?.id).length})`}
+          </button>
+        </div>
         <button
           className="btn btn-primary btn-sm active:scale-95 transition-transform"
           onClick={() => setShowAdd(true)}
@@ -77,10 +96,11 @@ export default function BoardGameTab({ eventId }: Props) {
         <SkeletonBoardGameList count={3} />
       ) : (
         <BoardGameList
-          entries={entries}
-          onRemove={handleRemove}
+          entries={visibleEntries}
+          onRemove={tab === "mine" ? handleRemove : undefined}
           currentUserId={user?.id}
           isAdmin={user?.role === "ADMIN"}
+          emptyDescription={tab === "mine" ? "You haven't added any games yet." : undefined}
         />
       )}
 

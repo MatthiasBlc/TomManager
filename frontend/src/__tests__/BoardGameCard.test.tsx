@@ -35,7 +35,7 @@ describe("BoardGameCard", () => {
         currentUserId="user1"
       />
     );
-    const btn = screen.getByRole("button", { name: /Remove Catan brought by Alice/i });
+    const btn = screen.getByRole("button", { name: /Remove Catan/i });
     fireEvent.click(btn);
     expect(onRemove).toHaveBeenCalledWith("entry1");
   });
