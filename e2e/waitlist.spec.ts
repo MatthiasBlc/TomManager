@@ -128,7 +128,10 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     // Cliquer Promouvoir (un seul bouton visible — les deux joueurs sont en WAITLIST apres la retrograde)
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("button", { name: /promouvoir/i }).first()).toBeVisible();
-    await dialog.getByRole("button", { name: /promouvoir/i }).first().click();
+    await dialog
+      .getByRole("button", { name: /promouvoir/i })
+      .first()
+      .click();
 
     // Toast de succes
     await expect(page.getByText(/promu/i)).toBeVisible();
@@ -167,7 +170,10 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     // Retrograder player1 (seul CONFIRMED dans la table)
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("button", { name: /retrograder/i }).first()).toBeVisible();
-    await dialog.getByRole("button", { name: /retrograder/i }).first().click();
+    await dialog
+      .getByRole("button", { name: /retrograder/i })
+      .first()
+      .click();
 
     // Toast de succes
     await expect(page.getByText(/retrograd/i)).toBeVisible();

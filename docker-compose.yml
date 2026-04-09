@@ -131,4 +131,3 @@ networks:
   internal:
     driver: bridge
     name: ${COMPOSE_PROJECT_NAME:-tommanager}_internal
-

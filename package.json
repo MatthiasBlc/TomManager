@@ -39,7 +39,7 @@
   "author": "Matthias Bouloc",
   "license": "ISC",
   "lint-staged": {
-    "*.{ts,tsx,js,json,md,yml,yaml,css}": [
+    "**/*.{ts,tsx,js,json,md,yml,yaml,css}": [
       "prettier --write"
     ]
   },
