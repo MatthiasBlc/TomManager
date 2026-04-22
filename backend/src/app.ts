@@ -60,8 +60,9 @@ export const sessionMiddleware = session({
   secret: env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: {
-    maxAge: 60 * 60 * 1000, // 1h
+    maxAge: 10 * 24 * 60 * 60 * 1000, // 10 jours, renouvele a chaque requete
     httpOnly: true,
     secure: env.NODE_ENV === "production",
     sameSite: "lax",

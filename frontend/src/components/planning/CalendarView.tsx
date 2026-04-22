@@ -305,8 +305,9 @@ export default function CalendarView({
         longPressDelay={500}
         eventDrop={handleEventDrop}
         eventResize={handleEventResize}
-        // Permet les tables simultanees
+        // Permet les tables simultanees mais les affiche cote a cote
         eventOverlap
+        slotEventOverlap={false}
         // Clic/selection sur un creneau vide pour creer une table
         selectable={!!onSlotSelect}
         selectMirror
