@@ -156,3 +156,70 @@
   outline: none;
   box-shadow: none !important;
 }
+
+/* =========================================
+   EXPORT PDF — @media print
+   ========================================= */
+@media print {
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  /* Elements a cacher */
+  .print-hide,
+  .navbar,
+  nav {
+    display: none !important;
+  }
+
+  /* Fond blanc, texte noir partout */
+  *,
+  *::before,
+  *::after {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Cards : bordure visible, pas de coupure de page au milieu */
+  .card {
+    border: 1px solid #999 !important;
+    break-inside: avoid;
+  }
+
+  /* Badges : contour visible */
+  .badge {
+    border: 1px solid #666 !important;
+    background: transparent !important;
+  }
+
+  /* Titres de jour (sticky en normal, statique en print) */
+  h3.sticky {
+    position: static !important;
+  }
+
+  /* FullCalendar : forcer les bordures et couleurs visibles */
+  .fc-wrapper .fc-col-header-cell,
+  .fc-wrapper .fc-timegrid-slot,
+  .fc-wrapper .fc-scrollgrid,
+  .fc-wrapper .fc-scrollgrid td,
+  .fc-wrapper .fc-scrollgrid th {
+    border-color: #ccc !important;
+  }
+
+  .fc-wrapper .fc-col-header-cell {
+    background-color: #f0f0f0 !important;
+  }
+
+  .fc-wrapper .fc-timegrid-col {
+    background-color: white !important;
+  }
+
+  /* Forcer l'affichage complet du calendrier sans scroll */
+  .fc-wrapper .fc-scroller {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}

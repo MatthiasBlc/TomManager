@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { useAuth } from "../../contexts/AuthContext";
 import TimelineView from "./TimelineView";
 import CalendarView from "./CalendarView";
 import CreateTableModal from "./CreateTableModal";
@@ -47,6 +48,7 @@ function getStoredView(): ViewMode {
 
 export default function PlanningTab({ eventId }: { eventId: string }) {
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [tables, setTables] = useState<TableSummary[]>([]);
   const [eventBounds, setEventBounds] = useState<EventBounds | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,20 +162,45 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
 
   return (
     <>
-      {/* Header avec toggle + bouton desktop */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Header avec toggle + boutons desktop */}
+      <div className="flex items-center justify-between mb-4 print-hide">
         {ViewToggle}
-        {!isMobile && (
-          <button
-            className="btn btn-primary btn-sm active:scale-95 transition-transform"
-            onClick={() => {
-              setCreateSlot(undefined);
-              setShowCreate(true);
-            }}
-          >
-            Create Table
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {user?.role === "ADMIN" && !isMobile && (
+            <button
+              className="btn btn-ghost btn-sm gap-1"
+              onClick={() => window.print()}
+              title="Exporter en PDF"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                />
+              </svg>
+              Export PDF
+            </button>
+          )}
+          {!isMobile && (
+            <button
+              className="btn btn-primary btn-sm active:scale-95 transition-transform"
+              onClick={() => {
+                setCreateSlot(undefined);
+                setShowCreate(true);
+              }}
+            >
+              Create Table
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -195,13 +222,15 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
       )}
 
       {isMobile && (
-        <FAB
-          onClick={() => {
-            setCreateSlot(undefined);
-            setShowCreate(true);
-          }}
-          label="Create Table"
-        />
+        <div className="print-hide">
+          <FAB
+            onClick={() => {
+              setCreateSlot(undefined);
+              setShowCreate(true);
+            }}
+            label="Create Table"
+          />
+        </div>
       )}
 
       <CreateTableModal
