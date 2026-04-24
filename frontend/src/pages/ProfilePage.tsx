@@ -2,7 +2,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "../contexts/ThemeContext";
 import { usePdfExport } from "../hooks/usePdfExport";
 
 export default function ProfilePage() {
