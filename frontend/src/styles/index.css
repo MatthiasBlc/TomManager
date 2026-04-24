@@ -162,8 +162,29 @@
    ========================================= */
 @media print {
   @page {
-    size: A4;
     margin: 1.5cm;
+  }
+
+  /* Forcer le mode clair : surcharge les variables DaisyUI ToM (dark) */
+  :root {
+    color-scheme: light !important;
+    --color-base-100: #ffffff;
+    --color-base-200: #f3f4f6;
+    --color-base-300: #e5e7eb;
+    --color-base-content: #111111;
+    --color-primary: #16a34a;
+    --color-primary-content: #ffffff;
+    --color-secondary: #ca8a04;
+    --color-secondary-content: #ffffff;
+    --color-error: #dc2626;
+    --color-success: #16a34a;
+    --color-warning: #d97706;
+  }
+
+  html,
+  body {
+    background: white !important;
+    color: black !important;
   }
 
   /* Elements a cacher */
@@ -173,34 +194,25 @@
     display: none !important;
   }
 
-  /* Fond blanc, texte noir partout */
-  *,
-  *::before,
-  *::after {
-    background: white !important;
-    color: black !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-
-  /* Cards : bordure visible, pas de coupure de page au milieu */
+  /* Cards : bordure visible, sans coupure de page */
   .card {
     border: 1px solid #999 !important;
     break-inside: avoid;
+    box-shadow: none !important;
   }
 
-  /* Badges : contour visible */
+  /* Badges : contour lisible */
   .badge {
     border: 1px solid #666 !important;
+  }
+
+  /* Titres de jour : retirer le sticky */
+  h3.sticky {
+    position: static !important;
     background: transparent !important;
   }
 
-  /* Titres de jour (sticky en normal, statique en print) */
-  h3.sticky {
-    position: static !important;
-  }
-
-  /* FullCalendar : forcer les bordures et couleurs visibles */
+  /* FullCalendar : bordures visibles */
   .fc-wrapper .fc-col-header-cell,
   .fc-wrapper .fc-timegrid-slot,
   .fc-wrapper .fc-scrollgrid,
@@ -213,13 +225,20 @@
     background-color: #f0f0f0 !important;
   }
 
-  .fc-wrapper .fc-timegrid-col {
-    background-color: white !important;
-  }
-
-  /* Forcer l'affichage complet du calendrier sans scroll */
-  .fc-wrapper .fc-scroller {
+  /* Forcer l'affichage complet sans scroll — expose tous les evenements */
+  .fc-wrapper .fc-scroller,
+  .fc-wrapper .fc-scroller-harness,
+  .fc-wrapper .fc-scroller-liquid-absolute {
     overflow: visible !important;
     height: auto !important;
+    position: static !important;
+  }
+
+  .fc-wrapper .fc-timegrid-body,
+  .fc-wrapper .fc-timegrid-cols,
+  .fc-wrapper .fc-timegrid-col-frame {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: unset !important;
   }
 }
