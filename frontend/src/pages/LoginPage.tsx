@@ -27,11 +27,26 @@ export default function LoginPage() {
   const [discordAvailable, setDiscordAvailable] = useState(true);
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/events";
 
+  const redirectAfterLogin = async (destination: string) => {
+    try {
+      const res = await api.get("/api/events");
+      const events = res.data.data;
+      if (events.length === 1) {
+        navigate(`/events/${events[0].id}`, { replace: true });
+        return;
+      }
+    } catch {
+      // en cas d'erreur on redirige normalement
+    }
+    navigate(destination, { replace: true });
+  };
+
   useEffect(() => {
     if (!loading && user) {
-      navigate(from, { replace: true });
+      redirectAfterLogin(from);
     }
-  }, [user, loading, navigate, from]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading]);
 
   useEffect(() => {
     const error = searchParams.get("error");
@@ -62,7 +77,7 @@ export default function LoginPage() {
     try {
       await login(data.identifier, data.password);
       toast.success("Logged in!");
-      navigate(from, { replace: true });
+      await redirectAfterLogin(from);
     } catch {
       toast.error("Invalid credentials");
     }
