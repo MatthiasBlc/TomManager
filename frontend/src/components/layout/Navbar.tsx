@@ -28,7 +28,7 @@ function DesktopNavbar() {
           TomManager
         </Link>
       </div>
-      <div className="flex-none gap-2">
+      <div className="flex-none flex items-center gap-2">
         {user && (
           <>
             <Link to="/events" className="btn btn-ghost btn-sm">

@@ -1,18 +1,18 @@
 # ROADMAP : Upgrade Tailwind v4 + DaisyUI v5 + Theme ToM
 
-## Statut : A faire (branche dédiée)
+## Statut : Complete (branche feature/upgrade-tailwind-daisyui-v5)
 
 ---
 
 ## Etape 1 - Mise a jour des dependances
 
-- [ ] `npm install tailwindcss@^4 @tailwindcss/vite@^4`
-- [ ] `npm install daisyui@^5`
-- [ ] Supprimer `tailwindcss` de `postcss.config.js` (remplace par le plugin Vite)
+- [x] `npm install tailwindcss@^4 @tailwindcss/vite@^4`
+- [x] `npm install daisyui@^5`
+- [x] Supprimer `tailwindcss` de `postcss.config.js` (remplace par le plugin Vite)
 
 ## Etape 2 - Migration vite.config.ts
 
-- [ ] Remplacer le plugin PostCSS Tailwind par `@tailwindcss/vite`
+- [x] Remplacer le plugin PostCSS Tailwind par `@tailwindcss/vite`
 
 ```ts
 import tailwindcss from "@tailwindcss/vite";
@@ -24,16 +24,16 @@ export default defineConfig({
 
 ## Etape 3 - Supprimer tailwind.config.js
 
-- [ ] Supprimer `frontend/tailwind.config.js`
-- [ ] Migrer les keyframes / animations custom vers `@theme` dans `index.css`
-- [ ] Migrer les variants custom (`pointer-fine`, `pointer-coarse`) vers `@variant` dans `index.css`
+- [x] Supprimer `frontend/tailwind.config.js`
+- [x] Migrer les keyframes / animations custom vers `@theme` dans `index.css`
+- [x] Migrer les variants custom (`pointer-fine`, `pointer-coarse`) vers `@variant` dans `index.css`
 
 ## Etape 4 - Migration index.css
 
-- [ ] Remplacer les 3 directives `@tailwind` par `@import "tailwindcss"`
-- [ ] Ajouter `@plugin "daisyui"` (remplace `require("daisyui")` du config)
-- [ ] Ajouter le bloc `@plugin "daisyui/theme"` avec le theme ToM exact (cf. spec)
-- [ ] Migrer les variables CSS FullCalendar : `hsl(var(--b1))` -> `oklch(var(--color-base-100))` etc.
+- [x] Remplacer les 3 directives `@tailwind` par `@import "tailwindcss"`
+- [x] Ajouter `@plugin "daisyui"` (remplace `require("daisyui")` du config)
+- [x] Ajouter le bloc `@plugin "daisyui/theme"` avec le theme ToM exact (cf. spec)
+- [x] Migrer les variables CSS FullCalendar : `hsl(var(--b1))` -> `var(--color-base-100)` etc.
 
   | Ancien      | Nouveau                     |
   | ----------- | --------------------------- |
@@ -45,14 +45,14 @@ export default defineConfig({
 
 ## Etape 5 - Audit classes composants
 
-- [ ] Scanner les usages `bg-opacity-*`, `text-opacity-*` -> syntaxe slash (`bg-*/50`)
-- [ ] Verifier les classes DaisyUI renommees entre v4 et v5 (consulter changelog DaisyUI v5)
+- [x] Scanner les usages `bg-opacity-*`, `text-opacity-*` -> aucun trouve
+- [x] Verifier les classes DaisyUI renommees entre v4 et v5 (consulter changelog DaisyUI v5)
 - [ ] Tester visuellement chaque page : Home, Planning, BoardGames, Profile
 
 ## Etape 6 - Validation
 
-- [ ] `npm run docker:up:build` -> build sans erreur
-- [ ] `npm test` -> tous les tests passent
+- [x] `npm run docker:up:build` -> build sans erreur
+- [x] `npm test` -> tous les tests passent (172/172)
 - [ ] Review visuelle avec `data-theme="ToM"` et `data-theme="winter"`
 - [ ] Verifier le toggle dark/light sur ProfilePage
 
