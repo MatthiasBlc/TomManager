@@ -1,7 +1,7 @@
 # Prochaines etapes - TomManager
 
 Phases terminees : 1-13, 15a, 15b, 15c. Phase 9 (Emails) ignoree — remplacee par Discord.
-Feature `waitlist-manual-control` : complete. Spec : `docs/features/waitlist-manual-control/SPEC_WAITLIST_MANUAL_CONTROL.md`
+Feature `waitlist-manual-control` : complete (UI mise a jour : bloc waitlist separe du bloc participants). Spec : `docs/features/waitlist-manual-control/SPEC_WAITLIST_MANUAL_CONTROL.md`
 Feature `upgrade-tailwind-daisyui` : complete. Spec : `docs/features/upgrade-tailwind-daisyui/SPEC_UPGRADE_TAILWIND_DAISYUI.md`
 Historique des phases : `CHANGELOG.md`
 
@@ -36,27 +36,6 @@ Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 - [ ] **Export** : export PDF du planning d'un event
 - [ ] **Historique** : log des actions sur un event
 - [ ] **PWA avancee** : service worker, cache offline, push notifications
-
----
-
-## Optionnel : remplacer axios par un wrapper fetch custom
-
-**Modele reco : Sonnet 4.6 | Effort : 2h**
-
-**Context** : Le projet utilise axios (`src/config/api.ts`) pour les requetes HTTP.
-Axios apporte surtout de la convenance (timeouts, intercepteurs, etc.), mais fetch moderne
-peut faire 95% des memes choses sans dependance externe.
-
-**Refacto proposee** :
-
-1. Creer un wrapper fetch minimaliste (30 lignes) avec les memes methodes : `get()`, `post()`, `delete()`, `put()`
-2. Garder `src/config/api.ts` comme point d'entree (meme interface)
-3. Ajouter une couche d'intercepteurs auth au niveau du Provider React si besoin
-4. Supprimer `axios` de `package.json`
-5. Tests existants resteront valides (les mocks de `../config/api` restent identiques)
-
-**Avantages** : une dependance de moins, moins de surface d'attaque, code plus clair.
-**Mise en garde** : `.data` utilise en 80+ endroits — le wrapper doit preserver cette interface.
 
 ---
 
