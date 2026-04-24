@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { useAuth } from "../../contexts/AuthContext";
+import { usePdfExport } from "../../hooks/usePdfExport";
 import TimelineView from "./TimelineView";
 import CalendarView from "./CalendarView";
 import CreateTableModal from "./CreateTableModal";
@@ -49,6 +50,7 @@ function getStoredView(): ViewMode {
 export default function PlanningTab({ eventId }: { eventId: string }) {
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const { pdfExportEnabled } = usePdfExport();
   const [tables, setTables] = useState<TableSummary[]>([]);
   const [eventBounds, setEventBounds] = useState<EventBounds | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,10 +168,16 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
       <div className="flex items-center justify-between mb-4 print-hide">
         {ViewToggle}
         <div className="flex items-center gap-2">
-          {user?.role === "ADMIN" && !isMobile && (
+          {user?.role === "ADMIN" && pdfExportEnabled && !isMobile && (
             <button
               className="btn btn-ghost btn-sm gap-1"
-              onClick={() => window.print()}
+              onClick={() => {
+                const style = document.createElement("style");
+                style.textContent = `@page { size: A4 ${viewMode === "calendar" ? "landscape" : "portrait"}; }`;
+                document.head.appendChild(style);
+                window.print();
+                document.head.removeChild(style);
+              }}
               title="Exporter en PDF"
             >
               <svg
