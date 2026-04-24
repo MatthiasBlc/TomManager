@@ -8,7 +8,7 @@ async function loginAs(page: Page, email: string, password: string) {
   await page.getByLabel(/email|identifiant/i).fill(email);
   await page.getByLabel(/mot de passe|password/i).fill(password);
   await page.getByRole("button", { name: /^(connexion|login)$/i }).click();
-  await expect(page).toHaveURL("/events");
+  await expect(page).toHaveURL(/\/events/);
 }
 
 /** Cree une table via API et fait rejoindre deux joueurs (1 confirme, 1 waitlist). */
