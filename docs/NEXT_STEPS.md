@@ -1,7 +1,8 @@
 # Prochaines etapes - TomManager
 
-Phases terminees : 1-13, 15a, 15b. Phase 9 (Emails) ignoree — remplacee par Discord.
+Phases terminees : 1-13, 15a, 15b, 15c. Phase 9 (Emails) ignoree — remplacee par Discord.
 Feature `waitlist-manual-control` : complete. Spec : `docs/features/waitlist-manual-control/SPEC_WAITLIST_MANUAL_CONTROL.md`
+Feature `upgrade-tailwind-daisyui` : complete. Spec : `docs/features/upgrade-tailwind-daisyui/SPEC_UPGRADE_TAILWIND_DAISYUI.md`
 Historique des phases : `CHANGELOG.md`
 
 ---
@@ -27,24 +28,6 @@ Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 - [ ] E2E `boardgames.spec.ts` : search + ajout via BGG
 
 **En attendant** : utiliser "Create manually" pour ajouter des jeux.
-
----
-
-## Phase 15c : Upgrade Tailwind v4 + DaisyUI v5 + Theme ToM (Priorite moyenne)
-
-Spec complete : `docs/features/upgrade-tailwind-daisyui/SPEC_UPGRADE_TAILWIND_DAISYUI.md`
-Roadmap detaillee : `docs/features/upgrade-tailwind-daisyui/ROADMAP.md`
-
-**Branche suggeree** : `feature/upgrade-tailwind-daisyui-v5`
-
-- [ ] Installer `tailwindcss@^4`, `@tailwindcss/vite@^4`, `daisyui@^5`
-- [ ] Migrer `vite.config.ts` : remplacer plugin PostCSS par `@tailwindcss/vite`
-- [ ] Supprimer `tailwind.config.js` (keyframes + variants -> `@theme` / `@variant` dans CSS)
-- [ ] Migrer `index.css` : `@import "tailwindcss"`, `@plugin "daisyui"`, theme ToM, variables FullCalendar
-- [ ] Audit classes composants (`bg-opacity-*` -> slash, classes DaisyUI renommees)
-- [ ] Validation : build + tests + review visuelle (ToM + winter) + toggle dark/light
-
-**Modele reco : Sonnet 4.6 | Effort : 3-5h**
 
 ---
 
