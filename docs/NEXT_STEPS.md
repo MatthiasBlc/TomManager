@@ -1,7 +1,8 @@
 # Prochaines etapes - TomManager
 
-Phases terminees : 1-13, 15a, 15b. Phase 9 (Emails) ignoree — remplacee par Discord.
+Phases terminees : 1-13, 15a, 15b, 15c. Phase 9 (Emails) ignoree — remplacee par Discord.
 Feature `waitlist-manual-control` : complete. Spec : `docs/features/waitlist-manual-control/SPEC_WAITLIST_MANUAL_CONTROL.md`
+Feature `upgrade-tailwind-daisyui` : complete. Spec : `docs/features/upgrade-tailwind-daisyui/SPEC_UPGRADE_TAILWIND_DAISYUI.md`
 Historique des phases : `CHANGELOG.md`
 
 ---
@@ -83,3 +84,18 @@ Un composant React custom + CSS grid pourrait faire la meme chose avec beaucoup 
 
 **Effort estime** : ~4-6h (exploration + impl + tests). A faire seulement si vraiment necessaire.
 **Risque** : refacto complexe, facile de casser quelque chose. Valider en tests avant le moindre commit final.
+
+---
+
+## Optionnel : Export PDF v2 (amelioration du systeme actuel)
+
+**Contexte** : La v1 utilise `window.print()` + CSS `@media print`. Elle fonctionne mais a des limites :
+la vue calendrier (FullCalendar) imprime mal ses evenements, et l'orientation est injectee via un `<style>` dynamique.
+
+**Pistes pour v2** :
+
+- Evaluer `@react-pdf/renderer` pour un vrai rendu PDF sans passer par le dialog d'impression
+- Ou generer une vue "print-only" dediee (composant React simplifie, optimise pour l'impression)
+- Regler proprement le cas FullCalendar (evenements absents en vue calendrier)
+
+**Modele reco : Sonnet 4.6 | Effort : 2-4h**

@@ -30,8 +30,16 @@ npx prisma studio              # DB GUI :5555
 ## Git
 
 - **Main**: master
-- **Branche courante**: master
+- **Branche de dev**: Developement
 - **Commits**: Ne JAMAIS ajouter de Co-Authored-By pour Claude
+
+### Workflow
+
+1. Creer une branche `feature/*` depuis `Developement`
+2. Developper et committer sur la feature branch
+3. Merger la feature branch dans `Developement`
+4. Push `Developement` sur GitHub
+5. PR `Developement` -> `master` sur GitHub (jamais de push direct sur master)
 
 ## Phase actuelle
 

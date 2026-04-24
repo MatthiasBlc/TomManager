@@ -265,62 +265,39 @@ export default function TableDetailModal({
               </div>
             )}
 
-            {/* Participants */}
+            {/* Participants confirmes */}
             <div className="card bg-base-200 shadow-none">
               <div className="card-body p-3">
                 <h4 className="font-semibold text-sm mb-2">
                   Participants ({confirmedCount}/{table.maxPlayers})
                 </h4>
-                {table.participants.length === 0 ? (
-                  <EmptyState icon={<span>👥</span>} title="No participants yet" />
+                {confirmedCount === 0 ? (
+                  <EmptyState icon={<span>👥</span>} title="Aucun participant pour l'instant" />
                 ) : isMobile ? (
                   <div className="space-y-1">
-                    {table.participants.map((p) => (
-                      <div key={p.userId} className="flex items-center justify-between py-1">
-                        <div className="flex items-center gap-2">
+                    {table.participants
+                      .filter((p) => p.status === "CONFIRMED")
+                      .map((p) => (
+                        <div key={p.userId} className="flex items-center justify-between py-1">
                           <span className="text-sm">{p.username}</span>
-                          <span
-                            className={`badge badge-xs ${
-                              p.status === "CONFIRMED" ? "badge-success" : "badge-warning"
-                            }`}
-                          >
-                            {p.status}
-                          </span>
-                        </div>
-                        {canEdit && (
-                          <div className="flex items-center gap-1">
-                            {p.status === "WAITLIST" && (
-                              <button
-                                className="btn btn-ghost btn-xs text-success min-h-[44px]"
-                                onClick={() => handlePromote(p.userId)}
-                                disabled={confirmedCount >= table.maxPlayers}
-                                title={
-                                  confirmedCount >= table.maxPlayers
-                                    ? "Table pleine — retrogradez un joueur d'abord"
-                                    : "Promouvoir"
-                                }
-                              >
-                                Promouvoir
-                              </button>
-                            )}
-                            {p.status === "CONFIRMED" && (
+                          {canEdit && (
+                            <div className="flex items-center gap-1">
                               <button
                                 className="btn btn-ghost btn-xs text-warning min-h-[44px]"
                                 onClick={() => handleDemote(p.userId)}
                               >
                                 Retrograder
                               </button>
-                            )}
-                            <button
-                              className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                              onClick={() => handleKick(p.userId, p.username)}
-                            >
-                              Retirer
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                              <button
+                                className="btn btn-ghost btn-xs text-error min-h-[44px]"
+                                onClick={() => handleKick(p.userId, p.username)}
+                              >
+                                Retirer
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -328,63 +305,123 @@ export default function TableDetailModal({
                       <thead>
                         <tr>
                           <th>Joueur</th>
-                          <th>Statut</th>
                           {canEdit && <th />}
                         </tr>
                       </thead>
                       <tbody>
-                        {table.participants.map((p) => (
-                          <tr key={p.userId}>
-                            <td>{p.username}</td>
-                            <td>
-                              <span
-                                className={`badge badge-xs ${
-                                  p.status === "CONFIRMED" ? "badge-success" : "badge-warning"
-                                }`}
-                              >
-                                {p.status}
-                              </span>
-                            </td>
-                            {canEdit && (
-                              <td className="flex gap-1">
-                                {p.status === "WAITLIST" && (
-                                  <button
-                                    className="btn btn-ghost btn-xs text-success"
-                                    onClick={() => handlePromote(p.userId)}
-                                    disabled={confirmedCount >= table.maxPlayers}
-                                    title={
-                                      confirmedCount >= table.maxPlayers
-                                        ? "Table pleine — retrogradez un joueur d'abord"
-                                        : "Promouvoir"
-                                    }
-                                  >
-                                    Promouvoir
-                                  </button>
-                                )}
-                                {p.status === "CONFIRMED" && (
+                        {table.participants
+                          .filter((p) => p.status === "CONFIRMED")
+                          .map((p) => (
+                            <tr key={p.userId}>
+                              <td>{p.username}</td>
+                              {canEdit && (
+                                <td className="flex gap-1">
                                   <button
                                     className="btn btn-ghost btn-xs text-warning"
                                     onClick={() => handleDemote(p.userId)}
                                   >
                                     Retrograder
                                   </button>
-                                )}
-                                <button
-                                  className="btn btn-ghost btn-xs text-error"
-                                  onClick={() => handleKick(p.userId, p.username)}
-                                >
-                                  Retirer
-                                </button>
-                              </td>
-                            )}
-                          </tr>
-                        ))}
+                                  <button
+                                    className="btn btn-ghost btn-xs text-error"
+                                    onClick={() => handleKick(p.userId, p.username)}
+                                  >
+                                    Retirer
+                                  </button>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Waitlist */}
+            {waitlistCount > 0 && (
+              <div className="card bg-base-200 border-l-4 border-warning shadow-none">
+                <div className="card-body p-3">
+                  <h4 className="font-semibold text-sm mb-2">Waitlist ({waitlistCount})</h4>
+                  {isMobile ? (
+                    <div className="space-y-1">
+                      {table.participants
+                        .filter((p) => p.status === "WAITLIST")
+                        .map((p) => (
+                          <div key={p.userId} className="flex items-center justify-between py-1">
+                            <span className="text-sm">{p.username}</span>
+                            {canEdit && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  className="btn btn-ghost btn-xs text-success min-h-[44px]"
+                                  onClick={() => handlePromote(p.userId)}
+                                  disabled={confirmedCount >= table.maxPlayers}
+                                  title={
+                                    confirmedCount >= table.maxPlayers
+                                      ? "Table pleine — retrogradez un joueur d'abord"
+                                      : "Promouvoir"
+                                  }
+                                >
+                                  Promouvoir
+                                </button>
+                                <button
+                                  className="btn btn-ghost btn-xs text-error min-h-[44px]"
+                                  onClick={() => handleKick(p.userId, p.username)}
+                                >
+                                  Retirer
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="table table-xs">
+                        <thead>
+                          <tr>
+                            <th>Joueur</th>
+                            {canEdit && <th />}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {table.participants
+                            .filter((p) => p.status === "WAITLIST")
+                            .map((p) => (
+                              <tr key={p.userId}>
+                                <td>{p.username}</td>
+                                {canEdit && (
+                                  <td className="flex gap-1">
+                                    <button
+                                      className="btn btn-ghost btn-xs text-success"
+                                      onClick={() => handlePromote(p.userId)}
+                                      disabled={confirmedCount >= table.maxPlayers}
+                                      title={
+                                        confirmedCount >= table.maxPlayers
+                                          ? "Table pleine — retrogradez un joueur d'abord"
+                                          : "Promouvoir"
+                                      }
+                                    >
+                                      Promouvoir
+                                    </button>
+                                    <button
+                                      className="btn btn-ghost btn-xs text-error"
+                                      onClick={() => handleKick(p.userId, p.username)}
+                                    >
+                                      Retirer
+                                    </button>
+                                  </td>
+                                )}
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className={`flex flex-wrap gap-2 pt-1 ${isMobile ? "pb-2" : ""}`}>

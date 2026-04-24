@@ -2,11 +2,13 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "../contexts/ThemeContext";
+import { usePdfExport } from "../hooks/usePdfExport";
 
 export default function ProfilePage() {
   const { user, logout, initiateDiscordLogin, unlinkDiscord } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { pdfExportEnabled, togglePdfExport } = usePdfExport();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -124,6 +126,27 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {user.role === "ADMIN" && (
+        <div className="card bg-base-100 shadow">
+          <div className="card-body">
+            <h2 className="card-title text-base">Options avancees</h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm">Activer export PDF</span>
+                <span className="badge badge-warning badge-xs ml-2">Beta</span>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-sm"
+                checked={pdfExportEnabled}
+                onChange={togglePdfExport}
+                aria-label="Activer export PDF"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card bg-base-100 shadow">
         <div className="card-body space-y-3">

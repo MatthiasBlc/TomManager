@@ -200,38 +200,26 @@ export default function TableDetailPage() {
           <div className="card-body p-3 md:p-4">
             <h3 className="font-semibold text-sm mb-2">
               Participants ({confirmedCount}/{table.maxPlayers})
-              {table.participants.filter((p) => p.status === "WAITLIST").length > 0 && (
-                <span className="badge badge-warning badge-sm ml-2">
-                  +{table.participants.filter((p) => p.status === "WAITLIST").length} waitlist
-                </span>
-              )}
             </h3>
-            {table.participants.length === 0 ? (
+            {confirmedCount === 0 ? (
               <EmptyState icon={<span>👥</span>} title="No participants yet" />
             ) : isMobile ? (
               <div className="space-y-2">
-                {table.participants.map((p) => (
-                  <div key={p.userId} className="flex items-center justify-between py-1">
-                    <div className="flex items-center gap-2">
+                {table.participants
+                  .filter((p) => p.status === "CONFIRMED")
+                  .map((p) => (
+                    <div key={p.userId} className="flex items-center justify-between py-1">
                       <span className="text-sm font-medium">{p.username}</span>
-                      <span
-                        className={`badge badge-sm ${
-                          p.status === "CONFIRMED" ? "badge-success" : "badge-warning"
-                        }`}
-                      >
-                        {p.status}
-                      </span>
+                      {canEdit && (
+                        <button
+                          className="btn btn-ghost btn-sm text-error min-h-[44px]"
+                          onClick={() => handleKick(p.userId, p.username)}
+                        >
+                          Remove
+                        </button>
+                      )}
                     </div>
-                    {canEdit && (
-                      <button
-                        className="btn btn-ghost btn-sm text-error min-h-[44px]"
-                        onClick={() => handleKick(p.userId, p.username)}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  ))}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -239,41 +227,92 @@ export default function TableDetailPage() {
                   <thead>
                     <tr>
                       <th>Player</th>
-                      <th>Status</th>
                       {canEdit && <th>Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {table.participants.map((p) => (
-                      <tr key={p.userId}>
-                        <td>{p.username}</td>
-                        <td>
-                          <span
-                            className={`badge badge-sm ${
-                              p.status === "CONFIRMED" ? "badge-success" : "badge-warning"
-                            }`}
-                          >
-                            {p.status}
-                          </span>
-                        </td>
-                        {canEdit && (
-                          <td>
-                            <button
-                              className="btn btn-ghost btn-xs text-error"
-                              onClick={() => handleKick(p.userId, p.username)}
-                            >
-                              Remove
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
+                    {table.participants
+                      .filter((p) => p.status === "CONFIRMED")
+                      .map((p) => (
+                        <tr key={p.userId}>
+                          <td>{p.username}</td>
+                          {canEdit && (
+                            <td>
+                              <button
+                                className="btn btn-ghost btn-xs text-error"
+                                onClick={() => handleKick(p.userId, p.username)}
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
         </div>
+
+        {table.participants.filter((p) => p.status === "WAITLIST").length > 0 && (
+          <div className="card bg-base-100 shadow-sm border-l-4 border-warning">
+            <div className="card-body p-3 md:p-4">
+              <h3 className="font-semibold text-sm mb-2">
+                Waitlist ({table.participants.filter((p) => p.status === "WAITLIST").length})
+              </h3>
+              {isMobile ? (
+                <div className="space-y-2">
+                  {table.participants
+                    .filter((p) => p.status === "WAITLIST")
+                    .map((p) => (
+                      <div key={p.userId} className="flex items-center justify-between py-1">
+                        <span className="text-sm font-medium">{p.username}</span>
+                        {canEdit && (
+                          <button
+                            className="btn btn-ghost btn-sm text-error min-h-[44px]"
+                            onClick={() => handleKick(p.userId, p.username)}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Player</th>
+                        {canEdit && <th>Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {table.participants
+                        .filter((p) => p.status === "WAITLIST")
+                        .map((p) => (
+                          <tr key={p.userId}>
+                            <td>{p.username}</td>
+                            {canEdit && (
+                              <td>
+                                <button
+                                  className="btn btn-ghost btn-xs text-error"
+                                  onClick={() => handleKick(p.userId, p.username)}
+                                >
+                                  Remove
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Sticky action bar on mobile */}
