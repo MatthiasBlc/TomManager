@@ -698,6 +698,148 @@ describe("GameTable API", () => {
     });
   });
 
+  describe("Conflict detection (GET /api/events/:eventId/tables)", () => {
+    // Tables qui se chevauchent : A (10-14h), B (12-16h)
+    // Tables qui ne se chevauchent pas : A (10-12h), C (13-15h)
+    const tableA = {
+      title: "Table A",
+      maxPlayers: 4,
+      startDateTime: "2026-06-01T10:00:00Z",
+      endDateTime: "2026-06-01T14:00:00Z",
+    };
+    const tableB = {
+      title: "Table B",
+      maxPlayers: 4,
+      startDateTime: "2026-06-01T12:00:00Z",
+      endDateTime: "2026-06-01T16:00:00Z",
+    };
+    const tableC = {
+      title: "Table C",
+      maxPlayers: 4,
+      startDateTime: "2026-06-01T15:00:00Z",
+      endDateTime: "2026-06-01T17:00:00Z",
+    };
+
+    it("should flag conflict when GM directs two overlapping tables (JDR sans gmIsPlayer)", async () => {
+      const { admin, event } = await setupEventWithParticipant();
+
+      // Admin est GM sur deux tables qui se chevauchent (pas dans participants)
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send(tableA);
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send(tableB);
+
+      const res = await request
+        .get(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(2);
+      // Les deux tables doivent signaler un conflit pour l'admin (le GM)
+      expect(res.body.data[0].currentUserConflict).toBe(true);
+      expect(res.body.data[1].currentUserConflict).toBe(true);
+      expect(res.body.data[0].conflictingPlayerCount).toBe(1);
+      expect(res.body.data[1].conflictingPlayerCount).toBe(1);
+    });
+
+    it("should flag conflict when user is GM on one table and player on another overlapping table", async () => {
+      const { admin, event } = await setupEventWithParticipant();
+
+      // Player cree la table B (GM: player)
+      const { cookie: playerCookie } = await addTestParticipant(event.id, {
+        email: "gmplayer@example.com",
+        username: "gmplayer",
+      });
+
+      // Admin est GM sur table A
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send(tableA);
+
+      // Player est GM sur table B (chevauchement avec A)
+      const resTB = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send(tableB);
+      const tableBId = resTB.body.data.id;
+
+      // Admin rejoint la table B comme joueur (CONFIRMED)
+      await request
+        .post(`/api/events/${event.id}/tables/${tableBId}/join`)
+        .set("Cookie", admin.cookie);
+
+      const res = await request
+        .get(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie);
+
+      expect(res.status).toBe(200);
+      // L'admin est GM sur A et joueur sur B : conflit sur les deux
+      const tA = res.body.data.find((t: { title: string }) => t.title === "Table A");
+      const tB = res.body.data.find((t: { title: string }) => t.title === "Table B");
+      expect(tA.currentUserConflict).toBe(true);
+      expect(tB.currentUserConflict).toBe(true);
+    });
+
+    it("should not flag conflict when GM directs two non-overlapping tables", async () => {
+      const { admin, event } = await setupEventWithParticipant();
+
+      // Admin est GM sur table A (10-14h) et table C (15-17h) : pas de chevauchement
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send(tableA);
+      await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send(tableC);
+
+      const res = await request
+        .get(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data[0].currentUserConflict).toBe(false);
+      expect(res.body.data[1].currentUserConflict).toBe(false);
+      expect(res.body.data[0].conflictingPlayerCount).toBe(0);
+      expect(res.body.data[1].conflictingPlayerCount).toBe(0);
+    });
+
+    it("should flag conflict when player is CONFIRMED on two overlapping tables", async () => {
+      const { admin, playerCookie, event } = await setupEventWithParticipant();
+
+      // Admin cree deux tables qui se chevauchent
+      const resA = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send(tableA);
+      const resB = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send(tableB);
+
+      // Player rejoint les deux tables
+      await request
+        .post(`/api/events/${event.id}/tables/${resA.body.data.id}/join`)
+        .set("Cookie", playerCookie);
+      await request
+        .post(`/api/events/${event.id}/tables/${resB.body.data.id}/join`)
+        .set("Cookie", playerCookie);
+
+      const res = await request
+        .get(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data[0].currentUserConflict).toBe(true);
+      expect(res.body.data[1].currentUserConflict).toBe(true);
+    });
+  });
+
   describe("GET /api/events/:eventId/tables/:tableId", () => {
     it("should return table detail with participants", async () => {
       const { admin, playerCookie, event } = await setupEventWithParticipant();

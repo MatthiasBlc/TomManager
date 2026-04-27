@@ -151,13 +151,20 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
     orderBy: { startDateTime: "asc" },
   });
 
-  // Calcul des conflits : participant CONFIRMED sur deux tables qui se chevauchent
-  // confirmedTablesByUser : userId -> indices des tables ou il est CONFIRMED
+  // Calcul des conflits : toute personne presente sur une table (participant CONFIRMED ou GM/createur)
+  // sur deux tables qui se chevauchent est en conflit.
+  // confirmedTablesByUser : userId -> indices des tables ou il est present
   const confirmedTablesByUser = new Map<string, number[]>();
   tables.forEach((t, idx) => {
+    // Inclure le GM (createur) meme s'il n'est pas dans participants (cas JDR sans gmIsPlayer)
+    if (!confirmedTablesByUser.has(t.createdBy)) confirmedTablesByUser.set(t.createdBy, []);
+    confirmedTablesByUser.get(t.createdBy)!.push(idx);
+
     t.participants
       .filter((p) => p.status === "CONFIRMED")
       .forEach((p) => {
+        // Eviter le doublon si le GM est aussi dans participants (gmIsPlayer=true ou JDS)
+        if (p.userId === t.createdBy) return;
         if (!confirmedTablesByUser.has(p.userId)) confirmedTablesByUser.set(p.userId, []);
         confirmedTablesByUser.get(p.userId)!.push(idx);
       });
