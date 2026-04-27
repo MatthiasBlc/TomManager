@@ -724,18 +724,10 @@ describe("GameTable API", () => {
       const { admin, event } = await setupEventWithParticipant();
 
       // Admin est GM sur deux tables qui se chevauchent (pas dans participants)
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableA);
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableB);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableA);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableB);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(2);
@@ -756,10 +748,7 @@ describe("GameTable API", () => {
       });
 
       // Admin est GM sur table A
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableA);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableA);
 
       // Player est GM sur table B (chevauchement avec A)
       const resTB = await request
@@ -773,9 +762,7 @@ describe("GameTable API", () => {
         .post(`/api/events/${event.id}/tables/${tableBId}/join`)
         .set("Cookie", admin.cookie);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       // L'admin est GM sur A et joueur sur B : conflit sur les deux
@@ -789,18 +776,10 @@ describe("GameTable API", () => {
       const { admin, event } = await setupEventWithParticipant();
 
       // Admin est GM sur table A (10-14h) et table C (15-17h) : pas de chevauchement
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableA);
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableC);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableA);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableC);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data[0].currentUserConflict).toBe(false);
@@ -830,9 +809,7 @@ describe("GameTable API", () => {
         .post(`/api/events/${event.id}/tables/${resB.body.data.id}/join`)
         .set("Cookie", playerCookie);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", playerCookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data[0].currentUserConflict).toBe(true);
