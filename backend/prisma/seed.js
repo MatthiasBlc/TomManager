@@ -339,7 +339,12 @@ async function seedDemoData() {
 
 async function main() {
   await seedAdmins();
-  await seedDemoData();
+  try {
+    await seedDemoData();
+  } catch (e) {
+    // La donnee de demo est optionnelle — le serveur doit toujours demarrer
+    console.error("[seed] seedDemoData echoue (non-fatal) :", e.message);
+  }
 }
 
 main()
