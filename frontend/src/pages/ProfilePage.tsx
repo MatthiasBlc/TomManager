@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { usePdfExport } from "../hooks/usePdfExport";
+import AdminBoardGamePanel from "../components/admin/AdminBoardGamePanel";
 
 export default function ProfilePage() {
   const { user, logout, initiateDiscordLogin, unlinkDiscord } = useAuth();
@@ -136,24 +137,33 @@ export default function ProfilePage() {
       </div>
 
       {user.role === "ADMIN" && (
-        <div className="card bg-base-100 shadow">
-          <div className="card-body">
-            <h2 className="card-title text-base">Options avancees</h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm">Activer export PDF</span>
-                <span className="badge badge-warning badge-xs ml-2">Beta</span>
+        <>
+          <div className="card bg-base-100 shadow">
+            <div className="card-body">
+              <h2 className="card-title text-base">Options avancees</h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm">Activer export PDF</span>
+                  <span className="badge badge-warning badge-xs ml-2">Beta</span>
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-sm"
+                  checked={pdfExportEnabled}
+                  onChange={togglePdfExport}
+                  aria-label="Activer export PDF"
+                />
               </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-sm"
-                checked={pdfExportEnabled}
-                onChange={togglePdfExport}
-                aria-label="Activer export PDF"
-              />
             </div>
           </div>
-        </div>
+
+          <div className="card bg-base-100 shadow">
+            <div className="card-body space-y-3">
+              <h2 className="card-title text-base">Banque de jeux</h2>
+              <AdminBoardGamePanel />
+            </div>
+          </div>
+        </>
       )}
 
       <div className="card bg-base-100 shadow">

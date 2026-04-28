@@ -38,10 +38,10 @@ Prerequis : avoir le `BGG_API_TOKEN` (enregistrement sur boardgamegeek.com/appli
 
 **Modele reco : Sonnet 4.6 | Effort : 3-4h**
 
-- [ ] Endpoints backend `/api/admin/boardgames` : GET liste paginee, PATCH edit, DELETE avec cascade, POST merge
-- [ ] Tests integration : CRUD admin, regles suppression (SET NULL tables, delete EventBoardGame), merge
-- [ ] Section admin dans `ProfilePage` (visible ADMIN uniquement, meme pattern que print beta)
-- [ ] Composant `AdminBoardGamePanel` : liste/recherche, edit modal, delete avec confirmation impact, merge flow
+- [x] Endpoints backend `/api/admin/boardgames` : GET liste paginee, PATCH edit, DELETE avec cascade, POST merge
+- [x] Tests integration : CRUD admin, regles suppression (SET NULL tables, delete EventBoardGame), merge
+- [x] Section admin dans `ProfilePage` (visible ADMIN uniquement, meme pattern que print beta)
+- [x] Composant `AdminBoardGamePanel` : liste/recherche, edit modal, delete avec confirmation impact, merge flow
 
 ---
 
