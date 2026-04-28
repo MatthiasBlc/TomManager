@@ -49,14 +49,14 @@ Prerequis : avoir le `BGG_API_TOKEN` (enregistrement sur boardgamegeek.com/appli
 
 **Modele reco : Sonnet 4.6 | Effort : 3-4h**
 
-- [ ] Migration Prisma : `boardGameId String?` sur `GameTable`, relation `BoardGame.gameTables`
-- [ ] Schemas Zod mis a jour (`createTableSchema`, `updateTableSchema`)
-- [ ] Service `gameTable.ts` : inclure `boardGame` dans tous les selects
-- [ ] Tests integration : creer table avec boardGameId valide / invalide / absent
-- [ ] `CreateTableModal` : selecteur jeu (3 modes) positionne en haut, uniquement si type=JDS, pre-remplissage silencieux
-- [ ] `EditTableModal` : idem avec jeu pre-selectionne si existant
-- [ ] `TableDetailModal` : bloc jeu compact + lien vers `BoardGameDetailModal`
-- [ ] `TableCard` : sous-titre / badge nom du jeu
+- [x] Migration Prisma : `boardGameId String?` sur `GameTable`, relation `BoardGame.gameTables`
+- [x] Schemas Zod mis a jour (`createTableSchema`, `updateTableSchema`)
+- [x] Service `gameTable.ts` : inclure `boardGame` dans tous les selects
+- [x] Tests integration : creer table avec boardGameId valide / invalide / absent
+- [x] `CreateTableModal` : selecteur jeu (3 modes) positionne en haut, uniquement si type=JDS, pre-remplissage silencieux
+- [x] `EditTableModal` : idem avec jeu pre-selectionne si existant
+- [x] `TableDetailModal` : bloc jeu compact (lien vers `BoardGameDetailModal` a faire en B)
+- [x] `TableCard` : sous-titre / badge nom du jeu
 
 ---
 

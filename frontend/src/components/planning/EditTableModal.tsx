@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import TagInput from "./TagInput";
 import ResponsiveModal from "../common/ResponsiveModal";
+import BoardGameSelector, { SelectedGame } from "./BoardGameSelector";
 
 const DURATION_OPTIONS = [
   { label: "30 min", value: 30 },
@@ -63,6 +64,7 @@ interface TableData {
   startDateTime: string;
   endDateTime: string;
   tags: { id: string; name: string }[];
+  boardGame?: { id: string; name: string; maxPlayers?: number | null; playingTime?: number | null } | null;
 }
 
 interface Props {
@@ -75,10 +77,13 @@ interface Props {
 
 export default function EditTableModal({ open, onClose, onUpdated, eventId, table }: Props) {
   const [tags, setTags] = useState<string[]>([]);
+  const [selectedGame, setSelectedGame] = useState<SelectedGame | null>(null);
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<EditTableForm>();
 
@@ -98,8 +103,31 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
         durationMinutes: snapDuration(durationMs),
       });
       setTags(table.tags.map((t) => t.name));
+      setSelectedGame(
+        table.boardGame
+          ? { id: table.boardGame.id, name: table.boardGame.name, maxPlayers: table.boardGame.maxPlayers, playingTime: table.boardGame.playingTime }
+          : null
+      );
     }
   }, [open, table, reset]);
+
+  // Pre-remplissage one-shot en edition : ne remplir que les champs vides
+  const handleGameChange = (game: SelectedGame | null) => {
+    setSelectedGame(game);
+    if (!game) return;
+    const currentMaxPlayers = watch("maxPlayers");
+    if (!currentMaxPlayers && game.maxPlayers) setValue("maxPlayers", game.maxPlayers);
+    if (game.playingTime) {
+      const currentDuration = watch("durationMinutes");
+      if (!currentDuration) {
+        const values = DURATION_OPTIONS.map((o) => o.value);
+        const snapped = values.reduce((prev, curr) =>
+          Math.abs(curr - game.playingTime!) < Math.abs(prev - game.playingTime!) ? curr : prev
+        );
+        setValue("durationMinutes", snapped);
+      }
+    }
+  };
 
   const onSubmit = async (data: EditTableForm) => {
     try {
@@ -116,6 +144,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
         startDateTime: startDateTime.toISOString(),
         endDateTime: endDateTime.toISOString(),
         tags,
+        boardGameId: selectedGame?.id ?? null,
       });
       toast.success("Table mise a jour !");
       onUpdated();
@@ -148,6 +177,17 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
               />
               <span className="label-text">Le MJ est aussi joueur (se compte dans les places)</span>
             </label>
+          </div>
+        )}
+
+        {/* Jeu associe — uniquement pour JDS */}
+        {table.type === "JDS" && (
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Jeu associe</span>
+              <span className="label-text-alt opacity-50">optionnel</span>
+            </label>
+            <BoardGameSelector value={selectedGame} onChange={handleGameChange} />
           </div>
         )}
 

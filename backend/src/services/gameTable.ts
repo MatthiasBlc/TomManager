@@ -4,16 +4,26 @@ import { findOrCreateTags } from "./tag";
 import { emitToEvent } from "../socket/emitter";
 import { createNotification, createBulkNotifications } from "./notification";
 
+const BOARD_GAME_SELECT = {
+  id: true,
+  name: true,
+  minPlayers: true,
+  maxPlayers: true,
+  playingTime: true,
+  imageUrl: true,
+} as const;
+
 interface UpdateTableData {
   title?: string;
   gmIsPlayer?: boolean;
-  pitch?: string;
-  triggers?: string;
-  comments?: string;
+  pitch?: string | null;
+  triggers?: string | null;
+  comments?: string | null;
   maxPlayers?: number;
   startDateTime?: string;
   endDateTime?: string;
   tags?: string[];
+  boardGameId?: string | null;
 }
 
 interface CreateTableData {
@@ -27,6 +37,7 @@ interface CreateTableData {
   startDateTime: string;
   endDateTime: string;
   tags?: string[];
+  boardGameId?: string | null;
 }
 
 export async function createTable(eventId: string, userId: string, data: CreateTableData) {
@@ -77,6 +88,11 @@ export async function createTable(eventId: string, userId: string, data: CreateT
     throw createError(400, "Table endDateTime must be within event bounds");
   }
 
+  if (data.boardGameId) {
+    const game = await prisma.boardGame.findUnique({ where: { id: data.boardGameId } });
+    if (!game) throw createError(400, "Board game not found");
+  }
+
   const tableType = data.type ?? "JDR";
   const gmIsPlayer = tableType === "JDR" ? (data.gmIsPlayer ?? false) : false;
   // GM takes a seat if JDS (they're always a player) or JDR with gmIsPlayer checked
@@ -96,6 +112,7 @@ export async function createTable(eventId: string, userId: string, data: CreateT
         maxPlayers: data.maxPlayers,
         startDateTime: start,
         endDateTime: end,
+        boardGameId: data.boardGameId ?? null,
       },
     });
 
@@ -123,6 +140,7 @@ export async function createTable(eventId: string, userId: string, data: CreateT
       include: {
         tags: { include: { tag: true } },
         creator: { select: { id: true, username: true } },
+        boardGame: { select: BOARD_GAME_SELECT },
       },
     });
   });
@@ -146,6 +164,7 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       participants: {
         select: { userId: true, status: true },
       },
+      boardGame: { select: BOARD_GAME_SELECT },
     },
     take: limit,
     orderBy: { startDateTime: "asc" },
@@ -215,6 +234,7 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       isGM: t.createdBy === currentUserId,
       currentUserConflict: conflictedUsers.has(currentUserId),
       conflictingPlayerCount: conflictedUsers.size,
+      boardGame: t.boardGame ?? null,
     };
   });
 }
@@ -231,6 +251,7 @@ export async function getTable(tableId: string) {
         },
         orderBy: { joinedAt: "asc" },
       },
+      boardGame: { select: BOARD_GAME_SELECT },
     },
   });
 
@@ -261,6 +282,7 @@ export async function getTable(tableId: string) {
       status: p.status,
       joinedAt: p.joinedAt,
     })),
+    boardGame: table.boardGame ?? null,
   };
 }
 
@@ -275,6 +297,11 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
 
   const event = await prisma.event.findUnique({ where: { id: existing.eventId } });
 
+  if (data.boardGameId) {
+    const game = await prisma.boardGame.findUnique({ where: { id: data.boardGameId } });
+    if (!game) throw createError(400, "Board game not found");
+  }
+
   // Merge with existing values
   const title = data.title !== undefined ? data.title.trim() : existing.title;
   const pitch = data.pitch !== undefined ? data.pitch : existing.pitch;
@@ -283,6 +310,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
   const maxPlayers = data.maxPlayers !== undefined ? data.maxPlayers : existing.maxPlayers;
   const start = data.startDateTime ? new Date(data.startDateTime) : existing.startDateTime;
   const end = data.endDateTime ? new Date(data.endDateTime) : existing.endDateTime;
+  const boardGameId = data.boardGameId !== undefined ? data.boardGameId : existing.boardGameId;
 
   // Validate
   if (!title || title.length === 0 || title.length > 150) {
@@ -427,11 +455,13 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
         maxPlayers,
         startDateTime: start,
         endDateTime: end,
+        boardGameId,
         ...gmIsPlayerUpdate,
       },
       include: {
         tags: { include: { tag: true } },
         creator: { select: { id: true, username: true } },
+        boardGame: { select: BOARD_GAME_SELECT },
       },
     });
   });
@@ -439,6 +469,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
   const updated = {
     ...result,
     tags: result.tags.map((gt) => gt.tag),
+    boardGame: result.boardGame ?? null,
   };
 
   emitToEvent(existing.eventId, "table:updated", { table: updated });
