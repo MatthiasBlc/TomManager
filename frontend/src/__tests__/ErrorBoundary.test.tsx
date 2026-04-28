@@ -20,7 +20,7 @@ describe("ErrorBoundary", () => {
     render(
       <ErrorBoundary>
         <div>Safe content</div>
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByText("Safe content")).toBeInTheDocument();
   });
@@ -29,17 +29,19 @@ describe("ErrorBoundary", () => {
     render(
       <ErrorBoundary>
         <Boom />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByText("Erreur inattendue")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /recharger/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /recharger/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders a custom fallback when provided", () => {
     render(
       <ErrorBoundary fallback={<div>Custom fallback</div>}>
         <Boom />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     );
     expect(screen.getByText("Custom fallback")).toBeInTheDocument();
     expect(screen.queryByText("Erreur inattendue")).not.toBeInTheDocument();

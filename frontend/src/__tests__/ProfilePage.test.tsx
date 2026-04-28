@@ -78,12 +78,18 @@ describe("ProfilePage", () => {
     });
     renderWithRouter(<ProfilePage />);
     expect(screen.getByText("No Discord account linked")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Link Discord/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Link Discord/i }),
+    ).toBeInTheDocument();
   });
 
   it("shows Discord unlink button when account is linked", () => {
     useAuthMock.mockReturnValue({
-      user: { ...baseUser, discordId: "discord123", discordUsername: "AliceDiscord" },
+      user: {
+        ...baseUser,
+        discordId: "discord123",
+        discordUsername: "AliceDiscord",
+      },
       initiateDiscordLogin: initiateDiscordLoginMock,
       unlinkDiscord: unlinkDiscordMock,
     });
@@ -157,7 +163,9 @@ describe("ProfilePage", () => {
   });
 
   it("shows specific error when Discord account is already linked to another user", async () => {
-    initiateDiscordLoginMock.mockRejectedValue(new Error("discord_already_linked"));
+    initiateDiscordLoginMock.mockRejectedValue(
+      new Error("discord_already_linked"),
+    );
     useAuthMock.mockReturnValue({
       user: baseUser,
       initiateDiscordLogin: initiateDiscordLoginMock,
@@ -167,7 +175,7 @@ describe("ProfilePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith(
-        "This Discord account is already linked to another user"
+        "This Discord account is already linked to another user",
       );
     });
   });
@@ -188,7 +196,12 @@ describe("ProfilePage", () => {
 
   it("disables Unlink button when user has no email", () => {
     useAuthMock.mockReturnValue({
-      user: { ...baseUser, email: null, discordId: "discord123", discordUsername: "AliceDiscord" },
+      user: {
+        ...baseUser,
+        email: null,
+        discordId: "discord123",
+        discordUsername: "AliceDiscord",
+      },
       initiateDiscordLogin: initiateDiscordLoginMock,
       unlinkDiscord: unlinkDiscordMock,
     });

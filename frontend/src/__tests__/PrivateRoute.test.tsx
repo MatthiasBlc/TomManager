@@ -21,7 +21,7 @@ function renderWithRouter() {
           }
         />
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -45,7 +45,10 @@ describe("PrivateRoute", () => {
   });
 
   it("renders the children when a user is authenticated", () => {
-    useAuthMock.mockReturnValue({ user: { id: "u1", username: "Alice" }, loading: false });
+    useAuthMock.mockReturnValue({
+      user: { id: "u1", username: "Alice" },
+      loading: false,
+    });
     renderWithRouter();
     expect(screen.getByText("Secret content")).toBeInTheDocument();
   });

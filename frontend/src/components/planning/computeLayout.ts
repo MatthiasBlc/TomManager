@@ -37,11 +37,15 @@ function computeGroupLayout(tables: TableSummary[]): {
   numCols: number;
 } {
   const sorted = [...tables].sort(
-    (a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime()
+    (a, b) =>
+      new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime(),
   );
 
   if (tables.length === 1) {
-    return { items: [{ table: tables[0], col: 0, cssRow: 1, rowSpan: 1 }], numCols: 1 };
+    return {
+      items: [{ table: tables[0], col: 0, cssRow: 1, rowSpan: 1 }],
+      numCols: 1,
+    };
   }
 
   // Affectation greedy des colonnes
@@ -60,7 +64,12 @@ function computeGroupLayout(tables: TableSummary[]): {
 
   if (columns.length === 1) {
     return {
-      items: sorted.map((table, i) => ({ table, col: 0, cssRow: i + 1, rowSpan: 1 })),
+      items: sorted.map((table, i) => ({
+        table,
+        col: 0,
+        cssRow: i + 1,
+        rowSpan: 1,
+      })),
       numCols: 1,
     };
   }
@@ -124,7 +133,8 @@ export function computeLayout(tables: TableSummary[]): LayoutItem[] {
 
   for (let i = 0; i < tables.length; i++) {
     for (let j = i + 1; j < tables.length; j++) {
-      if (tablesOverlap(tables[i], tables[j])) union(tables[i].id, tables[j].id);
+      if (tablesOverlap(tables[i], tables[j]))
+        union(tables[i].id, tables[j].id);
     }
   }
 
@@ -139,7 +149,7 @@ export function computeLayout(tables: TableSummary[]): LayoutItem[] {
   const groups = [...groupMap.values()].sort(
     (a, b) =>
       Math.min(...a.map((t) => new Date(t.startDateTime).getTime())) -
-      Math.min(...b.map((t) => new Date(t.startDateTime).getTime()))
+      Math.min(...b.map((t) => new Date(t.startDateTime).getTime())),
   );
 
   // Layout de chaque groupe

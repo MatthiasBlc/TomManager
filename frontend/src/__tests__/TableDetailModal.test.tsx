@@ -48,7 +48,8 @@ vi.mock("../components/common/ResponsiveModal", () => ({
     ) : null,
 }));
 vi.mock("../components/planning/EditTableModal", () => ({
-  default: ({ open }: { open: boolean }) => (open ? <div data-testid="edit-modal" /> : null),
+  default: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="edit-modal" /> : null,
 }));
 
 const baseTable = {
@@ -67,12 +68,21 @@ const baseTable = {
   creator: { id: "u1", username: "Alice" },
   tags: [{ id: "tag1", name: "horreur" }],
   participants: [
-    { userId: "u2", username: "Bob", status: "CONFIRMED", joinedAt: "2026-04-09T10:00:00.000Z" },
+    {
+      userId: "u2",
+      username: "Bob",
+      status: "CONFIRMED",
+      joinedAt: "2026-04-09T10:00:00.000Z",
+    },
   ],
 };
 
-function renderModal(extra: Partial<{ user: { id: string; role: string } | null }> = {}) {
-  useAuthMock.mockReturnValue({ user: extra.user ?? { id: "u2", role: "USER" } });
+function renderModal(
+  extra: Partial<{ user: { id: string; role: string } | null }> = {},
+) {
+  useAuthMock.mockReturnValue({
+    user: extra.user ?? { id: "u2", role: "USER" },
+  });
   return render(
     <TableDetailModal
       open={true}
@@ -81,7 +91,7 @@ function renderModal(extra: Partial<{ user: { id: string; role: string } | null 
       eventId="ev1"
       onTableDeleted={vi.fn()}
       onTableUpdated={vi.fn()}
-    />
+    />,
   );
 }
 
@@ -114,33 +124,53 @@ describe("TableDetailModal", () => {
 
   it("shows the Rejoindre button when current user is not a participant and not the GM", async () => {
     renderModal({ user: { id: "u3", role: "USER" } });
-    expect(await screen.findByRole("button", { name: /Rejoindre/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Quitter$/i })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Rejoindre/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Quitter$/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the Quitter button when current user is already a participant", async () => {
     renderModal({ user: { id: "u2", role: "USER" } });
-    expect(await screen.findByRole("button", { name: /^Quitter$/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Rejoindre/i })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /^Quitter$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Rejoindre/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows Modifier and Supprimer buttons for the GM", async () => {
     renderModal({ user: { id: "u1", role: "USER" } });
-    expect(await screen.findByRole("button", { name: /Modifier/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Supprimer/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Modifier/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Supprimer/i }),
+    ).toBeInTheDocument();
   });
 
   it("shows Modifier and Supprimer buttons for an admin user", async () => {
     renderModal({ user: { id: "u3", role: "ADMIN" } });
-    expect(await screen.findByRole("button", { name: /Modifier/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Supprimer/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Modifier/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Supprimer/i }),
+    ).toBeInTheDocument();
   });
 
   it("does not show Modifier/Supprimer for a regular non-GM participant", async () => {
     renderModal({ user: { id: "u2", role: "USER" } });
     await screen.findByText("Une aventure");
-    expect(screen.queryByRole("button", { name: /Modifier/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Supprimer$/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Modifier/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Supprimer$/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("calls api.post when Rejoindre is clicked", async () => {
@@ -149,7 +179,9 @@ describe("TableDetailModal", () => {
     const joinBtn = await screen.findByRole("button", { name: /Rejoindre/i });
     fireEvent.click(joinBtn);
     await waitFor(() => {
-      expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1/join");
+      expect(apiPostMock).toHaveBeenCalledWith(
+        "/api/events/ev1/tables/t1/join",
+      );
     });
   });
 

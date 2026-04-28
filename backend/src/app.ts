@@ -33,8 +33,9 @@ if (env.NODE_ENV !== "test") {
         return crypto.randomUUID();
       },
       // Propager le request ID dans le header de reponse
-      customSuccessMessage: (req, res) => `${req.method} ${req.url} - ${res.statusCode}`,
-    })
+      customSuccessMessage: (req, res) =>
+        `${req.method} ${req.url} - ${res.statusCode}`,
+    }),
   );
 }
 
@@ -46,7 +47,7 @@ app.use(
   cors({
     origin: env.CORS_ORIGIN,
     credentials: true,
-  })
+  }),
 );
 
 // Trust proxy (for Traefik)

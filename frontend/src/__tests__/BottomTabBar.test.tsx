@@ -9,7 +9,10 @@ vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => useAuthMock(),
 }));
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return { ...actual, useNavigate: () => navigateMock };
 });
 
@@ -17,7 +20,7 @@ function renderAt(route: string) {
   return render(
     <MemoryRouter initialEntries={[route]}>
       <BottomTabBar />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -39,8 +42,12 @@ describe("BottomTabBar", () => {
     });
     renderAt("/");
     expect(screen.getByRole("link", { name: /Events/ })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Planning/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Games/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Planning/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Games/ }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Alice/ })).toBeInTheDocument();
   });
 

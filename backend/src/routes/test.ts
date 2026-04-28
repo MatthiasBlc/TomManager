@@ -27,7 +27,9 @@ router.post("/seed-admin", async (req, res, next) => {
   try {
     const { email, username, password } = req.body;
     if (!email || !username || !password) {
-      res.status(400).json({ error: { message: "email, username, password requis" } });
+      res
+        .status(400)
+        .json({ error: { message: "email, username, password requis" } });
       return;
     }
 

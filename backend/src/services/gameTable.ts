@@ -40,7 +40,11 @@ interface CreateTableData {
   boardGameId?: string | null;
 }
 
-export async function createTable(eventId: string, userId: string, data: CreateTableData) {
+export async function createTable(
+  eventId: string,
+  userId: string,
+  data: CreateTableData,
+) {
   // Validate title
   const title = data.title?.trim();
   if (!title || title.length === 0 || title.length > 150) {
@@ -59,7 +63,11 @@ export async function createTable(eventId: string, userId: string, data: CreateT
   }
 
   // Validate maxPlayers
-  if (!Number.isInteger(data.maxPlayers) || data.maxPlayers < 1 || data.maxPlayers > 20) {
+  if (
+    !Number.isInteger(data.maxPlayers) ||
+    data.maxPlayers < 1 ||
+    data.maxPlayers > 20
+  ) {
     throw createError(400, "maxPlayers must be an integer between 1 and 20");
   }
 
@@ -89,7 +97,9 @@ export async function createTable(eventId: string, userId: string, data: CreateT
   }
 
   if (data.boardGameId) {
-    const game = await prisma.boardGame.findUnique({ where: { id: data.boardGameId } });
+    const game = await prisma.boardGame.findUnique({
+      where: { id: data.boardGameId },
+    });
     if (!game) throw createError(400, "Board game not found");
   }
 
@@ -130,8 +140,8 @@ export async function createTable(eventId: string, userId: string, data: CreateT
         tags.map((tag) =>
           tx.gameTableTag.create({
             data: { gameTableId: created.id, tagId: tag.id },
-          })
-        )
+          }),
+        ),
       );
     }
 
@@ -155,7 +165,11 @@ export async function createTable(eventId: string, userId: string, data: CreateT
   return result;
 }
 
-export async function listTables(eventId: string, currentUserId: string, limit?: number) {
+export async function listTables(
+  eventId: string,
+  currentUserId: string,
+  limit?: number,
+) {
   const tables = await prisma.gameTable.findMany({
     where: { eventId },
     include: {
@@ -176,7 +190,8 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
   const confirmedTablesByUser = new Map<string, number[]>();
   tables.forEach((t, idx) => {
     // Inclure le GM (createur) meme s'il n'est pas dans participants (cas JDR sans gmIsPlayer)
-    if (!confirmedTablesByUser.has(t.createdBy)) confirmedTablesByUser.set(t.createdBy, []);
+    if (!confirmedTablesByUser.has(t.createdBy))
+      confirmedTablesByUser.set(t.createdBy, []);
     confirmedTablesByUser.get(t.createdBy)!.push(idx);
 
     t.participants
@@ -184,7 +199,8 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       .forEach((p) => {
         // Eviter le doublon si le GM est aussi dans participants (gmIsPlayer=true ou JDS)
         if (p.userId === t.createdBy) return;
-        if (!confirmedTablesByUser.has(p.userId)) confirmedTablesByUser.set(p.userId, []);
+        if (!confirmedTablesByUser.has(p.userId))
+          confirmedTablesByUser.set(p.userId, []);
         confirmedTablesByUser.get(p.userId)!.push(idx);
       });
   });
@@ -197,7 +213,10 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       for (let j = i + 1; j < indices.length; j++) {
         const a = tables[indices[i]];
         const b = tables[indices[j]];
-        if (a.startDateTime < b.endDateTime && a.endDateTime > b.startDateTime) {
+        if (
+          a.startDateTime < b.endDateTime &&
+          a.endDateTime > b.startDateTime
+        ) {
           if (!conflictedUsersInTable.has(indices[i]))
             conflictedUsersInTable.set(indices[i], new Set());
           if (!conflictedUsersInTable.has(indices[j]))
@@ -210,10 +229,17 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
   }
 
   return tables.map((t, idx) => {
-    const confirmedCount = t.participants.filter((p) => p.status === "CONFIRMED").length;
-    const waitlistCount = t.participants.filter((p) => p.status === "WAITLIST").length;
-    const currentUserParticipant = t.participants.find((p) => p.userId === currentUserId);
-    const conflictedUsers = conflictedUsersInTable.get(idx) ?? new Set<string>();
+    const confirmedCount = t.participants.filter(
+      (p) => p.status === "CONFIRMED",
+    ).length;
+    const waitlistCount = t.participants.filter(
+      (p) => p.status === "WAITLIST",
+    ).length;
+    const currentUserParticipant = t.participants.find(
+      (p) => p.userId === currentUserId,
+    );
+    const conflictedUsers =
+      conflictedUsersInTable.get(idx) ?? new Set<string>();
 
     return {
       id: t.id,
@@ -286,7 +312,11 @@ export async function getTable(tableId: string) {
   };
 }
 
-export async function updateTable(tableId: string, data: UpdateTableData, updatedByUserId: string) {
+export async function updateTable(
+  tableId: string,
+  data: UpdateTableData,
+  updatedByUserId: string,
+) {
   const existing = await prisma.gameTable.findUnique({
     where: { id: tableId },
     include: { participants: true },
@@ -295,22 +325,34 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     throw createError(404, "Table not found");
   }
 
-  const event = await prisma.event.findUnique({ where: { id: existing.eventId } });
+  const event = await prisma.event.findUnique({
+    where: { id: existing.eventId },
+  });
 
   if (data.boardGameId) {
-    const game = await prisma.boardGame.findUnique({ where: { id: data.boardGameId } });
+    const game = await prisma.boardGame.findUnique({
+      where: { id: data.boardGameId },
+    });
     if (!game) throw createError(400, "Board game not found");
   }
 
   // Merge with existing values
   const title = data.title !== undefined ? data.title.trim() : existing.title;
   const pitch = data.pitch !== undefined ? data.pitch : existing.pitch;
-  const triggers = data.triggers !== undefined ? data.triggers : existing.triggers;
-  const comments = data.comments !== undefined ? data.comments : existing.comments;
-  const maxPlayers = data.maxPlayers !== undefined ? data.maxPlayers : existing.maxPlayers;
-  const start = data.startDateTime ? new Date(data.startDateTime) : existing.startDateTime;
-  const end = data.endDateTime ? new Date(data.endDateTime) : existing.endDateTime;
-  const boardGameId = data.boardGameId !== undefined ? data.boardGameId : existing.boardGameId;
+  const triggers =
+    data.triggers !== undefined ? data.triggers : existing.triggers;
+  const comments =
+    data.comments !== undefined ? data.comments : existing.comments;
+  const maxPlayers =
+    data.maxPlayers !== undefined ? data.maxPlayers : existing.maxPlayers;
+  const start = data.startDateTime
+    ? new Date(data.startDateTime)
+    : existing.startDateTime;
+  const end = data.endDateTime
+    ? new Date(data.endDateTime)
+    : existing.endDateTime;
+  const boardGameId =
+    data.boardGameId !== undefined ? data.boardGameId : existing.boardGameId;
 
   // Validate
   if (!title || title.length === 0 || title.length > 150) {
@@ -355,7 +397,9 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
 
   const result = await prisma.$transaction(async (tx) => {
     // Handle maxPlayers change
-    const confirmedCount = existing.participants.filter((p) => p.status === "CONFIRMED").length;
+    const confirmedCount = existing.participants.filter(
+      (p) => p.status === "CONFIRMED",
+    ).length;
 
     if (maxPlayers < existing.maxPlayers && confirmedCount > maxPlayers) {
       // Demotion: move last confirmed players to waitlist
@@ -394,20 +438,25 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     // Handle gmIsPlayer toggle
     if (gmIsPlayerChanged) {
       const gmId = existing.createdBy;
-      const gmParticipant = existing.participants.find((p) => p.userId === gmId);
+      const gmParticipant = existing.participants.find(
+        (p) => p.userId === gmId,
+      );
 
       if (data.gmIsPlayer && !gmParticipant) {
         // MJ devient joueur : l'ajouter comme participant
         const currentConfirmed = await tx.gameTableParticipant.count({
           where: { gameTableId: tableId, status: "CONFIRMED" },
         });
-        const gmStatus = currentConfirmed < maxPlayers ? "CONFIRMED" : "WAITLIST";
+        const gmStatus =
+          currentConfirmed < maxPlayers ? "CONFIRMED" : "WAITLIST";
         await tx.gameTableParticipant.create({
           data: { gameTableId: tableId, userId: gmId, status: gmStatus },
         });
       } else if (!data.gmIsPlayer && gmParticipant) {
         // MJ n'est plus joueur : le retirer des participants
-        await tx.gameTableParticipant.delete({ where: { id: gmParticipant.id } });
+        await tx.gameTableParticipant.delete({
+          where: { id: gmParticipant.id },
+        });
         if (gmParticipant.status === "CONFIRMED") {
           // Promouvoir le premier en waitlist
           const firstWaitlisted = await tx.gameTableParticipant.findFirst({
@@ -434,8 +483,8 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
           tags.map((tag) =>
             tx.gameTableTag.create({
               data: { gameTableId: tableId, tagId: tag.id },
-            })
-          )
+            }),
+          ),
         );
       }
     }
@@ -487,7 +536,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
         title: "Table modifiee",
         message: `La table "${existing.title}" a ete modifiee`,
         metadata: { eventId: existing.eventId, tableId },
-      }))
+      })),
     );
   }
 
@@ -500,7 +549,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
         title: "Place en liste d'attente",
         message: `Tu es en liste d'attente pour la table "${existing.title}"`,
         metadata: { eventId: existing.eventId, tableId },
-      }))
+      })),
     );
   }
 
@@ -513,7 +562,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
         title: "Place confirmee",
         message: `Tu es confirme pour la table "${existing.title}"`,
         metadata: { eventId: existing.eventId, tableId },
-      }))
+      })),
     );
   }
 
@@ -548,7 +597,7 @@ export async function deleteTable(tableId: string, deletedByUserId: string) {
         title: "Table supprimee",
         message: `La table "${existing.title}" a ete supprimee`,
         metadata: { eventId: existing.eventId, tableId },
-      }))
+      })),
     );
   }
 }
@@ -575,7 +624,9 @@ export async function joinTable(tableId: string, userId: string) {
       throw createError(409, "Already a participant of this table");
     }
 
-    const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
+    const confirmedCount = table.participants.filter(
+      (p) => p.status === "CONFIRMED",
+    ).length;
     const status = confirmedCount < table.maxPlayers ? "CONFIRMED" : "WAITLIST";
 
     const participant = await tx.gameTableParticipant.create({
@@ -620,7 +671,7 @@ export async function leaveTable(tableId: string, userId: string) {
           title: "Table supprimee",
           message: `La table "${table.title}" a ete supprimee (le MJ a quitte)`,
           metadata: { eventId: table.eventId, tableId },
-        }))
+        })),
       );
     }
     return;
@@ -656,7 +707,10 @@ export async function leaveTable(tableId: string, userId: string) {
 
   emitToEvent(table.eventId, "table:player:left", { tableId, userId });
   if (promotedUserId) {
-    emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: promotedUserId });
+    emitToEvent(table.eventId, "table:player:promoted", {
+      tableId,
+      userId: promotedUserId,
+    });
     await createNotification({
       userId: promotedUserId,
       type: "WAITLIST_PROMOTED",
@@ -670,7 +724,7 @@ export async function leaveTable(tableId: string, userId: string) {
 export async function setParticipantStatus(
   tableId: string,
   targetUserId: string,
-  newStatus: "CONFIRMED" | "WAITLIST"
+  newStatus: "CONFIRMED" | "WAITLIST",
 ) {
   const table = await prisma.gameTable.findUnique({
     where: { id: tableId },
@@ -687,7 +741,9 @@ export async function setParticipantStatus(
   }
 
   if (newStatus === "CONFIRMED") {
-    const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
+    const confirmedCount = table.participants.filter(
+      (p) => p.status === "CONFIRMED",
+    ).length;
     if (confirmedCount >= table.maxPlayers) {
       throw createError(409, "Table is full");
     }
@@ -701,7 +757,10 @@ export async function setParticipantStatus(
   });
 
   if (newStatus === "CONFIRMED") {
-    emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: targetUserId });
+    emitToEvent(table.eventId, "table:player:promoted", {
+      tableId,
+      userId: targetUserId,
+    });
     await createNotification({
       userId: targetUserId,
       type: "WAITLIST_PROMOTED",
@@ -710,7 +769,10 @@ export async function setParticipantStatus(
       metadata: { eventId: table.eventId, tableId },
     });
   } else {
-    emitToEvent(table.eventId, "table:player:demoted", { tableId, userId: targetUserId });
+    emitToEvent(table.eventId, "table:player:demoted", {
+      tableId,
+      userId: targetUserId,
+    });
     await createNotification({
       userId: targetUserId,
       type: "WAITLIST_DEMOTED",
@@ -763,7 +825,10 @@ export async function kickPlayer(tableId: string, userId: string) {
       metadata: { eventId: table.eventId, tableId },
     });
     if (promotedUserId) {
-      emitToEvent(table.eventId, "table:player:promoted", { tableId, userId: promotedUserId });
+      emitToEvent(table.eventId, "table:player:promoted", {
+        tableId,
+        userId: promotedUserId,
+      });
       await createNotification({
         userId: promotedUserId,
         type: "WAITLIST_PROMOTED",

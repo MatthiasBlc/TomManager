@@ -72,13 +72,15 @@ export default function CreateTableModal({
   // Pre-remplissage reactif depuis le jeu selectionne (creation uniquement — ecrase a chaque changement)
   useEffect(() => {
     if (!selectedGame) return;
-    if (selectedGame.maxPlayers) setValue("maxPlayers", selectedGame.maxPlayers);
+    if (selectedGame.maxPlayers)
+      setValue("maxPlayers", selectedGame.maxPlayers);
     if (selectedGame.playingTime) {
       const values = DURATION_OPTIONS.map((o) => o.value);
       const snapped = values.reduce((prev, curr) =>
-        Math.abs(curr - selectedGame.playingTime!) < Math.abs(prev - selectedGame.playingTime!)
+        Math.abs(curr - selectedGame.playingTime!) <
+        Math.abs(prev - selectedGame.playingTime!)
           ? curr
-          : prev
+          : prev,
       );
       setValue("durationMinutes", snapped);
     }
@@ -90,11 +92,12 @@ export default function CreateTableModal({
       setValue("date", prefilledSlot.date);
       setValue("startTime", prefilledSlot.startTime);
       // Arrondir la duree au multiple de 30 le plus proche dans les options
-      const snapped = [30, 60, 90, 120, 150, 180, 240, 300, 360].reduce((prev, cur) =>
-        Math.abs(cur - prefilledSlot.durationMinutes) <
-        Math.abs(prev - prefilledSlot.durationMinutes)
-          ? cur
-          : prev
+      const snapped = [30, 60, 90, 120, 150, 180, 240, 300, 360].reduce(
+        (prev, cur) =>
+          Math.abs(cur - prefilledSlot.durationMinutes) <
+          Math.abs(prev - prefilledSlot.durationMinutes)
+            ? cur
+            : prev,
       );
       setValue("durationMinutes", snapped);
     }
@@ -103,7 +106,9 @@ export default function CreateTableModal({
   const onSubmit = async (data: CreateTableForm) => {
     try {
       const startDateTime = new Date(`${data.date}T${data.startTime}`);
-      const endDateTime = new Date(startDateTime.getTime() + Number(data.durationMinutes) * 60000);
+      const endDateTime = new Date(
+        startDateTime.getTime() + Number(data.durationMinutes) * 60000,
+      );
 
       await api.post(`/api/events/${eventId}/tables`, {
         title: data.title,
@@ -126,15 +131,18 @@ export default function CreateTableModal({
       onClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de la creation";
+        (err as { response?: { data?: { error?: { message?: string } } } })
+          ?.response?.data?.error?.message || "Echec de la creation";
       toast.error(message);
     }
   };
 
   return (
     <ResponsiveModal open={open} onClose={onClose} title="Creer une table">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-3 p-4 md:p-0 md:mt-4"
+      >
         <div className="form-control">
           <label className="label" htmlFor="ct-title">
             <span className="label-text">Titre</span>
@@ -150,7 +158,9 @@ export default function CreateTableModal({
           />
           {errors.title && (
             <label className="label">
-              <span className="label-text-alt text-error">{errors.title.message}</span>
+              <span className="label-text-alt text-error">
+                {errors.title.message}
+              </span>
             </label>
           )}
         </div>
@@ -191,7 +201,9 @@ export default function CreateTableModal({
                 className="checkbox checkbox-primary"
                 {...register("gmIsPlayer")}
               />
-              <span className="label-text">Le MJ est aussi joueur (se compte dans les places)</span>
+              <span className="label-text">
+                Le MJ est aussi joueur (se compte dans les places)
+              </span>
             </label>
           </div>
         )}
@@ -203,7 +215,10 @@ export default function CreateTableModal({
               <span className="label-text">Jeu associe</span>
               <span className="label-text-alt opacity-50">optionnel</span>
             </label>
-            <BoardGameSelector value={selectedGame} onChange={setSelectedGame} />
+            <BoardGameSelector
+              value={selectedGame}
+              onChange={setSelectedGame}
+            />
           </div>
         )}
 
@@ -269,7 +284,9 @@ export default function CreateTableModal({
           />
           {errors.maxPlayers && (
             <label className="label">
-              <span className="label-text-alt text-error">{errors.maxPlayers.message}</span>
+              <span className="label-text-alt text-error">
+                {errors.maxPlayers.message}
+              </span>
             </label>
           )}
         </div>
@@ -289,7 +306,9 @@ export default function CreateTableModal({
             />
             {errors.date && (
               <label className="label">
-                <span className="label-text-alt text-error">{errors.date.message}</span>
+                <span className="label-text-alt text-error">
+                  {errors.date.message}
+                </span>
               </label>
             )}
           </div>
@@ -305,7 +324,9 @@ export default function CreateTableModal({
             />
             {errors.startTime && (
               <label className="label">
-                <span className="label-text-alt text-error">{errors.startTime.message}</span>
+                <span className="label-text-alt text-error">
+                  {errors.startTime.message}
+                </span>
               </label>
             )}
           </div>
@@ -316,7 +337,10 @@ export default function CreateTableModal({
             <select
               id="ct-duration"
               className="select select-bordered w-full"
-              {...register("durationMinutes", { required: "Requis", valueAsNumber: true })}
+              {...register("durationMinutes", {
+                required: "Requis",
+                valueAsNumber: true,
+              })}
             >
               {DURATION_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>

@@ -70,27 +70,39 @@ export async function searchBGG(query: string): Promise<BGGSearchResult[]> {
     const nameField = item.name;
     let name = "";
     if (Array.isArray(nameField)) {
-      const primary = nameField.find((n: Record<string, unknown>) => n["@_type"] === "primary");
-      name = (primary?.["@_value"] as string) || (nameField[0]?.["@_value"] as string) || "";
+      const primary = nameField.find(
+        (n: Record<string, unknown>) => n["@_type"] === "primary",
+      );
+      name =
+        (primary?.["@_value"] as string) ||
+        (nameField[0]?.["@_value"] as string) ||
+        "";
     } else if (nameField && typeof nameField === "object") {
-      name = ((nameField as Record<string, unknown>)["@_value"] as string) || "";
+      name =
+        ((nameField as Record<string, unknown>)["@_value"] as string) || "";
     }
 
     const yearField = item.yearpublished;
     const yearPublished =
       yearField && typeof yearField === "object"
-        ? parseInt((yearField as Record<string, unknown>)["@_value"] as string, 10)
+        ? parseInt(
+            (yearField as Record<string, unknown>)["@_value"] as string,
+            10,
+          )
         : undefined;
 
     return {
       bggId: String((item as Record<string, unknown>)["@_id"]),
       name,
-      yearPublished: yearPublished && !isNaN(yearPublished) ? yearPublished : undefined,
+      yearPublished:
+        yearPublished && !isNaN(yearPublished) ? yearPublished : undefined,
     };
   });
 }
 
-export async function fetchBGGThing(bggId: string): Promise<BGGThingDetail | null> {
+export async function fetchBGGThing(
+  bggId: string,
+): Promise<BGGThingDetail | null> {
   const url = `${BGG_BASE_URL}/thing?id=${encodeURIComponent(bggId)}&stats=1`;
 
   let xml: string;
@@ -107,15 +119,23 @@ export async function fetchBGGThing(bggId: string): Promise<BGGThingDetail | nul
   const nameField = item.name;
   let name = "";
   if (Array.isArray(nameField)) {
-    const primary = nameField.find((n: Record<string, unknown>) => n["@_type"] === "primary");
-    name = (primary?.["@_value"] as string) || (nameField[0]?.["@_value"] as string) || "";
+    const primary = nameField.find(
+      (n: Record<string, unknown>) => n["@_type"] === "primary",
+    );
+    name =
+      (primary?.["@_value"] as string) ||
+      (nameField[0]?.["@_value"] as string) ||
+      "";
   } else if (nameField && typeof nameField === "object") {
     name = ((nameField as Record<string, unknown>)["@_value"] as string) || "";
   }
 
   const getIntAttr = (field: unknown): number | undefined => {
     if (field && typeof field === "object") {
-      const val = parseInt((field as Record<string, unknown>)["@_value"] as string, 10);
+      const val = parseInt(
+        (field as Record<string, unknown>)["@_value"] as string,
+        10,
+      );
       return isNaN(val) ? undefined : val;
     }
     return undefined;
@@ -128,7 +148,8 @@ export async function fetchBGGThing(bggId: string): Promise<BGGThingDetail | nul
     minPlayers: getIntAttr(item.minplayers),
     maxPlayers: getIntAttr(item.maxplayers),
     playingTime: getIntAttr(item.playingtime),
-    description: typeof item.description === "string" ? item.description : undefined,
+    description:
+      typeof item.description === "string" ? item.description : undefined,
     imageUrl: typeof item.image === "string" ? item.image : undefined,
   };
 }

@@ -16,7 +16,10 @@ vi.mock("react-hot-toast", () => ({
   default: { error: (...a: unknown[]) => toastError(...a) },
 }));
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return { ...actual, useNavigate: () => navigateMock };
 });
 vi.mock("../components/events/EditEventModal", () => ({
@@ -52,7 +55,9 @@ describe("EventDetailPage", () => {
   it("component renders without crashing", () => {
     apiGetMock.mockResolvedValue({ data: { data: baseEvent } });
     useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });
-    const { container } = renderWithRouter(<EventDetailPage />, { route: "/events/ev1" });
+    const { container } = renderWithRouter(<EventDetailPage />, {
+      route: "/events/ev1",
+    });
     expect(container).toBeInTheDocument();
   });
 

@@ -1,9 +1,14 @@
 import { z } from "zod";
 
-const isoDatetime = z.string().refine((s) => !isNaN(Date.parse(s)), "Invalid datetime");
+const isoDatetime = z
+  .string()
+  .refine((s) => !isNaN(Date.parse(s)), "Invalid datetime");
 
 export const createEventSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100, "Name must be at most 100 characters"),
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(100, "Name must be at most 100 characters"),
   startDateTime: isoDatetime,
   endDateTime: isoDatetime,
   discordRoleId: z

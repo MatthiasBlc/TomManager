@@ -44,8 +44,13 @@ describe("Participant API", () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      await createTestUserDirectly({ email: "outsider@example.com", username: "outsider" });
-      const { cookie: outsiderCookie } = await loginTestUser("outsider@example.com");
+      await createTestUserDirectly({
+        email: "outsider@example.com",
+        username: "outsider",
+      });
+      const { cookie: outsiderCookie } = await loginTestUser(
+        "outsider@example.com",
+      );
 
       const res = await request
         .get(`/api/events/${event.id}/participants`)
@@ -73,7 +78,9 @@ describe("Participant API", () => {
       expect(res.status).toBe(204);
 
       const participation = await prisma.eventParticipation.findUnique({
-        where: { eventId_userId: { eventId: event.id, userId: regularUser.id } },
+        where: {
+          eventId_userId: { eventId: event.id, userId: regularUser.id },
+        },
       });
       expect(participation).toBeNull();
     });
@@ -119,7 +126,9 @@ describe("Participant API", () => {
       const event = await createTestEvent(adminCookie);
 
       const res = await request
-        .delete(`/api/events/${event.id}/participants/00000000-0000-0000-0000-000000000000`)
+        .delete(
+          `/api/events/${event.id}/participants/00000000-0000-0000-0000-000000000000`,
+        )
         .set("Cookie", adminCookie);
 
       expect(res.status).toBe(404);
@@ -146,7 +155,9 @@ describe("Participant API", () => {
       expect(res.status).toBe(204);
 
       const participation = await prisma.eventParticipation.findUnique({
-        where: { eventId_userId: { eventId: event.id, userId: regularUser.id } },
+        where: {
+          eventId_userId: { eventId: event.id, userId: regularUser.id },
+        },
       });
       expect(participation).toBeNull();
     });
@@ -166,8 +177,13 @@ describe("Participant API", () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      await createTestUserDirectly({ email: "outsider@example.com", username: "outsider" });
-      const { cookie: outsiderCookie } = await loginTestUser("outsider@example.com");
+      await createTestUserDirectly({
+        email: "outsider@example.com",
+        username: "outsider",
+      });
+      const { cookie: outsiderCookie } = await loginTestUser(
+        "outsider@example.com",
+      );
 
       const res = await request
         .delete(`/api/events/${event.id}/participants/me`)

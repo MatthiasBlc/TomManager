@@ -1,7 +1,10 @@
 import { z } from "zod";
 
 export const createBoardGameSchema = z.object({
-  name: z.string().min(1, "Name is required").max(200, "Name must be at most 200 characters"),
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(200, "Name must be at most 200 characters"),
   yearPublished: z.number().int().min(1000).max(9999).optional(),
   minPlayers: z.number().int().min(1).optional(),
   maxPlayers: z.number().int().min(1).optional(),

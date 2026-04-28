@@ -14,19 +14,25 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       startDateTime,
       endDateTime,
       tags,
+      boardGameId,
     } = req.body;
-    const table = await gameTableService.createTable(req.params.eventId, req.session.userId!, {
-      title,
-      type,
-      gmIsPlayer,
-      pitch,
-      triggers,
-      comments,
-      maxPlayers,
-      startDateTime,
-      endDateTime,
-      tags,
-    });
+    const table = await gameTableService.createTable(
+      req.params.eventId,
+      req.session.userId!,
+      {
+        title,
+        type,
+        gmIsPlayer,
+        pitch,
+        triggers,
+        comments,
+        maxPlayers,
+        startDateTime,
+        endDateTime,
+        tags,
+        boardGameId,
+      },
+    );
     res.status(201).json({ data: table });
   } catch (err) {
     next(err);
@@ -35,16 +41,20 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+    const limit = req.query.limit
+      ? parseInt(req.query.limit as string, 10)
+      : undefined;
 
     if (limit !== undefined && (isNaN(limit) || limit < 1)) {
-      return res.status(400).json({ error: { message: "limit must be a positive integer" } });
+      return res
+        .status(400)
+        .json({ error: { message: "limit must be a positive integer" } });
     }
 
     const tables = await gameTableService.listTables(
       req.params.eventId,
       req.session.userId!,
-      limit
+      limit,
     );
     res.json({ data: tables });
   } catch (err) {
@@ -73,6 +83,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
       startDateTime,
       endDateTime,
       tags,
+      boardGameId,
     } = req.body;
     const table = await gameTableService.updateTable(
       req.params.tableId,
@@ -86,8 +97,9 @@ export async function update(req: Request, res: Response, next: NextFunction) {
         startDateTime,
         endDateTime,
         tags,
+        boardGameId,
       },
-      req.session.userId!
+      req.session.userId!,
     );
     res.json({ data: table });
   } catch (err) {
@@ -106,7 +118,10 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
 
 export async function join(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await gameTableService.joinTable(req.params.tableId, req.session.userId!);
+    const result = await gameTableService.joinTable(
+      req.params.tableId,
+      req.session.userId!,
+    );
     res.status(201).json({ data: result });
   } catch (err) {
     next(err);
@@ -131,12 +146,16 @@ export async function kick(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export async function setStatus(req: Request, res: Response, next: NextFunction) {
+export async function setStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const result = await gameTableService.setParticipantStatus(
       req.params.tableId,
       req.params.userId,
-      req.body.status
+      req.body.status,
     );
     res.json({ data: result });
   } catch (err) {

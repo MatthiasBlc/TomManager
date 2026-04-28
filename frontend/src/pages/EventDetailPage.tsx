@@ -89,7 +89,9 @@ export default function EventDetailPage() {
     <div className="container mx-auto px-4 py-4 md:py-8">
       <div className="flex items-start justify-between mb-4 md:mb-6">
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-bold truncate md:text-2xl">{event.name}</h1>
+          <h1 className="text-lg font-bold truncate md:text-2xl">
+            {event.name}
+          </h1>
           <p className="text-xs opacity-70 mt-1 md:text-sm">
             {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
           </p>
@@ -177,13 +179,16 @@ export default function EventDetailPage() {
             <h2 className="card-title text-base md:text-lg">{event.name}</h2>
             <div className="space-y-2 text-sm">
               <p>
-                <span className="font-medium">Start:</span> {formatDate(event.startDateTime)}
+                <span className="font-medium">Start:</span>{" "}
+                {formatDate(event.startDateTime)}
               </p>
               <p>
-                <span className="font-medium">End:</span> {formatDate(event.endDateTime)}
+                <span className="font-medium">End:</span>{" "}
+                {formatDate(event.endDateTime)}
               </p>
               <p>
-                <span className="font-medium">Participants:</span> {event.participants.length}
+                <span className="font-medium">Participants:</span>{" "}
+                {event.participants.length}
               </p>
             </div>
           </div>

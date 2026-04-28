@@ -42,7 +42,14 @@ describe("BoardGameSearchInput", () => {
   it("shows a BGG badge for external results without an id", async () => {
     apiGetMock.mockResolvedValue({
       data: {
-        data: [{ id: null, name: "External Game", externalSource: "BGG", externalId: "42" }],
+        data: [
+          {
+            id: null,
+            name: "External Game",
+            externalSource: "BGG",
+            externalId: "42",
+          },
+        ],
       },
     });
 
@@ -60,7 +67,9 @@ describe("BoardGameSearchInput", () => {
     const onSelect = vi.fn();
 
     render(<BoardGameSearchInput onSelect={onSelect} />);
-    const input = screen.getByPlaceholderText(/search board games/i) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(
+      /search board games/i,
+    ) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "cat" } });
 
     const result = await screen.findByText("Catan");

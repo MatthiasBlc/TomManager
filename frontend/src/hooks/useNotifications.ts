@@ -66,7 +66,9 @@ export function useNotifications() {
     if (!nextCursor || isLoading) return;
     setIsLoading(true);
     try {
-      const res = await api.get(`/api/notifications?limit=20&cursor=${nextCursor}`);
+      const res = await api.get(
+        `/api/notifications?limit=20&cursor=${nextCursor}`,
+      );
       setNotifications((prev) => [...prev, ...res.data.data]);
       setNextCursor(res.data.nextCursor);
     } catch {
@@ -80,7 +82,11 @@ export function useNotifications() {
     try {
       await api.patch(`/api/notifications/${id}/read`);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: true, readAt: new Date().toISOString() } : n))
+        prev.map((n) =>
+          n.id === id
+            ? { ...n, read: true, readAt: new Date().toISOString() }
+            : n,
+        ),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch {
@@ -92,7 +98,11 @@ export function useNotifications() {
     try {
       await api.patch("/api/notifications/read-all");
       setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read: true, readAt: n.readAt || new Date().toISOString() }))
+        prev.map((n) => ({
+          ...n,
+          read: true,
+          readAt: n.readAt || new Date().toISOString(),
+        })),
       );
       setUnreadCount(0);
     } catch {
@@ -113,7 +123,7 @@ export function useNotifications() {
         // silently fail
       }
     },
-    [notifications]
+    [notifications],
   );
 
   return {

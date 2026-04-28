@@ -29,7 +29,9 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/api/boardgames/search?q=${encodeURIComponent(query.trim())}`);
+        const res = await api.get(
+          `/api/boardgames/search?q=${encodeURIComponent(query.trim())}`,
+        );
         setResults(res.data.data);
         setOpen(true);
       } catch {
@@ -44,7 +46,10 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -69,7 +74,9 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}
       />
-      {loading && <span className="loading loading-spinner loading-xs absolute right-3 top-3" />}
+      {loading && (
+        <span className="loading loading-spinner loading-xs absolute right-3 top-3" />
+      )}
       {open && results.length > 0 && (
         <ul className="menu bg-base-200 rounded-box shadow-lg absolute z-50 w-full max-h-48 overflow-y-auto mt-1 md:max-h-60">
           {results.map((game, idx) => (
@@ -77,7 +84,9 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
               <button type="button" onClick={() => handleSelect(game)}>
                 <span>{game.name}</span>
                 {game.yearPublished && (
-                  <span className="opacity-50 text-sm">({game.yearPublished})</span>
+                  <span className="opacity-50 text-sm">
+                    ({game.yearPublished})
+                  </span>
                 )}
                 {!game.id && game.externalSource === "BGG" && (
                   <span className="badge badge-xs badge-info">BGG</span>

@@ -35,7 +35,9 @@ export default function BoardGameTab({ eventId }: Props) {
   const [tab, setTab] = useState<TabMode>("all");
 
   const visibleEntries =
-    tab === "mine" ? entries.filter((e) => e.broughtBy.id === user?.id) : entries;
+    tab === "mine"
+      ? entries.filter((e) => e.broughtBy.id === user?.id)
+      : entries;
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -81,7 +83,9 @@ export default function BoardGameTab({ eventId }: Props) {
             className={`tab tab-sm ${tab === "mine" ? "tab-active" : ""}`}
             onClick={() => setTab("mine")}
           >
-            My List {!loading && `(${entries.filter((e) => e.broughtBy.id === user?.id).length})`}
+            My List{" "}
+            {!loading &&
+              `(${entries.filter((e) => e.broughtBy.id === user?.id).length})`}
           </button>
         </div>
         <button
@@ -100,7 +104,9 @@ export default function BoardGameTab({ eventId }: Props) {
           onRemove={tab === "mine" ? handleRemove : undefined}
           currentUserId={user?.id}
           isAdmin={user?.role === "ADMIN"}
-          emptyDescription={tab === "mine" ? "You haven't added any games yet." : undefined}
+          emptyDescription={
+            tab === "mine" ? "You haven't added any games yet." : undefined
+          }
         />
       )}
 

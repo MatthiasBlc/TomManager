@@ -19,16 +19,22 @@ export default function TimelineView({ tables, onTableClick }: Props) {
   }
 
   // Groupement par jour
-  const grouped = tables.reduce<Record<string, TableSummary[]>>((acc, table) => {
-    const dateKey = new Date(table.startDateTime).toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-    if (!acc[dateKey]) acc[dateKey] = [];
-    acc[dateKey].push(table);
-    return acc;
-  }, {});
+  const grouped = tables.reduce<Record<string, TableSummary[]>>(
+    (acc, table) => {
+      const dateKey = new Date(table.startDateTime).toLocaleDateString(
+        "fr-FR",
+        {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        },
+      );
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(table);
+      return acc;
+    },
+    {},
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -57,7 +63,10 @@ export default function TimelineView({ tables, onTableClick }: Props) {
                     gridRow: `${cssRow} / span ${rowSpan}`,
                   }}
                 >
-                  <TableCard table={table} onClick={() => onTableClick(table.id)} />
+                  <TableCard
+                    table={table}
+                    onClick={() => onTableClick(table.id)}
+                  />
                 </div>
               ))}
             </div>

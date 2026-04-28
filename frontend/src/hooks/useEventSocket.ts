@@ -15,7 +15,10 @@ interface EventSocketCallbacks {
   onBoardGameRemoved?: () => void;
 }
 
-export function useEventSocket(eventId: string | undefined, callbacks: EventSocketCallbacks) {
+export function useEventSocket(
+  eventId: string | undefined,
+  callbacks: EventSocketCallbacks,
+) {
   const socket = useSocket();
 
   useEffect(() => {

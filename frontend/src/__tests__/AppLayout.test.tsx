@@ -23,7 +23,7 @@ describe("AppLayout", () => {
     render(
       <AppLayout>
         <p>Hello</p>
-      </AppLayout>
+      </AppLayout>,
     );
     const main = screen.getByRole("main");
     expect(main).toContainElement(screen.getByText("Hello"));
@@ -35,7 +35,7 @@ describe("AppLayout", () => {
     render(
       <AppLayout>
         <p>Hello</p>
-      </AppLayout>
+      </AppLayout>,
     );
     const main = screen.getByRole("main");
     expect(main.className).not.toContain("pt-12");
@@ -48,7 +48,7 @@ describe("AppLayout", () => {
     render(
       <AppLayout>
         <p>Hello</p>
-      </AppLayout>
+      </AppLayout>,
     );
     const main = screen.getByRole("main");
     expect(main.className).toContain("pt-12");
@@ -61,7 +61,7 @@ describe("AppLayout", () => {
     render(
       <AppLayout>
         <p>Hello</p>
-      </AppLayout>
+      </AppLayout>,
     );
     const main = screen.getByRole("main");
     expect(main.className).toContain("pt-12");

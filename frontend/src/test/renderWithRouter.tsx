@@ -7,6 +7,6 @@ export function renderWithRouter(ui: ReactNode, { route = "/" } = {}) {
   return render(
     <ThemeProvider>
       <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
-    </ThemeProvider>
+    </ThemeProvider>,
   );
 }

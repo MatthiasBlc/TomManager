@@ -23,11 +23,16 @@ vi.mock("react-hot-toast", () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return { ...actual, useNavigate: () => navigateMock };
 });
 
-function setAuth(user: { id: string; username: string; avatarUrl: string | null } | null) {
+function setAuth(
+  user: { id: string; username: string; avatarUrl: string | null } | null,
+) {
   useAuthMock.mockReturnValue({ user, logout: logoutMock });
 }
 
@@ -35,7 +40,7 @@ function renderNavbar() {
   return render(
     <MemoryRouter>
       <Navbar />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -50,16 +55,22 @@ describe("Navbar (desktop)", () => {
     setAuth(null);
     renderNavbar();
     expect(screen.getByRole("link", { name: "Login" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Logout" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Logout" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows username, avatar, events link, logout when authenticated", () => {
-    setAuth({ id: "u1", username: "Alice", avatarUrl: "https://example.com/a.png" });
+    setAuth({
+      id: "u1",
+      username: "Alice",
+      avatarUrl: "https://example.com/a.png",
+    });
     renderNavbar();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "avatar" })).toHaveAttribute(
       "src",
-      "https://example.com/a.png"
+      "https://example.com/a.png",
     );
     expect(screen.getByRole("link", { name: "Events" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();
@@ -70,7 +81,9 @@ describe("Navbar (desktop)", () => {
   it("does not render an avatar img when avatarUrl is null", () => {
     setAuth({ id: "u1", username: "Bob", avatarUrl: null });
     renderNavbar();
-    expect(screen.queryByRole("img", { name: "avatar" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "avatar" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
@@ -105,6 +118,8 @@ describe("Navbar (mobile)", () => {
     setAuth(null);
     renderNavbar();
     expect(screen.getByText("TM")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Events/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Events/ }),
+    ).not.toBeInTheDocument();
   });
 });

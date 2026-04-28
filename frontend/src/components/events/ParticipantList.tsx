@@ -18,7 +18,12 @@ interface Props {
   onChanged: () => void;
 }
 
-export default function ParticipantList({ eventId, createdBy, participants, onChanged }: Props) {
+export default function ParticipantList({
+  eventId,
+  createdBy,
+  participants,
+  onChanged,
+}: Props) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const isCreator = user?.id === createdBy;
@@ -31,8 +36,8 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       onChanged();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to remove participant";
+        (err as { response?: { data?: { error?: { message?: string } } } })
+          ?.response?.data?.error?.message || "Failed to remove participant";
       toast.error(message);
     }
   };
@@ -45,8 +50,8 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       onChanged();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to leave event";
+        (err as { response?: { data?: { error?: { message?: string } } } })
+          ?.response?.data?.error?.message || "Failed to leave event";
       toast.error(message);
     }
   };
@@ -140,7 +145,10 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
 
       {!isCreator && user && (
         <div className="mt-4">
-          <button className="btn btn-outline btn-error btn-sm" onClick={handleLeave}>
+          <button
+            className="btn btn-outline btn-error btn-sm"
+            onClick={handleLeave}
+          >
             Leave event
           </button>
         </div>

@@ -5,7 +5,7 @@ import { createNotification } from "./notification";
 
 export async function listParticipants(
   eventId: string,
-  options: { limit?: number; cursor?: string } = {}
+  options: { limit?: number; cursor?: string } = {},
 ) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
@@ -17,7 +17,9 @@ export async function listParticipants(
   const participations = await prisma.eventParticipation.findMany({
     where: {
       eventId,
-      ...(options.cursor ? { createdAt: { lt: new Date(options.cursor) } } : {}),
+      ...(options.cursor
+        ? { createdAt: { lt: new Date(options.cursor) } }
+        : {}),
     },
     include: {
       user: { select: { id: true, username: true, role: true } },
@@ -28,7 +30,9 @@ export async function listParticipants(
 
   const hasMore = participations.length > take;
   const items = hasMore ? participations.slice(0, take) : participations;
-  const nextCursor = hasMore ? items[items.length - 1].createdAt.toISOString() : null;
+  const nextCursor = hasMore
+    ? items[items.length - 1].createdAt.toISOString()
+    : null;
 
   return {
     data: items.map((p) => ({
@@ -44,7 +48,7 @@ export async function listParticipants(
 async function cascadeRemoveFromTables(
   eventId: string,
   userId: string,
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
 ) {
   // Delete EventBoardGame entries for this user in this event
   await tx.eventBoardGame.deleteMany({

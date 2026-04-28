@@ -9,8 +9,12 @@ describe("ManualBoardGameForm", () => {
     expect(screen.getByLabelText("Min Players")).toBeInTheDocument();
     expect(screen.getByLabelText("Max Players")).toBeInTheDocument();
     expect(screen.getByLabelText("Playing Time (min)")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /create & add/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /back to search/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /create & add/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /back to search/i }),
+    ).toBeInTheDocument();
   });
 
   it("shows an error message when submitting without a name", async () => {
@@ -24,11 +28,21 @@ describe("ManualBoardGameForm", () => {
   it("submits parsed numeric fields when valid", async () => {
     const onSubmit = vi.fn();
     render(<ManualBoardGameForm onSubmit={onSubmit} onCancel={vi.fn()} />);
-    fireEvent.input(screen.getByLabelText("Name"), { target: { value: "Catan" } });
-    fireEvent.input(screen.getByLabelText("Year"), { target: { value: "1995" } });
-    fireEvent.input(screen.getByLabelText("Min Players"), { target: { value: "3" } });
-    fireEvent.input(screen.getByLabelText("Max Players"), { target: { value: "4" } });
-    fireEvent.input(screen.getByLabelText("Playing Time (min)"), { target: { value: "120" } });
+    fireEvent.input(screen.getByLabelText("Name"), {
+      target: { value: "Catan" },
+    });
+    fireEvent.input(screen.getByLabelText("Year"), {
+      target: { value: "1995" },
+    });
+    fireEvent.input(screen.getByLabelText("Min Players"), {
+      target: { value: "3" },
+    });
+    fireEvent.input(screen.getByLabelText("Max Players"), {
+      target: { value: "4" },
+    });
+    fireEvent.input(screen.getByLabelText("Playing Time (min)"), {
+      target: { value: "120" },
+    });
 
     fireEvent.click(screen.getByRole("button", { name: /create & add/i }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());

@@ -20,7 +20,12 @@ interface Props {
   eventId: string;
 }
 
-export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: Props) {
+export default function AddBoardGameModal({
+  open,
+  onClose,
+  onAdded,
+  eventId,
+}: Props) {
   const [mode, setMode] = useState<"search" | "manual">("search");
 
   const handleClose = () => {
@@ -36,8 +41,8 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
       handleClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to add board game";
+        (err as { response?: { data?: { error?: { message?: string } } } })
+          ?.response?.data?.error?.message || "Failed to add board game";
       toast.error(message);
     }
   };
@@ -82,12 +87,18 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
           <>
             <BoardGameSearchInput onSelect={handleSelect} />
             <div className="divider text-sm opacity-50">or</div>
-            <button className="btn btn-outline btn-sm w-full" onClick={() => setMode("manual")}>
+            <button
+              className="btn btn-outline btn-sm w-full"
+              onClick={() => setMode("manual")}
+            >
               Create manually
             </button>
           </>
         ) : (
-          <ManualBoardGameForm onSubmit={handleManualCreate} onCancel={() => setMode("search")} />
+          <ManualBoardGameForm
+            onSubmit={handleManualCreate}
+            onCancel={() => setMode("search")}
+          />
         )}
 
         <div className="flex justify-end pt-4">

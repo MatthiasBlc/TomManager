@@ -15,8 +15,12 @@ describe("TagInput", () => {
     render(<TagInput value={["jdr", "horreur"]} onChange={vi.fn()} />);
     expect(screen.getByText("jdr")).toBeInTheDocument();
     expect(screen.getByText("horreur")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove tag jdr" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove tag horreur" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove tag jdr" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Remove tag horreur" }),
+    ).toBeInTheDocument();
   });
 
   it("removes a tag when the badge button is clicked", () => {
@@ -62,9 +66,13 @@ describe("TagInput", () => {
   });
 
   it("queries suggestions from the API after a debounce", async () => {
-    apiGetMock.mockResolvedValue({ data: { data: [{ id: "t1", name: "donjon" }] } });
+    apiGetMock.mockResolvedValue({
+      data: { data: [{ id: "t1", name: "donjon" }] },
+    });
     render(<TagInput value={[]} onChange={vi.fn()} />);
-    fireEvent.change(screen.getByPlaceholderText("Add tags..."), { target: { value: "don" } });
+    fireEvent.change(screen.getByPlaceholderText("Add tags..."), {
+      target: { value: "don" },
+    });
     await waitFor(() => {
       expect(apiGetMock).toHaveBeenCalledWith("/api/tags?q=don");
     });

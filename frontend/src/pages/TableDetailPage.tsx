@@ -33,7 +33,10 @@ interface TableDetail {
 }
 
 export default function TableDetailPage() {
-  const { eventId, tableId } = useParams<{ eventId: string; tableId: string }>();
+  const { eventId, tableId } = useParams<{
+    eventId: string;
+    tableId: string;
+  }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -44,8 +47,11 @@ export default function TableDetailPage() {
   const isGM = user?.id === table?.createdBy;
   const isAdmin = user?.role === "ADMIN";
   const canEdit = isGM || isAdmin;
-  const currentParticipant = table?.participants.find((p) => p.userId === user?.id);
-  const confirmedCount = table?.participants.filter((p) => p.status === "CONFIRMED").length ?? 0;
+  const currentParticipant = table?.participants.find(
+    (p) => p.userId === user?.id,
+  );
+  const confirmedCount =
+    table?.participants.filter((p) => p.status === "CONFIRMED").length ?? 0;
 
   const fetchTable = useCallback(async () => {
     try {
@@ -75,14 +81,16 @@ export default function TableDetailPage() {
 
   const handleJoin = async () => {
     try {
-      const res = await api.post(`/api/events/${eventId}/tables/${tableId}/join`);
+      const res = await api.post(
+        `/api/events/${eventId}/tables/${tableId}/join`,
+      );
       const status = res.data.data.status;
       toast.success(status === "CONFIRMED" ? "Joined!" : "Added to waitlist");
       fetchTable();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to join";
+        (err as { response?: { data?: { error?: { message?: string } } } })
+          ?.response?.data?.error?.message || "Failed to join";
       toast.error(message);
     }
   };
@@ -101,7 +109,9 @@ export default function TableDetailPage() {
   const handleKick = async (userId: string, username: string) => {
     if (!confirm(`Remove ${username} from this table?`)) return;
     try {
-      await api.delete(`/api/events/${eventId}/tables/${tableId}/participants/${userId}`);
+      await api.delete(
+        `/api/events/${eventId}/tables/${tableId}/participants/${userId}`,
+      );
       toast.success(`${username} removed`);
       fetchTable();
     } catch {
@@ -152,9 +162,12 @@ export default function TableDetailPage() {
 
       <div className="mb-4 md:mb-6">
         <h1 className="text-lg font-bold md:text-2xl">{table.title}</h1>
-        <p className="text-xs opacity-70 mt-1 md:text-sm">GM: {table.creator.username}</p>
+        <p className="text-xs opacity-70 mt-1 md:text-sm">
+          GM: {table.creator.username}
+        </p>
         <p className="text-xs opacity-70 md:text-sm">
-          {formatDateTime(table.startDateTime)} - {formatDateTime(table.endDateTime)}
+          {formatDateTime(table.startDateTime)} -{" "}
+          {formatDateTime(table.endDateTime)}
         </p>
       </div>
 
@@ -208,7 +221,10 @@ export default function TableDetailPage() {
                 {table.participants
                   .filter((p) => p.status === "CONFIRMED")
                   .map((p) => (
-                    <div key={p.userId} className="flex items-center justify-between py-1">
+                    <div
+                      key={p.userId}
+                      className="flex items-center justify-between py-1"
+                    >
                       <span className="text-sm font-medium">{p.username}</span>
                       {canEdit && (
                         <button
@@ -255,19 +271,30 @@ export default function TableDetailPage() {
           </div>
         </div>
 
-        {table.participants.filter((p) => p.status === "WAITLIST").length > 0 && (
+        {table.participants.filter((p) => p.status === "WAITLIST").length >
+          0 && (
           <div className="card bg-base-100 shadow-sm border-l-4 border-warning">
             <div className="card-body p-3 md:p-4">
               <h3 className="font-semibold text-sm mb-2">
-                Waitlist ({table.participants.filter((p) => p.status === "WAITLIST").length})
+                Waitlist (
+                {
+                  table.participants.filter((p) => p.status === "WAITLIST")
+                    .length
+                }
+                )
               </h3>
               {isMobile ? (
                 <div className="space-y-2">
                   {table.participants
                     .filter((p) => p.status === "WAITLIST")
                     .map((p) => (
-                      <div key={p.userId} className="flex items-center justify-between py-1">
-                        <span className="text-sm font-medium">{p.username}</span>
+                      <div
+                        key={p.userId}
+                        className="flex items-center justify-between py-1"
+                      >
+                        <span className="text-sm font-medium">
+                          {p.username}
+                        </span>
                         {canEdit && (
                           <button
                             className="btn btn-ghost btn-sm text-error min-h-[44px]"
@@ -298,7 +325,9 @@ export default function TableDetailPage() {
                               <td>
                                 <button
                                   className="btn btn-ghost btn-xs text-error"
-                                  onClick={() => handleKick(p.userId, p.username)}
+                                  onClick={() =>
+                                    handleKick(p.userId, p.username)
+                                  }
                                 >
                                   Remove
                                 </button>
@@ -318,7 +347,10 @@ export default function TableDetailPage() {
       {/* Sticky action bar on mobile */}
       <div className="sticky bottom-20 mt-4 flex gap-2 md:static md:mt-6 md:bottom-auto">
         {!isGM && !currentParticipant && (
-          <button className="btn btn-primary flex-1 md:flex-none md:btn-sm" onClick={handleJoin}>
+          <button
+            className="btn btn-primary flex-1 md:flex-none md:btn-sm"
+            onClick={handleJoin}
+          >
             Join
           </button>
         )}

@@ -22,7 +22,7 @@ function snapDuration(ms: number): number {
   const minutes = Math.round(ms / 60000);
   const values = DURATION_OPTIONS.map((o) => o.value);
   return values.reduce((prev, curr) =>
-    Math.abs(curr - minutes) < Math.abs(prev - minutes) ? curr : prev
+    Math.abs(curr - minutes) < Math.abs(prev - minutes) ? curr : prev,
   );
 }
 
@@ -64,7 +64,12 @@ interface TableData {
   startDateTime: string;
   endDateTime: string;
   tags: { id: string; name: string }[];
-  boardGame?: { id: string; name: string; maxPlayers?: number | null; playingTime?: number | null } | null;
+  boardGame?: {
+    id: string;
+    name: string;
+    maxPlayers?: number | null;
+    playingTime?: number | null;
+  } | null;
 }
 
 interface Props {
@@ -75,7 +80,13 @@ interface Props {
   table: TableData;
 }
 
-export default function EditTableModal({ open, onClose, onUpdated, eventId, table }: Props) {
+export default function EditTableModal({
+  open,
+  onClose,
+  onUpdated,
+  eventId,
+  table,
+}: Props) {
   const [tags, setTags] = useState<string[]>([]);
   const [selectedGame, setSelectedGame] = useState<SelectedGame | null>(null);
   const {
@@ -90,7 +101,8 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
   useEffect(() => {
     if (open && table) {
       const durationMs =
-        new Date(table.endDateTime).getTime() - new Date(table.startDateTime).getTime();
+        new Date(table.endDateTime).getTime() -
+        new Date(table.startDateTime).getTime();
       reset({
         title: table.title,
         gmIsPlayer: table.gmIsPlayer,
@@ -105,8 +117,13 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
       setTags(table.tags.map((t) => t.name));
       setSelectedGame(
         table.boardGame
-          ? { id: table.boardGame.id, name: table.boardGame.name, maxPlayers: table.boardGame.maxPlayers, playingTime: table.boardGame.playingTime }
-          : null
+          ? {
+              id: table.boardGame.id,
+              name: table.boardGame.name,
+              maxPlayers: table.boardGame.maxPlayers,
+              playingTime: table.boardGame.playingTime,
+            }
+          : null,
       );
     }
   }, [open, table, reset]);
@@ -116,13 +133,17 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
     setSelectedGame(game);
     if (!game) return;
     const currentMaxPlayers = watch("maxPlayers");
-    if (!currentMaxPlayers && game.maxPlayers) setValue("maxPlayers", game.maxPlayers);
+    if (!currentMaxPlayers && game.maxPlayers)
+      setValue("maxPlayers", game.maxPlayers);
     if (game.playingTime) {
       const currentDuration = watch("durationMinutes");
       if (!currentDuration) {
         const values = DURATION_OPTIONS.map((o) => o.value);
         const snapped = values.reduce((prev, curr) =>
-          Math.abs(curr - game.playingTime!) < Math.abs(prev - game.playingTime!) ? curr : prev
+          Math.abs(curr - game.playingTime!) <
+          Math.abs(prev - game.playingTime!)
+            ? curr
+            : prev,
         );
         setValue("durationMinutes", snapped);
       }
@@ -132,7 +153,9 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
   const onSubmit = async (data: EditTableForm) => {
     try {
       const startDateTime = new Date(`${data.date}T${data.startTime}`);
-      const endDateTime = new Date(startDateTime.getTime() + Number(data.durationMinutes) * 60000);
+      const endDateTime = new Date(
+        startDateTime.getTime() + Number(data.durationMinutes) * 60000,
+      );
 
       await api.patch(`/api/events/${eventId}/tables/${table.id}`, {
         title: data.title,
@@ -151,19 +174,24 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
       onClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de la mise a jour";
+        (err as { response?: { data?: { error?: { message?: string } } } })
+          ?.response?.data?.error?.message || "Echec de la mise a jour";
       toast.error(message);
     }
   };
 
   return (
     <ResponsiveModal open={open} onClose={onClose} title="Modifier la table">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-3 p-4 md:p-0 md:mt-4"
+      >
         {/* Type — lecture seule */}
         <div className="flex items-center gap-2">
           <span className="badge badge-outline badge-sm">{table.type}</span>
-          <span className="text-xs opacity-60">Le type ne peut pas etre modifie</span>
+          <span className="text-xs opacity-60">
+            Le type ne peut pas etre modifie
+          </span>
         </div>
 
         {/* MJ joueur — uniquement pour JDR */}
@@ -175,7 +203,9 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
                 className="checkbox checkbox-primary"
                 {...register("gmIsPlayer")}
               />
-              <span className="label-text">Le MJ est aussi joueur (se compte dans les places)</span>
+              <span className="label-text">
+                Le MJ est aussi joueur (se compte dans les places)
+              </span>
             </label>
           </div>
         )}
@@ -187,7 +217,10 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
               <span className="label-text">Jeu associe</span>
               <span className="label-text-alt opacity-50">optionnel</span>
             </label>
-            <BoardGameSelector value={selectedGame} onChange={handleGameChange} />
+            <BoardGameSelector
+              value={selectedGame}
+              onChange={handleGameChange}
+            />
           </div>
         )}
 
@@ -206,7 +239,9 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
           />
           {errors.title && (
             <label className="label">
-              <span className="label-text-alt text-error">{errors.title.message}</span>
+              <span className="label-text-alt text-error">
+                {errors.title.message}
+              </span>
             </label>
           )}
         </div>
@@ -273,7 +308,9 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
           />
           {errors.maxPlayers && (
             <label className="label">
-              <span className="label-text-alt text-error">{errors.maxPlayers.message}</span>
+              <span className="label-text-alt text-error">
+                {errors.maxPlayers.message}
+              </span>
             </label>
           )}
         </div>
@@ -291,7 +328,9 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             />
             {errors.date && (
               <label className="label">
-                <span className="label-text-alt text-error">{errors.date.message}</span>
+                <span className="label-text-alt text-error">
+                  {errors.date.message}
+                </span>
               </label>
             )}
           </div>
@@ -307,7 +346,9 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             />
             {errors.startTime && (
               <label className="label">
-                <span className="label-text-alt text-error">{errors.startTime.message}</span>
+                <span className="label-text-alt text-error">
+                  {errors.startTime.message}
+                </span>
               </label>
             )}
           </div>
@@ -318,7 +359,10 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             <select
               id="et-duration"
               className="select select-bordered w-full"
-              {...register("durationMinutes", { required: "Requis", valueAsNumber: true })}
+              {...register("durationMinutes", {
+                required: "Requis",
+                valueAsNumber: true,
+              })}
             >
               {DURATION_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>

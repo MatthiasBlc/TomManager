@@ -58,7 +58,9 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
       const container = containerRef.current;
       if (!container) return;
 
-      const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+      const focusable = Array.from(
+        container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      );
       if (focusable.length === 0) {
         e.preventDefault();
         return;
@@ -118,7 +120,10 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
       aria-label={title || "Dialog"}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 animate-fade-in" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/50 animate-fade-in"
+        onClick={onClose}
+      />
       {/* Sheet */}
       <div
         ref={sheetRef}
@@ -138,7 +143,9 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
           </div>
         )}
         {/* Content */}
-        <div className="overflow-y-auto flex-1 overscroll-contain">{children}</div>
+        <div className="overflow-y-auto flex-1 overscroll-contain">
+          {children}
+        </div>
       </div>
     </div>
   );

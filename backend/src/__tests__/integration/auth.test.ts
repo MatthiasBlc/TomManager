@@ -1,10 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { request, createTestUserDirectly, loginTestUser } from "../setup/testHelpers";
+import {
+  request,
+  createTestUserDirectly,
+  loginTestUser,
+} from "../setup/testHelpers";
 
 describe("Auth API", () => {
   describe("POST /api/auth/login", () => {
     it("should login with email", async () => {
-      await createTestUserDirectly({ email: "user@example.com", username: "testuser" });
+      await createTestUserDirectly({
+        email: "user@example.com",
+        username: "testuser",
+      });
 
       const res = await request.post("/api/auth/login").send({
         identifier: "user@example.com",
@@ -16,7 +23,10 @@ describe("Auth API", () => {
     });
 
     it("should login with username", async () => {
-      await createTestUserDirectly({ email: "user@example.com", username: "testuser" });
+      await createTestUserDirectly({
+        email: "user@example.com",
+        username: "testuser",
+      });
 
       const res = await request.post("/api/auth/login").send({
         identifier: "testuser",
@@ -28,7 +38,10 @@ describe("Auth API", () => {
     });
 
     it("should reject invalid credentials", async () => {
-      await createTestUserDirectly({ email: "user@example.com", username: "testuser" });
+      await createTestUserDirectly({
+        email: "user@example.com",
+        username: "testuser",
+      });
 
       const res = await request.post("/api/auth/login").send({
         identifier: "user@example.com",
@@ -39,7 +52,10 @@ describe("Auth API", () => {
     });
 
     it("should login normally", async () => {
-      await createTestUserDirectly({ email: "user@example.com", username: "testuser" });
+      await createTestUserDirectly({
+        email: "user@example.com",
+        username: "testuser",
+      });
 
       const res = await request.post("/api/auth/login").send({
         identifier: "user@example.com",
@@ -57,7 +73,10 @@ describe("Auth API", () => {
     });
 
     it("should return current user when authenticated", async () => {
-      await createTestUserDirectly({ email: "user@example.com", username: "testuser" });
+      await createTestUserDirectly({
+        email: "user@example.com",
+        username: "testuser",
+      });
       const { cookie } = await loginTestUser("user@example.com");
 
       const res = await request.get("/api/auth/me").set("Cookie", cookie);

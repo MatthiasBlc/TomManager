@@ -44,7 +44,9 @@ describe("Skeleton variants", () => {
 
   it("SkeletonBoardGame renders an image and text placeholders", () => {
     const { container } = render(<SkeletonBoardGame />);
-    expect(container.querySelectorAll(".skeleton").length).toBeGreaterThanOrEqual(4);
+    expect(
+      container.querySelectorAll(".skeleton").length,
+    ).toBeGreaterThanOrEqual(4);
   });
 
   it("SkeletonBoardGameList renders the requested number of items", () => {
@@ -54,7 +56,9 @@ describe("Skeleton variants", () => {
 
   it("SkeletonNotification renders an avatar and text placeholders", () => {
     const { container } = render(<SkeletonNotification />);
-    expect(container.querySelectorAll(".skeleton").length).toBeGreaterThanOrEqual(4);
+    expect(
+      container.querySelectorAll(".skeleton").length,
+    ).toBeGreaterThanOrEqual(4);
   });
 
   it("SkeletonNotificationList renders the requested number of items", () => {
@@ -66,7 +70,9 @@ describe("Skeleton variants", () => {
 
   it("SkeletonTableDetail renders multiple cards and skeleton blocks", () => {
     const { container } = render(<SkeletonTableDetail />);
-    expect(container.querySelectorAll(".card").length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelectorAll(".card").length).toBeGreaterThanOrEqual(
+      2,
+    );
     expect(container.querySelectorAll(".skeleton").length).toBeGreaterThan(5);
   });
 });

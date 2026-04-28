@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { request, setupAdmin, createTestEvent, addTestParticipant } from "../setup/testHelpers";
+import {
+  request,
+  setupAdmin,
+  createTestEvent,
+  addTestParticipant,
+} from "../setup/testHelpers";
 import prisma from "../../util/db";
 
 // Helper: setup admin + event + participant user with cookie
@@ -190,7 +195,8 @@ describe("EventBoardGame API", () => {
 
   describe("Cascade: participant removal includes board games", () => {
     it("should delete EventBoardGame when participant is removed", async () => {
-      const { admin, playerCookie, event, playerId } = await setupEventWithParticipant();
+      const { admin, playerCookie, event, playerId } =
+        await setupEventWithParticipant();
       const bg = await createBoardGame();
 
       // Player adds a board game
@@ -218,7 +224,8 @@ describe("EventBoardGame API", () => {
     });
 
     it("should delete EventBoardGame when participant leaves", async () => {
-      const { playerCookie, event, playerId } = await setupEventWithParticipant();
+      const { playerCookie, event, playerId } =
+        await setupEventWithParticipant();
       const bg = await createBoardGame();
 
       await request
@@ -227,7 +234,9 @@ describe("EventBoardGame API", () => {
         .send({ boardGameId: bg.id });
 
       // Player leaves event
-      await request.delete(`/api/events/${event.id}/participants/me`).set("Cookie", playerCookie);
+      await request
+        .delete(`/api/events/${event.id}/participants/me`)
+        .set("Cookie", playerCookie);
 
       const after = await prisma.eventBoardGame.findMany({
         where: { eventId: event.id, broughtByUserId: playerId },

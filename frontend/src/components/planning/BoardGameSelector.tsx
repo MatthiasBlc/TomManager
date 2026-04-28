@@ -32,7 +32,12 @@ export default function BoardGameSelector({ value, onChange }: Props) {
     playingTime?: number | null;
   }) => {
     if (game.id) {
-      onChange({ id: game.id, name: game.name, maxPlayers: game.maxPlayers, playingTime: game.playingTime });
+      onChange({
+        id: game.id,
+        name: game.name,
+        maxPlayers: game.maxPlayers,
+        playingTime: game.playingTime,
+      });
       return;
     }
     if (game.externalSource === "BGG" && game.externalId) {
@@ -44,7 +49,12 @@ export default function BoardGameSelector({ value, onChange }: Props) {
           yearPublished: game.yearPublished,
         });
         const created = res.data.data;
-        onChange({ id: created.id, name: created.name, maxPlayers: created.maxPlayers, playingTime: created.playingTime });
+        onChange({
+          id: created.id,
+          name: created.name,
+          maxPlayers: created.maxPlayers,
+          playingTime: created.playingTime,
+        });
       } catch {
         toast.error("Impossible d'ajouter ce jeu BGG");
       } finally {
@@ -64,7 +74,12 @@ export default function BoardGameSelector({ value, onChange }: Props) {
     try {
       const res = await api.post("/api/boardgames", data);
       const created = res.data.data;
-      onChange({ id: created.id, name: created.name, maxPlayers: created.maxPlayers, playingTime: created.playingTime });
+      onChange({
+        id: created.id,
+        name: created.name,
+        maxPlayers: created.maxPlayers,
+        playingTime: created.playingTime,
+      });
       setMode("search");
     } catch {
       toast.error("Impossible de creer le jeu");

@@ -5,10 +5,16 @@ import env from "../config/env";
 
 const FRONTEND_URL = env.CORS_ORIGIN;
 
-export async function initiateLogin(req: Request, res: Response, next: NextFunction) {
+export async function initiateLogin(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     if (!discordService.isDiscordConfigured()) {
-      res.status(503).json({ error: { message: "Discord OAuth not configured" } });
+      res
+        .status(503)
+        .json({ error: { message: "Discord OAuth not configured" } });
       return;
     }
 
@@ -16,7 +22,8 @@ export async function initiateLogin(req: Request, res: Response, next: NextFunct
     req.session.oauthState = state;
 
     const returnTo =
-      typeof req.query.returnTo === "string" && req.query.returnTo.startsWith("/")
+      typeof req.query.returnTo === "string" &&
+      req.query.returnTo.startsWith("/")
         ? req.query.returnTo
         : undefined;
     if (returnTo) req.session.oauthReturnTo = returnTo;
@@ -43,7 +50,11 @@ function sendPopupResponse(res: Response, payload: Record<string, string>) {
   res.redirect(`${FRONTEND_URL}/oauth-popup?${params}`);
 }
 
-export async function handleCallback(req: Request, res: Response, next: NextFunction) {
+export async function handleCallback(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const { code, state, error } = req.query as Record<string, string>;
 
@@ -51,7 +62,11 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
     delete req.session.oauthPopup;
 
     const authError = (errorKey: string) => {
-      if (isPopup) return sendPopupResponse(res, { type: "DISCORD_AUTH_ERROR", error: errorKey });
+      if (isPopup)
+        return sendPopupResponse(res, {
+          type: "DISCORD_AUTH_ERROR",
+          error: errorKey,
+        });
       return res.redirect(`${FRONTEND_URL}/login?error=${errorKey}`);
     };
 
@@ -84,8 +99,12 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
     }
 
     const memberRoles = guildMember.roles;
-    const avatarUrl = discordService.buildAvatarUrl(discordUser.id, discordUser.avatar);
-    const displayName = guildMember.nick ?? discordUser.global_name ?? discordUser.username;
+    const avatarUrl = discordService.buildAvatarUrl(
+      discordUser.id,
+      discordUser.avatar,
+    );
+    const displayName =
+      guildMember.nick ?? discordUser.global_name ?? discordUser.username;
 
     if (action === "link" && req.session.userId) {
       return handleLink(
@@ -96,7 +115,7 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
         avatarUrl,
         memberRoles,
         returnTo,
-        isPopup
+        isPopup,
       );
     }
 
@@ -118,11 +137,15 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
       await discordService.syncDiscordParticipations(existing.id, memberRoles);
 
       req.session.userId = existing.id;
-      if (isPopup) return sendPopupResponse(res, { type: "DISCORD_AUTH_SUCCESS" });
+      if (isPopup)
+        return sendPopupResponse(res, { type: "DISCORD_AUTH_SUCCESS" });
       return res.redirect(`${FRONTEND_URL}${returnTo}`);
     }
 
-    const username = await discordService.generateUniqueUsername(displayName, discordUser.id);
+    const username = await discordService.generateUniqueUsername(
+      displayName,
+      discordUser.id,
+    );
 
     const user = await prisma.user.create({
       data: {
@@ -138,7 +161,8 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
     await discordService.syncDiscordParticipations(user.id, memberRoles);
 
     req.session.userId = user.id;
-    if (isPopup) return sendPopupResponse(res, { type: "DISCORD_AUTH_SUCCESS" });
+    if (isPopup)
+      return sendPopupResponse(res, { type: "DISCORD_AUTH_SUCCESS" });
     res.redirect(`${FRONTEND_URL}${returnTo}`);
   } catch (err) {
     next(err);
@@ -153,7 +177,7 @@ async function handleLink(
   avatarUrl: string,
   memberRoles: string[],
   returnTo: string,
-  isPopup: boolean
+  isPopup: boolean,
 ) {
   const conflict = await prisma.user.findFirst({
     where: { discordId },
@@ -165,7 +189,9 @@ async function handleLink(
         type: "DISCORD_AUTH_ERROR",
         error: "discord_already_linked",
       });
-    return res.redirect(`${FRONTEND_URL}${returnTo}?error=discord_already_linked`);
+    return res.redirect(
+      `${FRONTEND_URL}${returnTo}?error=discord_already_linked`,
+    );
   }
 
   await prisma.user.update({
@@ -173,13 +199,20 @@ async function handleLink(
     data: { discordId, discordUsername, avatarUrl },
   });
 
-  await discordService.syncDiscordParticipations(req.session.userId!, memberRoles);
+  await discordService.syncDiscordParticipations(
+    req.session.userId!,
+    memberRoles,
+  );
 
   if (isPopup) return sendPopupResponse(res, { type: "DISCORD_AUTH_SUCCESS" });
   return res.redirect(`${FRONTEND_URL}${returnTo}?success=discord_linked`);
 }
 
-export async function unlinkDiscord(req: Request, res: Response, next: NextFunction) {
+export async function unlinkDiscord(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   try {
     const user = await prisma.user.findFirst({
       where: { id: req.session.userId, deletedAt: null },
@@ -193,7 +226,11 @@ export async function unlinkDiscord(req: Request, res: Response, next: NextFunct
     if (!user.passwordHash) {
       res
         .status(400)
-        .json({ error: { message: "Cannot unlink Discord from a Discord-only account" } });
+        .json({
+          error: {
+            message: "Cannot unlink Discord from a Discord-only account",
+          },
+        });
       return;
     }
 
@@ -208,9 +245,15 @@ export async function unlinkDiscord(req: Request, res: Response, next: NextFunct
   }
 }
 
-async function syncAdminRole(userId: string, memberRoles: string[]): Promise<void> {
+async function syncAdminRole(
+  userId: string,
+  memberRoles: string[],
+): Promise<void> {
   if (!env.DISCORD_ADMIN_ROLE_ID) return;
   if (memberRoles.includes(env.DISCORD_ADMIN_ROLE_ID)) {
-    await prisma.user.update({ where: { id: userId }, data: { role: "ADMIN" } });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { role: "ADMIN" },
+    });
   }
 }

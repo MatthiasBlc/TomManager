@@ -24,8 +24,18 @@ vi.mock("react-hot-toast", () => ({
 }));
 
 const baseParticipants = [
-  { userId: "u1", username: "Alice", role: "ADMIN", joinedAt: "2026-01-01T10:00:00.000Z" },
-  { userId: "u2", username: "Bob", role: "USER", joinedAt: "2026-01-02T10:00:00.000Z" },
+  {
+    userId: "u1",
+    username: "Alice",
+    role: "ADMIN",
+    joinedAt: "2026-01-01T10:00:00.000Z",
+  },
+  {
+    userId: "u2",
+    username: "Bob",
+    role: "USER",
+    joinedAt: "2026-01-02T10:00:00.000Z",
+  },
 ];
 
 describe("ParticipantList", () => {
@@ -44,7 +54,14 @@ describe("ParticipantList", () => {
 
   it("renders the empty state when no participants", () => {
     useAuthMock.mockReturnValue({ user: { id: "u1" } });
-    render(<ParticipantList eventId="ev1" createdBy="u1" participants={[]} onChanged={vi.fn()} />);
+    render(
+      <ParticipantList
+        eventId="ev1"
+        createdBy="u1"
+        participants={[]}
+        onChanged={vi.fn()}
+      />,
+    );
     expect(screen.getByText("No participants yet")).toBeInTheDocument();
   });
 
@@ -56,7 +73,7 @@ describe("ParticipantList", () => {
         createdBy="u1"
         participants={baseParticipants}
         onChanged={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
@@ -71,7 +88,7 @@ describe("ParticipantList", () => {
         createdBy="u1"
         participants={baseParticipants}
         onChanged={vi.fn()}
-      />
+      />,
     );
     const removes = screen.getAllByRole("button", { name: "Remove" });
     expect(removes).toHaveLength(1);
@@ -85,10 +102,14 @@ describe("ParticipantList", () => {
         createdBy="u1"
         participants={baseParticipants}
         onChanged={vi.fn()}
-      />
+      />,
     );
-    expect(screen.queryByRole("button", { name: "Remove" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /leave event/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Remove" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /leave event/i }),
+    ).toBeInTheDocument();
   });
 
   it("does not show Leave button for the creator", () => {
@@ -99,9 +120,11 @@ describe("ParticipantList", () => {
         createdBy="u1"
         participants={baseParticipants}
         onChanged={vi.fn()}
-      />
+      />,
     );
-    expect(screen.queryByRole("button", { name: /leave event/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /leave event/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("calls api.delete and onChanged when Remove is clicked", async () => {
@@ -114,11 +137,13 @@ describe("ParticipantList", () => {
         createdBy="u1"
         participants={baseParticipants}
         onChanged={onChanged}
-      />
+      />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Remove" }));
     await waitFor(() => {
-      expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/participants/u2");
+      expect(apiDeleteMock).toHaveBeenCalledWith(
+        "/api/events/ev1/participants/u2",
+      );
       expect(onChanged).toHaveBeenCalled();
       expect(toastSuccess).toHaveBeenCalled();
     });
@@ -134,11 +159,13 @@ describe("ParticipantList", () => {
         createdBy="u1"
         participants={baseParticipants}
         onChanged={onChanged}
-      />
+      />,
     );
     fireEvent.click(screen.getByRole("button", { name: /leave event/i }));
     await waitFor(() => {
-      expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/participants/me");
+      expect(apiDeleteMock).toHaveBeenCalledWith(
+        "/api/events/ev1/participants/me",
+      );
       expect(onChanged).toHaveBeenCalled();
     });
   });
@@ -152,7 +179,7 @@ describe("ParticipantList", () => {
         createdBy="u1"
         participants={baseParticipants}
         onChanged={vi.fn()}
-      />
+      />,
     );
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("Alice")).toBeInTheDocument();

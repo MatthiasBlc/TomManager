@@ -44,7 +44,11 @@ function formatTimeAgo(dateStr: string): string {
   return `${days}j`;
 }
 
-export default function NotificationItem({ notification, onMarkAsRead, onDelete }: Props) {
+export default function NotificationItem({
+  notification,
+  onMarkAsRead,
+  onDelete,
+}: Props) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -64,13 +68,21 @@ export default function NotificationItem({ notification, onMarkAsRead, onDelete 
       }`}
       onClick={handleClick}
     >
-      <span className="text-lg flex-shrink-0">{getIcon(notification.type)}</span>
+      <span className="text-lg flex-shrink-0">
+        {getIcon(notification.type)}
+      </span>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm leading-tight ${!notification.read ? "font-semibold" : ""}`}>
+        <p
+          className={`text-sm leading-tight ${!notification.read ? "font-semibold" : ""}`}
+        >
           {notification.title}
         </p>
-        <p className="text-xs opacity-70 mt-0.5 truncate">{notification.message}</p>
-        <p className="text-xs opacity-50 mt-1">{formatTimeAgo(notification.createdAt)}</p>
+        <p className="text-xs opacity-70 mt-0.5 truncate">
+          {notification.message}
+        </p>
+        <p className="text-xs opacity-50 mt-1">
+          {formatTimeAgo(notification.createdAt)}
+        </p>
       </div>
       <button
         className="btn btn-ghost btn-xs flex-shrink-0 opacity-50 hover:opacity-100"

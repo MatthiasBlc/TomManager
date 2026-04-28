@@ -26,8 +26,12 @@ export default function TagInput({ value, onChange }: Props) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await api.get(`/api/tags?q=${encodeURIComponent(input.trim())}`);
-        setSuggestions(res.data.data.filter((t: Tag) => !value.includes(t.name)));
+        const res = await api.get(
+          `/api/tags?q=${encodeURIComponent(input.trim())}`,
+        );
+        setSuggestions(
+          res.data.data.filter((t: Tag) => !value.includes(t.name)),
+        );
         setShowSuggestions(true);
       } catch {
         setSuggestions([]);

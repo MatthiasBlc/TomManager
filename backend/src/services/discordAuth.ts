@@ -77,10 +77,15 @@ interface GuildMember {
   roles: string[];
 }
 
-export async function fetchGuildMember(token: string): Promise<GuildMember | null> {
-  const res = await fetch(`${DISCORD_API}/users/@me/guilds/${env.DISCORD_GUILD_ID}/member`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export async function fetchGuildMember(
+  token: string,
+): Promise<GuildMember | null> {
+  const res = await fetch(
+    `${DISCORD_API}/users/@me/guilds/${env.DISCORD_GUILD_ID}/member`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
   if (res.status === 404) return null;
   if (!res.ok) throw createError(502, "Failed to fetch guild member");
   return res.json() as Promise<GuildMember>;
@@ -96,7 +101,7 @@ export function buildAvatarUrl(id: string, avatar: string | null): string {
 
 export async function generateUniqueUsername(
   candidate: string,
-  discordId: string
+  discordId: string,
 ): Promise<string> {
   let base = candidate.slice(0, 30).replace(/[^a-zA-Z0-9_-]/g, "_");
 
@@ -106,7 +111,9 @@ export async function generateUniqueUsername(
   if (!existing) return base;
 
   const fallback = `${base.slice(0, 24)}_${discordId.slice(-5)}`;
-  const existing2 = await prisma.user.findFirst({ where: { username: fallback } });
+  const existing2 = await prisma.user.findFirst({
+    where: { username: fallback },
+  });
   if (!existing2) return fallback;
 
   return `${base.slice(0, 21)}_${crypto.randomBytes(3).toString("hex")}`;
@@ -114,7 +121,7 @@ export async function generateUniqueUsername(
 
 export async function syncDiscordParticipations(
   userId: string,
-  memberRoles: string[]
+  memberRoles: string[],
 ): Promise<void> {
   const events = await prisma.event.findMany({
     where: { discordRoleId: { not: null } },
