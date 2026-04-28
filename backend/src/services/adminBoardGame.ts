@@ -92,7 +92,23 @@ export async function deleteBoardGame(id: string) {
   await prisma.boardGame.delete({ where: { id } });
 }
 
-export async function mergeBoardGames(sourceId: string, targetId: string) {
+type FieldPick = "source" | "target";
+
+export interface MergeFieldPicks {
+  name?: FieldPick;
+  yearPublished?: FieldPick;
+  minPlayers?: FieldPick;
+  maxPlayers?: FieldPick;
+  playingTime?: FieldPick;
+  imageUrl?: FieldPick;
+  externalRef?: FieldPick;
+}
+
+export async function mergeBoardGames(
+  sourceId: string,
+  targetId: string,
+  fieldPicks?: MergeFieldPicks,
+) {
   if (sourceId === targetId)
     throw createError(400, "Cannot merge a game into itself");
 
@@ -102,6 +118,24 @@ export async function mergeBoardGames(sourceId: string, targetId: string) {
   ]);
   if (!source) throw createError(404, "Source board game not found");
   if (!target) throw createError(404, "Target board game not found");
+
+  // Apply field picks — update target with values from source where requested
+  if (fieldPicks) {
+    const upd: Record<string, unknown> = {};
+    if (fieldPicks.name === "source") upd.name = source.name;
+    if (fieldPicks.yearPublished === "source") upd.yearPublished = source.yearPublished;
+    if (fieldPicks.minPlayers === "source") upd.minPlayers = source.minPlayers;
+    if (fieldPicks.maxPlayers === "source") upd.maxPlayers = source.maxPlayers;
+    if (fieldPicks.playingTime === "source") upd.playingTime = source.playingTime;
+    if (fieldPicks.imageUrl === "source") upd.imageUrl = source.imageUrl;
+    if (fieldPicks.externalRef === "source") {
+      upd.externalSource = source.externalSource;
+      upd.externalId = source.externalId;
+    }
+    if (Object.keys(upd).length > 0) {
+      await prisma.boardGame.update({ where: { id: targetId }, data: upd });
+    }
+  }
 
   // Re-link GameTable entries
   await prisma.gameTable.updateMany({

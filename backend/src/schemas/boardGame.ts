@@ -32,6 +32,19 @@ export const updateBoardGameAdminSchema = z.object({
   imageUrl: z.string().url("Invalid image URL").nullable().optional(),
 });
 
+const fieldPickSchema = z.enum(["source", "target"]);
+
 export const mergeSchema = z.object({
   targetId: z.string().uuid("Invalid target board game ID"),
+  fieldPicks: z
+    .object({
+      name: fieldPickSchema.optional(),
+      yearPublished: fieldPickSchema.optional(),
+      minPlayers: fieldPickSchema.optional(),
+      maxPlayers: fieldPickSchema.optional(),
+      playingTime: fieldPickSchema.optional(),
+      imageUrl: fieldPickSchema.optional(),
+      externalRef: fieldPickSchema.optional(),
+    })
+    .optional(),
 });

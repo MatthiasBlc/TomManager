@@ -42,7 +42,7 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
 
 export async function merge(req: Request, res: Response, next: NextFunction) {
   try {
-    const { targetId } = req.body;
+    const { targetId, fieldPicks } = req.body;
     if (!targetId)
       return res
         .status(400)
@@ -51,6 +51,7 @@ export async function merge(req: Request, res: Response, next: NextFunction) {
     const result = await adminBoardGameService.mergeBoardGames(
       req.params.id,
       targetId,
+      fieldPicks,
     );
     res.json({ data: result });
   } catch (err) {

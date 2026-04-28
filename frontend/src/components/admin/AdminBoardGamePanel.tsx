@@ -8,6 +8,7 @@ interface BoardGameAdmin {
   id: string;
   name: string;
   externalSource: string | null;
+  externalId: string | null;
   yearPublished: number | null;
   minPlayers: number | null;
   maxPlayers: number | null;
@@ -31,6 +32,17 @@ interface EditForm {
   playingTime: string;
 }
 
+type MergeFieldKey =
+  | "name"
+  | "yearPublished"
+  | "minPlayers"
+  | "maxPlayers"
+  | "playingTime"
+  | "imageUrl"
+  | "externalRef";
+type FieldPick = "source" | "target";
+type MergeFieldPicks = Record<MergeFieldKey, FieldPick>;
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -38,6 +50,24 @@ function useDebounce<T>(value: T, delay: number): T {
     return () => clearTimeout(t);
   }, [value, delay]);
   return debounced;
+}
+
+function buildDefaultPicks(
+  source: BoardGameAdmin,
+  target: BoardGameAdmin,
+): MergeFieldPicks {
+  // Prefer source when target is null and source has a value
+  const prefer = (tv: unknown, sv: unknown): FieldPick =>
+    tv == null && sv != null ? "source" : "target";
+  return {
+    name: "target",
+    yearPublished: prefer(target.yearPublished, source.yearPublished),
+    minPlayers: prefer(target.minPlayers, source.minPlayers),
+    maxPlayers: prefer(target.maxPlayers, source.maxPlayers),
+    playingTime: prefer(target.playingTime, source.playingTime),
+    imageUrl: prefer(target.imageUrl, source.imageUrl),
+    externalRef: prefer(target.externalSource, source.externalSource),
+  };
 }
 
 export default function AdminBoardGamePanel() {
@@ -60,6 +90,7 @@ export default function AdminBoardGamePanel() {
   const debouncedMergeSearch = useDebounce(mergeSearch, 300);
   const [mergeResults, setMergeResults] = useState<BoardGameAdmin[]>([]);
   const [mergeTarget, setMergeTarget] = useState<BoardGameAdmin | null>(null);
+  const [fieldPicks, setFieldPicks] = useState<MergeFieldPicks | null>(null);
   const [merging, setMerging] = useState(false);
 
   const limit = 20;
@@ -172,6 +203,16 @@ export default function AdminBoardGamePanel() {
     setMergeSearch("");
     setMergeResults([]);
     setMergeTarget(null);
+    setFieldPicks(null);
+  };
+
+  const selectMergeTarget = (game: BoardGameAdmin) => {
+    setMergeTarget(game);
+    setFieldPicks(buildDefaultPicks(mergeSource!, game));
+  };
+
+  const togglePick = (key: MergeFieldKey, pick: FieldPick) => {
+    setFieldPicks((prev) => (prev ? { ...prev, [key]: pick } : prev));
   };
 
   const handleMerge = async () => {
@@ -180,9 +221,11 @@ export default function AdminBoardGamePanel() {
     try {
       await api.post(`/api/admin/boardgames/${mergeSource.id}/merge`, {
         targetId: mergeTarget.id,
+        fieldPicks,
       });
       toast.success(`"${mergeSource.name}" fusionne dans "${mergeTarget.name}"`);
       setMergeSource(null);
+      setFieldPicks(null);
       fetchGames();
     } catch {
       toast.error("Echec de la fusion");
@@ -190,6 +233,73 @@ export default function AdminBoardGamePanel() {
       setMerging(false);
     }
   };
+
+  // Compute field rows for the picker (only shown when both source and target are selected)
+  const mergeFieldRows =
+    mergeSource && mergeTarget
+      ? (
+          [
+            {
+              key: "name" as MergeFieldKey,
+              label: "Nom",
+              src: mergeSource.name,
+              tgt: mergeTarget.name,
+            },
+            {
+              key: "yearPublished" as MergeFieldKey,
+              label: "Annee",
+              src: mergeSource.yearPublished?.toString() ?? null,
+              tgt: mergeTarget.yearPublished?.toString() ?? null,
+            },
+            {
+              key: "minPlayers" as MergeFieldKey,
+              label: "Joueurs min",
+              src: mergeSource.minPlayers?.toString() ?? null,
+              tgt: mergeTarget.minPlayers?.toString() ?? null,
+            },
+            {
+              key: "maxPlayers" as MergeFieldKey,
+              label: "Joueurs max",
+              src: mergeSource.maxPlayers?.toString() ?? null,
+              tgt: mergeTarget.maxPlayers?.toString() ?? null,
+            },
+            {
+              key: "playingTime" as MergeFieldKey,
+              label: "Duree (min)",
+              src: mergeSource.playingTime?.toString() ?? null,
+              tgt: mergeTarget.playingTime?.toString() ?? null,
+            },
+            {
+              key: "imageUrl" as MergeFieldKey,
+              label: "Image",
+              src: mergeSource.imageUrl,
+              tgt: mergeTarget.imageUrl,
+              isImage: true,
+            },
+            {
+              key: "externalRef" as MergeFieldKey,
+              label: "Source ext.",
+              src: mergeSource.externalSource
+                ? `${mergeSource.externalSource} #${mergeSource.externalId ?? "?"}`
+                : null,
+              tgt: mergeTarget.externalSource
+                ? `${mergeTarget.externalSource} #${mergeTarget.externalId ?? "?"}`
+                : null,
+            },
+          ] as {
+            key: MergeFieldKey;
+            label: string;
+            src: string | null;
+            tgt: string | null;
+            isImage?: boolean;
+          }[]
+        ).filter((f) => {
+          if (f.key === "name") return true;
+          if (f.src == null && f.tgt == null) return false;
+          if (f.src === f.tgt) return false;
+          return true;
+        })
+      : [];
 
   return (
     <div className="space-y-4">
@@ -439,13 +549,14 @@ export default function AdminBoardGamePanel() {
       {/* Merge modal */}
       <ResponsiveModal
         open={mergeSource !== null}
-        onClose={() => setMergeSource(null)}
+        onClose={() => { setMergeSource(null); setFieldPicks(null); }}
         title="Fusionner le jeu"
         size="lg"
       >
         {mergeSource && (
           <div className="p-4 md:p-0 md:mt-4 space-y-4">
             {!mergeTarget ? (
+              /* Step 1: search for target */
               <>
                 <p className="text-sm">
                   Fusionner <strong>{mergeSource.name}</strong> dans...
@@ -465,7 +576,7 @@ export default function AdminBoardGamePanel() {
                         key={g.id}
                         type="button"
                         className="w-full text-left p-2 hover:bg-base-200 rounded text-sm"
-                        onClick={() => setMergeTarget(g)}
+                        onClick={() => selectMergeTarget(g)}
                       >
                         <span className="font-medium">{g.name}</span>
                         {g.yearPublished && (
@@ -485,37 +596,99 @@ export default function AdminBoardGamePanel() {
                 )}
               </>
             ) : (
+              /* Step 2: field picker */
               <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-error/10 rounded-lg border border-error/30">
-                    <p className="text-xs opacity-60 mb-1">Source (supprime)</p>
-                    <p className="font-semibold text-sm">{mergeSource.name}</p>
-                    <p className="text-xs opacity-50 mt-1">
-                      {mergeSource._count.eventBoardGames}E ·{" "}
-                      {mergeSource._count.gameTables}T
-                    </p>
+                {/* Column headers */}
+                <div className="grid grid-cols-[90px_1fr_1fr] gap-2">
+                  <span />
+                  <div className="text-xs font-medium text-error/80 bg-error/10 rounded px-2 py-1 text-center">
+                    Source — supprime
                   </div>
-                  <div className="p-3 bg-success/10 rounded-lg border border-success/30">
-                    <p className="text-xs opacity-60 mb-1">Cible (conserve)</p>
-                    <p className="font-semibold text-sm">{mergeTarget.name}</p>
-                    <p className="text-xs opacity-50 mt-1">
-                      {mergeTarget._count.eventBoardGames}E ·{" "}
-                      {mergeTarget._count.gameTables}T
-                    </p>
+                  <div className="text-xs font-medium text-success/80 bg-success/10 rounded px-2 py-1 text-center">
+                    Cible — conserve
                   </div>
                 </div>
-                <p className="text-sm opacity-70">
+
+                {/* Field rows */}
+                {mergeFieldRows.map(({ key, label, src, tgt, isImage }) => {
+                  const srcPicked = fieldPicks![key] === "source";
+                  const tgtPicked = fieldPicks![key] === "target";
+                  const srcDisabled = src == null;
+                  const tgtDisabled = tgt == null;
+
+                  return (
+                    <div
+                      key={key}
+                      className="grid grid-cols-[90px_1fr_1fr] gap-2 items-center"
+                    >
+                      <span className="text-xs opacity-50 text-right pr-2">
+                        {label}
+                      </span>
+
+                      <button
+                        type="button"
+                        disabled={srcDisabled}
+                        onClick={() => togglePick(key, "source")}
+                        className={`rounded p-2 text-sm text-center min-h-[2.5rem] transition-colors ${
+                          srcDisabled
+                            ? "bg-base-200 opacity-25 cursor-default"
+                            : srcPicked
+                              ? "bg-primary/20 ring-1 ring-primary"
+                              : "bg-base-200 opacity-50 hover:opacity-80"
+                        }`}
+                      >
+                        {isImage && src ? (
+                          <img
+                            src={src}
+                            alt=""
+                            className="h-10 w-10 object-cover mx-auto rounded"
+                          />
+                        ) : (
+                          <span>{src ?? "—"}</span>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={tgtDisabled}
+                        onClick={() => togglePick(key, "target")}
+                        className={`rounded p-2 text-sm text-center min-h-[2.5rem] transition-colors ${
+                          tgtDisabled
+                            ? "bg-base-200 opacity-25 cursor-default"
+                            : tgtPicked
+                              ? "bg-primary/20 ring-1 ring-primary"
+                              : "bg-base-200 opacity-50 hover:opacity-80"
+                        }`}
+                      >
+                        {isImage && tgt ? (
+                          <img
+                            src={tgt}
+                            alt=""
+                            className="h-10 w-10 object-cover mx-auto rounded"
+                          />
+                        ) : (
+                          <span>{tgt ?? "—"}</span>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+
+                <p className="text-xs opacity-50">
                   Toutes les liaisons (evenements, tables) seront transferees
-                  vers <strong>{mergeTarget.name}</strong>. Les doublons seront
-                  ignores.{" "}
+                  vers <strong>{mergeTarget.name}</strong>.{" "}
                   <strong className="text-error">
                     {mergeSource.name} sera supprime.
                   </strong>
                 </p>
+
                 <div className="flex gap-2 justify-between">
                   <button
                     className="btn btn-ghost btn-sm"
-                    onClick={() => setMergeTarget(null)}
+                    onClick={() => {
+                      setMergeTarget(null);
+                      setFieldPicks(null);
+                    }}
                     disabled={merging}
                   >
                     ← Changer la cible
@@ -523,7 +696,10 @@ export default function AdminBoardGamePanel() {
                   <div className="flex gap-2">
                     <button
                       className="btn"
-                      onClick={() => setMergeSource(null)}
+                      onClick={() => {
+                        setMergeSource(null);
+                        setFieldPicks(null);
+                      }}
                       disabled={merging}
                     >
                       Annuler

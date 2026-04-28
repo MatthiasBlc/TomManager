@@ -30,6 +30,7 @@ const makeBoardGame = (
   id,
   name,
   externalSource: null,
+  externalId: null,
   yearPublished: 2020,
   minPlayers: 2,
   maxPlayers: 4,
@@ -178,7 +179,18 @@ describe("AdminBoardGamePanel", () => {
     await waitFor(() =>
       expect(apiPostMock).toHaveBeenCalledWith(
         "/api/admin/boardgames/g1/merge",
-        { targetId: "g2" },
+        {
+          targetId: "g2",
+          fieldPicks: {
+            name: "target",
+            yearPublished: "target",
+            minPlayers: "target",
+            maxPlayers: "target",
+            playingTime: "target",
+            imageUrl: "target",
+            externalRef: "target",
+          },
+        },
       ),
     );
   });

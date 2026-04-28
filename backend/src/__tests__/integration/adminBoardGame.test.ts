@@ -285,5 +285,54 @@ describe("Admin BoardGame API", () => {
 
       expect(res.status).toBe(400);
     });
+
+    it("should apply fieldPicks — source fields overwrite target when picked", async () => {
+      const { admin } = await setupWithParticipant();
+      const source = await prisma.boardGame.create({
+        data: { name: "Source Name", yearPublished: 2020, playingTime: 90 },
+      });
+      const target = await prisma.boardGame.create({
+        data: { name: "Target Name", yearPublished: 2021, playingTime: null },
+      });
+
+      const res = await request
+        .post(`/api/admin/boardgames/${source.id}/merge`)
+        .set("Cookie", admin.cookie)
+        .send({
+          targetId: target.id,
+          fieldPicks: {
+            name: "source",
+            yearPublished: "target",
+            playingTime: "source",
+          },
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.name).toBe("Source Name");
+      expect(res.body.data.yearPublished).toBe(2021);
+      expect(res.body.data.playingTime).toBe(90);
+
+      const gone = await prisma.boardGame.findUnique({ where: { id: source.id } });
+      expect(gone).toBeNull();
+    });
+
+    it("should preserve target fields when no fieldPicks provided", async () => {
+      const { admin } = await setupWithParticipant();
+      const source = await prisma.boardGame.create({
+        data: { name: "Source Only", yearPublished: 2019 },
+      });
+      const target = await prisma.boardGame.create({
+        data: { name: "Target Kept", yearPublished: 2022 },
+      });
+
+      const res = await request
+        .post(`/api/admin/boardgames/${source.id}/merge`)
+        .set("Cookie", admin.cookie)
+        .send({ targetId: target.id });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.name).toBe("Target Kept");
+      expect(res.body.data.yearPublished).toBe(2022);
+    });
   });
 });
