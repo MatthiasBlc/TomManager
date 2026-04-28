@@ -48,9 +48,7 @@ describe("Participant API", () => {
         email: "outsider@example.com",
         username: "outsider",
       });
-      const { cookie: outsiderCookie } = await loginTestUser(
-        "outsider@example.com",
-      );
+      const { cookie: outsiderCookie } = await loginTestUser("outsider@example.com");
 
       const res = await request
         .get(`/api/events/${event.id}/participants`)
@@ -126,9 +124,7 @@ describe("Participant API", () => {
       const event = await createTestEvent(adminCookie);
 
       const res = await request
-        .delete(
-          `/api/events/${event.id}/participants/00000000-0000-0000-0000-000000000000`,
-        )
+        .delete(`/api/events/${event.id}/participants/00000000-0000-0000-0000-000000000000`)
         .set("Cookie", adminCookie);
 
       expect(res.status).toBe(404);
@@ -181,9 +177,7 @@ describe("Participant API", () => {
         email: "outsider@example.com",
         username: "outsider",
       });
-      const { cookie: outsiderCookie } = await loginTestUser(
-        "outsider@example.com",
-      );
+      const { cookie: outsiderCookie } = await loginTestUser("outsider@example.com");
 
       const res = await request
         .delete(`/api/events/${event.id}/participants/me`)

@@ -42,9 +42,10 @@ describe("GameTable API", () => {
       expect(res.body.data.title).toBe("Curse of Strahd");
       expect(res.body.data.maxPlayers).toBe(5);
       expect(res.body.data.tags).toHaveLength(2);
-      expect(
-        res.body.data.tags.map((t: { name: string }) => t.name).sort(),
-      ).toEqual(["dnd", "horror"]);
+      expect(res.body.data.tags.map((t: { name: string }) => t.name).sort()).toEqual([
+        "dnd",
+        "horror",
+      ]);
     });
 
     it("should create a table as admin", async () => {
@@ -161,9 +162,10 @@ describe("GameTable API", () => {
         .send({ ...validTableData, tags: ["DnD", "HORROR"] });
 
       expect(res.status).toBe(201);
-      expect(
-        res.body.data.tags.map((t: { name: string }) => t.name).sort(),
-      ).toEqual(["dnd", "horror"]);
+      expect(res.body.data.tags.map((t: { name: string }) => t.name).sort()).toEqual([
+        "dnd",
+        "horror",
+      ]);
     });
 
     it("should create a JDS table with a valid boardGameId", async () => {
@@ -219,9 +221,7 @@ describe("GameTable API", () => {
         .set("Cookie", admin.cookie)
         .send(validTableData);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", playerCookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -236,9 +236,7 @@ describe("GameTable API", () => {
     it("should return empty array when no tables", async () => {
       const { playerCookie, event } = await setupEventWithParticipant();
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", playerCookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
@@ -290,12 +288,7 @@ describe("GameTable API", () => {
     });
 
     it("should demote last confirmed players when reducing maxPlayers", async () => {
-      const {
-        admin,
-        playerCookie,
-        playerId: _playerId,
-        event,
-      } = await setupEventWithParticipant();
+      const { admin, playerCookie, playerId: _playerId, event } = await setupEventWithParticipant();
 
       // Admin creates table with maxPlayers=2
       const createRes = await request
@@ -314,9 +307,7 @@ describe("GameTable API", () => {
         email: "p2@example.com",
         username: "player2",
       });
-      await request
-        .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", p2Cookie);
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", p2Cookie);
 
       // Reduce maxPlayers to 1 — last joined should be demoted
       const res = await request
@@ -332,10 +323,10 @@ describe("GameTable API", () => {
         .set("Cookie", admin.cookie);
 
       const confirmed = detail.body.data.participants.filter(
-        (p: { status: string }) => p.status === "CONFIRMED",
+        (p: { status: string }) => p.status === "CONFIRMED"
       );
       const waitlisted = detail.body.data.participants.filter(
-        (p: { status: string }) => p.status === "WAITLIST",
+        (p: { status: string }) => p.status === "WAITLIST"
       );
       expect(confirmed).toHaveLength(1);
       expect(waitlisted).toHaveLength(1);
@@ -378,7 +369,7 @@ describe("GameTable API", () => {
         .set("Cookie", admin.cookie);
 
       const confirmed = detail.body.data.participants.filter(
-        (p: { status: string }) => p.status === "CONFIRMED",
+        (p: { status: string }) => p.status === "CONFIRMED"
       );
       expect(confirmed).toHaveLength(2);
     });
@@ -574,8 +565,7 @@ describe("GameTable API", () => {
 
   describe("DELETE /api/events/:eventId/tables/:tableId/participants/:userId (kick)", () => {
     it("should kick player as GM", async () => {
-      const { admin, playerCookie, playerId, event } =
-        await setupEventWithParticipant();
+      const { admin, playerCookie, playerId, event } = await setupEventWithParticipant();
 
       // Player creates table, admin joins
       // Actually: admin creates table, player joins, admin kicks player
@@ -590,9 +580,7 @@ describe("GameTable API", () => {
         .set("Cookie", playerCookie);
 
       const res = await request
-        .delete(
-          `/api/events/${event.id}/tables/${tableId}/participants/${playerId}`,
-        )
+        .delete(`/api/events/${event.id}/tables/${tableId}/participants/${playerId}`)
         .set("Cookie", admin.cookie);
 
       expect(res.status).toBe(204);
@@ -614,9 +602,7 @@ describe("GameTable API", () => {
       const tableId = createRes.body.data.id;
 
       const res = await request
-        .delete(
-          `/api/events/${event.id}/tables/${tableId}/participants/${admin.user.id}`,
-        )
+        .delete(`/api/events/${event.id}/tables/${tableId}/participants/${admin.user.id}`)
         .set("Cookie", playerCookie);
 
       expect(res.status).toBe(403);
@@ -636,49 +622,34 @@ describe("GameTable API", () => {
       const tableId = createRes.body.data.id;
 
       // Joueur1 rejoint (confirme)
-      const { user: player1, cookie: cookie1 } = await addTestParticipant(
-        event.id,
-        {
-          email: "setp1@example.com",
-          username: "setp1user",
-        },
-      );
-      await request
-        .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", cookie1);
+      const { user: player1, cookie: cookie1 } = await addTestParticipant(event.id, {
+        email: "setp1@example.com",
+        username: "setp1user",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", cookie1);
 
       // Joueur2 rejoint (waitlist)
-      const { user: player2, cookie: cookie2 } = await addTestParticipant(
-        event.id,
-        {
-          email: "setp2@example.com",
-          username: "setp2user",
-        },
-      );
-      await request
-        .post(`/api/events/${event.id}/tables/${tableId}/join`)
-        .set("Cookie", cookie2);
+      const { user: player2, cookie: cookie2 } = await addTestParticipant(event.id, {
+        email: "setp2@example.com",
+        username: "setp2user",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", cookie2);
 
       return { admin, event, tableId, player1, cookie1, player2, cookie2 };
     }
 
     it("should promote a WAITLIST player to CONFIRMED when a slot is available", async () => {
-      const { admin, event, tableId, player1, player2 } =
-        await setupTableWithWaitlistedPlayer();
+      const { admin, event, tableId, player1, player2 } = await setupTableWithWaitlistedPlayer();
 
       // Retrograder player1 d'abord pour liberer une place
       await request
-        .patch(
-          `/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`,
-        )
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`)
         .set("Cookie", admin.cookie)
         .send({ status: "WAITLIST" });
 
       // Promouvoir player2
       const res = await request
-        .patch(
-          `/api/events/${event.id}/tables/${tableId}/participants/${player2.id}/status`,
-        )
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player2.id}/status`)
         .set("Cookie", admin.cookie)
         .send({ status: "CONFIRMED" });
 
@@ -689,20 +660,17 @@ describe("GameTable API", () => {
         .get(`/api/events/${event.id}/tables/${tableId}`)
         .set("Cookie", admin.cookie);
       const p2 = detail.body.data.participants.find(
-        (p: { userId: string }) => p.userId === player2.id,
+        (p: { userId: string }) => p.userId === player2.id
       );
       expect(p2.status).toBe("CONFIRMED");
     });
 
     it("should reject promote with 409 when table is full", async () => {
-      const { admin, event, tableId, player2 } =
-        await setupTableWithWaitlistedPlayer();
+      const { admin, event, tableId, player2 } = await setupTableWithWaitlistedPlayer();
 
       // Table pleine (player1 est confirme, maxPlayers=1)
       const res = await request
-        .patch(
-          `/api/events/${event.id}/tables/${tableId}/participants/${player2.id}/status`,
-        )
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player2.id}/status`)
         .set("Cookie", admin.cookie)
         .send({ status: "CONFIRMED" });
 
@@ -710,13 +678,10 @@ describe("GameTable API", () => {
     });
 
     it("should demote a CONFIRMED player to WAITLIST", async () => {
-      const { admin, event, tableId, player1 } =
-        await setupTableWithWaitlistedPlayer();
+      const { admin, event, tableId, player1 } = await setupTableWithWaitlistedPlayer();
 
       const res = await request
-        .patch(
-          `/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`,
-        )
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`)
         .set("Cookie", admin.cookie)
         .send({ status: "WAITLIST" });
 
@@ -727,20 +692,17 @@ describe("GameTable API", () => {
         .get(`/api/events/${event.id}/tables/${tableId}`)
         .set("Cookie", admin.cookie);
       const p1 = detail.body.data.participants.find(
-        (p: { userId: string }) => p.userId === player1.id,
+        (p: { userId: string }) => p.userId === player1.id
       );
       expect(p1.status).toBe("WAITLIST");
     });
 
     it("should NOT auto-promote the next waitlist player after a demote", async () => {
-      const { admin, event, tableId, player1, player2 } =
-        await setupTableWithWaitlistedPlayer();
+      const { admin, event, tableId, player1, player2 } = await setupTableWithWaitlistedPlayer();
 
       // Retrograder player1 (confirme) -> waitlist
       await request
-        .patch(
-          `/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`,
-        )
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`)
         .set("Cookie", admin.cookie)
         .send({ status: "WAITLIST" });
 
@@ -749,19 +711,16 @@ describe("GameTable API", () => {
         .get(`/api/events/${event.id}/tables/${tableId}`)
         .set("Cookie", admin.cookie);
       const p2 = detail.body.data.participants.find(
-        (p: { userId: string }) => p.userId === player2.id,
+        (p: { userId: string }) => p.userId === player2.id
       );
       expect(p2.status).toBe("WAITLIST");
     });
 
     it("should reject status change with 403 if not GM or admin", async () => {
-      const { event, tableId, player1, cookie2 } =
-        await setupTableWithWaitlistedPlayer();
+      const { event, tableId, player1, cookie2 } = await setupTableWithWaitlistedPlayer();
 
       const res = await request
-        .patch(
-          `/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`,
-        )
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${player1.id}/status`)
         .set("Cookie", cookie2)
         .send({ status: "WAITLIST" });
 
@@ -773,7 +732,7 @@ describe("GameTable API", () => {
 
       const res = await request
         .patch(
-          `/api/events/${event.id}/tables/${tableId}/participants/00000000-0000-0000-0000-000000000000/status`,
+          `/api/events/${event.id}/tables/${tableId}/participants/00000000-0000-0000-0000-000000000000/status`
         )
         .set("Cookie", admin.cookie)
         .send({ status: "WAITLIST" });
@@ -808,18 +767,10 @@ describe("GameTable API", () => {
       const { admin, event } = await setupEventWithParticipant();
 
       // Admin est GM sur deux tables qui se chevauchent (pas dans participants)
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableA);
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableB);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableA);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableB);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(2);
@@ -840,10 +791,7 @@ describe("GameTable API", () => {
       });
 
       // Admin est GM sur table A
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableA);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableA);
 
       // Player est GM sur table B (chevauchement avec A)
       const resTB = await request
@@ -857,18 +805,12 @@ describe("GameTable API", () => {
         .post(`/api/events/${event.id}/tables/${tableBId}/join`)
         .set("Cookie", admin.cookie);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       // L'admin est GM sur A et joueur sur B : conflit sur les deux
-      const tA = res.body.data.find(
-        (t: { title: string }) => t.title === "Table A",
-      );
-      const tB = res.body.data.find(
-        (t: { title: string }) => t.title === "Table B",
-      );
+      const tA = res.body.data.find((t: { title: string }) => t.title === "Table A");
+      const tB = res.body.data.find((t: { title: string }) => t.title === "Table B");
       expect(tA.currentUserConflict).toBe(true);
       expect(tB.currentUserConflict).toBe(true);
     });
@@ -877,18 +819,10 @@ describe("GameTable API", () => {
       const { admin, event } = await setupEventWithParticipant();
 
       // Admin est GM sur table A (10-14h) et table C (15-17h) : pas de chevauchement
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableA);
-      await request
-        .post(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie)
-        .send(tableC);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableA);
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie).send(tableC);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data[0].currentUserConflict).toBe(false);
@@ -918,9 +852,7 @@ describe("GameTable API", () => {
         .post(`/api/events/${event.id}/tables/${resB.body.data.id}/join`)
         .set("Cookie", playerCookie);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", playerCookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data[0].currentUserConflict).toBe(true);
@@ -954,9 +886,7 @@ describe("GameTable API", () => {
       const { playerCookie, event } = await setupEventWithParticipant();
 
       const res = await request
-        .get(
-          `/api/events/${event.id}/tables/00000000-0000-0000-0000-000000000000`,
-        )
+        .get(`/api/events/${event.id}/tables/00000000-0000-0000-0000-000000000000`)
         .set("Cookie", playerCookie);
 
       expect(res.status).toBe(404);
@@ -980,13 +910,10 @@ describe("Cascade Tests", () => {
         });
 
       // Shrink event to 12:00-16:00
-      await request
-        .patch(`/api/events/${event.id}`)
-        .set("Cookie", admin.cookie)
-        .send({
-          startDateTime: "2026-06-01T12:00:00Z",
-          endDateTime: "2026-06-01T16:00:00Z",
-        });
+      await request.patch(`/api/events/${event.id}`).set("Cookie", admin.cookie).send({
+        startDateTime: "2026-06-01T12:00:00Z",
+        endDateTime: "2026-06-01T16:00:00Z",
+      });
 
       const tables = await request
         .get(`/api/events/${event.id}/tables`)
@@ -994,10 +921,10 @@ describe("Cascade Tests", () => {
 
       expect(tables.body.data).toHaveLength(1);
       expect(new Date(tables.body.data[0].startDateTime).toISOString()).toBe(
-        "2026-06-01T12:00:00.000Z",
+        "2026-06-01T12:00:00.000Z"
       );
       expect(new Date(tables.body.data[0].endDateTime).toISOString()).toBe(
-        "2026-06-01T16:00:00.000Z",
+        "2026-06-01T16:00:00.000Z"
       );
     });
 
@@ -1030,8 +957,7 @@ describe("Cascade Tests", () => {
 
   describe("Participant removal cascade to GameTables", () => {
     it("should delete tables created by removed participant", async () => {
-      const { admin, playerCookie, playerId, event } =
-        await setupEventWithParticipant();
+      const { admin, playerCookie, playerId, event } = await setupEventWithParticipant();
 
       // Player creates a table
       await request
@@ -1053,8 +979,7 @@ describe("Cascade Tests", () => {
     });
 
     it("should remove participant from tables and promote waitlist", async () => {
-      const { admin, playerCookie, playerId, event } =
-        await setupEventWithParticipant();
+      const { admin, playerCookie, playerId, event } = await setupEventWithParticipant();
 
       // Admin creates table with maxPlayers=1
       const createRes = await request
@@ -1108,14 +1033,10 @@ describe("Cascade Tests", () => {
         .send({ ...validTableData, title: "Second Table" });
 
       // Delete event
-      await request
-        .delete(`/api/events/${event.id}`)
-        .set("Cookie", admin.cookie);
+      await request.delete(`/api/events/${event.id}`).set("Cookie", admin.cookie);
 
       // Event should be gone
-      const eventRes = await request
-        .get(`/api/events/${event.id}`)
-        .set("Cookie", admin.cookie);
+      const eventRes = await request.get(`/api/events/${event.id}`).set("Cookie", admin.cookie);
       expect(eventRes.status).toBe(404);
     });
   });
@@ -1132,26 +1053,18 @@ describe("Tag API", () => {
         .set("Cookie", admin.cookie)
         .send({ ...validTableData, tags: ["dnd", "horror", "dark-fantasy"] });
 
-      const res = await request
-        .get("/api/tags?q=d")
-        .set("Cookie", admin.cookie);
+      const res = await request.get("/api/tags?q=d").set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThanOrEqual(2);
-      expect(res.body.data.map((t: { name: string }) => t.name)).toContain(
-        "dnd",
-      );
-      expect(res.body.data.map((t: { name: string }) => t.name)).toContain(
-        "dark-fantasy",
-      );
+      expect(res.body.data.map((t: { name: string }) => t.name)).toContain("dnd");
+      expect(res.body.data.map((t: { name: string }) => t.name)).toContain("dark-fantasy");
     });
 
     it("should return empty array for no match", async () => {
       const { admin } = await setupEventWithParticipant();
 
-      const res = await request
-        .get("/api/tags?q=zzz")
-        .set("Cookie", admin.cookie);
+      const res = await request.get("/api/tags?q=zzz").set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);

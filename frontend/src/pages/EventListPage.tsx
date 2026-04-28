@@ -69,9 +69,7 @@ export default function EventListPage() {
           icon={<span>📅</span>}
           title="No events yet"
           description={
-            user?.role === "ADMIN"
-              ? "Create your first event to get started."
-              : undefined
+            user?.role === "ADMIN" ? "Create your first event to get started." : undefined
           }
         />
       ) : (
@@ -83,12 +81,9 @@ export default function EventListPage() {
               className="card bg-base-100 shadow-sm hover:shadow-md active:scale-[0.98] transition-all"
             >
               <div className="card-body p-4 md:p-6">
-                <h2 className="card-title text-base md:text-lg">
-                  {event.name}
-                </h2>
+                <h2 className="card-title text-base md:text-lg">{event.name}</h2>
                 <p className="text-xs opacity-70 md:text-sm">
-                  {formatDate(event.startDateTime)} -{" "}
-                  {formatDate(event.endDateTime)}
+                  {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
                 </p>
                 <div className="badge badge-outline text-xs">
                   {event.participantCount} participant

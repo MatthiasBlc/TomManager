@@ -21,7 +21,7 @@ function renderWithRouter() {
           }
         />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 

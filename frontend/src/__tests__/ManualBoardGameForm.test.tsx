@@ -9,12 +9,8 @@ describe("ManualBoardGameForm", () => {
     expect(screen.getByLabelText("Min Players")).toBeInTheDocument();
     expect(screen.getByLabelText("Max Players")).toBeInTheDocument();
     expect(screen.getByLabelText("Playing Time (min)")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /create & add/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /back to search/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /create & add/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /back to search/i })).toBeInTheDocument();
   });
 
   it("shows an error message when submitting without a name", async () => {

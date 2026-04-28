@@ -21,10 +21,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const game = await adminBoardGameService.updateBoardGame(
-      req.params.id,
-      req.body,
-    );
+    const game = await adminBoardGameService.updateBoardGame(req.params.id, req.body);
     res.json({ data: game });
   } catch (err) {
     next(err);
@@ -43,16 +40,9 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
 export async function merge(req: Request, res: Response, next: NextFunction) {
   try {
     const { targetId, fieldPicks } = req.body;
-    if (!targetId)
-      return res
-        .status(400)
-        .json({ error: { message: "targetId is required" } });
+    if (!targetId) return res.status(400).json({ error: { message: "targetId is required" } });
 
-    const result = await adminBoardGameService.mergeBoardGames(
-      req.params.id,
-      targetId,
-      fieldPicks,
-    );
+    const result = await adminBoardGameService.mergeBoardGames(req.params.id, targetId, fieldPicks);
     res.json({ data: result });
   } catch (err) {
     next(err);

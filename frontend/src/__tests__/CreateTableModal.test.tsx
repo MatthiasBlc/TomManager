@@ -31,13 +31,7 @@ vi.mock("../components/common/ResponsiveModal", () => ({
     ) : null,
 }));
 vi.mock("../components/planning/TagInput", () => ({
-  default: ({
-    value,
-    onChange,
-  }: {
-    value: string[];
-    onChange: (v: string[]) => void;
-  }) => (
+  default: ({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) => (
     <div data-testid="tag-input">
       <span>tags:{value.join(",")}</span>
       <button type="button" onClick={() => onChange([...value, "added"])}>
@@ -55,26 +49,12 @@ describe("CreateTableModal", () => {
   });
 
   it("renders nothing when closed", () => {
-    render(
-      <CreateTableModal
-        open={false}
-        onClose={vi.fn()}
-        onCreated={vi.fn()}
-        eventId="ev1"
-      />,
-    );
+    render(<CreateTableModal open={false} onClose={vi.fn()} onCreated={vi.fn()} eventId="ev1" />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renders the form when open", () => {
-    render(
-      <CreateTableModal
-        open={true}
-        onClose={vi.fn()}
-        onCreated={vi.fn()}
-        eventId="ev1"
-      />,
-    );
+    render(<CreateTableModal open={true} onClose={vi.fn()} onCreated={vi.fn()} eventId="ev1" />);
     expect(screen.getByLabelText("Titre")).toBeInTheDocument();
     expect(screen.getByLabelText("Pitch")).toBeInTheDocument();
     expect(screen.getByLabelText("Joueurs max")).toBeInTheDocument();
@@ -84,33 +64,17 @@ describe("CreateTableModal", () => {
   });
 
   it("shows the GM-is-player checkbox only for JDR type", () => {
-    render(
-      <CreateTableModal
-        open={true}
-        onClose={vi.fn()}
-        onCreated={vi.fn()}
-        eventId="ev1"
-      />,
-    );
+    render(<CreateTableModal open={true} onClose={vi.fn()} onCreated={vi.fn()} eventId="ev1" />);
     // JDR is the default
     expect(screen.getByLabelText(/MJ est aussi joueur/i)).toBeInTheDocument();
 
     // Switch to JDS
     fireEvent.click(screen.getByLabelText(/JDS/i));
-    expect(
-      screen.queryByLabelText(/MJ est aussi joueur/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/MJ est aussi joueur/i)).not.toBeInTheDocument();
   });
 
   it("shows validation errors when submitting an empty form", async () => {
-    render(
-      <CreateTableModal
-        open={true}
-        onClose={vi.fn()}
-        onCreated={vi.fn()}
-        eventId="ev1"
-      />,
-    );
+    render(<CreateTableModal open={true} onClose={vi.fn()} onCreated={vi.fn()} eventId="ev1" />);
     fireEvent.click(screen.getByRole("button", { name: /^Creer$/i }));
     expect(await screen.findByText("Le titre est requis")).toBeInTheDocument();
     expect(apiPostMock).not.toHaveBeenCalled();
@@ -120,14 +84,7 @@ describe("CreateTableModal", () => {
     apiPostMock.mockResolvedValue({});
     const onCreated = vi.fn();
     const onClose = vi.fn();
-    render(
-      <CreateTableModal
-        open={true}
-        onClose={onClose}
-        onCreated={onCreated}
-        eventId="ev1"
-      />,
-    );
+    render(<CreateTableModal open={true} onClose={onClose} onCreated={onCreated} eventId="ev1" />);
 
     fireEvent.input(screen.getByLabelText("Titre"), {
       target: { value: "Donjon" },
@@ -163,14 +120,7 @@ describe("CreateTableModal", () => {
 
   it("calls onClose when Annuler is clicked", () => {
     const onClose = vi.fn();
-    render(
-      <CreateTableModal
-        open={true}
-        onClose={onClose}
-        onCreated={vi.fn()}
-        eventId="ev1"
-      />,
-    );
+    render(<CreateTableModal open={true} onClose={onClose} onCreated={vi.fn()} eventId="ev1" />);
     fireEvent.click(screen.getByRole("button", { name: /^Annuler$/i }));
     expect(onClose).toHaveBeenCalled();
   });

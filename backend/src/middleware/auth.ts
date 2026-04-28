@@ -9,11 +9,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-export async function requireAdmin(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await prisma.user.findFirst({
       where: { id: req.session.userId, deletedAt: null },
@@ -30,11 +26,7 @@ export async function requireAdmin(
   }
 }
 
-export async function requireEventParticipant(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export async function requireEventParticipant(req: Request, res: Response, next: NextFunction) {
   try {
     const eventId = req.params.eventId;
     const userId = req.session.userId!;
@@ -49,9 +41,7 @@ export async function requireEventParticipant(
         where: { id: userId, deletedAt: null },
       });
       if (!user || user.role !== "ADMIN") {
-        res
-          .status(403)
-          .json({ error: { message: "Event participation required" } });
+        res.status(403).json({ error: { message: "Event participation required" } });
         return;
       }
     }
@@ -62,11 +52,7 @@ export async function requireEventParticipant(
   }
 }
 
-export async function requireTableGMOrAdmin(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export async function requireTableGMOrAdmin(req: Request, res: Response, next: NextFunction) {
   try {
     const tableId = req.params.tableId;
     const userId = req.session.userId!;
@@ -90,13 +76,11 @@ export async function requireTableGMOrAdmin(
     });
 
     if (!user || user.role !== "ADMIN") {
-      res
-        .status(403)
-        .json({
-          error: {
-            message: "Only the table GM or an admin can perform this action",
-          },
-        });
+      res.status(403).json({
+        error: {
+          message: "Only the table GM or an admin can perform this action",
+        },
+      });
       return;
     }
 
@@ -106,11 +90,7 @@ export async function requireTableGMOrAdmin(
   }
 }
 
-export async function requireEventCreator(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
+export async function requireEventCreator(req: Request, res: Response, next: NextFunction) {
   try {
     const eventId = req.params.eventId;
     const userId = req.session.userId!;
@@ -134,14 +114,11 @@ export async function requireEventCreator(
     });
 
     if (!user || user.role !== "ADMIN") {
-      res
-        .status(403)
-        .json({
-          error: {
-            message:
-              "Only the event creator or an admin can perform this action",
-          },
-        });
+      res.status(403).json({
+        error: {
+          message: "Only the event creator or an admin can perform this action",
+        },
+      });
       return;
     }
 

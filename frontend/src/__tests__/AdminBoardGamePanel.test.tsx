@@ -25,7 +25,7 @@ const makeBoardGame = (
   overrides: Partial<{
     eventBoardGames: number;
     gameTables: number;
-  }> = {},
+  }> = {}
 ) => ({
   id,
   name,
@@ -45,10 +45,7 @@ const makeBoardGame = (
 const defaultListResult = {
   data: {
     data: {
-      games: [
-        makeBoardGame("g1", "Wingspan"),
-        makeBoardGame("g2", "Azul"),
-      ],
+      games: [makeBoardGame("g1", "Wingspan"), makeBoardGame("g2", "Azul")],
       total: 2,
       page: 1,
       limit: 20,
@@ -71,9 +68,7 @@ describe("AdminBoardGamePanel", () => {
 
   it("shows total count", async () => {
     render(<AdminBoardGamePanel />);
-    await waitFor(() =>
-      expect(screen.getByText("2 jeux au total")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText("2 jeux au total")).toBeInTheDocument());
   });
 
   it("opens edit modal on Editer click", async () => {
@@ -106,9 +101,7 @@ describe("AdminBoardGamePanel", () => {
     render(<AdminBoardGamePanel />);
     await waitFor(() => screen.getByText("Wingspan"));
     fireEvent.click(screen.getByText("Sup."));
-    await waitFor(() =>
-      expect(screen.getByText(/3 entree/)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/3 entree/)).toBeInTheDocument());
   });
 
   it("calls delete API and refreshes on confirm", async () => {
@@ -177,21 +170,18 @@ describe("AdminBoardGamePanel", () => {
     fireEvent.click(screen.getByText("Confirmer la fusion"));
 
     await waitFor(() =>
-      expect(apiPostMock).toHaveBeenCalledWith(
-        "/api/admin/boardgames/g1/merge",
-        {
-          targetId: "g2",
-          fieldPicks: {
-            name: "target",
-            yearPublished: "target",
-            minPlayers: "target",
-            maxPlayers: "target",
-            playingTime: "target",
-            imageUrl: "target",
-            externalRef: "target",
-          },
+      expect(apiPostMock).toHaveBeenCalledWith("/api/admin/boardgames/g1/merge", {
+        targetId: "g2",
+        fieldPicks: {
+          name: "target",
+          yearPublished: "target",
+          minPlayers: "target",
+          maxPlayers: "target",
+          playingTime: "target",
+          imageUrl: "target",
+          externalRef: "target",
         },
-      ),
+      })
     );
   });
 });

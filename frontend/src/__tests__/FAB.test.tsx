@@ -4,9 +4,7 @@ import FAB from "../components/common/FAB";
 describe("FAB", () => {
   it("renders a button with the provided aria label", () => {
     render(<FAB onClick={() => {}} label="Ajouter une table" />);
-    expect(
-      screen.getByRole("button", { name: "Ajouter une table" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ajouter une table" })).toBeInTheDocument();
   });
 
   it("calls onClick when the button is clicked", () => {

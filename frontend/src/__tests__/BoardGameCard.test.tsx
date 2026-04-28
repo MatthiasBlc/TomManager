@@ -33,7 +33,7 @@ describe("BoardGameCard", () => {
         onRemove={onRemove}
         removableEntries={[{ entryId: "entry1", broughtByUserId: "user1" }]}
         currentUserId="user1"
-      />,
+      />
     );
     const btn = screen.getByRole("button", { name: /Remove Catan/i });
     fireEvent.click(btn);
@@ -48,7 +48,7 @@ describe("BoardGameCard", () => {
         onRemove={vi.fn()}
         removableEntries={[{ entryId: "entry2", broughtByUserId: "user2" }]}
         currentUserId="user1"
-      />,
+      />
     );
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
@@ -62,7 +62,7 @@ describe("BoardGameCard", () => {
           { id: "t1", title: "Table 1" },
           { id: "t2", title: "Table 2" },
         ]}
-      />,
+      />
     );
     expect(screen.getByText("2 tables")).toBeInTheDocument();
   });
@@ -73,16 +73,14 @@ describe("BoardGameCard", () => {
         game={baseGame}
         broughtBy={[]}
         linkedTables={[{ id: "t1", title: "Table 1" }]}
-      />,
+      />
     );
     expect(screen.getByText("1 table")).toBeInTheDocument();
   });
 
   it("calls onClick when card is clicked", () => {
     const onClick = vi.fn();
-    render(
-      <BoardGameCard game={baseGame} broughtBy={[]} onClick={onClick} />,
-    );
+    render(<BoardGameCard game={baseGame} broughtBy={[]} onClick={onClick} />);
     fireEvent.click(screen.getByText("Catan"));
     expect(onClick).toHaveBeenCalled();
   });
@@ -98,7 +96,7 @@ describe("BoardGameCard", () => {
         removableEntries={[{ entryId: "entry1", broughtByUserId: "user1" }]}
         currentUserId="user1"
         onClick={onClick}
-      />,
+      />
     );
     fireEvent.click(screen.getByRole("button", { name: /Remove Catan/i }));
     expect(onRemove).toHaveBeenCalledWith("entry1");

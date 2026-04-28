@@ -9,9 +9,7 @@ export function validateBody(schema: ZodSchema) {
         field: issue.path.join(".") || "body",
         message: issue.message,
       }));
-      res
-        .status(400)
-        .json({ error: { message: "Validation error", status: 400, details } });
+      res.status(400).json({ error: { message: "Validation error", status: 400, details } });
       return;
     }
     // Remplacer req.body par les donnees validees et transformees par Zod
@@ -20,8 +18,7 @@ export function validateBody(schema: ZodSchema) {
   };
 }
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function validateUUID(...paramNames: string[]) {
   return (req: Request, res: Response, next: NextFunction) => {

@@ -24,7 +24,7 @@ describe("BoardGameDetailModal", () => {
         game={null}
         linkedTables={[]}
         broughtBy={[]}
-      />,
+      />
     );
     expect(container.firstChild).toBeNull();
   });
@@ -37,7 +37,7 @@ describe("BoardGameDetailModal", () => {
         game={baseGame}
         linkedTables={[]}
         broughtBy={[{ id: "u1", username: "Alice" }]}
-      />,
+      />
     );
     expect(screen.getAllByText("Wingspan").length).toBeGreaterThan(0);
     expect(screen.getByText("(2019)")).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe("BoardGameDetailModal", () => {
           { id: "u1", username: "Alice" },
           { id: "u2", username: "Bob" },
         ]}
-      />,
+      />
     );
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe("BoardGameDetailModal", () => {
           { id: "t2", title: "Deuxieme table" },
         ]}
         broughtBy={[]}
-      />,
+      />
     );
     expect(screen.getByText("Tables associees (2)")).toBeInTheDocument();
     expect(screen.getByText("Partie Wingspan")).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe("BoardGameDetailModal", () => {
         game={baseGame}
         linkedTables={[]}
         broughtBy={[]}
-      />,
+      />
     );
     expect(screen.getByText("Aucune table associee")).toBeInTheDocument();
   });
@@ -102,7 +102,7 @@ describe("BoardGameDetailModal", () => {
         game={baseGame}
         linkedTables={[]}
         broughtBy={[]}
-      />,
+      />
     );
     fireEvent.click(screen.getByLabelText("Fermer"));
     expect(onClose).toHaveBeenCalled();

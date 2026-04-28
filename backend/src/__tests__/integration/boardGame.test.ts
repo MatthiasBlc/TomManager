@@ -1,10 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  request,
-  setupAdmin,
-  createTestEvent,
-  addTestParticipant,
-} from "../setup/testHelpers";
+import { request, setupAdmin, createTestEvent, addTestParticipant } from "../setup/testHelpers";
 import prisma from "../../util/db";
 import * as bggService from "../../services/bgg";
 
@@ -53,10 +48,7 @@ describe("BoardGame API", () => {
     it("should reject missing name", async () => {
       const { playerCookie } = await setupEventWithParticipant();
 
-      const res = await request
-        .post("/api/boardgames")
-        .set("Cookie", playerCookie)
-        .send({});
+      const res = await request.post("/api/boardgames").set("Cookie", playerCookie).send({});
 
       expect(res.status).toBe(400);
     });
@@ -64,16 +56,13 @@ describe("BoardGame API", () => {
     it("should create with optional fields", async () => {
       const { playerCookie } = await setupEventWithParticipant();
 
-      const res = await request
-        .post("/api/boardgames")
-        .set("Cookie", playerCookie)
-        .send({
-          name: "Catan",
-          yearPublished: 1995,
-          minPlayers: 3,
-          maxPlayers: 4,
-          playingTime: 90,
-        });
+      const res = await request.post("/api/boardgames").set("Cookie", playerCookie).send({
+        name: "Catan",
+        yearPublished: 1995,
+        minPlayers: 3,
+        maxPlayers: 4,
+        playingTime: 90,
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.data.yearPublished).toBe(1995);
@@ -94,9 +83,7 @@ describe("BoardGame API", () => {
 
       vi.spyOn(bggService, "searchBGG").mockResolvedValue([]);
 
-      const res = await request
-        .get("/api/boardgames/search?q=Catan")
-        .set("Cookie", playerCookie);
+      const res = await request.get("/api/boardgames/search?q=Catan").set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -111,9 +98,7 @@ describe("BoardGame API", () => {
         { bggId: "42", name: "Catan: Seafarers", yearPublished: 1997 },
       ]);
 
-      const res = await request
-        .get("/api/boardgames/search?q=Catan")
-        .set("Cookie", playerCookie);
+      const res = await request.get("/api/boardgames/search?q=Catan").set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(2);
@@ -139,9 +124,7 @@ describe("BoardGame API", () => {
         { bggId: "42", name: "Catan: Seafarers", yearPublished: 1997 },
       ]);
 
-      const res = await request
-        .get("/api/boardgames/search?q=Catan")
-        .set("Cookie", playerCookie);
+      const res = await request.get("/api/boardgames/search?q=Catan").set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       // 1 local + 1 new from BGG (deduped "13")
@@ -151,9 +134,7 @@ describe("BoardGame API", () => {
     it("should return empty array for empty query", async () => {
       const { playerCookie } = await setupEventWithParticipant();
 
-      const res = await request
-        .get("/api/boardgames/search?q=")
-        .set("Cookie", playerCookie);
+      const res = await request.get("/api/boardgames/search?q=").set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(0);
@@ -172,9 +153,7 @@ describe("BoardGame API", () => {
         },
       });
 
-      const res = await request
-        .get(`/api/boardgames/${bg.id}`)
-        .set("Cookie", playerCookie);
+      const res = await request.get(`/api/boardgames/${bg.id}`).set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe("Catan");
@@ -200,9 +179,7 @@ describe("BoardGame API", () => {
         imageUrl: "https://example.com/catan.jpg",
       });
 
-      const res = await request
-        .get(`/api/boardgames/${bg.id}`)
-        .set("Cookie", playerCookie);
+      const res = await request.get(`/api/boardgames/${bg.id}`).set("Cookie", playerCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.description).toBe("Trade and build settlements");

@@ -68,7 +68,7 @@ describe("Socket.io", () => {
         client.on("disconnect", () => resolve(client));
         client.on("connect_error", () => resolve(client as ClientSocket));
         setTimeout(() => reject(new Error("Timeout")), 5000);
-      }),
+      })
     ).resolves.toBeDefined();
   });
 
@@ -102,9 +102,7 @@ describe("Socket.io", () => {
 
     // Listen for a custom event
     const receivedPromise = new Promise<Record<string, unknown>>((resolve) => {
-      client1.on("table:created", (data: Record<string, unknown>) =>
-        resolve(data),
-      );
+      client1.on("table:created", (data: Record<string, unknown>) => resolve(data));
     });
 
     // Emit from server to test room broadcast

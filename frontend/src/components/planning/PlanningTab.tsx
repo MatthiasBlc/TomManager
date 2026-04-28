@@ -113,11 +113,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
     setSelectedTableId(tableId);
   };
 
-  const handleSlotSelect = (slot: {
-    date: string;
-    startTime: string;
-    durationMinutes: number;
-  }) => {
+  const handleSlotSelect = (slot: { date: string; startTime: string; durationMinutes: number }) => {
     setCreateSlot(slot);
     setShowCreate(true);
   };
@@ -139,11 +135,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
           stroke="currentColor"
           strokeWidth={2}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M4 6h16M4 10h16M4 14h16M4 18h16"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
         </svg>
       </button>
       <button
@@ -219,11 +211,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         </div>
       </div>
 
-      <div
-        className={
-          !isMobile ? "flex-1 min-h-0 overflow-y-auto pb-4" : ""
-        }
-      >
+      <div className={!isMobile ? "flex-1 min-h-0 overflow-y-auto pb-4" : ""}>
         {loading ? (
           <SkeletonCardGrid count={4} />
         ) : viewMode === "list" ? (
@@ -264,15 +252,9 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         eventId={eventId}
         prefilledSlot={createSlot}
         eventStartDate={
-          eventBounds?.startDateTime
-            ? eventBounds.startDateTime.slice(0, 10)
-            : undefined
+          eventBounds?.startDateTime ? eventBounds.startDateTime.slice(0, 10) : undefined
         }
-        eventEndDate={
-          eventBounds?.endDateTime
-            ? eventBounds.endDateTime.slice(0, 10)
-            : undefined
-        }
+        eventEndDate={eventBounds?.endDateTime ? eventBounds.endDateTime.slice(0, 10) : undefined}
       />
 
       <TableDetailModal

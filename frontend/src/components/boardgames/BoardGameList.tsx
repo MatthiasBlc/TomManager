@@ -45,9 +45,7 @@ export default function BoardGameList({
       <EmptyState
         icon={<span>🎲</span>}
         title="No board games added yet"
-        description={
-          emptyDescription ?? "Add a board game to share with the group."
-        }
+        description={emptyDescription ?? "Add a board game to share with the group."}
       />
     );
   }

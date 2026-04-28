@@ -14,15 +14,11 @@ describe("EmptyState", () => {
 
   it("does not render description block when omitted", () => {
     render(<EmptyState title="Vide" />);
-    expect(
-      screen.queryByText("Essayez un autre filtre"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Essayez un autre filtre")).not.toBeInTheDocument();
   });
 
   it("renders the icon when provided", () => {
-    render(
-      <EmptyState title="Vide" icon={<span data-testid="icon">📭</span>} />,
-    );
+    render(<EmptyState title="Vide" icon={<span data-testid="icon">📭</span>} />);
     expect(screen.getByTestId("icon")).toBeInTheDocument();
   });
 

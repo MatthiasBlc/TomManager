@@ -59,9 +59,7 @@ export async function setupAdmin(overrides?: {
     role: "ADMIN",
   });
 
-  const res = await request
-    .post("/api/auth/login")
-    .send({ identifier: email, password });
+  const res = await request.post("/api/auth/login").send({ identifier: email, password });
   const cookie = [res.headers["set-cookie"]].flat() as string[];
 
   return { user, cookie, email, username, password };
@@ -72,7 +70,7 @@ export async function setupAdmin(overrides?: {
  */
 export async function createTestEvent(
   cookie: string[],
-  overrides?: { name?: string; startDateTime?: string; endDateTime?: string },
+  overrides?: { name?: string; startDateTime?: string; endDateTime?: string }
 ) {
   const res = await request
     .post("/api/events")
@@ -91,7 +89,7 @@ export async function createTestEvent(
  */
 export async function addTestParticipant(
   eventId: string,
-  overrides?: { email?: string; username?: string; password?: string },
+  overrides?: { email?: string; username?: string; password?: string }
 ) {
   const { user, email, username, password } = await createTestUserDirectly({
     email: overrides?.email || "player@example.com",
@@ -101,9 +99,7 @@ export async function addTestParticipant(
   await prisma.eventParticipation.create({
     data: { eventId, userId: user.id },
   });
-  const loginRes = await request
-    .post("/api/auth/login")
-    .send({ identifier: email, password });
+  const loginRes = await request.post("/api/auth/login").send({ identifier: email, password });
   const cookie = [loginRes.headers["set-cookie"]].flat() as string[];
   return { user, cookie, email, username, password };
 }
@@ -130,24 +126,14 @@ export async function createAdminUser(overrides?: {
   });
 }
 
-export async function loginTestUser(
-  identifier = "test@example.com",
-  password = "Password123!",
-) {
-  const res = await request
-    .post("/api/auth/login")
-    .send({ identifier, password });
+export async function loginTestUser(identifier = "test@example.com", password = "Password123!") {
+  const res = await request.post("/api/auth/login").send({ identifier, password });
   const cookie = [res.headers["set-cookie"]].flat() as string[];
   return { res, cookie };
 }
 
-export async function loginAdminUser(
-  identifier = "admin@example.com",
-  password = "Password123!",
-) {
-  const res = await request
-    .post("/api/auth/login")
-    .send({ identifier, password });
+export async function loginAdminUser(identifier = "admin@example.com", password = "Password123!") {
+  const res = await request.post("/api/auth/login").send({ identifier, password });
   const cookie = [res.headers["set-cookie"]].flat() as string[];
   return { res, cookie };
 }

@@ -1,11 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import {
-  createContext,
-  useContext,
-  useState,
-  useLayoutEffect,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useState, useLayoutEffect, type ReactNode } from "react";
 
 const THEME_KEY = "app_theme";
 const DARK_THEME = "ToM";
@@ -34,7 +28,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     document.documentElement.setAttribute(
       "data-theme",
-      theme === "dark" ? DARK_THEME : LIGHT_THEME,
+      theme === "dark" ? DARK_THEME : LIGHT_THEME
     );
   }, [theme]);
 
@@ -50,11 +44,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme(): ThemeContextValue {

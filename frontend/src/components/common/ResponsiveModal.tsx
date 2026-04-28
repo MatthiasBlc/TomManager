@@ -16,13 +16,7 @@ const SIZE_CLASSES = {
   xl: "max-w-4xl",
 };
 
-export default function ResponsiveModal({
-  open,
-  onClose,
-  title,
-  children,
-  size = "md",
-}: Props) {
+export default function ResponsiveModal({ open, onClose, title, children, size = "md" }: Props) {
   const isMobile = useIsMobile();
 
   if (isMobile) {
@@ -36,12 +30,7 @@ export default function ResponsiveModal({
   if (!open) return null;
 
   return (
-    <dialog
-      className="modal modal-open"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
+    <dialog className="modal modal-open" role="dialog" aria-modal="true" aria-label={title}>
       <div className={`modal-box ${SIZE_CLASSES[size]}`}>
         <button
           className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"

@@ -8,21 +8,21 @@ router.post(
   "/:eventId/boardgames",
   requireAuth,
   requireEventParticipant,
-  eventBoardGameController.add,
+  eventBoardGameController.add
 );
 
 router.get(
   "/:eventId/boardgames",
   requireAuth,
   requireEventParticipant,
-  eventBoardGameController.list,
+  eventBoardGameController.list
 );
 
 router.delete(
   "/:eventId/boardgames/:id",
   requireAuth,
   requireEventParticipant,
-  eventBoardGameController.remove,
+  eventBoardGameController.remove
 );
 
 export default router;

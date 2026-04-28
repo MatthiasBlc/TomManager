@@ -3,10 +3,7 @@ import { requireAuth, requireAdmin } from "../middleware/auth";
 import { discordSync } from "../controllers/adminSync";
 import * as adminBoardGame from "../controllers/adminBoardGame";
 import { validateBody, validateUUID } from "../middleware/validateBody";
-import {
-  updateBoardGameAdminSchema,
-  mergeSchema,
-} from "../schemas/boardGame";
+import { updateBoardGameAdminSchema, mergeSchema } from "../schemas/boardGame";
 
 const router = Router();
 
@@ -19,14 +16,14 @@ router.patch(
   requireAdmin,
   validateUUID("id"),
   validateBody(updateBoardGameAdminSchema),
-  adminBoardGame.update,
+  adminBoardGame.update
 );
 router.delete(
   "/boardgames/:id",
   requireAuth,
   requireAdmin,
   validateUUID("id"),
-  adminBoardGame.remove,
+  adminBoardGame.remove
 );
 router.post(
   "/boardgames/:id/merge",
@@ -34,7 +31,7 @@ router.post(
   requireAdmin,
   validateUUID("id"),
   validateBody(mergeSchema),
-  adminBoardGame.merge,
+  adminBoardGame.merge
 );
 
 export default router;

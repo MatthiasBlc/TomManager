@@ -245,9 +245,9 @@ describe("Notification Service", () => {
 
     it("should reject if notification not found", async () => {
       const user = await createUser();
-      await expect(
-        notificationService.markAsRead("non-existent-id", user.id),
-      ).rejects.toThrow("Notification not found");
+      await expect(notificationService.markAsRead("non-existent-id", user.id)).rejects.toThrow(
+        "Notification not found"
+      );
     });
 
     it("should reject if notification belongs to another user", async () => {
@@ -267,9 +267,7 @@ describe("Notification Service", () => {
         message: "Not yours",
       });
 
-      await expect(
-        notificationService.markAsRead(notif.id, user2.id),
-      ).rejects.toThrow("Forbidden");
+      await expect(notificationService.markAsRead(notif.id, user2.id)).rejects.toThrow("Forbidden");
     });
   });
 
@@ -352,7 +350,7 @@ describe("Notification Service", () => {
     it("should reject if notification not found", async () => {
       const user = await createUser();
       await expect(
-        notificationService.deleteNotification("non-existent-id", user.id),
+        notificationService.deleteNotification("non-existent-id", user.id)
       ).rejects.toThrow("Notification not found");
     });
 
@@ -373,26 +371,21 @@ describe("Notification Service", () => {
         message: "Not yours",
       });
 
-      await expect(
-        notificationService.deleteNotification(notif.id, user2.id),
-      ).rejects.toThrow("Forbidden");
+      await expect(notificationService.deleteNotification(notif.id, user2.id)).rejects.toThrow(
+        "Forbidden"
+      );
     });
   });
 });
 
 // Helper: create user, login, return cookie + userId
-async function setupAuthenticatedUser(overrides?: {
-  email?: string;
-  username?: string;
-}) {
+async function setupAuthenticatedUser(overrides?: { email?: string; username?: string }) {
   const email = overrides?.email || "notif-api@example.com";
   const username = overrides?.username || "notifapi";
   const password = "Password123!";
 
   await createTestUserDirectly({ email, username, password });
-  const res = await request
-    .post("/api/auth/login")
-    .send({ identifier: email, password });
+  const res = await request.post("/api/auth/login").send({ identifier: email, password });
   return { cookie: res.headers["set-cookie"], userId: res.body.user.id };
 }
 
@@ -433,9 +426,7 @@ describe("Notification API", () => {
         });
       }
 
-      const page1 = await request
-        .get("/api/notifications?limit=2")
-        .set("Cookie", cookie);
+      const page1 = await request.get("/api/notifications?limit=2").set("Cookie", cookie);
 
       expect(page1.status).toBe(200);
       expect(page1.body.data).toHaveLength(2);
@@ -473,9 +464,7 @@ describe("Notification API", () => {
 
       await notificationService.markAsRead(n1.id, userId);
 
-      const res = await request
-        .get("/api/notifications?unread=true")
-        .set("Cookie", cookie);
+      const res = await request.get("/api/notifications?unread=true").set("Cookie", cookie);
 
       expect(res.body.data).toHaveLength(1);
       expect(res.body.data[0].title).toBe("Unread one");
@@ -484,9 +473,7 @@ describe("Notification API", () => {
     it("should reject invalid limit", async () => {
       const { cookie } = await setupAuthenticatedUser();
 
-      const res = await request
-        .get("/api/notifications?limit=abc")
-        .set("Cookie", cookie);
+      const res = await request.get("/api/notifications?limit=abc").set("Cookie", cookie);
 
       expect(res.status).toBe(400);
     });
@@ -509,9 +496,7 @@ describe("Notification API", () => {
         message: "M2",
       });
 
-      const res = await request
-        .get("/api/notifications/unread-count")
-        .set("Cookie", cookie);
+      const res = await request.get("/api/notifications/unread-count").set("Cookie", cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.count).toBe(2);
@@ -520,9 +505,7 @@ describe("Notification API", () => {
     it("should return 0 when no notifications", async () => {
       const { cookie } = await setupAuthenticatedUser();
 
-      const res = await request
-        .get("/api/notifications/unread-count")
-        .set("Cookie", cookie);
+      const res = await request.get("/api/notifications/unread-count").set("Cookie", cookie);
 
       expect(res.body.data.count).toBe(0);
     });
@@ -539,9 +522,7 @@ describe("Notification API", () => {
         message: "You were kicked",
       });
 
-      const res = await request
-        .patch(`/api/notifications/${notif.id}/read`)
-        .set("Cookie", cookie);
+      const res = await request.patch(`/api/notifications/${notif.id}/read`).set("Cookie", cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.read).toBe(true);
@@ -559,11 +540,10 @@ describe("Notification API", () => {
     });
 
     it("should return 403 for another user's notification", async () => {
-      const { cookie: _cookie1, userId: userId1 } =
-        await setupAuthenticatedUser({
-          email: "u1@api.com",
-          username: "apiuser1",
-        });
+      const { cookie: _cookie1, userId: userId1 } = await setupAuthenticatedUser({
+        email: "u1@api.com",
+        username: "apiuser1",
+      });
       const { cookie: cookie2 } = await setupAuthenticatedUser({
         email: "u2@api.com",
         username: "apiuser2",
@@ -576,9 +556,7 @@ describe("Notification API", () => {
         message: "Not yours",
       });
 
-      const res = await request
-        .patch(`/api/notifications/${notif.id}/read`)
-        .set("Cookie", cookie2);
+      const res = await request.patch(`/api/notifications/${notif.id}/read`).set("Cookie", cookie2);
 
       expect(res.status).toBe(403);
     });
@@ -601,17 +579,13 @@ describe("Notification API", () => {
         message: "M2",
       });
 
-      const res = await request
-        .patch("/api/notifications/read-all")
-        .set("Cookie", cookie);
+      const res = await request.patch("/api/notifications/read-all").set("Cookie", cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.count).toBe(2);
 
       // Verify
-      const countRes = await request
-        .get("/api/notifications/unread-count")
-        .set("Cookie", cookie);
+      const countRes = await request.get("/api/notifications/unread-count").set("Cookie", cookie);
       expect(countRes.body.data.count).toBe(0);
     });
   });
@@ -627,25 +601,19 @@ describe("Notification API", () => {
         message: "Delete me",
       });
 
-      const res = await request
-        .delete(`/api/notifications/${notif.id}`)
-        .set("Cookie", cookie);
+      const res = await request.delete(`/api/notifications/${notif.id}`).set("Cookie", cookie);
 
       expect(res.status).toBe(204);
 
       // Verify deleted
-      const listRes = await request
-        .get("/api/notifications")
-        .set("Cookie", cookie);
+      const listRes = await request.get("/api/notifications").set("Cookie", cookie);
       expect(listRes.body.data).toHaveLength(0);
     });
 
     it("should return 404 for non-existent notification", async () => {
       const { cookie } = await setupAuthenticatedUser();
 
-      const res = await request
-        .delete("/api/notifications/non-existent-id")
-        .set("Cookie", cookie);
+      const res = await request.delete("/api/notifications/non-existent-id").set("Cookie", cookie);
 
       expect(res.status).toBe(404);
     });
@@ -667,9 +635,7 @@ describe("Notification API", () => {
         message: "Not yours",
       });
 
-      const res = await request
-        .delete(`/api/notifications/${notif.id}`)
-        .set("Cookie", cookie2);
+      const res = await request.delete(`/api/notifications/${notif.id}`).set("Cookie", cookie2);
 
       expect(res.status).toBe(403);
     });
@@ -699,8 +665,7 @@ async function addSecondPlayer(_adminCookie: string[], eventId: string) {
 describe("Notification Triggers", () => {
   describe("Table deletion", () => {
     it("should notify participants when a table is deleted", async () => {
-      const { admin, event, playerCookie, playerId } =
-        await setupEventWithPlayer();
+      const { admin, event, playerCookie, playerId } = await setupEventWithPlayer();
 
       // Player creates a table
       const tableRes = await request
@@ -721,9 +686,7 @@ describe("Notification Triggers", () => {
         .set("Cookie", player2.cookie);
 
       // Player (GM) deletes the table
-      await request
-        .delete(`/api/events/${event.id}/tables/${tableId}`)
-        .set("Cookie", playerCookie);
+      await request.delete(`/api/events/${event.id}/tables/${tableId}`).set("Cookie", playerCookie);
 
       // Player2 should have a TABLE_DELETED notification
       const notifs = await prisma.notification.findMany({
@@ -742,12 +705,7 @@ describe("Notification Triggers", () => {
 
   describe("Table update with demotion", () => {
     it("should notify demoted players when maxPlayers is reduced", async () => {
-      const {
-        admin,
-        event,
-        playerCookie,
-        playerId: _playerId,
-      } = await setupEventWithPlayer();
+      const { admin, event, playerCookie, playerId: _playerId } = await setupEventWithPlayer();
 
       // Player creates a table with maxPlayers=2
       const tableRes = await request
@@ -767,11 +725,10 @@ describe("Notification Triggers", () => {
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
         .set("Cookie", player2.cookie);
 
-      const { user: player3User, cookie: player3Cookie } =
-        await addTestParticipant(event.id, {
-          email: "player3@notif.com",
-          username: "notifplayer3",
-        });
+      const { user: player3User, cookie: player3Cookie } = await addTestParticipant(event.id, {
+        email: "player3@notif.com",
+        username: "notifplayer3",
+      });
       const player3Id = player3User.id;
 
       await request
@@ -814,9 +771,7 @@ describe("Notification Triggers", () => {
 
       // GM kicks player2
       await request
-        .delete(
-          `/api/events/${event.id}/tables/${tableId}/participants/${player2.userId}`,
-        )
+        .delete(`/api/events/${event.id}/tables/${tableId}/participants/${player2.userId}`)
         .set("Cookie", playerCookie);
 
       const kickNotifs = await prisma.notification.findMany({
@@ -849,11 +804,10 @@ describe("Notification Triggers", () => {
         .post(`/api/events/${event.id}/tables/${tableId}/join`)
         .set("Cookie", player2.cookie);
 
-      const { user: player3User, cookie: player3Cookie } =
-        await addTestParticipant(event.id, {
-          email: "player3@notif.com",
-          username: "notifplayer3",
-        });
+      const { user: player3User, cookie: player3Cookie } = await addTestParticipant(event.id, {
+        email: "player3@notif.com",
+        username: "notifplayer3",
+      });
       const player3Id = player3User.id;
 
       await request
@@ -875,12 +829,7 @@ describe("Notification Triggers", () => {
 
   describe("Remove participant", () => {
     it("should notify removed participant", async () => {
-      const {
-        admin,
-        event,
-        playerCookie: _playerCookie,
-        playerId,
-      } = await setupEventWithPlayer();
+      const { admin, event, playerCookie: _playerCookie, playerId } = await setupEventWithPlayer();
 
       // Admin removes the player
       await request

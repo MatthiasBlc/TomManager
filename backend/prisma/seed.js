@@ -264,7 +264,8 @@ async function seedDemoData() {
       type: "JDS",
       boardGameName: "Wingspan",
       title: "Wingspan - Tournoi des Oiseaux",
-      pitch: "Construisez le sanctuaire d'oiseaux le plus attractif. Partie competitive 3-5 joueurs.",
+      pitch:
+        "Construisez le sanctuaire d'oiseaux le plus attractif. Partie competitive 3-5 joueurs.",
       maxPlayers: 5,
       startDateTime: new Date("2026-07-17T14:00:00.000Z"),
       endDateTime: new Date("2026-07-17T16:30:00.000Z"),
@@ -274,7 +275,8 @@ async function seedDemoData() {
       type: "JDS",
       boardGameName: "Ark Nova",
       title: "Ark Nova - Zoo en construction",
-      pitch: "Concevez un zoo moderne en soutenant des projets de conservation. Jeu dense, initiation possible.",
+      pitch:
+        "Concevez un zoo moderne en soutenant des projets de conservation. Jeu dense, initiation possible.",
       maxPlayers: 4,
       startDateTime: new Date("2026-07-19T13:00:00.000Z"),
       endDateTime: new Date("2026-07-19T17:00:00.000Z"),

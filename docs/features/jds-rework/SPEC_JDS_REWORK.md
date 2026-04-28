@@ -2,14 +2,14 @@
 
 ## Decisions d'architecture
 
-| # | Sujet | Decision |
-|---|-------|----------|
-| 1 | Redondance Phase 14 / Sous-feature D | Garder les deux ; a la validation de D, cocher aussi Phase 14 dans `docs/NEXT_STEPS.md` |
-| 2 | Pre-remplissage en creation | Reactif : chaque changement de jeu ecrase les champs pre-remplis |
-| 2 | Pre-remplissage en edition | One-shot : ne remplir que les champs encore vides, ne pas ecraser ce que l'user a saisi |
-| 3 | UX merge doublons | Bouton contextuel "Merger..." sur chaque ligne → modal recherche du jeu canonique → preview cote a cote → confirmation |
-| 4 | Source donnees tables dans BoardGameTab | Option backend : enrichir `GET /api/events/:id/boardgames` avec `linkedTables: { id, title }[]` par jeu |
-| 5 | Selects Prisma `gameTable.ts` | Aucun select ne retourne `boardGame` actuellement. Mettre a jour `createTable`, `listTables`, `getTable`, `updateTable` dans la sous-feature A |
+| #   | Sujet                                   | Decision                                                                                                                                       |
+| --- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Redondance Phase 14 / Sous-feature D    | Garder les deux ; a la validation de D, cocher aussi Phase 14 dans `docs/NEXT_STEPS.md`                                                        |
+| 2   | Pre-remplissage en creation             | Reactif : chaque changement de jeu ecrase les champs pre-remplis                                                                               |
+| 2   | Pre-remplissage en edition              | One-shot : ne remplir que les champs encore vides, ne pas ecraser ce que l'user a saisi                                                        |
+| 3   | UX merge doublons                       | Bouton contextuel "Merger..." sur chaque ligne → modal recherche du jeu canonique → preview cote a cote → confirmation                         |
+| 4   | Source donnees tables dans BoardGameTab | Option backend : enrichir `GET /api/events/:id/boardgames` avec `linkedTables: { id, title }[]` par jeu                                        |
+| 5   | Selects Prisma `gameTable.ts`           | Aucun select ne retourne `boardGame` actuellement. Mettre a jour `createTable`, `listTables`, `getTable`, `updateTable` dans la sous-feature A |
 
 ---
 
@@ -17,12 +17,12 @@
 
 Quatre sous-features independantes mais liees, a implementer dans l'ordre logique dev :
 
-| ID  | Sous-feature                       | Depends de |
-| --- | ---------------------------------- | ---------- |
-| A   | Liaison GameTable ↔ BoardGame      | —          |
-| B   | Modal detail jeu + Games enrichi   | A          |
-| C   | Admin banque de jeux               | —          |
-| D   | BGG fix auth + UX                  | —          |
+| ID  | Sous-feature                     | Depends de |
+| --- | -------------------------------- | ---------- |
+| A   | Liaison GameTable ↔ BoardGame    | —          |
+| B   | Modal detail jeu + Games enrichi | A          |
+| C   | Admin banque de jeux             | —          |
+| D   | BGG fix auth + UX                | —          |
 
 ---
 
@@ -56,10 +56,12 @@ Une migration Prisma est necessaire.
 ### Backend
 
 **Schemas Zod (`gameTable.ts`) :**
+
 - `createTableSchema` : ajouter `boardGameId: z.string().uuid().optional()`
 - `updateTableSchema` : idem
 
 **Service `gameTable.ts` :**
+
 - Inclure `boardGame: { select: { id, name, yearPublished, minPlayers, maxPlayers, playingTime, imageUrl } }` dans tous les `findUnique` / `findMany`
 
 **Controllers / routes :** aucun changement de signature — les endpoints existants suffisent.
@@ -75,12 +77,14 @@ Le selecteur de jeu apparait **uniquement quand type = JDS**, positionne **en ha
 3. **Pas de jeu** (defaut) : ignorer la liaison
 
 **Pre-remplissage (creation) :**
+
 - Reactif : chaque changement de jeu selectionne declenche le pre-remplissage
 - `maxPlayers` → pre-rempli avec `game.maxPlayers` (ecrase la valeur precedente)
 - Duree → pre-remplie avec `game.playingTime` (ecrase la valeur precedente)
 - L'utilisateur peut toujours modifier apres le pre-remplissage
 
 **Maquette logique du formulaire JDS :**
+
 ```
 [Titre]
 [Type : JDR / JDS*]
@@ -100,12 +104,14 @@ Le selecteur de jeu apparait **uniquement quand type = JDS**, positionne **en ha
 Meme logique que CreateTableModal. Afficher le jeu actuellement lie (s'il existe) avec possibilite de changer ou de retirer la liaison.
 
 **Pre-remplissage (edition) :**
+
 - One-shot : ne remplir que les champs encore vides (ne pas ecraser ce que l'user a saisi)
 - Si l'user change de jeu, les champs deja remplis restent intacts
 
 ### Frontend — TableDetailModal
 
 Si `table.boardGame` est present :
+
 - Afficher un bloc compact : image miniature (si disponible) + nom du jeu + stats (joueurs, duree)
 - Bouton ou lien cliquable "Voir le jeu" → ouvre `BoardGameDetailModal` (sous-feature B)
 
@@ -122,10 +128,12 @@ Si `table.boardGame` est present : afficher le nom du jeu en sous-titre ou badge
 ### BoardGameDetailModal (nouveau composant)
 
 Ouvert depuis :
+
 - Un click sur une `BoardGameCard` dans l'onglet Games
 - Le lien "Voir le jeu" dans `TableDetailModal`
 
 **Contenu :**
+
 - Grande image (si `imageUrl` disponible), sinon placeholder
 - Nom + annee de publication
 - Stats : joueurs min–max, duree en minutes
@@ -136,6 +144,7 @@ Ouvert depuis :
 - Bouton "Ajouter a l'event" si le jeu n'est pas encore dans l'EventBoardGame (optionnel selon contexte)
 
 **Props :**
+
 ```typescript
 interface BoardGameDetailModalProps {
   open: boolean;
@@ -155,10 +164,12 @@ Le composant fetch `GET /api/boardgames/:id` (lazy-fetch BGG si stub) a l'ouvert
 ### BoardGameTab (tri et filtres)
 
 **Tri** (select en haut de l'onglet) :
+
 - Par nom A→Z (defaut)
 - "Avec table en premier"
 
 **Filtres** (toggle buttons) :
+
 - Tous (defaut)
 - Avec table organisee
 - Sans table
@@ -185,33 +196,37 @@ Bouton "Gerer la banque de jeux" → ouvre `AdminBoardGamePanel` (modal fullscre
 ### Edition
 
 Modal avec champs modifiables :
+
 - `name`, `yearPublished`, `minPlayers`, `maxPlayers`, `playingTime`, `imageUrl`, `description`
 - `externalSource` et `externalId` : affichés en read-only (informatif)
 
 ### Suppression
 
 **Regles :**
+
 - `GameTable.boardGameId` → SET NULL (la table conserve son contenu, perd la liaison)
 - `EventBoardGame` : supprimer les entrees liees (le jeu disparait des events)
 
 **UX :** avant confirmation, afficher l'impact :
+
 > "Ce jeu est reference dans X event(s) et X table(s). La suppression retirera ces liaisons."
 
 ### Merge de doublons
 
 Flux declenche par le bouton "Merger..." sur la ligne du jeu A (doublon a supprimer) :
+
 1. Modal de recherche : "Selectionner le jeu a conserver" → input recherche dans la banque
 2. Preview cote a cote : fiche du jeu A vs fiche du jeu B selectionne (nom, source, annee, joueurs, duree)
 3. Confirmation → transferer tous les `EventBoardGame` et `GameTable.boardGameId` de A vers B → supprimer A
 
 ### Nouveaux endpoints backend
 
-| Method | Path                           | Auth         | Description                       |
-| ------ | ------------------------------ | ------------ | --------------------------------- |
-| GET    | `/api/admin/boardgames`        | requireAdmin | Liste paginee (q, page, pageSize) |
-| PATCH  | `/api/admin/boardgames/:id`    | requireAdmin | Mise a jour champs                |
-| DELETE | `/api/admin/boardgames/:id`    | requireAdmin | Suppression avec cascade          |
-| POST   | `/api/admin/boardgames/merge`  | requireAdmin | Merge doublon A → B               |
+| Method | Path                          | Auth         | Description                       |
+| ------ | ----------------------------- | ------------ | --------------------------------- |
+| GET    | `/api/admin/boardgames`       | requireAdmin | Liste paginee (q, page, pageSize) |
+| PATCH  | `/api/admin/boardgames/:id`   | requireAdmin | Mise a jour champs                |
+| DELETE | `/api/admin/boardgames/:id`   | requireAdmin | Suppression avec cascade          |
+| POST   | `/api/admin/boardgames/merge` | requireAdmin | Merge doublon A → B               |
 
 ---
 
@@ -241,6 +256,7 @@ Flux declenche par le bouton "Merger..." sur la ligne du jeu A (doublon a suppri
 ```
 
 Le frontend affiche un message contextuel :
+
 > "Recherche BGG indisponible — resultats locaux uniquement"
 
 ### Import from-bgg — fetch complet immediat
@@ -261,6 +277,7 @@ mais les nouveaux imports sont complets d'emblee.
 ## Definition of done
 
 ### Sous-feature A
+
 - [ ] Migration Prisma `boardGameId` nullable sur `GameTable`
 - [ ] Schemas Zod mis a jour (create + update)
 - [ ] Service gameTable inclut `boardGame` dans les selects
@@ -271,6 +288,7 @@ mais les nouveaux imports sont complets d'emblee.
 - [ ] Tests backend : createTable avec boardGameId valide/invalide/absent
 
 ### Sous-feature B
+
 - [ ] `BoardGameDetailModal` : image, stats, description, tables liees
 - [ ] `BoardGameCard` cliquable → ouvre le modal
 - [ ] Badge "X table(s)" sur `BoardGameCard`
@@ -278,12 +296,14 @@ mais les nouveaux imports sont complets d'emblee.
 - [ ] Backend : `GET /api/events/:id/boardgames` enrichi avec `linkedTables`
 
 ### Sous-feature C
+
 - [ ] Endpoints admin CRUD + merge (`/api/admin/boardgames`)
 - [ ] Section admin dans ProfilePage
 - [ ] `AdminBoardGamePanel` : liste, edit, delete avec confirmation d'impact, merge
 - [ ] Tests backend : CRUD admin, regles de suppression, merge
 
 ### Sous-feature D
+
 - [ ] `BGG_API_TOKEN` dans tous les env files
 - [ ] `bgg.ts` refactoré (bearer, retry 202, retry 429, log 401)
 - [ ] Flag `bggAvailable` dans reponse search

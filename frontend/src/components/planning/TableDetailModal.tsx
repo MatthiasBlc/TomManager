@@ -68,13 +68,9 @@ export default function TableDetailModal({
   const isGM = user?.id === table?.createdBy;
   const isAdmin = user?.role === "ADMIN";
   const canEdit = isGM || isAdmin;
-  const currentParticipant = table?.participants.find(
-    (p) => p.userId === user?.id,
-  );
-  const confirmedCount =
-    table?.participants.filter((p) => p.status === "CONFIRMED").length ?? 0;
-  const waitlistCount =
-    table?.participants.filter((p) => p.status === "WAITLIST").length ?? 0;
+  const currentParticipant = table?.participants.find((p) => p.userId === user?.id);
+  const confirmedCount = table?.participants.filter((p) => p.status === "CONFIRMED").length ?? 0;
+  const waitlistCount = table?.participants.filter((p) => p.status === "WAITLIST").length ?? 0;
 
   const fetchTable = useCallback(async () => {
     if (!tableId) return;
@@ -111,17 +107,15 @@ export default function TableDetailModal({
   const handleJoin = async () => {
     if (!table) return;
     try {
-      const res = await api.post(
-        `/api/events/${eventId}/tables/${table.id}/join`,
-      );
+      const res = await api.post(`/api/events/${eventId}/tables/${table.id}/join`);
       const status = res.data.data.status;
       toast.success(status === "CONFIRMED" ? "Joined!" : "Added to waitlist");
       fetchTable();
       onTableUpdated();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message || "Failed to join";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to join";
       toast.error(message);
     }
   };
@@ -142,19 +136,16 @@ export default function TableDetailModal({
   const handlePromote = async (userId: string) => {
     if (!table) return;
     try {
-      await api.patch(
-        `/api/events/${eventId}/tables/${table.id}/participants/${userId}/status`,
-        {
-          status: "CONFIRMED",
-        },
-      );
+      await api.patch(`/api/events/${eventId}/tables/${table.id}/participants/${userId}/status`, {
+        status: "CONFIRMED",
+      });
       toast.success("Joueur promu");
       fetchTable();
       onTableUpdated();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message || "Failed to promote player";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to promote player";
       toast.error(message);
     }
   };
@@ -162,12 +153,9 @@ export default function TableDetailModal({
   const handleDemote = async (userId: string) => {
     if (!table) return;
     try {
-      await api.patch(
-        `/api/events/${eventId}/tables/${table.id}/participants/${userId}/status`,
-        {
-          status: "WAITLIST",
-        },
-      );
+      await api.patch(`/api/events/${eventId}/tables/${table.id}/participants/${userId}/status`, {
+        status: "WAITLIST",
+      });
       toast.success("Joueur rétrogradé");
       fetchTable();
       onTableUpdated();
@@ -180,9 +168,7 @@ export default function TableDetailModal({
     if (!table) return;
     if (!confirm(`Remove ${username} from this table?`)) return;
     try {
-      await api.delete(
-        `/api/events/${eventId}/tables/${table.id}/participants/${userId}`,
-      );
+      await api.delete(`/api/events/${eventId}/tables/${table.id}/participants/${userId}`);
       toast.success(`${username} removed`);
       fetchTable();
       onTableUpdated();
@@ -233,12 +219,10 @@ export default function TableDetailModal({
             </div>
             <div className="text-sm opacity-70 space-y-0.5">
               <p>
-                {table.type === "JDR" ? "MJ" : "Createur"} :{" "}
-                {table.creator.username}
+                {table.type === "JDR" ? "MJ" : "Createur"} : {table.creator.username}
               </p>
               <p>
-                {formatDateTime(table.startDateTime)} →{" "}
-                {formatDateTime(table.endDateTime)}
+                {formatDateTime(table.startDateTime)} → {formatDateTime(table.endDateTime)}
               </p>
               <p>
                 {confirmedCount}/{table.maxPlayers} joueurs
@@ -261,9 +245,7 @@ export default function TableDetailModal({
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">
-                    {table.boardGame.name}
-                  </p>
+                  <p className="text-sm font-semibold truncate">{table.boardGame.name}</p>
                   <p className="text-xs opacity-60">
                     {[
                       table.boardGame.minPlayers && table.boardGame.maxPlayers
@@ -271,9 +253,7 @@ export default function TableDetailModal({
                         : table.boardGame.maxPlayers
                           ? `${table.boardGame.maxPlayers} joueurs max`
                           : null,
-                      table.boardGame.playingTime
-                        ? `${table.boardGame.playingTime} min`
-                        : null,
+                      table.boardGame.playingTime ? `${table.boardGame.playingTime} min` : null,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
@@ -308,9 +288,7 @@ export default function TableDetailModal({
               <div className="card bg-base-200 border-l-4 border-warning shadow-none">
                 <div className="card-body p-3">
                   <h4 className="font-semibold text-sm">Triggers</h4>
-                  <p className="whitespace-pre-wrap text-sm">
-                    {table.triggers}
-                  </p>
+                  <p className="whitespace-pre-wrap text-sm">{table.triggers}</p>
                 </div>
               </div>
             )}
@@ -320,9 +298,7 @@ export default function TableDetailModal({
               <div className="card bg-base-200 shadow-none">
                 <div className="card-body p-3">
                   <h4 className="font-semibold text-sm">Commentaires</h4>
-                  <p className="whitespace-pre-wrap text-sm">
-                    {table.comments}
-                  </p>
+                  <p className="whitespace-pre-wrap text-sm">{table.comments}</p>
                 </div>
               </div>
             )}
@@ -334,19 +310,13 @@ export default function TableDetailModal({
                   Participants ({confirmedCount}/{table.maxPlayers})
                 </h4>
                 {confirmedCount === 0 ? (
-                  <EmptyState
-                    icon={<span>👥</span>}
-                    title="Aucun participant pour l'instant"
-                  />
+                  <EmptyState icon={<span>👥</span>} title="Aucun participant pour l'instant" />
                 ) : isMobile ? (
                   <div className="space-y-1">
                     {table.participants
                       .filter((p) => p.status === "CONFIRMED")
                       .map((p) => (
-                        <div
-                          key={p.userId}
-                          className="flex items-center justify-between py-1"
-                        >
+                        <div key={p.userId} className="flex items-center justify-between py-1">
                           <span className="text-sm">{p.username}</span>
                           {canEdit && (
                             <div className="flex items-center gap-1">
@@ -392,9 +362,7 @@ export default function TableDetailModal({
                                   </button>
                                   <button
                                     className="btn btn-ghost btn-xs text-error"
-                                    onClick={() =>
-                                      handleKick(p.userId, p.username)
-                                    }
+                                    onClick={() => handleKick(p.userId, p.username)}
                                   >
                                     Retirer
                                   </button>
@@ -413,18 +381,13 @@ export default function TableDetailModal({
             {waitlistCount > 0 && (
               <div className="card bg-base-200 border-l-4 border-warning shadow-none">
                 <div className="card-body p-3">
-                  <h4 className="font-semibold text-sm mb-2">
-                    Waitlist ({waitlistCount})
-                  </h4>
+                  <h4 className="font-semibold text-sm mb-2">Waitlist ({waitlistCount})</h4>
                   {isMobile ? (
                     <div className="space-y-1">
                       {table.participants
                         .filter((p) => p.status === "WAITLIST")
                         .map((p) => (
-                          <div
-                            key={p.userId}
-                            className="flex items-center justify-between py-1"
-                          >
+                          <div key={p.userId} className="flex items-center justify-between py-1">
                             <span className="text-sm">{p.username}</span>
                             {canEdit && (
                               <div className="flex items-center gap-1">
@@ -442,9 +405,7 @@ export default function TableDetailModal({
                                 </button>
                                 <button
                                   className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                                  onClick={() =>
-                                    handleKick(p.userId, p.username)
-                                  }
+                                  onClick={() => handleKick(p.userId, p.username)}
                                 >
                                   Retirer
                                 </button>
@@ -473,9 +434,7 @@ export default function TableDetailModal({
                                     <button
                                       className="btn btn-ghost btn-xs text-success"
                                       onClick={() => handlePromote(p.userId)}
-                                      disabled={
-                                        confirmedCount >= table.maxPlayers
-                                      }
+                                      disabled={confirmedCount >= table.maxPlayers}
                                       title={
                                         confirmedCount >= table.maxPlayers
                                           ? "Table pleine — retrogradez un joueur d'abord"
@@ -486,9 +445,7 @@ export default function TableDetailModal({
                                     </button>
                                     <button
                                       className="btn btn-ghost btn-xs text-error"
-                                      onClick={() =>
-                                        handleKick(p.userId, p.username)
-                                      }
+                                      onClick={() => handleKick(p.userId, p.username)}
                                     >
                                       Retirer
                                     </button>
@@ -505,18 +462,12 @@ export default function TableDetailModal({
             )}
 
             {/* Actions */}
-            <div
-              className={`flex flex-wrap gap-2 pt-1 ${isMobile ? "pb-2" : ""}`}
-            >
-              {!currentParticipant &&
-                (!isGM || table.type === "JDS" || table.gmIsPlayer) && (
-                  <button
-                    className="btn btn-primary btn-sm flex-1 md:flex-none"
-                    onClick={handleJoin}
-                  >
-                    Rejoindre
-                  </button>
-                )}
+            <div className={`flex flex-wrap gap-2 pt-1 ${isMobile ? "pb-2" : ""}`}>
+              {!currentParticipant && (!isGM || table.type === "JDS" || table.gmIsPlayer) && (
+                <button className="btn btn-primary btn-sm flex-1 md:flex-none" onClick={handleJoin}>
+                  Rejoindre
+                </button>
+              )}
               {currentParticipant && (
                 <button
                   className="btn btn-outline btn-warning btn-sm flex-1 md:flex-none"

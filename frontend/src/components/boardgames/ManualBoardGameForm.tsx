@@ -34,9 +34,7 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
         />
         {errors.name && (
           <label className="label">
-            <span className="label-text-alt text-error">
-              {errors.name.message}
-            </span>
+            <span className="label-text-alt text-error">{errors.name.message}</span>
           </label>
         )}
       </div>

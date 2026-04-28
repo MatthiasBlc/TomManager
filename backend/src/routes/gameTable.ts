@@ -1,16 +1,8 @@
 import { Router } from "express";
-import {
-  requireAuth,
-  requireEventParticipant,
-  requireTableGMOrAdmin,
-} from "../middleware/auth";
+import { requireAuth, requireEventParticipant, requireTableGMOrAdmin } from "../middleware/auth";
 import * as gameTableController from "../controllers/gameTable";
 import { validateBody, validateUUID } from "../middleware/validateBody";
-import {
-  createTableSchema,
-  updateTableSchema,
-  setStatusSchema,
-} from "../schemas/gameTable";
+import { createTableSchema, updateTableSchema, setStatusSchema } from "../schemas/gameTable";
 
 const router = Router();
 
@@ -21,7 +13,7 @@ router.post(
   validateUUID("eventId"),
   requireEventParticipant,
   validateBody(createTableSchema),
-  gameTableController.create,
+  gameTableController.create
 );
 
 router.get(
@@ -29,7 +21,7 @@ router.get(
   requireAuth,
   validateUUID("eventId"),
   requireEventParticipant,
-  gameTableController.list,
+  gameTableController.list
 );
 
 router.get(
@@ -37,7 +29,7 @@ router.get(
   requireAuth,
   validateUUID("eventId", "tableId"),
   requireEventParticipant,
-  gameTableController.detail,
+  gameTableController.detail
 );
 
 router.patch(
@@ -46,7 +38,7 @@ router.patch(
   validateUUID("eventId", "tableId"),
   requireTableGMOrAdmin,
   validateBody(updateTableSchema),
-  gameTableController.update,
+  gameTableController.update
 );
 
 router.delete(
@@ -54,7 +46,7 @@ router.delete(
   requireAuth,
   validateUUID("eventId", "tableId"),
   requireTableGMOrAdmin,
-  gameTableController.remove,
+  gameTableController.remove
 );
 
 // Table participation
@@ -63,14 +55,14 @@ router.post(
   requireAuth,
   validateUUID("eventId", "tableId"),
   requireEventParticipant,
-  gameTableController.join,
+  gameTableController.join
 );
 
 router.delete(
   "/:eventId/tables/:tableId/leave",
   requireAuth,
   validateUUID("eventId", "tableId"),
-  gameTableController.leave,
+  gameTableController.leave
 );
 
 router.delete(
@@ -78,7 +70,7 @@ router.delete(
   requireAuth,
   validateUUID("eventId", "tableId", "userId"),
   requireTableGMOrAdmin,
-  gameTableController.kick,
+  gameTableController.kick
 );
 
 router.patch(
@@ -87,7 +79,7 @@ router.patch(
   validateUUID("eventId", "tableId", "userId"),
   requireTableGMOrAdmin,
   validateBody(setStatusSchema),
-  gameTableController.setStatus,
+  gameTableController.setStatus
 );
 
 export default router;

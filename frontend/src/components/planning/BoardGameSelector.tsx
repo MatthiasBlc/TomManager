@@ -93,11 +93,7 @@ export default function BoardGameSelector({ value, onChange }: Props) {
       <div className="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
         <span className="badge badge-primary badge-sm">JDS</span>
         <span className="text-sm flex-1 font-medium">{value.name}</span>
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs"
-          onClick={() => onChange(null)}
-        >
+        <button type="button" className="btn btn-ghost btn-xs" onClick={() => onChange(null)}>
           ✕
         </button>
       </div>
@@ -105,12 +101,7 @@ export default function BoardGameSelector({ value, onChange }: Props) {
   }
 
   if (mode === "manual") {
-    return (
-      <ManualBoardGameForm
-        onSubmit={handleManualSubmit}
-        onCancel={() => setMode("search")}
-      />
-    );
+    return <ManualBoardGameForm onSubmit={handleManualSubmit} onCancel={() => setMode("search")} />;
   }
 
   return (

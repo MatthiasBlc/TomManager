@@ -33,7 +33,7 @@ export async function searchBoardGames(query: string) {
 
   // Dedup par externalId : les locaux sont prioritaires
   const localExternalIds = new Set(
-    localResults.filter((bg) => bg.externalId).map((bg) => bg.externalId),
+    localResults.filter((bg) => bg.externalId).map((bg) => bg.externalId)
   );
 
   const newFromBGG = bggResults
@@ -114,11 +114,7 @@ export async function createBoardGame(data: CreateBoardGameData) {
  * Find or create a BoardGame from a BGG search result.
  * Used when adding a BGG game to an event.
  */
-export async function findOrCreateFromBGG(
-  bggId: string,
-  name: string,
-  yearPublished?: number,
-) {
+export async function findOrCreateFromBGG(bggId: string, name: string, yearPublished?: number) {
   const existing = await prisma.boardGame.findFirst({
     where: { externalSource: "BGG", externalId: bggId },
   });

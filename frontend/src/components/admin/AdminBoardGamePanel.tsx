@@ -52,10 +52,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-function buildDefaultPicks(
-  source: BoardGameAdmin,
-  target: BoardGameAdmin,
-): MergeFieldPicks {
+function buildDefaultPicks(source: BoardGameAdmin, target: BoardGameAdmin): MergeFieldPicks {
   // Prefer source when target is null and source has a value
   const prefer = (tv: unknown, sv: unknown): FieldPick =>
     tv == null && sv != null ? "source" : "target";
@@ -133,11 +130,7 @@ export default function AdminBoardGamePanel() {
     api
       .get(`/api/admin/boardgames?${params}`)
       .then((res) =>
-        setMergeResults(
-          res.data.data.games.filter(
-            (g: BoardGameAdmin) => g.id !== mergeSource.id,
-          ),
-        ),
+        setMergeResults(res.data.data.games.filter((g: BoardGameAdmin) => g.id !== mergeSource.id))
       )
       .catch(() => {});
   }, [debouncedMergeSearch, mergeSource]);
@@ -327,10 +320,7 @@ export default function AdminBoardGamePanel() {
 
           <div className="space-y-2">
             {result.games.map((game) => (
-              <div
-                key={game.id}
-                className="flex items-center gap-2 p-3 bg-base-200 rounded-lg"
-              >
+              <div key={game.id} className="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{game.name}</p>
                   <p className="text-xs opacity-60">
@@ -344,23 +334,17 @@ export default function AdminBoardGamePanel() {
                       .filter(Boolean)
                       .join(" · ")}
                     {game.externalSource && (
-                      <span className="badge badge-ghost badge-xs ml-1">
-                        {game.externalSource}
-                      </span>
+                      <span className="badge badge-ghost badge-xs ml-1">{game.externalSource}</span>
                     )}
                   </p>
                   <p className="text-xs opacity-50">
                     {game._count.eventBoardGames} evenement
-                    {game._count.eventBoardGames !== 1 ? "s" : ""} ·{" "}
-                    {game._count.gameTables} table
+                    {game._count.eventBoardGames !== 1 ? "s" : ""} · {game._count.gameTables} table
                     {game._count.gameTables !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <button
-                    className="btn btn-ghost btn-xs"
-                    onClick={() => openEdit(game)}
-                  >
+                  <button className="btn btn-ghost btn-xs" onClick={() => openEdit(game)}>
                     Editer
                   </button>
                   <button
@@ -410,10 +394,7 @@ export default function AdminBoardGamePanel() {
         onClose={() => setEditTarget(null)}
         title="Modifier le jeu"
       >
-        <form
-          onSubmit={handleSubmit(onEditSubmit)}
-          className="space-y-3 p-4 md:p-0 md:mt-4"
-        >
+        <form onSubmit={handleSubmit(onEditSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
           <div className="form-control">
             <label className="label" htmlFor="abg-name">
               <span className="label-text">Nom</span>
@@ -426,9 +407,7 @@ export default function AdminBoardGamePanel() {
             />
             {editErrors.name && (
               <label className="label">
-                <span className="label-text-alt text-error">
-                  {editErrors.name.message}
-                </span>
+                <span className="label-text-alt text-error">{editErrors.name.message}</span>
               </label>
             )}
           </div>
@@ -479,18 +458,10 @@ export default function AdminBoardGamePanel() {
             </div>
           </div>
           <div className="flex gap-2 justify-end pt-2">
-            <button
-              type="button"
-              className="btn"
-              onClick={() => setEditTarget(null)}
-            >
+            <button type="button" className="btn" onClick={() => setEditTarget(null)}>
               Annuler
             </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={editSubmitting}
-            >
+            <button type="submit" className="btn btn-primary" disabled={editSubmitting}>
               Enregistrer
             </button>
           </div>
@@ -508,13 +479,11 @@ export default function AdminBoardGamePanel() {
             <p className="text-sm">
               Supprimer <strong>{deleteTarget.name}</strong> ?
             </p>
-            {(deleteTarget._count.eventBoardGames > 0 ||
-              deleteTarget._count.gameTables > 0) && (
+            {(deleteTarget._count.eventBoardGames > 0 || deleteTarget._count.gameTables > 0) && (
               <div className="alert alert-warning">
                 <span className="text-sm">
                   Impact : {deleteTarget._count.eventBoardGames} entree
-                  {deleteTarget._count.eventBoardGames !== 1 ? "s" : ""}{" "}
-                  evenement supprimee
+                  {deleteTarget._count.eventBoardGames !== 1 ? "s" : ""} evenement supprimee
                   {deleteTarget._count.eventBoardGames !== 1 ? "s" : ""},{" "}
                   {deleteTarget._count.gameTables} table
                   {deleteTarget._count.gameTables !== 1 ? "s" : ""} deliee
@@ -523,23 +492,11 @@ export default function AdminBoardGamePanel() {
               </div>
             )}
             <div className="flex gap-2 justify-end">
-              <button
-                className="btn"
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-              >
+              <button className="btn" onClick={() => setDeleteTarget(null)} disabled={deleting}>
                 Annuler
               </button>
-              <button
-                className="btn btn-error"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                {deleting ? (
-                  <span className="loading loading-spinner loading-xs" />
-                ) : (
-                  "Supprimer"
-                )}
+              <button className="btn btn-error" onClick={handleDelete} disabled={deleting}>
+                {deleting ? <span className="loading loading-spinner loading-xs" /> : "Supprimer"}
               </button>
             </div>
           </div>
@@ -549,7 +506,10 @@ export default function AdminBoardGamePanel() {
       {/* Merge modal */}
       <ResponsiveModal
         open={mergeSource !== null}
-        onClose={() => { setMergeSource(null); setFieldPicks(null); }}
+        onClose={() => {
+          setMergeSource(null);
+          setFieldPicks(null);
+        }}
         title="Fusionner le jeu"
         size="lg"
       >
@@ -580,9 +540,7 @@ export default function AdminBoardGamePanel() {
                       >
                         <span className="font-medium">{g.name}</span>
                         {g.yearPublished && (
-                          <span className="opacity-50 ml-1">
-                            ({g.yearPublished})
-                          </span>
+                          <span className="opacity-50 ml-1">({g.yearPublished})</span>
                         )}
                         <span className="opacity-50 text-xs ml-2">
                           {g._count.eventBoardGames}E · {g._count.gameTables}T
@@ -617,13 +575,8 @@ export default function AdminBoardGamePanel() {
                   const tgtDisabled = tgt == null;
 
                   return (
-                    <div
-                      key={key}
-                      className="grid grid-cols-[90px_1fr_1fr] gap-2 items-center"
-                    >
-                      <span className="text-xs opacity-50 text-right pr-2">
-                        {label}
-                      </span>
+                    <div key={key} className="grid grid-cols-[90px_1fr_1fr] gap-2 items-center">
+                      <span className="text-xs opacity-50 text-right pr-2">{label}</span>
 
                       <button
                         type="button"
@@ -700,11 +653,7 @@ export default function AdminBoardGamePanel() {
                     >
                       Annuler
                     </button>
-                    <button
-                      className="btn btn-warning"
-                      onClick={handleMerge}
-                      disabled={merging}
-                    >
+                    <button className="btn btn-warning" onClick={handleMerge} disabled={merging}>
                       {merging ? (
                         <span className="loading loading-spinner loading-xs" />
                       ) : (

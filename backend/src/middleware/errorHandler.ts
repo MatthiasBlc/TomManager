@@ -3,12 +3,7 @@ import { HttpError } from "http-errors";
 import logger from "../util/logger";
 import { Sentry } from "../util/sentry";
 
-export function errorHandler(
-  err: HttpError,
-  req: Request,
-  res: Response,
-  _next: NextFunction,
-) {
+export function errorHandler(err: HttpError, req: Request, res: Response, _next: NextFunction) {
   const status = err.status || 500;
   const message = err.message || "Internal Server Error";
 

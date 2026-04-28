@@ -50,14 +50,12 @@ describe("syncDiscordParticipations", () => {
     expect(mockUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { eventId_userId: { eventId: "event-1", userId: "user-1" } },
-      }),
+      })
     );
   });
 
   it("removes participation when role is revoked", async () => {
-    mockFindMany.mockResolvedValue([
-      { id: "event-1", discordRoleId: "role-A" },
-    ]);
+    mockFindMany.mockResolvedValue([{ id: "event-1", discordRoleId: "role-A" }]);
     mockFindUnique.mockResolvedValue({ id: "part-1" });
 
     await syncDiscordParticipations("user-1", []);
@@ -68,9 +66,7 @@ describe("syncDiscordParticipations", () => {
   });
 
   it("skips removal if participation does not exist", async () => {
-    mockFindMany.mockResolvedValue([
-      { id: "event-1", discordRoleId: "role-A" },
-    ]);
+    mockFindMany.mockResolvedValue([{ id: "event-1", discordRoleId: "role-A" }]);
     mockFindUnique.mockResolvedValue(null);
 
     await syncDiscordParticipations("user-1", []);
@@ -80,9 +76,7 @@ describe("syncDiscordParticipations", () => {
   });
 
   it("is idempotent when roles unchanged", async () => {
-    mockFindMany.mockResolvedValue([
-      { id: "event-1", discordRoleId: "role-A" },
-    ]);
+    mockFindMany.mockResolvedValue([{ id: "event-1", discordRoleId: "role-A" }]);
     mockFindUnique.mockResolvedValue(null);
 
     await syncDiscordParticipations("user-1", ["role-A"]);

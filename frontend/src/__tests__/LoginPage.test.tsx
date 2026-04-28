@@ -23,16 +23,11 @@ vi.mock("react-hot-toast", () => ({
   },
 }));
 vi.mock("react-router-dom", async () => {
-  const actual =
-    await vi.importActual<typeof import("react-router-dom")>(
-      "react-router-dom",
-    );
+  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return { ...actual, useNavigate: () => navigateMock };
 });
 
-function setUpAuth(
-  overrides: Partial<{ user: unknown; loading: boolean }> = {},
-) {
+function setUpAuth(overrides: Partial<{ user: unknown; loading: boolean }> = {}) {
   useAuthMock.mockReturnValue({
     user: null,
     loading: false,
@@ -46,7 +41,7 @@ function renderLogin(initialEntries: string[] = ["/login"]) {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
       <LoginPage />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
@@ -66,9 +61,7 @@ describe("LoginPage", () => {
     renderLogin();
     expect(screen.getByLabelText(/email or username/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^login$/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^login$/i })).toBeInTheDocument();
   });
 
   it("calls login with the form values and navigates on success", async () => {
@@ -119,9 +112,7 @@ describe("LoginPage", () => {
     apiGetMock.mockRejectedValueOnce({ response: { status: 503 } });
     renderLogin();
     await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: /login with discord/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /login with discord/i })).not.toBeInTheDocument();
     });
   });
 
@@ -155,9 +146,7 @@ describe("LoginPage", () => {
     });
     fireEvent.click(btn);
     await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith(
-        "You must be a member of the Discord server",
-      );
+      expect(toastError).toHaveBeenCalledWith("You must be a member of the Discord server");
     });
   });
 

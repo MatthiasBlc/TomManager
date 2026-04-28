@@ -9,10 +9,7 @@ vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => useAuthMock(),
 }));
 vi.mock("react-router-dom", async () => {
-  const actual =
-    await vi.importActual<typeof import("react-router-dom")>(
-      "react-router-dom",
-    );
+  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return { ...actual, useNavigate: () => navigateMock };
 });
 
@@ -27,9 +24,7 @@ describe("HomePage", () => {
     renderWithRouter(<HomePage />);
     expect(screen.getByText("TomManager")).toBeInTheDocument();
     expect(screen.getByText(/Welcome to TomManager/)).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /Get Started/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Get Started/i })).toBeInTheDocument();
   });
 
   it("navigates to /events when a user is authenticated", async () => {

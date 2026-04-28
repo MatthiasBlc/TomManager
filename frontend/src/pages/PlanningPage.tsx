@@ -10,9 +10,7 @@ export default function PlanningPage() {
   return (
     <div
       className={`container mx-auto px-4 ${
-        isMobile
-          ? "py-4"
-          : "pt-4 md:pt-6 h-[calc(100dvh-4rem)] flex flex-col"
+        isMobile ? "py-4" : "pt-4 md:pt-6 h-[calc(100dvh-4rem)] flex flex-col"
       }`}
     >
       <div className="mb-4 md:mb-5 flex-none">

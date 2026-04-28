@@ -102,32 +102,21 @@ export default function EventDetailPage() {
     >
       <div className="flex items-start justify-between mb-4 md:mb-6 flex-none">
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-bold truncate md:text-2xl">
-            {event.name}
-          </h1>
+          <h1 className="text-lg font-bold truncate md:text-2xl">{event.name}</h1>
           <p className="text-xs opacity-70 mt-1 md:text-sm">
             {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
           </p>
         </div>
         {canManageEvent && (
           <div className="flex flex-wrap gap-2 ml-2 shrink-0">
-            <button
-              className="btn btn-outline btn-sm"
-              onClick={() => setShowEdit(true)}
-            >
+            <button className="btn btn-outline btn-sm" onClick={() => setShowEdit(true)}>
               Edit
             </button>
-            <button
-              className="btn btn-outline btn-error btn-sm"
-              onClick={handleDelete}
-            >
+            <button className="btn btn-outline btn-error btn-sm" onClick={handleDelete}>
               Delete
             </button>
             {isAdmin && gameDbEnabled && (
-              <button
-                className="btn btn-outline btn-sm"
-                onClick={() => setShowGameDb(true)}
-              >
+              <button className="btn btn-outline btn-sm" onClick={() => setShowGameDb(true)}>
                 Manage game database
               </button>
             )}
@@ -165,42 +154,39 @@ export default function EventDetailPage() {
       </div>
 
       <div className={tab === "planning" && !isMobile ? "flex-1 min-h-0" : ""}>
-      {tab === "info" && (
-        <div className="card bg-base-100 shadow-sm">
-          <div className="card-body p-4 md:p-6">
-            <h2 className="card-title text-base md:text-lg">{event.name}</h2>
-            <div className="space-y-2 text-sm">
-              <p>
-                <span className="font-medium">Start:</span>{" "}
-                {formatDate(event.startDateTime)}
-              </p>
-              <p>
-                <span className="font-medium">End:</span>{" "}
-                {formatDate(event.endDateTime)}
-              </p>
-              <p>
-                <span className="font-medium">Participants:</span>{" "}
-                {event.participants.length}
-              </p>
+        {tab === "info" && (
+          <div className="card bg-base-100 shadow-sm">
+            <div className="card-body p-4 md:p-6">
+              <h2 className="card-title text-base md:text-lg">{event.name}</h2>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <span className="font-medium">Start:</span> {formatDate(event.startDateTime)}
+                </p>
+                <p>
+                  <span className="font-medium">End:</span> {formatDate(event.endDateTime)}
+                </p>
+                <p>
+                  <span className="font-medium">Participants:</span> {event.participants.length}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {tab === "participants" && (
-        <ParticipantList
-          eventId={event.id}
-          createdBy={event.createdBy}
-          participants={event.participants}
-          onChanged={() => {
-            fetchEvent();
-          }}
-        />
-      )}
+        {tab === "participants" && (
+          <ParticipantList
+            eventId={event.id}
+            createdBy={event.createdBy}
+            participants={event.participants}
+            onChanged={() => {
+              fetchEvent();
+            }}
+          />
+        )}
 
-      {tab === "planning" && <PlanningTab eventId={event.id} />}
+        {tab === "planning" && <PlanningTab eventId={event.id} />}
 
-      {tab === "games" && <BoardGameTab eventId={event.id} />}
+        {tab === "games" && <BoardGameTab eventId={event.id} />}
       </div>
 
       <EditEventModal

@@ -1,20 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import api from "../config/api";
 
 // Detection mobile par media query (coherent avec useIsMobile)
 function isMobileDevice(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(max-width: 767px)").matches
-  );
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
 }
 
 interface User {
@@ -97,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const popup = window.open(
         discordUrl,
         "discord-oauth",
-        `width=${width},height=${height},left=${left},top=${top},toolbar=0,menubar=0,location=0`,
+        `width=${width},height=${height},left=${left},top=${top},toolbar=0,menubar=0,location=0`
       );
 
       if (!popup) {
@@ -155,13 +145,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               resolve(false);
             }
           },
-          10 * 60 * 1000,
+          10 * 60 * 1000
         );
 
         window.addEventListener("message", onMessage);
       });
     },
-    [checkAuth],
+    [checkAuth]
   );
 
   const unlinkDiscord = async () => {

@@ -36,16 +36,9 @@ function DesktopNavbar() {
             </Link>
             <ConnectionStatus />
             <NotificationBell />
-            <Link
-              to="/profile"
-              className="flex items-center gap-2 hover:opacity-80"
-            >
+            <Link to="/profile" className="flex items-center gap-2 hover:opacity-80">
               {user.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt="avatar"
-                  className="w-7 h-7 rounded-full"
-                />
+                <img src={user.avatarUrl} alt="avatar" className="w-7 h-7 rounded-full" />
               ) : null}
               <span className="text-sm opacity-70">{user.username}</span>
             </Link>

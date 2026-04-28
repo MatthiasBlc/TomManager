@@ -23,25 +23,19 @@ describe("Discord OAuth — GET /api/auth/discord", () => {
 
 describe("Discord OAuth — GET /api/auth/discord/callback (mode redirect)", () => {
   it("redirects to /login?error=discord_denied when error param present", async () => {
-    const res = await request.get(
-      "/api/auth/discord/callback?error=access_denied&state=x",
-    );
+    const res = await request.get("/api/auth/discord/callback?error=access_denied&state=x");
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain("error=discord_denied");
   });
 
   it("redirects to /login?error=invalid_state when state missing from session", async () => {
-    const res = await request.get(
-      "/api/auth/discord/callback?code=abc&state=forged-state",
-    );
+    const res = await request.get("/api/auth/discord/callback?code=abc&state=forged-state");
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain("error=invalid_state");
   });
 
   it("redirects to /login?error=invalid_state when code without state in session", async () => {
-    const res = await request.get(
-      "/api/auth/discord/callback?code=abc&state=no-match",
-    );
+    const res = await request.get("/api/auth/discord/callback?code=abc&state=no-match");
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain("error=invalid_state");
   });
@@ -61,16 +55,14 @@ describe("Discord OAuth — GET /api/auth/discord/callback (mode popup)", () => 
 
   it("redirige vers /oauth-popup avec DISCORD_AUTH_ERROR sur erreur Discord", async () => {
     vi.spyOn(discordService, "isDiscordConfigured").mockReturnValue(true);
-    vi.spyOn(discordService, "generateState").mockReturnValue(
-      "popup-state-abc",
-    );
+    vi.spyOn(discordService, "generateState").mockReturnValue("popup-state-abc");
 
     // Initier le login en mode popup pour stocker oauthPopup en session
     await agent.get("/api/auth/discord?popup=1");
 
     // Simuler un retour Discord avec erreur
     const res = await agent.get(
-      "/api/auth/discord/callback?error=access_denied&state=popup-state-abc",
+      "/api/auth/discord/callback?error=access_denied&state=popup-state-abc"
     );
 
     expect(res.status).toBe(302);
@@ -81,15 +73,11 @@ describe("Discord OAuth — GET /api/auth/discord/callback (mode popup)", () => 
 
   it("redirige vers /oauth-popup avec DISCORD_AUTH_ERROR sur state invalide", async () => {
     vi.spyOn(discordService, "isDiscordConfigured").mockReturnValue(true);
-    vi.spyOn(discordService, "generateState").mockReturnValue(
-      "popup-state-xyz",
-    );
+    vi.spyOn(discordService, "generateState").mockReturnValue("popup-state-xyz");
 
     await agent.get("/api/auth/discord?popup=1");
 
-    const res = await agent.get(
-      "/api/auth/discord/callback?code=abc&state=wrong-state",
-    );
+    const res = await agent.get("/api/auth/discord/callback?code=abc&state=wrong-state");
 
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain("/oauth-popup");
@@ -99,9 +87,7 @@ describe("Discord OAuth — GET /api/auth/discord/callback (mode popup)", () => 
 
   it("retourne un redirect (302) quand pas de popup en session", async () => {
     // Pas d'appel a initiateLogin => pas de oauthPopup en session
-    const res = await agent.get(
-      "/api/auth/discord/callback?error=access_denied&state=x",
-    );
+    const res = await agent.get("/api/auth/discord/callback?error=access_denied&state=x");
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain("error=discord_denied");
   });

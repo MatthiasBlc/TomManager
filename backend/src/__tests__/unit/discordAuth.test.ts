@@ -49,9 +49,7 @@ describe("discordAuth service — utilities", () => {
   describe("buildAvatarUrl", () => {
     it("returns CDN URL when avatar hash present", () => {
       const url = buildAvatarUrl("123456789", "abc123hash");
-      expect(url).toBe(
-        "https://cdn.discordapp.com/avatars/123456789/abc123hash.png?size=256",
-      );
+      expect(url).toBe("https://cdn.discordapp.com/avatars/123456789/abc123hash.png?size=256");
     });
 
     it("returns default avatar when hash is null", () => {

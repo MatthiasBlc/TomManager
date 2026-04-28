@@ -17,7 +17,7 @@ router.post(
   requireAuth,
   requireAdmin,
   validateBody(createEventSchema),
-  eventController.create,
+  eventController.create
 );
 router.get("/", requireAuth, eventController.list);
 router.get(
@@ -25,7 +25,7 @@ router.get(
   requireAuth,
   validateUUID("eventId"),
   requireEventParticipant,
-  eventController.detail,
+  eventController.detail
 );
 router.patch(
   "/:eventId",
@@ -33,21 +33,21 @@ router.patch(
   validateUUID("eventId"),
   requireEventCreator,
   validateBody(updateEventSchema),
-  eventController.update,
+  eventController.update
 );
 router.post(
   "/:eventId/purge",
   requireAuth,
   validateUUID("eventId"),
   requireAdmin,
-  eventController.purge,
+  eventController.purge
 );
 router.delete(
   "/:eventId",
   requireAuth,
   validateUUID("eventId"),
   requireEventCreator,
-  eventController.remove,
+  eventController.remove
 );
 
 export default router;

@@ -27,9 +27,7 @@ export async function createNotification(input: CreateNotificationInput) {
   return notification;
 }
 
-export async function createBulkNotifications(
-  inputs: CreateNotificationInput[],
-) {
+export async function createBulkNotifications(inputs: CreateNotificationInput[]) {
   if (inputs.length === 0) return [];
 
   const notifications = await prisma.$transaction(
@@ -42,8 +40,8 @@ export async function createBulkNotifications(
           message: input.message,
           metadata: input.metadata ?? undefined,
         },
-      }),
-    ),
+      })
+    )
   );
 
   for (const notification of notifications) {
@@ -55,7 +53,7 @@ export async function createBulkNotifications(
 
 export async function getNotifications(
   userId: string,
-  options: { cursor?: string; limit?: number; unreadOnly?: boolean } = {},
+  options: { cursor?: string; limit?: number; unreadOnly?: boolean } = {}
 ) {
   const { cursor, limit = 20, unreadOnly } = options;
   const take = Math.min(limit, 50);

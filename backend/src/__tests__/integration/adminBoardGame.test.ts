@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  request,
-  setupAdmin,
-  createTestEvent,
-  addTestParticipant,
-} from "../setup/testHelpers";
+import { request, setupAdmin, createTestEvent, addTestParticipant } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
 async function createBoardGame(name = "Catan") {
@@ -28,9 +23,7 @@ describe("Admin BoardGame API", () => {
       await createBoardGame("Wingspan");
       await createBoardGame("Pandemic");
 
-      const res = await request
-        .get("/api/admin/boardgames")
-        .set("Cookie", admin.cookie);
+      const res = await request.get("/api/admin/boardgames").set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.games).toBeDefined();
@@ -48,24 +41,14 @@ describe("Admin BoardGame API", () => {
         .set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
-      expect(
-        res.body.data.games.some(
-          (g: { name: string }) => g.name === "Splendor",
-        ),
-      ).toBe(true);
-      expect(
-        res.body.data.games.some(
-          (g: { name: string }) => g.name === "Agricola",
-        ),
-      ).toBe(false);
+      expect(res.body.data.games.some((g: { name: string }) => g.name === "Splendor")).toBe(true);
+      expect(res.body.data.games.some((g: { name: string }) => g.name === "Agricola")).toBe(false);
     });
 
     it("should reject non-admin", async () => {
       const { playerCookie } = await setupWithParticipant();
 
-      const res = await request
-        .get("/api/admin/boardgames")
-        .set("Cookie", playerCookie);
+      const res = await request.get("/api/admin/boardgames").set("Cookie", playerCookie);
 
       expect(res.status).toBe(403);
     });
@@ -90,9 +73,7 @@ describe("Admin BoardGame API", () => {
       const { admin } = await setupWithParticipant();
 
       const res = await request
-        .patch(
-          "/api/admin/boardgames/00000000-0000-0000-0000-000000000000",
-        )
+        .patch("/api/admin/boardgames/00000000-0000-0000-0000-000000000000")
         .set("Cookie", admin.cookie)
         .send({ name: "Ghost" });
 
@@ -115,8 +96,7 @@ describe("Admin BoardGame API", () => {
     });
 
     it("should cascade-delete EventBoardGame entries and SET NULL on GameTable", async () => {
-      const { admin, event, playerCookie, playerId } =
-        await setupWithParticipant();
+      const { admin, event, playerCookie, playerId } = await setupWithParticipant();
       const bg = await createBoardGame("Cascade test");
 
       // Add to event
@@ -190,8 +170,7 @@ describe("Admin BoardGame API", () => {
     });
 
     it("should re-link EventBoardGame and GameTable to target", async () => {
-      const { admin, event, playerCookie, playerId } =
-        await setupWithParticipant();
+      const { admin, event, playerCookie, playerId } = await setupWithParticipant();
       const source = await createBoardGame("Source");
       const target = await createBoardGame("Target");
 

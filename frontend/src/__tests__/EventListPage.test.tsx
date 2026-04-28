@@ -54,9 +54,7 @@ describe("EventListPage", () => {
     useIsMobileMock.mockReturnValue(false);
     renderWithRouter(<EventListPage />);
 
-    expect(
-      await screen.findByRole("button", { name: "Create Event" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Create Event" })).toBeInTheDocument();
   });
 
   it("does not show Create Event button for regular users", async () => {
@@ -65,9 +63,7 @@ describe("EventListPage", () => {
     renderWithRouter(<EventListPage />);
 
     await screen.findByText("No events yet");
-    expect(
-      screen.queryByRole("button", { name: "Create Event" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Create Event" })).not.toBeInTheDocument();
   });
 
   it("uses FAB button for create on mobile instead of top button", async () => {

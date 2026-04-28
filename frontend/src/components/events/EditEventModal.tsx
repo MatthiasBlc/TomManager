@@ -31,12 +31,7 @@ function toLocalDatetime(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export default function EditEventModal({
-  open,
-  onClose,
-  onUpdated,
-  event,
-}: Props) {
+export default function EditEventModal({ open, onClose, onUpdated, event }: Props) {
   const { user } = useAuth();
   const {
     register,
@@ -60,7 +55,7 @@ export default function EditEventModal({
     if (!event) return;
     if (
       !confirm(
-        "Purger cet event ?\n\nCela supprimera definitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-meme sera conserve.",
+        "Purger cet event ?\n\nCela supprimera definitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-meme sera conserve."
       )
     )
       return;
@@ -71,8 +66,8 @@ export default function EditEventModal({
       onClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message || "Echec de la purge";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Echec de la purge";
       toast.error(message);
     }
   };
@@ -91,8 +86,8 @@ export default function EditEventModal({
       onClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message || "Failed to update event";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to update event";
       toast.error(message);
     }
   };
@@ -101,10 +96,7 @@ export default function EditEventModal({
 
   return (
     <ResponsiveModal open={open} onClose={onClose} title="Edit Event">
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4 p-4 md:p-0 md:mt-4"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ee-name">
             <span className="label-text">Name</span>
@@ -120,9 +112,7 @@ export default function EditEventModal({
           />
           {errors.name && (
             <label className="label">
-              <span className="label-text-alt text-error">
-                {errors.name.message}
-              </span>
+              <span className="label-text-alt text-error">{errors.name.message}</span>
             </label>
           )}
         </div>
@@ -164,16 +154,13 @@ export default function EditEventModal({
               {...register("discordRoleId", {
                 pattern: {
                   value: /^(\d{17,20})?$/,
-                  message:
-                    "Must be a Discord Snowflake (17-20 digits) or empty",
+                  message: "Must be a Discord Snowflake (17-20 digits) or empty",
                 },
               })}
             />
             {errors.discordRoleId && (
               <label className="label">
-                <span className="label-text-alt text-error">
-                  {errors.discordRoleId.message}
-                </span>
+                <span className="label-text-alt text-error">{errors.discordRoleId.message}</span>
               </label>
             )}
           </div>

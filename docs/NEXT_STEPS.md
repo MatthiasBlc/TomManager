@@ -45,7 +45,6 @@ Roadmap detaillee : `docs/features/jds-rework/ROADMAP.md`
 3. **A — Liaison table ↔ jeu** : migration DB `boardGameId` sur `GameTable`, selecteur dans formulaires tables JDS
 4. **B — Games enrichi** : `BoardGameDetailModal`, badge tables, tri/filtres dans `BoardGameTab`
 
-
 ---
 
 ## Phase 16 : Features avancees (Priorite basse, a discuter)

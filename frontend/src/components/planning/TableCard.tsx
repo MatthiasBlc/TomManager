@@ -30,9 +30,7 @@ export default function TableCard({ table, onClick }: Props) {
     });
 
   const hasGmPlayerConflict =
-    table.isGM &&
-    !table.currentUserConflict &&
-    table.conflictingPlayerCount > 0;
+    table.isGM && !table.currentUserConflict && table.conflictingPlayerCount > 0;
 
   return (
     <div
@@ -47,16 +45,10 @@ export default function TableCard({ table, onClick }: Props) {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="card-title text-base">{table.title}</h3>
-            {table.boardGame && (
-              <p className="text-xs opacity-60 mt-0.5">
-                {table.boardGame.name}
-              </p>
-            )}
+            {table.boardGame && <p className="text-xs opacity-60 mt-0.5">{table.boardGame.name}</p>}
           </div>
           <div className="flex items-center gap-1">
-            {table.isGM && (
-              <span className="badge badge-secondary badge-sm">GM</span>
-            )}
+            {table.isGM && <span className="badge badge-secondary badge-sm">GM</span>}
             {table.currentUserConflict && (
               <span className="badge badge-error badge-sm">⚠ Conflit</span>
             )}
@@ -82,16 +74,12 @@ export default function TableCard({ table, onClick }: Props) {
             {table.confirmedCount}/{table.maxPlayers}
           </span>
           {table.waitlistCount > 0 && (
-            <span className="badge badge-warning badge-sm">
-              +{table.waitlistCount} waitlist
-            </span>
+            <span className="badge badge-warning badge-sm">+{table.waitlistCount} waitlist</span>
           )}
           {table.currentUserStatus && (
             <span
               className={`badge badge-sm ${
-                table.currentUserStatus === "CONFIRMED"
-                  ? "badge-success"
-                  : "badge-warning"
+                table.currentUserStatus === "CONFIRMED" ? "badge-success" : "badge-warning"
               }`}
             >
               {table.currentUserStatus === "CONFIRMED" ? "Joined" : "Waitlist"}

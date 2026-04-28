@@ -15,12 +15,8 @@ describe("TagInput", () => {
     render(<TagInput value={["jdr", "horreur"]} onChange={vi.fn()} />);
     expect(screen.getByText("jdr")).toBeInTheDocument();
     expect(screen.getByText("horreur")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Remove tag jdr" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Remove tag horreur" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove tag jdr" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove tag horreur" })).toBeInTheDocument();
   });
 
   it("removes a tag when the badge button is clicked", () => {

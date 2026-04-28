@@ -23,7 +23,7 @@ describe("BoardGameList", () => {
           },
         ]}
         onRemove={vi.fn()}
-      />,
+      />
     );
     expect(screen.getByText("Catan")).toBeInTheDocument();
     expect(screen.getByText("Risk")).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe("BoardGameList", () => {
           },
         ]}
         onRemove={vi.fn()}
-      />,
+      />
     );
     expect(screen.getAllByText("Catan")).toHaveLength(1);
   });

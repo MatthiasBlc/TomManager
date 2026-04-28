@@ -37,9 +37,7 @@ describe("useIsMobile", () => {
     currentMql = createMatchMedia(false);
     window.matchMedia = vi
       .fn()
-      .mockImplementation(
-        () => currentMql,
-      ) as unknown as typeof window.matchMedia;
+      .mockImplementation(() => currentMql) as unknown as typeof window.matchMedia;
   });
 
   it("returns false when viewport is wider than the mobile breakpoint", () => {

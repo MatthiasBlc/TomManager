@@ -16,10 +16,7 @@ vi.mock("react-hot-toast", () => ({
   default: { error: (...a: unknown[]) => toastError(...a) },
 }));
 vi.mock("react-router-dom", async () => {
-  const actual =
-    await vi.importActual<typeof import("react-router-dom")>(
-      "react-router-dom",
-    );
+  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return { ...actual, useNavigate: () => navigateMock };
 });
 vi.mock("../components/events/EditEventModal", () => ({
@@ -33,6 +30,9 @@ vi.mock("../components/boardgames/BoardGameTab", () => ({
 }));
 vi.mock("../components/planning/PlanningTab", () => ({
   default: () => <div>PlanningTab</div>,
+}));
+vi.mock("../hooks/useIsMobile", () => ({
+  useIsMobile: () => false,
 }));
 
 const baseEvent = {

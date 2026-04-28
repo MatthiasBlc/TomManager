@@ -18,7 +18,7 @@ const BOARD_GAME_WITH_COUNTS = {
 export async function listBoardGames(
   search?: string,
   page = 1,
-  limit = 20,
+  limit = 20
 ): Promise<{
   games: {
     id: string;
@@ -37,9 +37,7 @@ export async function listBoardGames(
   page: number;
   limit: number;
 }> {
-  const where = search
-    ? { name: { contains: search, mode: "insensitive" as const } }
-    : {};
+  const where = search ? { name: { contains: search, mode: "insensitive" as const } } : {};
 
   const [total, games] = await Promise.all([
     prisma.boardGame.count({ where }),
@@ -64,7 +62,7 @@ export async function updateBoardGame(
     maxPlayers?: number | null;
     playingTime?: number | null;
     imageUrl?: string | null;
-  },
+  }
 ) {
   const game = await prisma.boardGame.findUnique({ where: { id } });
   if (!game) throw createError(404, "Board game not found");
@@ -107,10 +105,9 @@ export interface MergeFieldPicks {
 export async function mergeBoardGames(
   sourceId: string,
   targetId: string,
-  fieldPicks?: MergeFieldPicks,
+  fieldPicks?: MergeFieldPicks
 ) {
-  if (sourceId === targetId)
-    throw createError(400, "Cannot merge a game into itself");
+  if (sourceId === targetId) throw createError(400, "Cannot merge a game into itself");
 
   const [source, target] = await Promise.all([
     prisma.boardGame.findUnique({ where: { id: sourceId } }),

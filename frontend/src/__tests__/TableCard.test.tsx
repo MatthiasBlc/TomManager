@@ -37,49 +37,31 @@ describe("TableCard", () => {
   });
 
   it("renders the GM badge when isGM is true", () => {
-    render(
-      <TableCard table={{ ...baseTable, isGM: true }} onClick={() => {}} />,
-    );
+    render(<TableCard table={{ ...baseTable, isGM: true }} onClick={() => {}} />);
     expect(screen.getByText("GM")).toBeInTheDocument();
   });
 
   it("renders the waitlist badge when waitlistCount > 0", () => {
-    render(
-      <TableCard
-        table={{ ...baseTable, waitlistCount: 2 }}
-        onClick={() => {}}
-      />,
-    );
+    render(<TableCard table={{ ...baseTable, waitlistCount: 2 }} onClick={() => {}} />);
     expect(screen.getByText("+2 waitlist")).toBeInTheDocument();
   });
 
   it("renders the Joined badge when currentUserStatus is CONFIRMED", () => {
     render(
-      <TableCard
-        table={{ ...baseTable, currentUserStatus: "CONFIRMED" }}
-        onClick={() => {}}
-      />,
+      <TableCard table={{ ...baseTable, currentUserStatus: "CONFIRMED" }} onClick={() => {}} />
     );
     expect(screen.getByText("Joined")).toBeInTheDocument();
   });
 
   it("renders the Waitlist badge when currentUserStatus is WAITLIST", () => {
     render(
-      <TableCard
-        table={{ ...baseTable, currentUserStatus: "WAITLIST" }}
-        onClick={() => {}}
-      />,
+      <TableCard table={{ ...baseTable, currentUserStatus: "WAITLIST" }} onClick={() => {}} />
     );
     expect(screen.getByText("Waitlist")).toBeInTheDocument();
   });
 
   it("renders a conflict badge when currentUserConflict is true", () => {
-    render(
-      <TableCard
-        table={{ ...baseTable, currentUserConflict: true }}
-        onClick={() => {}}
-      />,
-    );
+    render(<TableCard table={{ ...baseTable, currentUserConflict: true }} onClick={() => {}} />);
     expect(screen.getByText(/Conflit/i)).toBeInTheDocument();
   });
 
@@ -88,23 +70,19 @@ describe("TableCard", () => {
       <TableCard
         table={{ ...baseTable, isGM: true, conflictingPlayerCount: 3 }}
         onClick={() => {}}
-      />,
+      />
     );
     expect(screen.getByText(/3 conflits/i)).toBeInTheDocument();
   });
 
   it("does not render a pitch paragraph when pitch is null", () => {
-    render(
-      <TableCard table={{ ...baseTable, pitch: null }} onClick={() => {}} />,
-    );
+    render(<TableCard table={{ ...baseTable, pitch: null }} onClick={() => {}} />);
     expect(screen.queryByText("Une aventure mortelle")).not.toBeInTheDocument();
   });
 
   it("calls onClick when the card is clicked", () => {
     const onClick = vi.fn();
-    const { container } = render(
-      <TableCard table={baseTable} onClick={onClick} />,
-    );
+    const { container } = render(<TableCard table={baseTable} onClick={onClick} />);
     fireEvent.click(container.firstChild as HTMLElement);
     expect(onClick).toHaveBeenCalledTimes(1);
   });

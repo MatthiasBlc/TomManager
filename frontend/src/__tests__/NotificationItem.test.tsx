@@ -22,7 +22,7 @@ function LocationProbe() {
 
 function renderItem(
   notification: Notification,
-  handlers = { onMarkAsRead: vi.fn(), onDelete: vi.fn() },
+  handlers = { onMarkAsRead: vi.fn(), onDelete: vi.fn() }
 ) {
   return {
     ...handlers,
@@ -31,13 +31,11 @@ function renderItem(
         <Routes>
           <Route
             path="/"
-            element={
-              <NotificationItem notification={notification} {...handlers} />
-            }
+            element={<NotificationItem notification={notification} {...handlers} />}
           />
           <Route path="*" element={<LocationProbe />} />
         </Routes>
-      </MemoryRouter>,
+      </MemoryRouter>
     ),
   };
 }
@@ -46,9 +44,7 @@ describe("NotificationItem", () => {
   it("renders title, message and a relative time", () => {
     renderItem(baseNotification);
     expect(screen.getByText("Table mise a jour")).toBeInTheDocument();
-    expect(
-      screen.getByText("Le donjon a change d'horaire"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Le donjon a change d'horaire")).toBeInTheDocument();
     expect(screen.getByText("5min")).toBeInTheDocument();
   });
 
@@ -85,18 +81,14 @@ describe("NotificationItem", () => {
   it("navigates to the event planning when metadata.eventId is set", () => {
     renderItem({ ...baseNotification, metadata: { eventId: "ev42" } });
     fireEvent.click(screen.getByText("Table mise a jour"));
-    expect(screen.getByTestId("location")).toHaveTextContent(
-      "/events/ev42/planning",
-    );
+    expect(screen.getByTestId("location")).toHaveTextContent("/events/ev42/planning");
   });
 
   it("calls onDelete and stops propagation when the delete button is clicked", () => {
     const onMarkAsRead = vi.fn();
     const onDelete = vi.fn();
     renderItem(baseNotification, { onMarkAsRead, onDelete });
-    fireEvent.click(
-      screen.getByRole("button", { name: /supprimer la notification/i }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /supprimer la notification/i }));
     expect(onDelete).toHaveBeenCalledWith("n1");
     expect(onMarkAsRead).not.toHaveBeenCalled();
   });

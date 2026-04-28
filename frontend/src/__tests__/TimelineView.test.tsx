@@ -3,7 +3,7 @@ import TimelineView from "../components/planning/TimelineView";
 import { computeLayout } from "../components/planning/computeLayout";
 
 const makeTable = (
-  overrides: Partial<{ id: string; startDateTime: string; title: string }> = {},
+  overrides: Partial<{ id: string; startDateTime: string; title: string }> = {}
 ) => ({
   id: "t1",
   title: "Donjon",
@@ -111,7 +111,7 @@ describe("TimelineView", () => {
           makeTable({ id: "t2", title: "Cthulhu" }),
         ]}
         onTableClick={vi.fn()}
-      />,
+      />
     );
     expect(screen.getByText("Donjon")).toBeInTheDocument();
     expect(screen.getByText("Cthulhu")).toBeInTheDocument();
@@ -133,7 +133,7 @@ describe("TimelineView", () => {
           makeTable({ id: "t2", title: "Day2", startDateTime: day2 }),
         ]}
         onTableClick={vi.fn()}
-      />,
+      />
     );
     expect(screen.getByText(formatDate(day1))).toBeInTheDocument();
     expect(screen.getByText(formatDate(day2))).toBeInTheDocument();
@@ -145,7 +145,7 @@ describe("TimelineView", () => {
       <TimelineView
         tables={[makeTable({ id: "t-xyz", title: "Donjon" })]}
         onTableClick={onTableClick}
-      />,
+      />
     );
     fireEvent.click(screen.getByText("Donjon"));
     expect(onTableClick).toHaveBeenCalledWith("t-xyz");

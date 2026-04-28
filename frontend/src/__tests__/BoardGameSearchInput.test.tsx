@@ -67,9 +67,7 @@ describe("BoardGameSearchInput", () => {
     const onSelect = vi.fn();
 
     render(<BoardGameSearchInput onSelect={onSelect} />);
-    const input = screen.getByPlaceholderText(
-      /search board games/i,
-    ) as HTMLInputElement;
+    const input = screen.getByPlaceholderText(/search board games/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "cat" } });
 
     const result = await screen.findByText("Catan");

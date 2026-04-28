@@ -5,15 +5,10 @@ import { Prisma } from "@prisma/client";
  * Find or create tags by name. Returns Tag records.
  * Names are normalized to lowercase and trimmed.
  */
-export async function findOrCreateTags(
-  names: string[],
-  tx?: Prisma.TransactionClient,
-) {
+export async function findOrCreateTags(names: string[], tx?: Prisma.TransactionClient) {
   const client = tx || prisma;
   const normalized = [
-    ...new Set(
-      names.map((n) => n.trim().toLowerCase()).filter((n) => n.length > 0),
-    ),
+    ...new Set(names.map((n) => n.trim().toLowerCase()).filter((n) => n.length > 0)),
   ];
 
   if (normalized.length === 0) return [];
@@ -25,9 +20,7 @@ export async function findOrCreateTags(
   const existingNames = new Set(existing.map((t) => t.name));
   const toCreate = normalized.filter((n) => !existingNames.has(n));
 
-  const created = await Promise.all(
-    toCreate.map((name) => client.tag.create({ data: { name } })),
-  );
+  const created = await Promise.all(toCreate.map((name) => client.tag.create({ data: { name } })));
 
   return [...existing, ...created];
 }

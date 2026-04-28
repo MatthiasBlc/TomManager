@@ -40,18 +40,15 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
       onClose();
     } catch (err: unknown) {
       const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message || "Failed to create event";
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Failed to create event";
       toast.error(message);
     }
   };
 
   return (
     <ResponsiveModal open={open} onClose={onClose} title="Create Event">
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4 p-4 md:p-0 md:mt-4"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ce-name">
             <span className="label-text">Name</span>
@@ -67,9 +64,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
           />
           {errors.name && (
             <label className="label">
-              <span className="label-text-alt text-error">
-                {errors.name.message}
-              </span>
+              <span className="label-text-alt text-error">{errors.name.message}</span>
             </label>
           )}
         </div>
@@ -87,9 +82,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
           />
           {errors.startDateTime && (
             <label className="label">
-              <span className="label-text-alt text-error">
-                {errors.startDateTime.message}
-              </span>
+              <span className="label-text-alt text-error">{errors.startDateTime.message}</span>
             </label>
           )}
         </div>
@@ -105,9 +98,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
           />
           {errors.endDateTime && (
             <label className="label">
-              <span className="label-text-alt text-error">
-                {errors.endDateTime.message}
-              </span>
+              <span className="label-text-alt text-error">{errors.endDateTime.message}</span>
             </label>
           )}
         </div>
@@ -125,16 +116,13 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
               {...register("discordRoleId", {
                 pattern: {
                   value: /^(\d{17,20})?$/,
-                  message:
-                    "Must be a Discord Snowflake (17-20 digits) or empty",
+                  message: "Must be a Discord Snowflake (17-20 digits) or empty",
                 },
               })}
             />
             {errors.discordRoleId && (
               <label className="label">
-                <span className="label-text-alt text-error">
-                  {errors.discordRoleId.message}
-                </span>
+                <span className="label-text-alt text-error">{errors.discordRoleId.message}</span>
               </label>
             )}
           </div>

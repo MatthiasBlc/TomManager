@@ -96,10 +96,7 @@ export default function BoardGameTab({ eventId }: Props) {
   };
 
   // Apply tab → mine filter on raw entries
-  const tabFiltered =
-    tab === "mine"
-      ? entries.filter((e) => e.broughtBy.id === user?.id)
-      : entries;
+  const tabFiltered = tab === "mine" ? entries.filter((e) => e.broughtBy.id === user?.id) : entries;
 
   // Group then apply sort/filter on groups
   const groups = groupEntries(tabFiltered);
@@ -120,17 +117,15 @@ export default function BoardGameTab({ eventId }: Props) {
 
   // Build sort rank and allowed game id set from sorted groups
   const rankByGameId: Record<string, number> = {};
-  sortedGroups.forEach((g, i) => { rankByGameId[g.game.id] = i; });
+  sortedGroups.forEach((g, i) => {
+    rankByGameId[g.game.id] = i;
+  });
   const visibleGameIds = new Set(sortedGroups.map((g) => g.game.id));
 
   // Filter and sort original per-user entries to match group order
   const visibleEntries = tabFiltered
     .filter((e) => visibleGameIds.has(e.boardGame.id))
-    .sort(
-      (a, b) =>
-        (rankByGameId[a.boardGame.id] ?? 0) -
-        (rankByGameId[b.boardGame.id] ?? 0),
-    );
+    .sort((a, b) => (rankByGameId[a.boardGame.id] ?? 0) - (rankByGameId[b.boardGame.id] ?? 0));
 
   return (
     <div>
@@ -146,9 +141,7 @@ export default function BoardGameTab({ eventId }: Props) {
             className={`tab tab-sm ${tab === "mine" ? "tab-active" : ""}`}
             onClick={() => setTab("mine")}
           >
-            My List{" "}
-            {!loading &&
-              `(${entries.filter((e) => e.broughtBy.id === user?.id).length})`}
+            My List {!loading && `(${entries.filter((e) => e.broughtBy.id === user?.id).length})`}
           </button>
         </div>
         <button
@@ -208,9 +201,7 @@ export default function BoardGameTab({ eventId }: Props) {
           onClickGame={handleClickGame}
           currentUserId={user?.id}
           isAdmin={user?.role === "ADMIN"}
-          emptyDescription={
-            tab === "mine" ? "You haven't added any games yet." : undefined
-          }
+          emptyDescription={tab === "mine" ? "You haven't added any games yet." : undefined}
         />
       )}
 

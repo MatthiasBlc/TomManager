@@ -2,12 +2,7 @@ import { useRef, useState, useCallback, useMemo } from "react";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import {
-  DatesSetArg,
-  EventDropArg,
-  EventContentArg,
-  DateSelectArg,
-} from "@fullcalendar/core";
+import { DatesSetArg, EventDropArg, EventContentArg, DateSelectArg } from "@fullcalendar/core";
 import { EventResizeDoneArg } from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
 import api from "../../config/api";
@@ -59,16 +54,13 @@ function calcNbDays(start: string, end: string): number {
   return Math.max(1, Math.min(7, Math.ceil(ms / (1000 * 60 * 60 * 24))));
 }
 
-function firstTableScrollTime(
-  tables: TableSummary[],
-  eventStart: string,
-): string {
+function firstTableScrollTime(tables: TableSummary[], eventStart: string): string {
   if (tables.length === 0) {
     const h = new Date(eventStart).getHours();
     return `${String(Math.max(0, h - 1)).padStart(2, "0")}:00:00`;
   }
   const earliest = tables.reduce((min, t) =>
-    new Date(t.startDateTime) < new Date(min.startDateTime) ? t : min,
+    new Date(t.startDateTime) < new Date(min.startDateTime) ? t : min
   );
   const d = new Date(earliest.startDateTime);
   const h = Math.max(0, d.getHours() - 1);
@@ -80,7 +72,7 @@ function findGmOverlap(
   movedTableId: string,
   newStart: Date,
   newEnd: Date,
-  tables: TableSummary[],
+  tables: TableSummary[]
 ): string | null {
   for (const t of tables) {
     if (t.id === movedTableId) continue;
@@ -109,7 +101,7 @@ export default function CalendarView({
 
   const nbDays = useMemo(
     () => calcNbDays(eventBounds.startDateTime, eventBounds.endDateTime),
-    [eventBounds.startDateTime, eventBounds.endDateTime],
+    [eventBounds.startDateTime, eventBounds.endDateTime]
   );
 
   const fcViews = useMemo(
@@ -119,17 +111,13 @@ export default function CalendarView({
         duration: { days: nbDays },
       },
     }),
-    [nbDays],
+    [nbDays]
   );
 
   // scrollTime calcule une seule fois au montage
-  const scrollTime = useRef(
-    firstTableScrollTime(tables, eventBounds.startDateTime),
-  ).current;
+  const scrollTime = useRef(firstTableScrollTime(tables, eventBounds.startDateTime)).current;
 
-  const [currentDate, setCurrentDate] = useState<Date>(
-    new Date(eventBounds.startDateTime),
-  );
+  const [currentDate, setCurrentDate] = useState<Date>(new Date(eventBounds.startDateTime));
 
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
     setCurrentDate(arg.start);
@@ -140,19 +128,9 @@ export default function CalendarView({
 
   // Appel API commun pour drag et resize
   const patchTableDates = useCallback(
-    async (
-      tableId: string,
-      newStart: Date,
-      newEnd: Date,
-      revertFunc: () => void,
-    ) => {
+    async (tableId: string, newStart: Date, newEnd: Date, revertFunc: () => void) => {
       // Warning si chevauchement avec une autre table du meme GM
-      const overlap = findGmOverlap(
-        tableId,
-        newStart,
-        newEnd,
-        tablesRef.current,
-      );
+      const overlap = findGmOverlap(tableId, newStart, newEnd, tablesRef.current);
       if (overlap) {
         toast(`Attention : chevauche "${overlap}"`, { icon: "⚠️" });
       }
@@ -166,12 +144,12 @@ export default function CalendarView({
       } catch (err: unknown) {
         revertFunc();
         const message =
-          (err as { response?: { data?: { error?: { message?: string } } } })
-            ?.response?.data?.error?.message || "Echec du deplacement";
+          (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+            ?.message || "Echec du deplacement";
         toast.error(message);
       }
     },
-    [eventId, onTableUpdated],
+    [eventId, onTableUpdated]
   );
 
   const handleEventDrop = useCallback(
@@ -180,14 +158,9 @@ export default function CalendarView({
         info.revert();
         return;
       }
-      patchTableDates(
-        info.event.id,
-        info.event.start,
-        info.event.end,
-        info.revert,
-      );
+      patchTableDates(info.event.id, info.event.start, info.event.end, info.revert);
     },
-    [patchTableDates],
+    [patchTableDates]
   );
 
   const handleEventResize = useCallback(
@@ -196,14 +169,9 @@ export default function CalendarView({
         info.revert();
         return;
       }
-      patchTableDates(
-        info.event.id,
-        info.event.start,
-        info.event.end,
-        info.revert,
-      );
+      patchTableDates(info.event.id, info.event.start, info.event.end, info.revert);
     },
-    [patchTableDates],
+    [patchTableDates]
   );
 
   const isAdmin = user?.role === "ADMIN";
@@ -215,12 +183,10 @@ export default function CalendarView({
       const end = info.end;
       const date = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
       const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
-      const durationMinutes = Math.round(
-        (end.getTime() - start.getTime()) / 60000,
-      );
+      const durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
       onSlotSelect({ date, startTime, durationMinutes });
     },
-    [onSlotSelect],
+    [onSlotSelect]
   );
 
   const calEvents = useMemo(
@@ -242,7 +208,7 @@ export default function CalendarView({
           conflictingPlayerCount: t.conflictingPlayerCount,
         },
       })),
-    [tables, isAdmin],
+    [tables, isAdmin]
   );
 
   const validRange = useMemo(
@@ -250,12 +216,12 @@ export default function CalendarView({
       start: eventBounds.startDateTime,
       end: eventBounds.endDateTime,
     }),
-    [eventBounds.startDateTime, eventBounds.endDateTime],
+    [eventBounds.startDateTime, eventBounds.endDateTime]
   );
 
   const renderEventContent = useCallback(
     (arg: EventContentArg) => <CalendarEventBlock arg={arg} />,
-    [],
+    []
   );
 
   const initialView = isMobile ? "timeGridDay" : "timeGridEventRange";
@@ -285,16 +251,10 @@ export default function CalendarView({
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="text-sm font-medium capitalize">
-            {formatMobileHeader(currentDate)}
-          </span>
+          <span className="text-sm font-medium capitalize">{formatMobileHeader(currentDate)}</span>
           <button
             className="btn btn-ghost btn-sm btn-square"
             onClick={goNext}
@@ -308,11 +268,7 @@ export default function CalendarView({
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5l7 7-7 7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>

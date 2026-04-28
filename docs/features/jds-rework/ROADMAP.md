@@ -75,10 +75,10 @@ Prerequis : avoir le `BGG_API_TOKEN` (enregistrement sur boardgamegeek.com/appli
 
 ## Effort total estime
 
-| Sous-feature | Modele     | Effort  |
-| ------------ | ---------- | ------- |
-| D — BGG fix  | Sonnet 4.6 | 2-3h    |
-| C — Admin    | Sonnet 4.6 | 3-4h    |
-| A — Liaison  | Sonnet 4.6 | 3-4h    |
-| B — Games UI | Sonnet 4.6 | 3-4h    |
-| **Total**    |            | 11-15h  |
+| Sous-feature | Modele     | Effort |
+| ------------ | ---------- | ------ |
+| D — BGG fix  | Sonnet 4.6 | 2-3h   |
+| C — Admin    | Sonnet 4.6 | 3-4h   |
+| A — Liaison  | Sonnet 4.6 | 3-4h   |
+| B — Games UI | Sonnet 4.6 | 3-4h   |
+| **Total**    |            | 11-15h |

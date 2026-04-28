@@ -2,11 +2,7 @@ import prisma from "../util/db";
 import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
 
-export async function addToEvent(
-  eventId: string,
-  boardGameId: string,
-  userId: string,
-) {
+export async function addToEvent(eventId: string, boardGameId: string, userId: string) {
   // Verify board game exists
   const boardGame = await prisma.boardGame.findUnique({
     where: { id: boardGameId },
@@ -60,12 +56,10 @@ export async function listByEvent(eventId: string, limit?: number) {
     select: { id: true, title: true, boardGameId: true },
   });
 
-  const linkedTablesByGame: Record<string, { id: string; title: string }[]> =
-    {};
+  const linkedTablesByGame: Record<string, { id: string; title: string }[]> = {};
   for (const t of linkedTablesRaw) {
     if (!t.boardGameId) continue;
-    if (!linkedTablesByGame[t.boardGameId])
-      linkedTablesByGame[t.boardGameId] = [];
+    if (!linkedTablesByGame[t.boardGameId]) linkedTablesByGame[t.boardGameId] = [];
     linkedTablesByGame[t.boardGameId].push({ id: t.id, title: t.title });
   }
 
@@ -75,21 +69,14 @@ export async function listByEvent(eventId: string, limit?: number) {
   }));
 }
 
-export async function removeFromEvent(
-  id: string,
-  userId: string,
-  userRole: string,
-) {
+export async function removeFromEvent(id: string, userId: string, userRole: string) {
   const entry = await prisma.eventBoardGame.findUnique({ where: { id } });
   if (!entry) {
     throw createError(404, "Board game entry not found");
   }
 
   if (entry.broughtByUserId !== userId && userRole !== "ADMIN") {
-    throw createError(
-      403,
-      "Only the owner or an admin can remove this board game",
-    );
+    throw createError(403, "Only the owner or an admin can remove this board game");
   }
 
   await prisma.eventBoardGame.delete({ where: { id } });

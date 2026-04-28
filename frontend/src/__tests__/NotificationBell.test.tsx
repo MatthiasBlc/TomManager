@@ -45,7 +45,7 @@ function renderBell() {
   return render(
     <MemoryRouter>
       <NotificationBell />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
@@ -58,9 +58,7 @@ describe("NotificationBell", () => {
   it("renders the bell button without a badge when unreadCount is 0", () => {
     useNotificationsMock.mockReturnValue({ ...baseNotifData, unreadCount: 0 });
     renderBell();
-    expect(
-      screen.getByRole("button", { name: "Notifications" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
     expect(screen.queryByText("0")).not.toBeInTheDocument();
   });
 
@@ -101,8 +99,6 @@ describe("NotificationBell", () => {
     useNotificationsMock.mockReturnValue({ ...baseNotifData, unreadCount: 3 });
     renderBell();
     fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
-    expect(
-      screen.getByRole("button", { name: /Tout marquer lu/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Tout marquer lu/i })).toBeInTheDocument();
   });
 });

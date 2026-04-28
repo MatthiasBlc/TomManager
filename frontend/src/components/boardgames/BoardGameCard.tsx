@@ -30,34 +30,23 @@ export default function BoardGameCard({
   onClick,
 }: Props) {
   const canRemove =
-    onRemove &&
-    removableEntries?.some(
-      (e) => e.broughtByUserId === currentUserId || isAdmin,
-    );
+    onRemove && removableEntries?.some((e) => e.broughtByUserId === currentUserId || isAdmin);
 
   const entryToRemove = canRemove
-    ? removableEntries?.find((e) =>
-        isAdmin ? true : e.broughtByUserId === currentUserId,
-      )
+    ? removableEntries?.find((e) => (isAdmin ? true : e.broughtByUserId === currentUserId))
     : undefined;
 
   return (
     <div
       className={`card bg-base-100 shadow-sm border transition-all ${
-        onClick
-          ? "cursor-pointer hover:shadow-md active:scale-[0.99]"
-          : ""
+        onClick ? "cursor-pointer hover:shadow-md active:scale-[0.99]" : ""
       }`}
       onClick={onClick}
     >
       <div className="card-body p-4">
         <div className="flex gap-3">
           {game.imageUrl && (
-            <img
-              src={game.imageUrl}
-              alt={game.name}
-              className="w-16 h-16 object-cover rounded"
-            />
+            <img src={game.imageUrl} alt={game.name} className="w-16 h-16 object-cover rounded" />
           )}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
@@ -76,16 +65,11 @@ export default function BoardGameCard({
                       {game.minPlayers}-{game.maxPlayers} players
                     </span>
                   )}
-                  {game.playingTime != null && (
-                    <span>{game.playingTime} min</span>
-                  )}
+                  {game.playingTime != null && <span>{game.playingTime} min</span>}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {broughtBy.map((user) => (
-                    <span
-                      key={user.id}
-                      className="badge badge-outline badge-sm"
-                    >
+                    <span key={user.id} className="badge badge-outline badge-sm">
                       {user.username}
                     </span>
                   ))}

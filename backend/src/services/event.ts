@@ -6,7 +6,7 @@ export async function createEvent(
   startDateTime: string,
   endDateTime: string,
   userId: string,
-  discordRoleId?: string | null,
+  discordRoleId?: string | null
 ) {
   if (!name || name.trim().length === 0 || name.trim().length > 100) {
     throw createError(400, "Name must be between 1 and 100 characters");
@@ -27,8 +27,7 @@ export async function createEvent(
 
   if (discordRoleId) {
     const conflict = await prisma.event.findFirst({ where: { discordRoleId } });
-    if (conflict)
-      throw createError(409, "Discord role already linked to another event");
+    if (conflict) throw createError(409, "Discord role already linked to another event");
   }
 
   const event = await prisma.event.create({
@@ -52,12 +51,7 @@ export async function createEvent(
   return event;
 }
 
-export async function listEvents(
-  userId: string,
-  role: string,
-  upcoming?: boolean,
-  limit?: number,
-) {
+export async function listEvents(userId: string, role: string, upcoming?: boolean, limit?: number) {
   const now = new Date();
 
   const where: Record<string, unknown> = {};
@@ -133,7 +127,7 @@ export async function updateEvent(
     startDateTime?: string;
     endDateTime?: string;
     discordRoleId?: string | null;
-  },
+  }
 ) {
   if (data.discordRoleId !== undefined && data.discordRoleId !== null) {
     const conflict = await prisma.event.findFirst({
@@ -150,12 +144,8 @@ export async function updateEvent(
   }
 
   const name = data.name !== undefined ? data.name.trim() : existing.name;
-  const start = data.startDateTime
-    ? new Date(data.startDateTime)
-    : existing.startDateTime;
-  const end = data.endDateTime
-    ? new Date(data.endDateTime)
-    : existing.endDateTime;
+  const start = data.startDateTime ? new Date(data.startDateTime) : existing.startDateTime;
+  const end = data.endDateTime ? new Date(data.endDateTime) : existing.endDateTime;
 
   if (!name || name.length === 0 || name.length > 100) {
     throw createError(400, "Name must be between 1 and 100 characters");
@@ -181,9 +171,7 @@ export async function updateEvent(
         name,
         startDateTime: start,
         endDateTime: end,
-        ...(data.discordRoleId !== undefined
-          ? { discordRoleId: data.discordRoleId }
-          : {}),
+        ...(data.discordRoleId !== undefined ? { discordRoleId: data.discordRoleId } : {}),
       },
     });
 
@@ -191,8 +179,7 @@ export async function updateEvent(
       // Cascade dates to GameTables
       const tables = await tx.gameTable.findMany({ where: { eventId } });
       for (const table of tables) {
-        const clampedStart =
-          table.startDateTime < start ? start : table.startDateTime;
+        const clampedStart = table.startDateTime < start ? start : table.startDateTime;
         const clampedEnd = table.endDateTime > end ? end : table.endDateTime;
 
         if (clampedStart >= clampedEnd) {
