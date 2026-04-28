@@ -14,6 +14,10 @@ const baseTable = {
     { id: "tag1", name: "Fantasy" },
     { id: "tag2", name: "Horreur" },
   ],
+  players: [
+    { id: "u2", username: "Bob" },
+    { id: "u3", username: "Charlie" },
+  ],
   confirmedCount: 3,
   waitlistCount: 0,
   currentUserStatus: null,

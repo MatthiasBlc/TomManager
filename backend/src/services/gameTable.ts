@@ -164,7 +164,8 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       creator: { select: { id: true, username: true } },
       tags: { include: { tag: true } },
       participants: {
-        select: { userId: true, status: true },
+        select: { userId: true, status: true, user: { select: { id: true, username: true } } },
+        orderBy: { joinedAt: "asc" },
       },
       boardGame: { select: BOARD_GAME_SELECT },
     },
@@ -230,6 +231,9 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       createdAt: t.createdAt,
       creator: t.creator,
       tags: t.tags.map((gt) => gt.tag),
+      players: t.participants
+        .filter((p) => p.status === "CONFIRMED")
+        .map((p) => ({ id: p.user.id, username: p.user.username })),
       confirmedCount,
       waitlistCount,
       currentUserStatus: currentUserParticipant?.status || null,

@@ -8,6 +8,7 @@ export interface TableSummary {
   endDateTime: string;
   creator: { id: string; username: string };
   tags: { id: string; name: string }[];
+  players: { id: string; username: string }[];
   confirmedCount: number;
   waitlistCount: number;
   currentUserStatus: string | null;

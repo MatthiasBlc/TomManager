@@ -80,6 +80,21 @@ export default function TableCard({ table, onClick }: Props) {
           )}
         </div>
 
+        {table.players.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {table.players.slice(0, 4).map((p) => (
+              <span key={p.id} className="badge badge-outline badge-xs opacity-70">
+                {p.username}
+              </span>
+            ))}
+            {table.players.length > 4 && (
+              <span className="badge badge-outline badge-xs opacity-50">
+                +{table.players.length - 4}
+              </span>
+            )}
+          </div>
+        )}
+
         {table.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {table.tags.map((tag) => (

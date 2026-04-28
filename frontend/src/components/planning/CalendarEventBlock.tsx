@@ -9,6 +9,7 @@ interface TableExtendedProps {
   type: "JDR" | "JDS";
   currentUserConflict: boolean;
   conflictingPlayerCount: number;
+  players: { id: string; username: string }[];
 }
 
 export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
@@ -21,6 +22,7 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
     type,
     currentUserConflict,
     conflictingPlayerCount,
+    players,
   } = arg.event.extendedProps as TableExtendedProps;
 
   let classes = "bg-primary/80 border-primary text-primary-content";
@@ -48,6 +50,15 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
         <p className="text-xs font-semibold">
           ⚠ {conflictingPlayerCount} conflit
           {conflictingPlayerCount > 1 ? "s" : ""}
+        </p>
+      )}
+      {players.length > 0 && (
+        <p className="text-xs opacity-70 truncate">
+          {players
+            .slice(0, 3)
+            .map((p) => p.username)
+            .join(", ")}
+          {players.length > 3 && ` +${players.length - 3}`}
         </p>
       )}
     </div>

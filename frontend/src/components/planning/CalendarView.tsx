@@ -13,21 +13,7 @@ import CalendarEventBlock from "./CalendarEventBlock";
 // Stable hors du composant pour eviter les re-renders FC
 const FC_PLUGINS = [timeGridPlugin, interactionPlugin];
 
-interface TableSummary {
-  id: string;
-  title: string;
-  startDateTime: string;
-  endDateTime: string;
-  creator: { id: string; username: string };
-  type: "JDR" | "JDS";
-  confirmedCount: number;
-  waitlistCount: number;
-  maxPlayers: number;
-  currentUserStatus: string | null;
-  isGM: boolean;
-  currentUserConflict: boolean;
-  conflictingPlayerCount: number;
-}
+import { type TableSummary } from "./computeLayout";
 
 interface EventBounds {
   startDateTime: string;
@@ -206,6 +192,7 @@ export default function CalendarView({
           type: t.type,
           currentUserConflict: t.currentUserConflict,
           conflictingPlayerCount: t.conflictingPlayerCount,
+          players: t.players,
         },
       })),
     [tables, isAdmin]
