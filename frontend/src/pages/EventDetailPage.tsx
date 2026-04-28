@@ -7,6 +7,9 @@ import EditEventModal from "../components/events/EditEventModal";
 import ParticipantList from "../components/events/ParticipantList";
 import BoardGameTab from "../components/boardgames/BoardGameTab";
 import PlanningTab from "../components/planning/PlanningTab";
+import ResponsiveModal from "../components/common/ResponsiveModal";
+import AdminBoardGamePanel from "../components/admin/AdminBoardGamePanel";
+import { useGameDbManagement } from "../hooks/useGameDbManagement";
 
 interface EventDetail {
   id: string;
@@ -32,9 +35,11 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("info");
   const [showEdit, setShowEdit] = useState(false);
+  const [showGameDb, setShowGameDb] = useState(false);
 
   const isCreator = user?.id === event?.createdBy;
   const isAdmin = user?.role === "ADMIN";
+  const { gameDbEnabled } = useGameDbManagement();
   const canManageEvent = isCreator || isAdmin;
 
   const fetchEvent = useCallback(async () => {
@@ -140,6 +145,14 @@ export default function EventDetailPage() {
                 />
               </svg>
             </button>
+            {isAdmin && gameDbEnabled && (
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() => setShowGameDb(true)}
+              >
+                Manage game database
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -216,6 +229,17 @@ export default function EventDetailPage() {
         onUpdated={fetchEvent}
         event={event}
       />
+
+      <ResponsiveModal
+        open={showGameDb}
+        onClose={() => setShowGameDb(false)}
+        title="Banque de jeux"
+        size="xl"
+      >
+        <div className="mt-4 overflow-y-auto max-h-[70vh]">
+          <AdminBoardGamePanel />
+        </div>
+      </ResponsiveModal>
     </div>
   );
 }
