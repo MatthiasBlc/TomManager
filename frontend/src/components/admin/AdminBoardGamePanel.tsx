@@ -601,11 +601,11 @@ export default function AdminBoardGamePanel() {
                 {/* Column headers */}
                 <div className="grid grid-cols-[90px_1fr_1fr] gap-2">
                   <span />
-                  <div className="text-xs font-medium text-error/80 bg-error/10 rounded px-2 py-1 text-center">
-                    Source — supprime
+                  <div className="text-xs font-medium bg-base-200 rounded px-2 py-1 text-center truncate">
+                    {mergeSource.name}
                   </div>
-                  <div className="text-xs font-medium text-success/80 bg-success/10 rounded px-2 py-1 text-center">
-                    Cible — conserve
+                  <div className="text-xs font-medium bg-base-200 rounded px-2 py-1 text-center truncate">
+                    {mergeTarget.name}
                   </div>
                 </div>
 
@@ -675,11 +675,7 @@ export default function AdminBoardGamePanel() {
                 })}
 
                 <p className="text-xs opacity-50">
-                  Toutes les liaisons (evenements, tables) seront transferees
-                  vers <strong>{mergeTarget.name}</strong>.{" "}
-                  <strong className="text-error">
-                    {mergeSource.name} sera supprime.
-                  </strong>
+                  Toutes les liaisons (evenements, tables) seront transferees.
                 </p>
 
                 <div className="flex gap-2 justify-between">
