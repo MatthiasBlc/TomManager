@@ -1,42 +1,15 @@
 # Spec : Refonte JDS — banque de jeux, BGG et liaisons tables
 
-## IMPORTANT : Points a resoudre avant de commencer
+## Decisions d'architecture
 
-Les questions suivantes n'ont pas encore de reponse arretee. **Ne pas demarrer l'implementation
-avant de les avoir toutes tranchees.** Les integrer dans la spec avant de coder.
-
----
-
-**Point 1 — Redondance Phase 14 / Sous-feature D**
-
-La Phase 14 (BGG fix) est toujours documentee comme entree separee dans `docs/NEXT_STEPS.md`.
-La Sous-feature D la couvre entierement.
-> Decider : supprimer Phase 14 et laisser D comme unique reference, ou garder les deux avec une note de cross-reference explicite ?
-
-**Point 2 — Pre-remplissage : changement de jeu en cours de saisie**
-
-Si l'utilisateur selectionne le jeu A (qui pre-remplit `maxPlayers: 6`), puis change pour le jeu B
-(avec `maxPlayers: 4`) — on ecrase la valeur deja pre-remplie ? On laisse l'utilisateur maitre ?
-> Decider : le pre-remplissage est-il one-shot (au premier select uniquement) ou reactif a chaque changement de jeu ?
-
-**Point 3 — UX du merge doublons (Sous-feature C)**
-
-La spec dit "selectionner 2 jeux" sans decrire le flux UI concret.
-> Decider : double-select dans la liste ? Bouton "Merger avec..." contextuel sur chaque ligne ? Autre ?
-
-**Point 4 — Source des donnees tables dans BoardGameTab (Sous-feature B)**
-
-Pour afficher les badges "X table(s)" sur chaque jeu, `BoardGameTab` a besoin des tables JDS de
-l'event. La spec propose d'enrichir `GET /api/events/:id/boardgames` cote backend, mais ne precise
-pas le comportement si les tables ne sont pas encore chargees.
-> Decider : appel supplementaire dans `BoardGameTab` ? Props injectees depuis le parent ? Chargement dans le endpoint boardgames ?
-
-**Point 5 — `TableCard` et acces au champ `boardGame`**
-
-`TableCard` est rendu dans `PlanningTab` et `TimelineView`. Les donnees viennent de
-`GET /api/events/:id/tables`. Ce endpoint devra inclure `boardGame` dans sa reponse pour que
-`TableCard` puisse afficher le nom du jeu.
-> Verifier que tous les selects Prisma du service `gameTable.ts` (findMany inclus) retournent bien `boardGame`, et que les types TS correspondants sont mis a jour.
+| # | Sujet | Decision |
+|---|-------|----------|
+| 1 | Redondance Phase 14 / Sous-feature D | Garder les deux ; a la validation de D, cocher aussi Phase 14 dans `docs/NEXT_STEPS.md` |
+| 2 | Pre-remplissage en creation | Reactif : chaque changement de jeu ecrase les champs pre-remplis |
+| 2 | Pre-remplissage en edition | One-shot : ne remplir que les champs encore vides, ne pas ecraser ce que l'user a saisi |
+| 3 | UX merge doublons | Bouton contextuel "Merger..." sur chaque ligne → modal recherche du jeu canonique → preview cote a cote → confirmation |
+| 4 | Source donnees tables dans BoardGameTab | Option backend : enrichir `GET /api/events/:id/boardgames` avec `linkedTables: { id, title }[]` par jeu |
+| 5 | Selects Prisma `gameTable.ts` | Aucun select ne retourne `boardGame` actuellement. Mettre a jour `createTable`, `listTables`, `getTable`, `updateTable` dans la sous-feature A |
 
 ---
 
@@ -101,10 +74,11 @@ Le selecteur de jeu apparait **uniquement quand type = JDS**, positionne **en ha
 2. **Creer manuellement** : ouvre `ManualBoardGameForm` → `POST /api/boardgames` → selectionne le jeu cree
 3. **Pas de jeu** (defaut) : ignorer la liaison
 
-**Pre-remplissage :**
-- Quand un jeu est selectionne : si `maxPlayers` est vide → pre-remplir avec `game.maxPlayers`
-- Si duree est vide → pré-remplir avec `game.playingTime` (converti en option de duree la plus proche)
-- Si les champs sont deja remplis par l'utilisateur : ne pas ecraser
+**Pre-remplissage (creation) :**
+- Reactif : chaque changement de jeu selectionne declenche le pre-remplissage
+- `maxPlayers` → pre-rempli avec `game.maxPlayers` (ecrase la valeur precedente)
+- Duree → pre-remplie avec `game.playingTime` (ecrase la valeur precedente)
+- L'utilisateur peut toujours modifier apres le pre-remplissage
 
 **Maquette logique du formulaire JDS :**
 ```
@@ -124,6 +98,10 @@ Le selecteur de jeu apparait **uniquement quand type = JDS**, positionne **en ha
 ### Frontend — EditTableModal
 
 Meme logique que CreateTableModal. Afficher le jeu actuellement lie (s'il existe) avec possibilite de changer ou de retirer la liaison.
+
+**Pre-remplissage (edition) :**
+- One-shot : ne remplir que les champs encore vides (ne pas ecraser ce que l'user a saisi)
+- Si l'user change de jeu, les champs deja remplis restent intacts
 
 ### Frontend — TableDetailModal
 
@@ -185,11 +163,9 @@ Le composant fetch `GET /api/boardgames/:id` (lazy-fetch BGG si stub) a l'ouvert
 - Avec table organisee
 - Sans table
 
-L'onglet doit recevoir les tables de l'event pour calculer les liaisons cote frontend
-(ou le backend les inclut dans `GET /api/events/:id/boardgames`).
-
-**Option backend (recommandee)** : enrichir la reponse `GET /api/events/:id/boardgames` avec un champ
-`linkedTables: { id, title }[]` par jeu, calculé a partir de `GameTable.boardGameId`.
+**Architecture retenue** : enrichir `GET /api/events/:id/boardgames` avec un champ
+`linkedTables: { id, title }[]` par jeu, calcule a partir de `GameTable.boardGameId` (join cote backend).
+`BoardGameTab` conserve un seul appel API et calcule les badges/filtres a partir des donnees recues.
 
 ---
 
@@ -204,8 +180,7 @@ Bouton "Gerer la banque de jeux" → ouvre `AdminBoardGamePanel` (modal fullscre
 
 - Tableau paginé : nom, source (BGG / manuel), annee, joueurs min–max, duree
 - Recherche par nom (filtre local instantane + query backend si besoin)
-- Actions par ligne : **Editer**, **Supprimer**
-- Action globale : **Merger des doublons** (selectionner 2 jeux)
+- Actions par ligne : **Editer**, **Supprimer**, **Merger...**
 
 ### Edition
 
@@ -224,10 +199,10 @@ Modal avec champs modifiables :
 
 ### Merge de doublons
 
-Flux :
-1. Selectionner le jeu A (doublon a supprimer) et le jeu B (jeu a conserver)
-2. Afficher les deux fiches cote a cote pour verification
-3. Confirmer → transferer tous les `EventBoardGame` et `GameTable.boardGameId` de A vers B → supprimer A
+Flux declenche par le bouton "Merger..." sur la ligne du jeu A (doublon a supprimer) :
+1. Modal de recherche : "Selectionner le jeu a conserver" → input recherche dans la banque
+2. Preview cote a cote : fiche du jeu A vs fiche du jeu B selectionne (nom, source, annee, joueurs, duree)
+3. Confirmation → transferer tous les `EventBoardGame` et `GameTable.boardGameId` de A vers B → supprimer A
 
 ### Nouveaux endpoints backend
 
