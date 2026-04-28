@@ -171,9 +171,9 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
   );
 
   return (
-    <>
+    <div className={!isMobile ? "flex flex-col h-full" : ""}>
       {/* Header avec toggle + boutons desktop */}
-      <div className="flex items-center justify-between mb-4 print-hide">
+      <div className="flex items-center justify-between mb-4 print-hide flex-none">
         {ViewToggle}
         <div className="flex items-center gap-2">
           {user?.role === "ADMIN" && pdfExportEnabled && !isMobile && (
@@ -219,23 +219,28 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         </div>
       </div>
 
-      {loading ? (
-        <SkeletonCardGrid count={4} />
-      ) : viewMode === "list" ? (
-        <TimelineView tables={tables} onTableClick={handleTableClick} />
-      ) : eventBounds ? (
-        <CalendarView
-          tables={tables}
-          eventBounds={eventBounds}
-          eventId={eventId}
-          onTableClick={handleTableClick}
-          onTableUpdated={fetchTables}
-          onSlotSelect={handleSlotSelect}
-        />
-      ) : (
-        // Fallback si les bornes ne sont pas encore chargees
-        <TimelineView tables={tables} onTableClick={handleTableClick} />
-      )}
+      <div
+        className={
+          !isMobile ? "flex-1 min-h-0 overflow-y-auto pb-4" : ""
+        }
+      >
+        {loading ? (
+          <SkeletonCardGrid count={4} />
+        ) : viewMode === "list" ? (
+          <TimelineView tables={tables} onTableClick={handleTableClick} />
+        ) : eventBounds ? (
+          <CalendarView
+            tables={tables}
+            eventBounds={eventBounds}
+            eventId={eventId}
+            onTableClick={handleTableClick}
+            onTableUpdated={fetchTables}
+            onSlotSelect={handleSlotSelect}
+          />
+        ) : (
+          <TimelineView tables={tables} onTableClick={handleTableClick} />
+        )}
+      </div>
 
       {isMobile && (
         <div className="print-hide">
@@ -278,6 +283,6 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         onTableDeleted={fetchTables}
         onTableUpdated={fetchTables}
       />
-    </>
+    </div>
   );
 }

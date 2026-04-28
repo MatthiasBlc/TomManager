@@ -156,7 +156,10 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Activer la gestion des jeux</span>
+                <div>
+                  <span className="text-sm">Activer la gestion des jeux</span>
+                  <span className="badge badge-warning badge-xs ml-2">Beta</span>
+                </div>
                 <input
                   type="checkbox"
                   className="toggle toggle-sm"

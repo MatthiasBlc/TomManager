@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
+import { useIsMobile } from "../hooks/useIsMobile";
 import EditEventModal from "../components/events/EditEventModal";
 import ParticipantList from "../components/events/ParticipantList";
 import BoardGameTab from "../components/boardgames/BoardGameTab";
@@ -37,6 +38,7 @@ export default function EventDetailPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [showGameDb, setShowGameDb] = useState(false);
 
+  const isMobile = useIsMobile();
   const isCreator = user?.id === event?.createdBy;
   const isAdmin = user?.role === "ADMIN";
   const { gameDbEnabled } = useGameDbManagement();
@@ -91,8 +93,14 @@ export default function EventDetailPage() {
   if (!event) return null;
 
   return (
-    <div className="container mx-auto px-4 py-4 md:py-8">
-      <div className="flex items-start justify-between mb-4 md:mb-6">
+    <div
+      className={`container mx-auto px-4 ${
+        tab === "planning" && !isMobile
+          ? "pt-4 md:pt-6 h-[calc(100dvh-4rem)] flex flex-col"
+          : "py-4 md:py-8"
+      }`}
+    >
+      <div className="flex items-start justify-between mb-4 md:mb-6 flex-none">
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-bold truncate md:text-2xl">
             {event.name}
@@ -127,7 +135,7 @@ export default function EventDetailPage() {
         )}
       </div>
 
-      <div className="overflow-x-auto -mx-4 px-4 mb-4 md:mb-6 md:mx-0 md:px-0">
+      <div className="overflow-x-auto -mx-4 px-4 mb-4 md:mb-6 md:mx-0 md:px-0 flex-none">
         <div className="tabs tabs-boxed inline-flex min-w-max">
           <button
             className={`tab ${tab === "info" ? "tab-active" : ""}`}
@@ -156,6 +164,7 @@ export default function EventDetailPage() {
         </div>
       </div>
 
+      <div className={tab === "planning" && !isMobile ? "flex-1 min-h-0" : ""}>
       {tab === "info" && (
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body p-4 md:p-6">
@@ -192,6 +201,7 @@ export default function EventDetailPage() {
       {tab === "planning" && <PlanningTab eventId={event.id} />}
 
       {tab === "games" && <BoardGameTab eventId={event.id} />}
+      </div>
 
       <EditEventModal
         open={showEdit}
