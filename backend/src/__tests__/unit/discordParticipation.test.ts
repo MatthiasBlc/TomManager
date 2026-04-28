@@ -26,7 +26,9 @@ vi.mock("../../util/db", () => ({
       findUnique: (...args: unknown[]) => mockFindUnique(...args),
       delete: (...args: unknown[]) => mockDelete(...args),
     },
-    gameTableParticipant: { deleteMany: (...args: unknown[]) => mockDeleteMany(...args) },
+    gameTableParticipant: {
+      deleteMany: (...args: unknown[]) => mockDeleteMany(...args),
+    },
   },
 }));
 

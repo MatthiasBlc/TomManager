@@ -44,7 +44,10 @@ describe("Participant API", () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      await createTestUserDirectly({ email: "outsider@example.com", username: "outsider" });
+      await createTestUserDirectly({
+        email: "outsider@example.com",
+        username: "outsider",
+      });
       const { cookie: outsiderCookie } = await loginTestUser("outsider@example.com");
 
       const res = await request
@@ -73,7 +76,9 @@ describe("Participant API", () => {
       expect(res.status).toBe(204);
 
       const participation = await prisma.eventParticipation.findUnique({
-        where: { eventId_userId: { eventId: event.id, userId: regularUser.id } },
+        where: {
+          eventId_userId: { eventId: event.id, userId: regularUser.id },
+        },
       });
       expect(participation).toBeNull();
     });
@@ -146,7 +151,9 @@ describe("Participant API", () => {
       expect(res.status).toBe(204);
 
       const participation = await prisma.eventParticipation.findUnique({
-        where: { eventId_userId: { eventId: event.id, userId: regularUser.id } },
+        where: {
+          eventId_userId: { eventId: event.id, userId: regularUser.id },
+        },
       });
       expect(participation).toBeNull();
     });
@@ -166,7 +173,10 @@ describe("Participant API", () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      await createTestUserDirectly({ email: "outsider@example.com", username: "outsider" });
+      await createTestUserDirectly({
+        email: "outsider@example.com",
+        username: "outsider",
+      });
       const { cookie: outsiderCookie } = await loginTestUser("outsider@example.com");
 
       const res = await request

@@ -36,7 +36,9 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.session.userId! } });
+    const user = await prisma.user.findUnique({
+      where: { id: req.session.userId! },
+    });
     await eventBoardGameService.removeFromEvent(
       req.params.id,
       req.session.userId!,

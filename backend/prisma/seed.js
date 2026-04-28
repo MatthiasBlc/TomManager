@@ -73,6 +73,7 @@ async function seedDemoData() {
   ];
 
   const boardGames = [];
+  const boardGameMap = {};
   for (const g of gamesData) {
     let bg = await prisma.boardGame.findFirst({ where: { name: g.name } });
     if (!bg) {
@@ -82,6 +83,7 @@ async function seedDemoData() {
       console.log(`Jeu deja existant, ignore : ${g.name}`);
     }
     boardGames.push(bg);
+    boardGameMap[g.name] = bg;
   }
 
   // Associer les jeux a l'evenement (amenes par admin)
@@ -246,8 +248,10 @@ async function seedDemoData() {
       endDateTime: new Date("2026-07-20T16:00:00.000Z"),
       tags: ["jdr"],
     },
-    // Session jds de nuit sur le dernier jour
+    // --- Sessions JDS ---
     {
+      type: "JDS",
+      boardGameName: "Spirit Island",
       title: "Spirit Island - Nuit des Esprits",
       pitch:
         "Defense cooperative de l'ile contre les colonisateurs. Complexite elevee, session de nuit.",
@@ -255,6 +259,37 @@ async function seedDemoData() {
       startDateTime: new Date("2026-07-20T00:30:00.000Z"),
       endDateTime: new Date("2026-07-20T03:30:00.000Z"),
       tags: ["coopératif", "strategie"],
+    },
+    {
+      type: "JDS",
+      boardGameName: "Wingspan",
+      title: "Wingspan - Tournoi des Oiseaux",
+      pitch:
+        "Construisez le sanctuaire d'oiseaux le plus attractif. Partie competitive 3-5 joueurs.",
+      maxPlayers: 5,
+      startDateTime: new Date("2026-07-17T14:00:00.000Z"),
+      endDateTime: new Date("2026-07-17T16:30:00.000Z"),
+      tags: ["familial", "strategie"],
+    },
+    {
+      type: "JDS",
+      boardGameName: "Ark Nova",
+      title: "Ark Nova - Zoo en construction",
+      pitch:
+        "Concevez un zoo moderne en soutenant des projets de conservation. Jeu dense, initiation possible.",
+      maxPlayers: 4,
+      startDateTime: new Date("2026-07-19T13:00:00.000Z"),
+      endDateTime: new Date("2026-07-19T17:00:00.000Z"),
+      tags: ["strategie"],
+    },
+    {
+      type: "JDS",
+      title: "Partie libre JDS - apportez vos jeux",
+      pitch: "Table ouverte pour toute partie de jeu de societe. Jeux du coin ou les votres.",
+      maxPlayers: 8,
+      startDateTime: new Date("2026-07-16T18:00:00.000Z"),
+      endDateTime: new Date("2026-07-16T21:00:00.000Z"),
+      tags: ["familial"],
     },
   ];
 
@@ -264,10 +299,13 @@ async function seedDemoData() {
     });
 
     if (!existing) {
+      const boardGameId = t.boardGameName ? (boardGameMap[t.boardGameName]?.id ?? null) : null;
+
       const table = await prisma.gameTable.create({
         data: {
           eventId: event.id,
           createdBy: admin.id,
+          type: t.type || "JDR",
           title: t.title,
           pitch: t.pitch || null,
           triggers: t.triggers || null,
@@ -275,6 +313,7 @@ async function seedDemoData() {
           maxPlayers: t.maxPlayers,
           startDateTime: t.startDateTime,
           endDateTime: t.endDateTime,
+          boardGameId,
         },
       });
 
@@ -302,7 +341,12 @@ async function seedDemoData() {
 
 async function main() {
   await seedAdmins();
-  await seedDemoData();
+  try {
+    await seedDemoData();
+  } catch (e) {
+    // La donnee de demo est optionnelle — le serveur doit toujours demarrer
+    console.error("[seed] seedDemoData echoue (non-fatal) :", e.message);
+  }
 }
 
 main()

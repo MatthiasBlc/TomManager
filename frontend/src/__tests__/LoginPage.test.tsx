@@ -71,7 +71,9 @@ describe("LoginPage", () => {
     fireEvent.input(screen.getByLabelText(/email or username/i), {
       target: { value: "alice@example.com" },
     });
-    fireEvent.input(screen.getByLabelText(/password/i), { target: { value: "secret" } });
+    fireEvent.input(screen.getByLabelText(/password/i), {
+      target: { value: "secret" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
     await waitFor(() => {
       expect(loginMock).toHaveBeenCalledWith("alice@example.com", "secret");
@@ -87,7 +89,9 @@ describe("LoginPage", () => {
     fireEvent.input(screen.getByLabelText(/email or username/i), {
       target: { value: "alice" },
     });
-    fireEvent.input(screen.getByLabelText(/password/i), { target: { value: "bad" } });
+    fireEvent.input(screen.getByLabelText(/password/i), {
+      target: { value: "bad" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /^login$/i }));
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith("Invalid credentials");
@@ -116,7 +120,9 @@ describe("LoginPage", () => {
     setUpAuth();
     initiateDiscordLoginMock.mockResolvedValue(undefined);
     renderLogin();
-    const btn = await screen.findByRole("button", { name: /login with discord/i });
+    const btn = await screen.findByRole("button", {
+      name: /login with discord/i,
+    });
     fireEvent.click(btn);
     await waitFor(() => {
       expect(initiateDiscordLoginMock).toHaveBeenCalledWith("/events");
@@ -135,7 +141,9 @@ describe("LoginPage", () => {
     setUpAuth();
     initiateDiscordLoginMock.mockRejectedValue(new Error("not_in_guild"));
     renderLogin();
-    const btn = await screen.findByRole("button", { name: /login with discord/i });
+    const btn = await screen.findByRole("button", {
+      name: /login with discord/i,
+    });
     fireEvent.click(btn);
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith("You must be a member of the Discord server");
@@ -146,7 +154,9 @@ describe("LoginPage", () => {
     setUpAuth();
     initiateDiscordLoginMock.mockRejectedValue(new Error("unexpected_error"));
     renderLogin();
-    const btn = await screen.findByRole("button", { name: /login with discord/i });
+    const btn = await screen.findByRole("button", {
+      name: /login with discord/i,
+    });
     fireEvent.click(btn);
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith("Discord login unavailable");

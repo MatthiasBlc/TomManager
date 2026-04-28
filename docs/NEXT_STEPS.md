@@ -31,6 +31,22 @@ Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
 
 ---
 
+## Feature : Refonte JDS — banque de jeux, BGG et liaisons tables
+
+**Statut** : specifiee. Spec complete : `docs/features/jds-rework/SPEC_JDS_REWORK.md`
+Roadmap detaillee : `docs/features/jds-rework/ROADMAP.md`
+
+**Effort total estime : 11-15h | Modele reco : Sonnet 4.6**
+
+4 sous-features a implementer dans cet ordre :
+
+1. **D — BGG fix** : bearer token, retry 202/429, flag `bggAvailable`, fetch complet a l'import
+2. **C — Admin banque** : CRUD admin `/api/admin/boardgames` + panel dans ProfilePage
+3. **A — Liaison table ↔ jeu** : migration DB `boardGameId` sur `GameTable`, selecteur dans formulaires tables JDS
+4. **B — Games enrichi** : `BoardGameDetailModal`, badge tables, tri/filtres dans `BoardGameTab`
+
+---
+
 ## Phase 16 : Features avancees (Priorite basse, a discuter)
 
 - [ ] **Export** : export PDF du planning d'un event

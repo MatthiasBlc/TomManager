@@ -33,7 +33,10 @@ interface TableDetail {
 }
 
 export default function TableDetailPage() {
-  const { eventId, tableId } = useParams<{ eventId: string; tableId: string }>();
+  const { eventId, tableId } = useParams<{
+    eventId: string;
+    tableId: string;
+  }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();

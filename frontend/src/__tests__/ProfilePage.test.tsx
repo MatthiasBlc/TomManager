@@ -83,7 +83,11 @@ describe("ProfilePage", () => {
 
   it("shows Discord unlink button when account is linked", () => {
     useAuthMock.mockReturnValue({
-      user: { ...baseUser, discordId: "discord123", discordUsername: "AliceDiscord" },
+      user: {
+        ...baseUser,
+        discordId: "discord123",
+        discordUsername: "AliceDiscord",
+      },
       initiateDiscordLogin: initiateDiscordLoginMock,
       unlinkDiscord: unlinkDiscordMock,
     });
@@ -188,7 +192,12 @@ describe("ProfilePage", () => {
 
   it("disables Unlink button when user has no email", () => {
     useAuthMock.mockReturnValue({
-      user: { ...baseUser, email: null, discordId: "discord123", discordUsername: "AliceDiscord" },
+      user: {
+        ...baseUser,
+        email: null,
+        discordId: "discord123",
+        discordUsername: "AliceDiscord",
+      },
       initiateDiscordLogin: initiateDiscordLoginMock,
       unlinkDiscord: unlinkDiscordMock,
     });

@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import TagInput from "./TagInput";
 import ResponsiveModal from "../common/ResponsiveModal";
+import BoardGameSelector, { SelectedGame } from "./BoardGameSelector";
 
 const DURATION_OPTIONS = [
   { label: "30 min", value: 30 },
@@ -50,6 +51,7 @@ export default function CreateTableModal({
   eventEndDate,
 }: Props) {
   const [tags, setTags] = useState<string[]>([]);
+  const [selectedGame, setSelectedGame] = useState<SelectedGame | null>(null);
   const {
     register,
     handleSubmit,
@@ -66,6 +68,21 @@ export default function CreateTableModal({
   useEffect(() => {
     if (tableType === "JDS") setValue("gmIsPlayer", false);
   }, [tableType, setValue]);
+
+  // Pre-remplissage reactif depuis le jeu selectionne (creation uniquement — ecrase a chaque changement)
+  useEffect(() => {
+    if (!selectedGame) return;
+    if (selectedGame.maxPlayers) setValue("maxPlayers", selectedGame.maxPlayers);
+    if (selectedGame.playingTime) {
+      const values = DURATION_OPTIONS.map((o) => o.value);
+      const snapped = values.reduce((prev, curr) =>
+        Math.abs(curr - selectedGame.playingTime!) < Math.abs(prev - selectedGame.playingTime!)
+          ? curr
+          : prev
+      );
+      setValue("durationMinutes", snapped);
+    }
+  }, [selectedGame, setValue]);
 
   // Pre-remplir date/heure depuis une selection sur le calendrier
   useEffect(() => {
@@ -99,10 +116,12 @@ export default function CreateTableModal({
         startDateTime: startDateTime.toISOString(),
         endDateTime: endDateTime.toISOString(),
         tags: tags.length > 0 ? tags : undefined,
+        boardGameId: selectedGame?.id ?? undefined,
       });
       toast.success("Table creee !");
       reset();
       setTags([]);
+      setSelectedGame(null);
       onCreated();
       onClose();
     } catch (err: unknown) {
@@ -174,6 +193,17 @@ export default function CreateTableModal({
               />
               <span className="label-text">Le MJ est aussi joueur (se compte dans les places)</span>
             </label>
+          </div>
+        )}
+
+        {/* Jeu associe — uniquement pour JDS */}
+        {tableType === "JDS" && (
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Jeu associe</span>
+              <span className="label-text-alt opacity-50">optionnel</span>
+            </label>
+            <BoardGameSelector value={selectedGame} onChange={setSelectedGame} />
           </div>
         )}
 
@@ -286,7 +316,10 @@ export default function CreateTableModal({
             <select
               id="ct-duration"
               className="select select-bordered w-full"
-              {...register("durationMinutes", { required: "Requis", valueAsNumber: true })}
+              {...register("durationMinutes", {
+                required: "Requis",
+                valueAsNumber: true,
+              })}
             >
               {DURATION_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>

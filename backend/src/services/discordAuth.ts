@@ -106,7 +106,9 @@ export async function generateUniqueUsername(
   if (!existing) return base;
 
   const fallback = `${base.slice(0, 24)}_${discordId.slice(-5)}`;
-  const existing2 = await prisma.user.findFirst({ where: { username: fallback } });
+  const existing2 = await prisma.user.findFirst({
+    where: { username: fallback },
+  });
   if (!existing2) return fallback;
 
   return `${base.slice(0, 21)}_${crypto.randomBytes(3).toString("hex")}`;

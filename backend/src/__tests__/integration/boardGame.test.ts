@@ -111,7 +111,12 @@ describe("BoardGame API", () => {
 
       // Local entry with BGG external ID
       await prisma.boardGame.create({
-        data: { name: "Catan", externalSource: "BGG", externalId: "13", yearPublished: 1995 },
+        data: {
+          name: "Catan",
+          externalSource: "BGG",
+          externalId: "13",
+          yearPublished: 1995,
+        },
       });
 
       vi.spyOn(bggService, "searchBGG").mockResolvedValue([
@@ -141,7 +146,11 @@ describe("BoardGame API", () => {
       const { playerCookie } = await setupEventWithParticipant();
 
       const bg = await prisma.boardGame.create({
-        data: { name: "Catan", yearPublished: 1995, description: "Trade and build" },
+        data: {
+          name: "Catan",
+          yearPublished: 1995,
+          description: "Trade and build",
+        },
       });
 
       const res = await request.get(`/api/boardgames/${bg.id}`).set("Cookie", playerCookie);
@@ -178,7 +187,9 @@ describe("BoardGame API", () => {
       expect(res.body.data.imageUrl).toBe("https://example.com/catan.jpg");
 
       // Verify it was persisted
-      const updated = await prisma.boardGame.findUnique({ where: { id: bg.id } });
+      const updated = await prisma.boardGame.findUnique({
+        where: { id: bg.id },
+      });
       expect(updated?.description).toBe("Trade and build settlements");
     });
 

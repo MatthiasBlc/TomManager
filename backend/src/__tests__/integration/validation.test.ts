@@ -19,19 +19,20 @@ describe("Validation Zod — 400 sur donnees invalides", () => {
   describe("POST /api/events", () => {
     it("rejette un name manquant", async () => {
       const { cookie } = await setupAdmin();
-      const res = await request
-        .post("/api/events")
-        .set("Cookie", cookie)
-        .send({ startDateTime: new Date().toISOString(), endDateTime: new Date().toISOString() });
+      const res = await request.post("/api/events").set("Cookie", cookie).send({
+        startDateTime: new Date().toISOString(),
+        endDateTime: new Date().toISOString(),
+      });
       expect(res.status).toBe(400);
     });
 
     it("rejette une date invalide", async () => {
       const { cookie } = await setupAdmin();
-      const res = await request
-        .post("/api/events")
-        .set("Cookie", cookie)
-        .send({ name: "Event", startDateTime: "not-a-date", endDateTime: "not-a-date" });
+      const res = await request.post("/api/events").set("Cookie", cookie).send({
+        name: "Event",
+        startDateTime: "not-a-date",
+        endDateTime: "not-a-date",
+      });
       expect(res.status).toBe(400);
     });
   });

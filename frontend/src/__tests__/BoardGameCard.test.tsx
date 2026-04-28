@@ -52,4 +52,54 @@ describe("BoardGameCard", () => {
     );
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
+
+  it("shows linkedTables badge when tables are present", () => {
+    render(
+      <BoardGameCard
+        game={baseGame}
+        broughtBy={[]}
+        linkedTables={[
+          { id: "t1", title: "Table 1" },
+          { id: "t2", title: "Table 2" },
+        ]}
+      />
+    );
+    expect(screen.getByText("2 tables")).toBeInTheDocument();
+  });
+
+  it("shows singular badge for one linked table", () => {
+    render(
+      <BoardGameCard
+        game={baseGame}
+        broughtBy={[]}
+        linkedTables={[{ id: "t1", title: "Table 1" }]}
+      />
+    );
+    expect(screen.getByText("1 table")).toBeInTheDocument();
+  });
+
+  it("calls onClick when card is clicked", () => {
+    const onClick = vi.fn();
+    render(<BoardGameCard game={baseGame} broughtBy={[]} onClick={onClick} />);
+    fireEvent.click(screen.getByText("Catan"));
+    expect(onClick).toHaveBeenCalled();
+  });
+
+  it("stopPropagation on remove button does not trigger onClick", () => {
+    const onClick = vi.fn();
+    const onRemove = vi.fn();
+    render(
+      <BoardGameCard
+        game={baseGame}
+        broughtBy={[{ id: "user1", username: "Alice" }]}
+        onRemove={onRemove}
+        removableEntries={[{ entryId: "entry1", broughtByUserId: "user1" }]}
+        currentUserId="user1"
+        onClick={onClick}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Remove Catan/i }));
+    expect(onRemove).toHaveBeenCalledWith("entry1");
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });

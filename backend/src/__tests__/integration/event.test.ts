@@ -120,7 +120,10 @@ describe("Event API", () => {
       await createTestEvent(adminCookie, { name: "Event 2" });
 
       // Regular user with no participations
-      await createTestUserDirectly({ email: "user@example.com", username: "user" });
+      await createTestUserDirectly({
+        email: "user@example.com",
+        username: "user",
+      });
       const { cookie: userCookie } = await loginTestUser("user@example.com");
 
       const res = await request.get("/api/events").set("Cookie", userCookie);
@@ -187,7 +190,10 @@ describe("Event API", () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      await createTestUserDirectly({ email: "user@example.com", username: "user" });
+      await createTestUserDirectly({
+        email: "user@example.com",
+        username: "user",
+      });
       const { cookie: userCookie } = await loginTestUser("user@example.com");
 
       const res = await request.get(`/api/events/${event.id}`).set("Cookie", userCookie);

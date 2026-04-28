@@ -86,10 +86,18 @@ describe("CreateTableModal", () => {
     const onClose = vi.fn();
     render(<CreateTableModal open={true} onClose={onClose} onCreated={onCreated} eventId="ev1" />);
 
-    fireEvent.input(screen.getByLabelText("Titre"), { target: { value: "Donjon" } });
-    fireEvent.input(screen.getByLabelText("Joueurs max"), { target: { value: "5" } });
-    fireEvent.input(screen.getByLabelText("Date"), { target: { value: "2026-04-10" } });
-    fireEvent.input(screen.getByLabelText("Heure de debut"), { target: { value: "18:00" } });
+    fireEvent.input(screen.getByLabelText("Titre"), {
+      target: { value: "Donjon" },
+    });
+    fireEvent.input(screen.getByLabelText("Joueurs max"), {
+      target: { value: "5" },
+    });
+    fireEvent.input(screen.getByLabelText("Date"), {
+      target: { value: "2026-04-10" },
+    });
+    fireEvent.input(screen.getByLabelText("Heure de debut"), {
+      target: { value: "18:00" },
+    });
 
     fireEvent.click(screen.getByRole("button", { name: /^Creer$/i }));
 

@@ -41,7 +41,10 @@ function computeGroupLayout(tables: TableSummary[]): {
   );
 
   if (tables.length === 1) {
-    return { items: [{ table: tables[0], col: 0, cssRow: 1, rowSpan: 1 }], numCols: 1 };
+    return {
+      items: [{ table: tables[0], col: 0, cssRow: 1, rowSpan: 1 }],
+      numCols: 1,
+    };
   }
 
   // Affectation greedy des colonnes
@@ -60,7 +63,12 @@ function computeGroupLayout(tables: TableSummary[]): {
 
   if (columns.length === 1) {
     return {
-      items: sorted.map((table, i) => ({ table, col: 0, cssRow: i + 1, rowSpan: 1 })),
+      items: sorted.map((table, i) => ({
+        table,
+        col: 0,
+        cssRow: i + 1,
+        rowSpan: 1,
+      })),
       numCols: 1,
     };
   }

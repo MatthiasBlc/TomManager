@@ -67,12 +67,19 @@ const baseTable = {
   creator: { id: "u1", username: "Alice" },
   tags: [{ id: "tag1", name: "horreur" }],
   participants: [
-    { userId: "u2", username: "Bob", status: "CONFIRMED", joinedAt: "2026-04-09T10:00:00.000Z" },
+    {
+      userId: "u2",
+      username: "Bob",
+      status: "CONFIRMED",
+      joinedAt: "2026-04-09T10:00:00.000Z",
+    },
   ],
 };
 
 function renderModal(extra: Partial<{ user: { id: string; role: string } | null }> = {}) {
-  useAuthMock.mockReturnValue({ user: extra.user ?? { id: "u2", role: "USER" } });
+  useAuthMock.mockReturnValue({
+    user: extra.user ?? { id: "u2", role: "USER" },
+  });
   return render(
     <TableDetailModal
       open={true}

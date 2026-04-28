@@ -124,7 +124,9 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
             id="ee-start"
             type="datetime-local"
             className="input input-bordered w-full"
-            {...register("startDateTime", { required: "Start date is required" })}
+            {...register("startDateTime", {
+              required: "Start date is required",
+            })}
           />
         </div>
         <div className="form-control">

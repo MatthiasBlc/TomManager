@@ -92,7 +92,11 @@ export function useNotifications() {
     try {
       await api.patch("/api/notifications/read-all");
       setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read: true, readAt: n.readAt || new Date().toISOString() }))
+        prev.map((n) => ({
+          ...n,
+          read: true,
+          readAt: n.readAt || new Date().toISOString(),
+        }))
       );
       setUnreadCount(0);
     } catch {

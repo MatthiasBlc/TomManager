@@ -4,7 +4,9 @@ import { emitToEvent } from "../socket/emitter";
 
 export async function addToEvent(eventId: string, boardGameId: string, userId: string) {
   // Verify board game exists
-  const boardGame = await prisma.boardGame.findUnique({ where: { id: boardGameId } });
+  const boardGame = await prisma.boardGame.findUnique({
+    where: { id: boardGameId },
+  });
   if (!boardGame) {
     throw createError(404, "Board game not found");
   }
@@ -12,7 +14,11 @@ export async function addToEvent(eventId: string, boardGameId: string, userId: s
   // Check for duplicate
   const existing = await prisma.eventBoardGame.findUnique({
     where: {
-      eventId_boardGameId_broughtByUserId: { eventId, boardGameId, broughtByUserId: userId },
+      eventId_boardGameId_broughtByUserId: {
+        eventId,
+        boardGameId,
+        broughtByUserId: userId,
+      },
     },
   });
   if (existing) {
@@ -33,7 +39,7 @@ export async function addToEvent(eventId: string, boardGameId: string, userId: s
 }
 
 export async function listByEvent(eventId: string, limit?: number) {
-  return prisma.eventBoardGame.findMany({
+  const entries = await prisma.eventBoardGame.findMany({
     where: { eventId },
     include: {
       boardGame: true,
@@ -42,6 +48,25 @@ export async function listByEvent(eventId: string, limit?: number) {
     take: limit,
     orderBy: { createdAt: "asc" },
   });
+
+  const boardGameIds = [...new Set(entries.map((e) => e.boardGameId))];
+
+  const linkedTablesRaw = await prisma.gameTable.findMany({
+    where: { boardGameId: { in: boardGameIds }, eventId },
+    select: { id: true, title: true, boardGameId: true },
+  });
+
+  const linkedTablesByGame: Record<string, { id: string; title: string }[]> = {};
+  for (const t of linkedTablesRaw) {
+    if (!t.boardGameId) continue;
+    if (!linkedTablesByGame[t.boardGameId]) linkedTablesByGame[t.boardGameId] = [];
+    linkedTablesByGame[t.boardGameId].push({ id: t.id, title: t.title });
+  }
+
+  return entries.map((e) => ({
+    ...e,
+    linkedTables: linkedTablesByGame[e.boardGameId] ?? [],
+  }));
 }
 
 export async function removeFromEvent(id: string, userId: string, userRole: string) {

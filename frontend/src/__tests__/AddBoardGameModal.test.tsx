@@ -32,7 +32,12 @@ vi.mock("../components/boardgames/BoardGameSearchInput", () => ({
       <button onClick={() => onSelect({ id: "g1", name: "Catan" })}>pick-local</button>
       <button
         onClick={() =>
-          onSelect({ id: null, name: "BGGGame", externalSource: "BGG", externalId: "42" })
+          onSelect({
+            id: null,
+            name: "BGGGame",
+            externalSource: "BGG",
+            externalId: "42",
+          })
         }
       >
         pick-bgg
@@ -87,7 +92,9 @@ describe("AddBoardGameModal", () => {
     render(<AddBoardGameModal open={true} onClose={onClose} onAdded={onAdded} eventId="ev1" />);
     fireEvent.click(screen.getByText("pick-local"));
     await waitFor(() => {
-      expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/boardgames", { boardGameId: "g1" });
+      expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/boardgames", {
+        boardGameId: "g1",
+      });
       expect(onAdded).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();
     });

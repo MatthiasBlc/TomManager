@@ -6,6 +6,7 @@ import {
   addTestParticipant,
   createTestUserDirectly,
 } from "../setup/testHelpers";
+import prisma from "../../util/db";
 
 // Helper: setup admin + event + participant user with cookie
 async function setupEventWithParticipant() {
@@ -165,6 +166,48 @@ describe("GameTable API", () => {
         "dnd",
         "horror",
       ]);
+    });
+
+    it("should create a JDS table with a valid boardGameId", async () => {
+      const { playerCookie, event } = await setupEventWithParticipant();
+
+      const game = await prisma.boardGame.create({ data: { name: "Catan" } });
+
+      const res = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send({ ...validTableData, type: "JDS", boardGameId: game.id });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.boardGame).toBeDefined();
+      expect(res.body.data.boardGame.id).toBe(game.id);
+      expect(res.body.data.boardGame.name).toBe("Catan");
+    });
+
+    it("should create a table without boardGameId (boardGame null)", async () => {
+      const { playerCookie, event } = await setupEventWithParticipant();
+
+      const res = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send(validTableData);
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.boardGame).toBeNull();
+    });
+
+    it("should reject an invalid boardGameId", async () => {
+      const { playerCookie, event } = await setupEventWithParticipant();
+
+      const res = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send({
+          ...validTableData,
+          boardGameId: "00000000-0000-0000-0000-000000000000",
+        });
+
+      expect(res.status).toBe(400);
     });
   });
 

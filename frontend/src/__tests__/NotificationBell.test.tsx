@@ -69,7 +69,10 @@ describe("NotificationBell", () => {
   });
 
   it("caps the unread badge at 99+", () => {
-    useNotificationsMock.mockReturnValue({ ...baseNotifData, unreadCount: 200 });
+    useNotificationsMock.mockReturnValue({
+      ...baseNotifData,
+      unreadCount: 200,
+    });
     renderBell();
     expect(screen.getByText("99+")).toBeInTheDocument();
   });

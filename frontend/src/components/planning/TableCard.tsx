@@ -1,6 +1,7 @@
 interface TableSummary {
   id: string;
   title: string;
+  type?: "JDR" | "JDS";
   pitch: string | null;
   maxPlayers: number;
   startDateTime: string;
@@ -13,6 +14,7 @@ interface TableSummary {
   isGM: boolean;
   currentUserConflict: boolean;
   conflictingPlayerCount: number;
+  boardGame?: { id: string; name: string } | null;
 }
 
 interface Props {
@@ -22,7 +24,10 @@ interface Props {
 
 export default function TableCard({ table, onClick }: Props) {
   const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    new Date(iso).toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   const hasGmPlayerConflict =
     table.isGM && !table.currentUserConflict && table.conflictingPlayerCount > 0;
@@ -38,7 +43,10 @@ export default function TableCard({ table, onClick }: Props) {
     >
       <div className="card-body p-4">
         <div className="flex items-start justify-between">
-          <h3 className="card-title text-base">{table.title}</h3>
+          <div>
+            <h3 className="card-title text-base">{table.title}</h3>
+            {table.boardGame && <p className="text-xs opacity-60 mt-0.5">{table.boardGame.name}</p>}
+          </div>
           <div className="flex items-center gap-1">
             {table.isGM && <span className="badge badge-secondary badge-sm">GM</span>}
             {table.currentUserConflict && (

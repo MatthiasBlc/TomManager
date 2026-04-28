@@ -17,6 +17,7 @@ export const createTableSchema = z.object({
   startDateTime: isoDatetime,
   endDateTime: isoDatetime,
   tags: z.array(z.string().min(1).max(50)).max(10, "At most 10 tags").optional(),
+  boardGameId: z.string().uuid("Invalid board game ID").optional().nullable(),
 });
 
 export const setStatusSchema = z.object({
@@ -33,4 +34,5 @@ export const updateTableSchema = z.object({
   startDateTime: isoDatetime.optional(),
   endDateTime: isoDatetime.optional(),
   tags: z.array(z.string().min(1).max(50)).max(10).optional(),
+  boardGameId: z.string().uuid("Invalid board game ID").optional().nullable(),
 });

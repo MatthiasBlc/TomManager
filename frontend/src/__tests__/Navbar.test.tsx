@@ -54,7 +54,11 @@ describe("Navbar (desktop)", () => {
   });
 
   it("shows username, avatar, events link, logout when authenticated", () => {
-    setAuth({ id: "u1", username: "Alice", avatarUrl: "https://example.com/a.png" });
+    setAuth({
+      id: "u1",
+      username: "Alice",
+      avatarUrl: "https://example.com/a.png",
+    });
     renderNavbar();
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "avatar" })).toHaveAttribute(
