@@ -55,8 +55,14 @@ describe("Notification Service", () => {
 
   describe("createBulkNotifications", () => {
     it("should create multiple notifications", async () => {
-      const user1 = await createUser({ email: "u1@test.com", username: "user1" });
-      const user2 = await createUser({ email: "u2@test.com", username: "user2" });
+      const user1 = await createUser({
+        email: "u1@test.com",
+        username: "user1",
+      });
+      const user2 = await createUser({
+        email: "u2@test.com",
+        username: "user2",
+      });
 
       const notifications = await notificationService.createBulkNotifications([
         {
@@ -121,7 +127,9 @@ describe("Notification Service", () => {
         });
       }
 
-      const page1 = await notificationService.getNotifications(user.id, { limit: 2 });
+      const page1 = await notificationService.getNotifications(user.id, {
+        limit: 2,
+      });
       expect(page1.data).toHaveLength(2);
       expect(page1.nextCursor).toBeDefined();
 
@@ -167,13 +175,21 @@ describe("Notification Service", () => {
 
     it("should cap limit at 50", async () => {
       const user = await createUser();
-      const { data } = await notificationService.getNotifications(user.id, { limit: 100 });
+      const { data } = await notificationService.getNotifications(user.id, {
+        limit: 100,
+      });
       expect(data).toHaveLength(0); // no notifications, just checking it doesn't throw
     });
 
     it("should not return notifications of other users", async () => {
-      const user1 = await createUser({ email: "u1@test.com", username: "user1" });
-      const user2 = await createUser({ email: "u2@test.com", username: "user2" });
+      const user1 = await createUser({
+        email: "u1@test.com",
+        username: "user1",
+      });
+      const user2 = await createUser({
+        email: "u2@test.com",
+        username: "user2",
+      });
 
       await notificationService.createNotification({
         userId: user1.id,
@@ -235,8 +251,14 @@ describe("Notification Service", () => {
     });
 
     it("should reject if notification belongs to another user", async () => {
-      const user1 = await createUser({ email: "u1@test.com", username: "user1" });
-      const user2 = await createUser({ email: "u2@test.com", username: "user2" });
+      const user1 = await createUser({
+        email: "u1@test.com",
+        username: "user1",
+      });
+      const user2 = await createUser({
+        email: "u2@test.com",
+        username: "user2",
+      });
 
       const notif = await notificationService.createNotification({
         userId: user1.id,
@@ -279,8 +301,14 @@ describe("Notification Service", () => {
     });
 
     it("should not affect other users' notifications", async () => {
-      const user1 = await createUser({ email: "u1@test.com", username: "user1" });
-      const user2 = await createUser({ email: "u2@test.com", username: "user2" });
+      const user1 = await createUser({
+        email: "u1@test.com",
+        username: "user1",
+      });
+      const user2 = await createUser({
+        email: "u2@test.com",
+        username: "user2",
+      });
 
       await notificationService.createNotification({
         userId: user1.id,
@@ -313,7 +341,9 @@ describe("Notification Service", () => {
 
       await notificationService.deleteNotification(notif.id, user.id);
 
-      const found = await prisma.notification.findUnique({ where: { id: notif.id } });
+      const found = await prisma.notification.findUnique({
+        where: { id: notif.id },
+      });
       expect(found).toBeNull();
     });
 
@@ -325,8 +355,14 @@ describe("Notification Service", () => {
     });
 
     it("should reject if notification belongs to another user", async () => {
-      const user1 = await createUser({ email: "u1@test.com", username: "user1" });
-      const user2 = await createUser({ email: "u2@test.com", username: "user2" });
+      const user1 = await createUser({
+        email: "u1@test.com",
+        username: "user1",
+      });
+      const user2 = await createUser({
+        email: "u2@test.com",
+        username: "user2",
+      });
 
       const notif = await notificationService.createNotification({
         userId: user1.id,

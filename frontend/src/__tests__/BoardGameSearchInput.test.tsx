@@ -42,7 +42,14 @@ describe("BoardGameSearchInput", () => {
   it("shows a BGG badge for external results without an id", async () => {
     apiGetMock.mockResolvedValue({
       data: {
-        data: [{ id: null, name: "External Game", externalSource: "BGG", externalId: "42" }],
+        data: [
+          {
+            id: null,
+            name: "External Game",
+            externalSource: "BGG",
+            externalId: "42",
+          },
+        ],
       },
     });
 

@@ -27,7 +27,12 @@ export async function createTestUserDirectly(overrides?: {
   });
 
   return {
-    user: { id: user.id, email: user.email, username: user.username, role: user.role },
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    },
     email,
     username,
     password,
@@ -47,7 +52,12 @@ export async function setupAdmin(overrides?: {
   const username = overrides?.username || "adminuser";
   const password = overrides?.password || "Password123!";
 
-  const { user } = await createTestUserDirectly({ email, username, password, role: "ADMIN" });
+  const { user } = await createTestUserDirectly({
+    email,
+    username,
+    password,
+    role: "ADMIN",
+  });
 
   const res = await request.post("/api/auth/login").send({ identifier: email, password });
   const cookie = [res.headers["set-cookie"]].flat() as string[];

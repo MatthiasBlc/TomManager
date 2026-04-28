@@ -83,6 +83,7 @@ model GameTable {
   maxPlayers    Int
   startDateTime DateTime
   endDateTime   DateTime
+  boardGameId   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -90,6 +91,7 @@ model GameTable {
   creator      User                 @relation(fields: [createdBy], references: [id])
   tags         GameTableTag[]
   participants GameTableParticipant[]
+  boardGame    BoardGame?           @relation(fields: [boardGameId], references: [id], onDelete: SetNull)
 
   @@index([eventId, startDateTime])
 }
@@ -140,6 +142,7 @@ model BoardGame {
   createdAt      DateTime @default(now())
 
   eventBoardGames EventBoardGame[]
+  gameTables      GameTable[]
 
   @@unique([externalSource, externalId])
   @@index([name])

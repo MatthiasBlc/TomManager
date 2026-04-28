@@ -76,9 +76,11 @@ export async function requireTableGMOrAdmin(req: Request, res: Response, next: N
     });
 
     if (!user || user.role !== "ADMIN") {
-      res
-        .status(403)
-        .json({ error: { message: "Only the table GM or an admin can perform this action" } });
+      res.status(403).json({
+        error: {
+          message: "Only the table GM or an admin can perform this action",
+        },
+      });
       return;
     }
 
@@ -112,9 +114,11 @@ export async function requireEventCreator(req: Request, res: Response, next: Nex
     });
 
     if (!user || user.role !== "ADMIN") {
-      res
-        .status(403)
-        .json({ error: { message: "Only the event creator or an admin can perform this action" } });
+      res.status(403).json({
+        error: {
+          message: "Only the event creator or an admin can perform this action",
+        },
+      });
       return;
     }
 

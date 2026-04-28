@@ -104,7 +104,11 @@ describe("NotificationItem", () => {
       ["UNKNOWN_TYPE", "🔔"],
     ];
     for (const [type, icon] of types) {
-      const { unmount } = renderItem({ ...baseNotification, id: `id-${type}`, type });
+      const { unmount } = renderItem({
+        ...baseNotification,
+        id: `id-${type}`,
+        type,
+      });
       expect(screen.getByText(icon)).toBeInTheDocument();
       unmount();
     }

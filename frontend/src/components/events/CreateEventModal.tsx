@@ -76,7 +76,9 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
             id="ce-start"
             type="datetime-local"
             className="input input-bordered w-full"
-            {...register("startDateTime", { required: "Start date is required" })}
+            {...register("startDateTime", {
+              required: "Start date is required",
+            })}
           />
           {errors.startDateTime && (
             <label className="label">

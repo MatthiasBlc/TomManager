@@ -24,8 +24,18 @@ vi.mock("react-hot-toast", () => ({
 }));
 
 const baseParticipants = [
-  { userId: "u1", username: "Alice", role: "ADMIN", joinedAt: "2026-01-01T10:00:00.000Z" },
-  { userId: "u2", username: "Bob", role: "USER", joinedAt: "2026-01-02T10:00:00.000Z" },
+  {
+    userId: "u1",
+    username: "Alice",
+    role: "ADMIN",
+    joinedAt: "2026-01-01T10:00:00.000Z",
+  },
+  {
+    userId: "u2",
+    username: "Bob",
+    role: "USER",
+    joinedAt: "2026-01-02T10:00:00.000Z",
+  },
 ];
 
 describe("ParticipantList", () => {

@@ -234,7 +234,7 @@ export default function CalendarView({
     });
 
   return (
-    <div className="fc-wrapper animate-fade-in">
+    <div className={`fc-wrapper animate-fade-in ${!isMobile ? "h-full" : ""}`}>
       {/* Navigation mobile */}
       {isMobile && (
         <div className="mb-2 flex items-center justify-between">
@@ -287,7 +287,7 @@ export default function CalendarView({
         slotLabelInterval="01:00:00"
         slotLabelFormat={{ hour: "2-digit", minute: "2-digit", hour12: false }}
         scrollTime={scrollTime}
-        height={isMobile ? "calc(100dvh - 220px)" : "calc(100dvh - 200px)"}
+        height={isMobile ? "calc(100dvh - 220px)" : "100%"}
         events={calEvents}
         eventContent={renderEventContent}
         eventClick={(info) => onTableClick(info.event.id)}

@@ -9,6 +9,15 @@ import EditTableModal from "./EditTableModal";
 import EmptyState from "../common/EmptyState";
 import { SkeletonTableDetail } from "../common/Skeleton";
 
+interface BoardGameSummary {
+  id: string;
+  name: string;
+  minPlayers?: number | null;
+  maxPlayers?: number | null;
+  playingTime?: number | null;
+  imageUrl?: string | null;
+}
+
 interface TableDetail {
   id: string;
   eventId: string;
@@ -30,6 +39,7 @@ interface TableDetail {
     status: string;
     joinedAt: string;
   }[];
+  boardGame?: BoardGameSummary | null;
 }
 
 interface Props {
@@ -223,6 +233,34 @@ export default function TableDetailModal({
                 )}
               </p>
             </div>
+
+            {/* Jeu associe (JDS uniquement) */}
+            {table.boardGame && (
+              <div className="flex items-center gap-3 p-2 bg-base-200 rounded-lg">
+                {table.boardGame.imageUrl && (
+                  <img
+                    src={table.boardGame.imageUrl}
+                    alt={table.boardGame.name}
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">{table.boardGame.name}</p>
+                  <p className="text-xs opacity-60">
+                    {[
+                      table.boardGame.minPlayers && table.boardGame.maxPlayers
+                        ? `${table.boardGame.minPlayers}–${table.boardGame.maxPlayers} joueurs`
+                        : table.boardGame.maxPlayers
+                          ? `${table.boardGame.maxPlayers} joueurs max`
+                          : null,
+                      table.boardGame.playingTime ? `${table.boardGame.playingTime} min` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Tags */}
             {table.tags.length > 0 && (

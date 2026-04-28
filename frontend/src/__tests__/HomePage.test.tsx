@@ -28,7 +28,10 @@ describe("HomePage", () => {
   });
 
   it("navigates to /events when a user is authenticated", async () => {
-    useAuthMock.mockReturnValue({ user: { id: "u1", username: "Alice" }, loading: false });
+    useAuthMock.mockReturnValue({
+      user: { id: "u1", username: "Alice" },
+      loading: false,
+    });
     renderWithRouter(<HomePage />);
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith("/events", { replace: true });

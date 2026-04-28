@@ -46,7 +46,8 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       {currentUserConflict && <p className="text-xs font-semibold">⚠ Conflit</p>}
       {!currentUserConflict && isGM && conflictingPlayerCount > 0 && (
         <p className="text-xs font-semibold">
-          ⚠ {conflictingPlayerCount} conflit{conflictingPlayerCount > 1 ? "s" : ""}
+          ⚠ {conflictingPlayerCount} conflit
+          {conflictingPlayerCount > 1 ? "s" : ""}
         </p>
       )}
     </div>

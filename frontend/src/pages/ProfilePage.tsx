@@ -4,11 +4,13 @@ import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { usePdfExport } from "../hooks/usePdfExport";
+import { useGameDbManagement } from "../hooks/useGameDbManagement";
 
 export default function ProfilePage() {
   const { user, logout, initiateDiscordLogin, unlinkDiscord } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { pdfExportEnabled, togglePdfExport } = usePdfExport();
+  const { gameDbEnabled, toggleGameDb } = useGameDbManagement();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -128,24 +130,39 @@ export default function ProfilePage() {
       </div>
 
       {user.role === "ADMIN" && (
-        <div className="card bg-base-100 shadow">
-          <div className="card-body">
-            <h2 className="card-title text-base">Options avancees</h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-sm">Activer export PDF</span>
-                <span className="badge badge-warning badge-xs ml-2">Beta</span>
+        <>
+          <div className="card bg-base-100 shadow">
+            <div className="card-body space-y-3">
+              <h2 className="card-title text-base">Options admin avancees</h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm">Activer export PDF</span>
+                  <span className="badge badge-warning badge-xs ml-2">Beta</span>
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-sm"
+                  checked={pdfExportEnabled}
+                  onChange={togglePdfExport}
+                  aria-label="Activer export PDF"
+                />
               </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-sm"
-                checked={pdfExportEnabled}
-                onChange={togglePdfExport}
-                aria-label="Activer export PDF"
-              />
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm">Activer la gestion des jeux</span>
+                  <span className="badge badge-warning badge-xs ml-2">Beta</span>
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-sm"
+                  checked={gameDbEnabled}
+                  onChange={toggleGameDb}
+                  aria-label="Activer la gestion des jeux"
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       <div className="card bg-base-100 shadow">

@@ -24,7 +24,12 @@ export async function login(identifier: string, password: string) {
   }
 
   return {
-    user: { id: user.id, email: user.email, username: user.username, role: user.role },
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    },
   };
 }
 

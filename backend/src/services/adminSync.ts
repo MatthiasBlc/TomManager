@@ -79,7 +79,10 @@ export async function syncAll(): Promise<{ synced: number; errors: string[] }> {
         const hasAdminRole = member.roles.includes(env.DISCORD_ADMIN_ROLE_ID);
         const expectedRole = hasAdminRole ? "ADMIN" : "USER";
         if (user.role !== expectedRole) {
-          await prisma.user.update({ where: { id: user.id }, data: { role: expectedRole } });
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { role: expectedRole },
+          });
         }
       }
 

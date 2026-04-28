@@ -86,7 +86,8 @@ export default function EventListPage() {
                   {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
                 </p>
                 <div className="badge badge-outline text-xs">
-                  {event.participantCount} participant{event.participantCount !== 1 ? "s" : ""}
+                  {event.participantCount} participant
+                  {event.participantCount !== 1 ? "s" : ""}
                 </div>
               </div>
             </Link>

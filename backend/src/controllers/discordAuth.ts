@@ -51,7 +51,11 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
     delete req.session.oauthPopup;
 
     const authError = (errorKey: string) => {
-      if (isPopup) return sendPopupResponse(res, { type: "DISCORD_AUTH_ERROR", error: errorKey });
+      if (isPopup)
+        return sendPopupResponse(res, {
+          type: "DISCORD_AUTH_ERROR",
+          error: errorKey,
+        });
       return res.redirect(`${FRONTEND_URL}/login?error=${errorKey}`);
     };
 
@@ -191,9 +195,11 @@ export async function unlinkDiscord(req: Request, res: Response, next: NextFunct
     }
 
     if (!user.passwordHash) {
-      res
-        .status(400)
-        .json({ error: { message: "Cannot unlink Discord from a Discord-only account" } });
+      res.status(400).json({
+        error: {
+          message: "Cannot unlink Discord from a Discord-only account",
+        },
+      });
       return;
     }
 
@@ -211,6 +217,9 @@ export async function unlinkDiscord(req: Request, res: Response, next: NextFunct
 async function syncAdminRole(userId: string, memberRoles: string[]): Promise<void> {
   if (!env.DISCORD_ADMIN_ROLE_ID) return;
   if (memberRoles.includes(env.DISCORD_ADMIN_ROLE_ID)) {
-    await prisma.user.update({ where: { id: userId }, data: { role: "ADMIN" } });
+    await prisma.user.update({
+      where: { id: userId },
+      data: { role: "ADMIN" },
+    });
   }
 }

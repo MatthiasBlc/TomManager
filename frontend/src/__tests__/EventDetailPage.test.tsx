@@ -31,6 +31,9 @@ vi.mock("../components/boardgames/BoardGameTab", () => ({
 vi.mock("../components/planning/PlanningTab", () => ({
   default: () => <div>PlanningTab</div>,
 }));
+vi.mock("../hooks/useIsMobile", () => ({
+  useIsMobile: () => false,
+}));
 
 const baseEvent = {
   id: "ev1",
@@ -52,7 +55,9 @@ describe("EventDetailPage", () => {
   it("component renders without crashing", () => {
     apiGetMock.mockResolvedValue({ data: { data: baseEvent } });
     useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });
-    const { container } = renderWithRouter(<EventDetailPage />, { route: "/events/ev1" });
+    const { container } = renderWithRouter(<EventDetailPage />, {
+      route: "/events/ev1",
+    });
     expect(container).toBeInTheDocument();
   });
 

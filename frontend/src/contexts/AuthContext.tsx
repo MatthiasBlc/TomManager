@@ -163,7 +163,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, logout, initiateDiscordLogin, unlinkDiscord, refreshUser }}
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        initiateDiscordLogin,
+        unlinkDiscord,
+        refreshUser,
+      }}
     >
       {children}
     </AuthContext.Provider>
