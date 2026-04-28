@@ -7,6 +7,7 @@ const makeTable = (
 ) => ({
   id: "t1",
   title: "Donjon",
+  type: "JDR" as const,
   pitch: null,
   maxPlayers: 5,
   startDateTime: "2026-04-10T18:00:00.000Z",
@@ -26,6 +27,7 @@ const makeTable = (
 const makeSlot = (id: string, start: string, end: string) => ({
   id,
   title: id,
+  type: "JDR" as const,
   pitch: null,
   maxPlayers: 4,
   startDateTime: start,

@@ -1,28 +1,16 @@
-interface TableSummary {
-  id: string;
-  title: string;
-  type?: "JDR" | "JDS";
-  pitch: string | null;
-  maxPlayers: number;
-  startDateTime: string;
-  endDateTime: string;
-  creator: { id: string; username: string };
-  tags: { id: string; name: string }[];
-  confirmedCount: number;
-  waitlistCount: number;
-  currentUserStatus: string | null;
-  isGM: boolean;
-  currentUserConflict: boolean;
-  conflictingPlayerCount: number;
+import { type TableSummary } from "./computeLayout";
+
+interface TableCardTableSummary extends TableSummary {
   boardGame?: { id: string; name: string } | null;
 }
 
 interface Props {
-  table: TableSummary;
+  table: TableCardTableSummary;
   onClick: () => void;
 }
 
 export default function TableCard({ table, onClick }: Props) {
+  const typeLabel = table.type === "JDR" ? "JDR" : "JDS";
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("fr-FR", {
       hour: "2-digit",
@@ -48,6 +36,11 @@ export default function TableCard({ table, onClick }: Props) {
             {table.boardGame && <p className="text-xs opacity-60 mt-0.5">{table.boardGame.name}</p>}
           </div>
           <div className="flex items-center gap-1">
+            <span
+              className={`badge badge-sm ${table.type === "JDR" ? "badge-primary" : "badge-accent"}`}
+            >
+              {typeLabel}
+            </span>
             {table.isGM && <span className="badge badge-secondary badge-sm">GM</span>}
             {table.currentUserConflict && (
               <span className="badge badge-error badge-sm">⚠ Conflit</span>

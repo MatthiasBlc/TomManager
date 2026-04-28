@@ -1,6 +1,7 @@
 export interface TableSummary {
   id: string;
   title: string;
+  type: "JDR" | "JDS";
   pitch: string | null;
   maxPlayers: number;
   startDateTime: string;

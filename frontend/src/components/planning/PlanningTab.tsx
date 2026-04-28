@@ -11,24 +11,7 @@ import TableDetailModal from "./TableDetailModal";
 import FAB from "../common/FAB";
 import { useEventSocket } from "../../hooks/useEventSocket";
 import { SkeletonCardGrid } from "../common/Skeleton";
-
-interface TableSummary {
-  id: string;
-  title: string;
-  pitch: string | null;
-  maxPlayers: number;
-  startDateTime: string;
-  endDateTime: string;
-  creator: { id: string; username: string };
-  tags: { id: string; name: string }[];
-  confirmedCount: number;
-  waitlistCount: number;
-  currentUserStatus: string | null;
-  isGM: boolean;
-  type: "JDR" | "JDS";
-  currentUserConflict: boolean;
-  conflictingPlayerCount: number;
-}
+import { type TableSummary } from "./computeLayout";
 
 interface EventBounds {
   startDateTime: string;
