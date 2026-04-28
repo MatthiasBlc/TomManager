@@ -11,19 +11,23 @@ interface BoardGame {
 interface Props {
   game: BoardGame;
   broughtBy: { id: string; username: string }[];
+  linkedTables?: { id: string; title: string }[];
   onRemove?: (entryId: string) => void;
   removableEntries?: { entryId: string; broughtByUserId: string }[];
   currentUserId?: string;
   isAdmin?: boolean;
+  onClick?: () => void;
 }
 
 export default function BoardGameCard({
   game,
   broughtBy,
+  linkedTables,
   onRemove,
   removableEntries,
   currentUserId,
   isAdmin,
+  onClick,
 }: Props) {
   const canRemove =
     onRemove &&
@@ -38,7 +42,14 @@ export default function BoardGameCard({
     : undefined;
 
   return (
-    <div className="card bg-base-100 shadow-sm border">
+    <div
+      className={`card bg-base-100 shadow-sm border transition-all ${
+        onClick
+          ? "cursor-pointer hover:shadow-md active:scale-[0.99]"
+          : ""
+      }`}
+      onClick={onClick}
+    >
       <div className="card-body p-4">
         <div className="flex gap-3">
           {game.imageUrl && (
@@ -80,16 +91,27 @@ export default function BoardGameCard({
                   ))}
                 </div>
               </div>
-              {canRemove && entryToRemove && (
-                <button
-                  type="button"
-                  className="btn btn-error btn-xs btn-outline shrink-0"
-                  onClick={() => onRemove!(entryToRemove.entryId)}
-                  aria-label={`Remove ${game.name}`}
-                >
-                  Remove
-                </button>
-              )}
+              <div className="flex items-center gap-1 shrink-0">
+                {linkedTables && linkedTables.length > 0 && (
+                  <span className="badge badge-info badge-sm">
+                    {linkedTables.length} table
+                    {linkedTables.length > 1 ? "s" : ""}
+                  </span>
+                )}
+                {canRemove && entryToRemove && (
+                  <button
+                    type="button"
+                    className="btn btn-error btn-xs btn-outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove!(entryToRemove.entryId);
+                    }}
+                    aria-label={`Remove ${game.name}`}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

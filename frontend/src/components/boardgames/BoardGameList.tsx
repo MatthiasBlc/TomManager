@@ -13,11 +13,13 @@ interface EventBoardGameEntry {
     imageUrl?: string | null;
   };
   broughtBy: { id: string; username: string };
+  linkedTables?: { id: string; title: string }[];
 }
 
 interface Props {
   entries: EventBoardGameEntry[];
   onRemove?: (entryId: string) => void;
+  onClickGame?: (gameId: string) => void;
   currentUserId?: string;
   isAdmin?: boolean;
   emptyDescription?: string;
@@ -27,11 +29,13 @@ interface GroupedGame {
   game: EventBoardGameEntry["boardGame"];
   broughtBy: { id: string; username: string }[];
   removableEntries: { entryId: string; broughtByUserId: string }[];
+  linkedTables: { id: string; title: string }[];
 }
 
 export default function BoardGameList({
   entries,
   onRemove,
+  onClickGame,
   currentUserId,
   isAdmin,
   emptyDescription,
@@ -56,6 +60,7 @@ export default function BoardGameList({
         game: entry.boardGame,
         broughtBy: [],
         removableEntries: [],
+        linkedTables: entry.linkedTables ?? [],
       };
     }
     acc[key].broughtBy.push(entry.broughtBy);
@@ -73,10 +78,12 @@ export default function BoardGameList({
           key={group.game.id}
           game={group.game}
           broughtBy={group.broughtBy}
+          linkedTables={group.linkedTables}
           onRemove={onRemove}
           removableEntries={group.removableEntries}
           currentUserId={currentUserId}
           isAdmin={isAdmin}
+          onClick={onClickGame ? () => onClickGame(group.game.id) : undefined}
         />
       ))}
     </div>

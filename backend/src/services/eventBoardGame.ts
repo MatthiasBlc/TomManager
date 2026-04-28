@@ -43,7 +43,7 @@ export async function addToEvent(
 }
 
 export async function listByEvent(eventId: string, limit?: number) {
-  return prisma.eventBoardGame.findMany({
+  const entries = await prisma.eventBoardGame.findMany({
     where: { eventId },
     include: {
       boardGame: true,
@@ -52,6 +52,27 @@ export async function listByEvent(eventId: string, limit?: number) {
     take: limit,
     orderBy: { createdAt: "asc" },
   });
+
+  const boardGameIds = [...new Set(entries.map((e) => e.boardGameId))];
+
+  const linkedTablesRaw = await prisma.gameTable.findMany({
+    where: { boardGameId: { in: boardGameIds }, eventId },
+    select: { id: true, title: true, boardGameId: true },
+  });
+
+  const linkedTablesByGame: Record<string, { id: string; title: string }[]> =
+    {};
+  for (const t of linkedTablesRaw) {
+    if (!t.boardGameId) continue;
+    if (!linkedTablesByGame[t.boardGameId])
+      linkedTablesByGame[t.boardGameId] = [];
+    linkedTablesByGame[t.boardGameId].push({ id: t.id, title: t.title });
+  }
+
+  return entries.map((e) => ({
+    ...e,
+    linkedTables: linkedTablesByGame[e.boardGameId] ?? [],
+  }));
 }
 
 export async function removeFromEvent(

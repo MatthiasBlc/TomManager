@@ -64,12 +64,12 @@ Prerequis : avoir le `BGG_API_TOKEN` (enregistrement sur boardgamegeek.com/appli
 
 **Modele reco : Sonnet 4.6 | Effort : 3-4h**
 
-- [ ] Backend : enrichir `GET /api/events/:id/boardgames` avec `linkedTables: { id, title }[]` par jeu
-- [ ] Nouveau composant `BoardGameDetailModal` : image, stats, description, section tables liees
-- [ ] `BoardGameCard` cliquable → ouvre `BoardGameDetailModal`
-- [ ] Badge "X table(s)" sur `BoardGameCard`
-- [ ] Tri et filtres dans `BoardGameTab` (tri par nom / avec table en premier ; filtre avec/sans table)
-- [ ] Tests frontend : `BoardGameDetailModal`, `BoardGameCard` cliquable, filtres
+- [x] Backend : enrichir `GET /api/events/:id/boardgames` avec `linkedTables: { id, title }[]` par jeu
+- [x] Nouveau composant `BoardGameDetailModal` : image, stats, description, section tables liees
+- [x] `BoardGameCard` cliquable → ouvre `BoardGameDetailModal`
+- [x] Badge "X table(s)" sur `BoardGameCard`
+- [x] Tri et filtres dans `BoardGameTab` (tri par nom / avec table en premier ; filtre avec/sans table)
+- [x] Tests frontend : `BoardGameDetailModal`, `BoardGameCard` cliquable, filtres
 
 ---
 

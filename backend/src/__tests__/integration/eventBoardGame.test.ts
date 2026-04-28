@@ -133,6 +133,62 @@ describe("EventBoardGame API", () => {
       expect(res.body.data).toHaveLength(2);
       expect(res.body.data[0].boardGame).toBeDefined();
       expect(res.body.data[0].broughtBy).toBeDefined();
+      expect(res.body.data[0].linkedTables).toBeDefined();
+    });
+
+    it("should include linkedTables for games linked to a JDS table", async () => {
+      const { playerCookie, event, playerId } =
+        await setupEventWithParticipant();
+      const bg = await createBoardGame("Wingspan");
+
+      await request
+        .post(`/api/events/${event.id}/boardgames`)
+        .set("Cookie", playerCookie)
+        .send({ boardGameId: bg.id });
+
+      await prisma.gameTable.create({
+        data: {
+          eventId: event.id,
+          createdBy: playerId,
+          title: "Partie Wingspan",
+          type: "JDS",
+          boardGameId: bg.id,
+          maxPlayers: 5,
+          startDateTime: new Date("2026-06-01T10:00:00Z"),
+          endDateTime: new Date("2026-06-01T12:00:00Z"),
+        },
+      });
+
+      const res = await request
+        .get(`/api/events/${event.id}/boardgames`)
+        .set("Cookie", playerCookie);
+
+      expect(res.status).toBe(200);
+      const entry = res.body.data.find(
+        (e: { boardGame: { id: string } }) => e.boardGame.id === bg.id,
+      );
+      expect(entry.linkedTables).toHaveLength(1);
+      expect(entry.linkedTables[0].title).toBe("Partie Wingspan");
+    });
+
+    it("should return empty linkedTables when no table is linked", async () => {
+      const { playerCookie, event } = await setupEventWithParticipant();
+      const bg = await createBoardGame("Azul");
+
+      await request
+        .post(`/api/events/${event.id}/boardgames`)
+        .set("Cookie", playerCookie)
+        .send({ boardGameId: bg.id });
+
+      const res = await request
+        .get(`/api/events/${event.id}/boardgames`)
+        .set("Cookie", playerCookie);
+
+      expect(res.status).toBe(200);
+      const entry = res.body.data.find(
+        (e: { boardGame: { id: string } }) => e.boardGame.id === bg.id,
+      );
+      expect(entry.linkedTables).toHaveLength(0);
     });
   });
 
