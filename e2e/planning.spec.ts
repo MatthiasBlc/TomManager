@@ -96,19 +96,10 @@ test.describe("Planning — creation via clic calendrier", () => {
     await page.getByRole("button", { name: "Planning", exact: true }).click();
     await page.getByRole("button", { name: /vue calendrier/i }).click();
 
-    // Attendre que le calendrier soit interactif avant de dragger
+    // Cliquer sur un creneau vide : dateClick ouvre le modal (plus fiable qu'un drag en CI)
     const slot = page.locator(".fc-timegrid-slot-lane").first();
     await expect(slot).toBeVisible();
-    const box = await slot.boundingBox();
-    if (!box) throw new Error("Creneau calendrier introuvable");
-
-    // Simuler un drag progressif sur plusieurs creneaux pour declencher la selection FullCalendar
-    // (steps: lent pour que FullCalendar detecte les mousemove intermediaires)
-    const startX = box.x + box.width / 2;
-    await page.mouse.move(startX, box.y + 4);
-    await page.mouse.down();
-    await page.mouse.move(startX, box.y + box.height * 3, { steps: 10 });
-    await page.mouse.up();
+    await slot.click();
 
     // Le modal de creation doit s'ouvrir
     await expect(page.getByRole("dialog")).toBeVisible();
