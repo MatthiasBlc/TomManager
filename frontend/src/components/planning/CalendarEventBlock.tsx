@@ -22,7 +22,7 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
     type,
     currentUserConflict,
     conflictingPlayerCount,
-    players,
+    players = [],
   } = arg.event.extendedProps as TableExtendedProps;
 
   let classes = "bg-primary/80 border-primary text-primary-content";
