@@ -4,14 +4,19 @@ import TableCard from "../components/planning/TableCard";
 const baseTable = {
   id: "t1",
   title: "Donjon des morts",
+  type: "JDR" as const,
   pitch: "Une aventure mortelle",
   maxPlayers: 5,
   startDateTime: "2026-04-10T18:30:00.000Z",
   endDateTime: "2026-04-10T22:00:00.000Z",
   creator: { id: "u1", username: "Alice" },
   tags: [
-    { id: "tag1", name: "JDR" },
+    { id: "tag1", name: "Fantasy" },
     { id: "tag2", name: "Horreur" },
+  ],
+  players: [
+    { id: "u2", username: "Bob" },
+    { id: "u3", username: "Charlie" },
   ],
   confirmedCount: 3,
   waitlistCount: 0,
@@ -30,9 +35,14 @@ describe("TableCard", () => {
     expect(screen.getByText("3/5")).toBeInTheDocument();
   });
 
-  it("renders all tag names as badges", () => {
+  it("renders the type badge (JDR or JDS)", () => {
     render(<TableCard table={baseTable} onClick={() => {}} />);
     expect(screen.getByText("JDR")).toBeInTheDocument();
+  });
+
+  it("renders all tag names as badges", () => {
+    render(<TableCard table={baseTable} onClick={() => {}} />);
+    expect(screen.getByText("Fantasy")).toBeInTheDocument();
     expect(screen.getByText("Horreur")).toBeInTheDocument();
   });
 

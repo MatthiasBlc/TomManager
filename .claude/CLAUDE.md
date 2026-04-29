@@ -27,6 +27,26 @@ npx prisma migrate dev         # Migrations (dans container)
 npx prisma studio              # DB GUI :5555
 ```
 
+## Tests E2E (Playwright)
+
+**Architecture** : Playwright tourne EN LOCAL (pas dans Docker). Le stack Docker doit etre demarré avant.
+
+```bash
+# Prérequis unique (a faire une seule fois)
+npx playwright install chromium
+
+# Lancer les tests e2e
+npx playwright test --project=chromium   # Chromium seul (recommande)
+npm run test:e2e                         # Tous les projets
+
+# Debug
+npx playwright test --grep "nom du test"  # Un seul test
+```
+
+**Pas de variables d'environnement nécessaires localement.** L'app est sur `http://localhost:3000` par défaut (voir `playwright.config.ts`).
+
+**CI** : Le CI ne passe pas par Docker — il lance le backend/frontend directement avec Node.js sur le runner GitHub Actions, et installe Chromium via `npx playwright install chromium --with-deps`. Ne pas chercher de docker-compose pour les e2e en CI.
+
 ## Git
 
 - **Main**: master

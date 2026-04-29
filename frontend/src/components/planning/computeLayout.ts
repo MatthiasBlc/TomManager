@@ -1,12 +1,14 @@
 export interface TableSummary {
   id: string;
   title: string;
+  type: "JDR" | "JDS";
   pitch: string | null;
   maxPlayers: number;
   startDateTime: string;
   endDateTime: string;
   creator: { id: string; username: string };
   tags: { id: string; name: string }[];
+  players: { id: string; username: string }[];
   confirmedCount: number;
   waitlistCount: number;
   currentUserStatus: string | null;

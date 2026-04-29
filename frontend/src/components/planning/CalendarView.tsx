@@ -3,7 +3,7 @@ import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { DatesSetArg, EventDropArg, EventContentArg, DateSelectArg } from "@fullcalendar/core";
-import { EventResizeDoneArg } from "@fullcalendar/interaction";
+import { EventResizeDoneArg, DateClickArg } from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -13,21 +13,7 @@ import CalendarEventBlock from "./CalendarEventBlock";
 // Stable hors du composant pour eviter les re-renders FC
 const FC_PLUGINS = [timeGridPlugin, interactionPlugin];
 
-interface TableSummary {
-  id: string;
-  title: string;
-  startDateTime: string;
-  endDateTime: string;
-  creator: { id: string; username: string };
-  type: "JDR" | "JDS";
-  confirmedCount: number;
-  waitlistCount: number;
-  maxPlayers: number;
-  currentUserStatus: string | null;
-  isGM: boolean;
-  currentUserConflict: boolean;
-  conflictingPlayerCount: number;
-}
+import { type TableSummary } from "./computeLayout";
 
 interface EventBounds {
   startDateTime: string;
@@ -189,6 +175,18 @@ export default function CalendarView({
     [onSlotSelect]
   );
 
+  // Clic simple sur un creneau vide : ouvre le modal avec duree par defaut (60 min)
+  const handleDateClick = useCallback(
+    (info: DateClickArg) => {
+      if (!onSlotSelect) return;
+      const start = info.date;
+      const date = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+      const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+      onSlotSelect({ date, startTime, durationMinutes: 60 });
+    },
+    [onSlotSelect]
+  );
+
   const calEvents = useMemo(
     () =>
       tables.map((t) => ({
@@ -206,6 +204,7 @@ export default function CalendarView({
           type: t.type,
           currentUserConflict: t.currentUserConflict,
           conflictingPlayerCount: t.conflictingPlayerCount,
+          players: t.players,
         },
       })),
     [tables, isAdmin]
@@ -313,6 +312,7 @@ export default function CalendarView({
         selectMirror
         unselectAuto
         select={handleSelect}
+        dateClick={onSlotSelect ? handleDateClick : undefined}
       />
     </div>
   );

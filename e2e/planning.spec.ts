@@ -96,9 +96,9 @@ test.describe("Planning — creation via clic calendrier", () => {
     await page.getByRole("button", { name: "Planning", exact: true }).click();
     await page.getByRole("button", { name: /vue calendrier/i }).click();
 
-    // Cliquer sur un creneau du calendrier (zone vide)
-    // FullCalendar rend les creneaux avec data-time attribute
+    // Cliquer sur un creneau vide : dateClick ouvre le modal (plus fiable qu'un drag en CI)
     const slot = page.locator(".fc-timegrid-slot-lane").first();
+    await expect(slot).toBeVisible();
     await slot.click();
 
     // Le modal de creation doit s'ouvrir
