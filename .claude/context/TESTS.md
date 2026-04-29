@@ -3,20 +3,34 @@
 ## Commandes
 
 ```bash
-# Depuis la racine (via docker)
+# Backend + Frontend unitaires (via docker, depuis la racine)
 npm test                          # Backend + Frontend
 npm run test:backend              # Backend seul
 npm run test:frontend             # Frontend seul
 npm run test:coverage             # Couverture complete
 
-# Depuis backend/ (hors docker, necessite DB test)
-npm run test:db:up                # Demarrer DB test (port 5433)
+# Backend hors docker (necessite DB test sur port 5433)
+npm run test:db:up                # Demarrer DB test
 npm run test:db:down              # Arreter DB test
-npm run test:integration          # Flow complet (db:up + migrate + test + db:down)
+npm run test:integration          # Flow complet
 
-# Depuis frontend/
-npx vitest run                    # Tous les tests
+# Frontend seul
+npx vitest run
+
+# E2E Playwright — tourne EN LOCAL, pas dans Docker
+# Prerequis : npx playwright install chromium (une seule fois)
+# Docker doit etre demarre (npm run docker:up:build)
+npx playwright test --project=chromium   # Recommande
+npm run test:e2e                         # Tous les projets
+npx playwright test --grep "nom"         # Un test specifique
 ```
+
+## E2E — Architecture
+
+- Playwright s'installe localement (`~/.cache/ms-playwright/`), pas dans Docker
+- Aucune variable d'environnement requise : baseURL = `http://localhost:3000` (defaut playwright.config.ts)
+- Les tests seedent leurs propres donnees via l'API (`e2e/fixtures/seed.ts`)
+- En CI : le backend/frontend sont lances directement sur le runner (pas via Docker), Chromium installe via `--with-deps`
 
 ## Configuration
 
