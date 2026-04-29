@@ -98,12 +98,31 @@ Lorsque l'utilisateur demande un "changelog user" ou "changelog utilisateur" :
 
 1. Identifier le dernier fichier dans `docs/changelogs/` (tri par nom = tri chronologique)
 2. Lister les commits de la branche courante depuis ce dernier changelog (ou depuis `master` si aucun)
-3. Rediger un fichier `docs/changelogs/YYYY-MM-DD_nom-branche.md` avec :
-   - Un titre par fonctionnalite ou correction notable (emoji + **titre gras**)
-   - 2-3 phrases en francais, orientees utilisateur (pas de jargon technique)
-   - Ton : simple, positif, concret
-   - Pas d'accents dans le fichier (ASCII only)
+3. Rediger un fichier `docs/changelogs/YYYY-MM-DD_nom-branche.md` en respectant le format ci-dessous
 4. Afficher le contenu dans la reponse pour validation
+
+### Format exact du changelog
+
+Chaque section est separee par `---`. Patron a suivre :
+
+```
+  :emoji-shortcode: **Titre de la feature**
+
+  Description en 2-3 phrases orientees utilisateur, ton simple et positif.
+
+  ---
+  :wrench: Corrections
+
+- Correction 1
+- Correction 2
+```
+
+Regles :
+- Emoji en shortcode (`:book:`, `:tools:`, `:wrench:`, `:twisted_rightwards_arrows:`, etc.)
+- Titre en **gras** apres l'emoji
+- Separateur `---` entre chaque section
+- Corrections groupees en fin sous `:wrench: Corrections` en liste a puces
+- Pas de jargon technique, pas d'accents (ASCII only)
 
 ## Contexte approfondi (lire selon le besoin)
 
