@@ -118,6 +118,7 @@ Chaque section est separee par `---`. Patron a suivre :
 ```
 
 Regles :
+
 - Emoji en shortcode (`:book:`, `:tools:`, `:wrench:`, `:twisted_rightwards_arrows:`, etc.)
 - Titre en **gras** apres l'emoji
 - Separateur `---` entre chaque section
