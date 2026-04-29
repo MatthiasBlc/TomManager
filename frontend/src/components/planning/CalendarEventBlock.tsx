@@ -53,9 +53,7 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
         </p>
       )}
       {players.length > 0 && (
-        <p className="text-xs opacity-70 truncate">
-          {players.map((p) => p.username).join(", ")}
-        </p>
+        <p className="text-xs opacity-70 truncate">{players.map((p) => p.username).join(", ")}</p>
       )}
     </div>
   );
