@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import BoardGameList from "./BoardGameList";
 import BoardGameDetailModal from "./BoardGameDetailModal";
 import AddBoardGameModal from "./AddBoardGameModal";
+import PoweredByBGG from "./PoweredByBGG";
 import { useEventSocket } from "../../hooks/useEventSocket";
 import { SkeletonBoardGameList } from "../common/Skeleton";
 
@@ -205,6 +206,10 @@ export default function BoardGameTab({ eventId }: Props) {
           emptyDescription={tab === "mine" ? "You haven't added any games yet." : undefined}
         />
       )}
+
+      <div className="flex justify-end mt-4">
+        <PoweredByBGG />
+      </div>
 
       <AddBoardGameModal
         open={showAdd}
