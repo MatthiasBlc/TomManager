@@ -28,8 +28,11 @@ export default function BoardGameSelector({ value, onChange }: Props) {
     externalSource?: string | null;
     externalId?: string | null;
     yearPublished?: number | null;
+    minPlayers?: number | null;
     maxPlayers?: number | null;
     playingTime?: number | null;
+    description?: string | null;
+    imageUrl?: string | null;
   }) => {
     if (game.id) {
       onChange({
@@ -46,7 +49,12 @@ export default function BoardGameSelector({ value, onChange }: Props) {
         const res = await api.post("/api/boardgames/from-bgg", {
           bggId: game.externalId,
           name: game.name,
-          yearPublished: game.yearPublished,
+          yearPublished: game.yearPublished ?? undefined,
+          minPlayers: game.minPlayers ?? undefined,
+          maxPlayers: game.maxPlayers ?? undefined,
+          playingTime: game.playingTime ?? undefined,
+          description: game.description ?? undefined,
+          imageUrl: game.imageUrl ?? undefined,
         });
         const created = res.data.data;
         onChange({

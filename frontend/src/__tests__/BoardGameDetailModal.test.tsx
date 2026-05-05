@@ -107,4 +107,61 @@ describe("BoardGameDetailModal", () => {
     fireEvent.click(screen.getByLabelText("Fermer"));
     expect(onClose).toHaveBeenCalled();
   });
+
+  it("renders description when present", () => {
+    render(
+      <BoardGameDetailModal
+        open={true}
+        onClose={vi.fn()}
+        game={{ ...baseGame, description: "Un jeu de strategie." }}
+        linkedTables={[]}
+        broughtBy={[]}
+      />
+    );
+    expect(screen.getByText("Un jeu de strategie.")).toBeInTheDocument();
+  });
+
+  it("does not show voir-plus button for short description", () => {
+    render(
+      <BoardGameDetailModal
+        open={true}
+        onClose={vi.fn()}
+        game={{ ...baseGame, description: "Court." }}
+        linkedTables={[]}
+        broughtBy={[]}
+      />
+    );
+    expect(screen.queryByText("Voir plus")).not.toBeInTheDocument();
+  });
+
+  it("truncates long description and shows voir-plus button", () => {
+    const longDesc = "A".repeat(500);
+    render(
+      <BoardGameDetailModal
+        open={true}
+        onClose={vi.fn()}
+        game={{ ...baseGame, description: longDesc }}
+        linkedTables={[]}
+        broughtBy={[]}
+      />
+    );
+    expect(screen.getByText("Voir plus")).toBeInTheDocument();
+    expect(screen.queryByText(longDesc)).not.toBeInTheDocument();
+  });
+
+  it("expands description on voir-plus click and shows voir-moins", () => {
+    const longDesc = "A".repeat(500);
+    render(
+      <BoardGameDetailModal
+        open={true}
+        onClose={vi.fn()}
+        game={{ ...baseGame, description: longDesc }}
+        linkedTables={[]}
+        broughtBy={[]}
+      />
+    );
+    fireEvent.click(screen.getByText("Voir plus"));
+    expect(screen.getByText("Voir moins")).toBeInTheDocument();
+    expect(screen.getByText(longDesc)).toBeInTheDocument();
+  });
 });

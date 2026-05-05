@@ -85,6 +85,21 @@ describe("BoardGameCard", () => {
     expect(onClick).toHaveBeenCalled();
   });
 
+  it("renders description when present", () => {
+    render(
+      <BoardGameCard
+        game={{ ...baseGame, description: "Un jeu de construction." }}
+        broughtBy={[]}
+      />
+    );
+    expect(screen.getByText("Un jeu de construction.")).toBeInTheDocument();
+  });
+
+  it("does not render description section when absent", () => {
+    render(<BoardGameCard game={baseGame} broughtBy={[]} />);
+    expect(screen.queryByText(/construction/i)).not.toBeInTheDocument();
+  });
+
   it("stopPropagation on remove button does not trigger onClick", () => {
     const onClick = vi.fn();
     const onRemove = vi.fn();

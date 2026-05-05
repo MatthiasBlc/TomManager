@@ -18,6 +18,7 @@ interface EventBoardGameEntry {
     maxPlayers?: number | null;
     playingTime?: number | null;
     imageUrl?: string | null;
+    description?: string | null;
   };
   broughtBy: { id: string; username: string };
   linkedTables: { id: string; title: string }[];

@@ -52,6 +52,7 @@ services:
       - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI}
       - DISCORD_ADMIN_ROLE_ID=${DISCORD_ADMIN_ROLE_ID}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - BGG_API_TOKEN=${BGG_API_TOKEN}
     volumes:
       - backend-logs-dev:/app/logs
     networks:

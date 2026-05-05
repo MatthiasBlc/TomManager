@@ -115,7 +115,7 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
 
       await prisma.user.update({
         where: { id: existing.id },
-        data: { discordUsername: discordUser.username, avatarUrl },
+        data: { discordUsername: discordUser.username, avatarUrl, displayName },
       });
 
       await syncAdminRole(existing.id, memberRoles);

@@ -29,6 +29,7 @@ Prerequis : avoir le `BGG_API_TOKEN` (enregistrement sur boardgamegeek.com/appli
 - [ ] Message inline "BGG indisponible" dans `BoardGameSearchInput`
 - [ ] `POST /api/boardgames/from-bgg` : fetch complet via `fetchBGGThing` (plus de stub)
 - [ ] Sanitisation description (`he`) + normalisation imageUrl (`https://`)
+- [ ] Afficher le logo "Powered by BGG" dans l'UI (obligation contractuelle BGG pour les apps publiques)
 - [ ] Tests unitaires `bgg.test.ts` (scenarios : auth header, no-token, retry 202, 429, 401, parse XML, timeout)
 - [ ] Ajouter `BGG_API_TOKEN` dans GitHub Secrets (a faire manuellement)
 

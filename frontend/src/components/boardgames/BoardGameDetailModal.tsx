@@ -1,4 +1,7 @@
+import { useState } from "react";
 import ResponsiveModal from "../common/ResponsiveModal";
+
+const DESCRIPTION_LIMIT = 400;
 
 interface BoardGame {
   id: string;
@@ -8,6 +11,7 @@ interface BoardGame {
   maxPlayers?: number | null;
   playingTime?: number | null;
   imageUrl?: string | null;
+  description?: string | null;
 }
 
 interface Props {
@@ -25,7 +29,14 @@ export default function BoardGameDetailModal({
   linkedTables,
   broughtBy,
 }: Props) {
+  const [descExpanded, setDescExpanded] = useState(false);
   if (!game) return null;
+
+  const descTooLong = (game.description?.length ?? 0) > DESCRIPTION_LIMIT;
+  const displayedDescription =
+    descTooLong && !descExpanded
+      ? game.description!.slice(0, DESCRIPTION_LIMIT).trimEnd() + "…"
+      : game.description;
 
   return (
     <ResponsiveModal open={open} onClose={onClose} title={game.name}>
@@ -54,6 +65,22 @@ export default function BoardGameDetailModal({
             {game.playingTime != null && <span>{game.playingTime} min</span>}
           </div>
         </div>
+
+        {game.description && (
+          <div>
+            <h3 className="text-sm font-semibold opacity-70 mb-1">Description</h3>
+            <p className="text-sm opacity-80 leading-relaxed">{displayedDescription}</p>
+            {descTooLong && (
+              <button
+                type="button"
+                className="text-xs text-primary mt-1 hover:underline"
+                onClick={() => setDescExpanded((v) => !v)}
+              >
+                {descExpanded ? "Voir moins" : "Voir plus"}
+              </button>
+            )}
+          </div>
+        )}
 
         <div>
           <h3 className="text-sm font-semibold opacity-70 mb-1">Apporte par</h3>

@@ -22,6 +22,7 @@ model User {
   passwordHash    String?
   discordId       String?   @unique
   discordUsername String?
+  displayName     String?
   avatarUrl       String?
   role            Role      @default(USER)
   createdAt       DateTime  @default(now())

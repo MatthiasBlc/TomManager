@@ -153,7 +153,21 @@ Prerequis : `BGG_API_TOKEN` disponible dans l'environnement E2E.
 
 ---
 
-## Etape 8 — Documentation
+## Etape 8 — Logo "Powered by BGG" (OBLIGATOIRE)
+
+**Contexte** : BGG exige explicitement l'affichage du logo "Powered by BGG" pour toute
+application publique utilisant leur API. C'est une condition non negociable de leur programme.
+
+- [ ] Recuperer le logo officiel BGG ("Powered by BGG")
+- [ ] L'afficher dans l'UI partout ou des donnees BGG sont presentees :
+  - Dans `BoardGameTab` (onglet jeux d'un event)
+  - Dans `BoardGameDetailModal`
+  - Dans `BoardGameSearchInput` (resultats de recherche BGG)
+- [ ] S'assurer que le logo est visible et non masque (taille raisonnable)
+
+---
+
+## Etape 9 — Documentation
 
 - [ ] Mettre a jour `NEXT_STEPS.md` : Phase 14 complete
 - [ ] Mettre a jour `DB_MODELS.md` si schema change (normalement non)
@@ -174,7 +188,8 @@ Prerequis (obtenir token BGG)
               └─ Etape 5 (non-regression integration)
                   └─ Etape 6 (E2E)
                       └─ Etape 7 (CI)
-                          └─ Etape 8 (docs)
+                          └─ Etape 8 (logo "Powered by BGG")  ← OBLIGATOIRE
+                              └─ Etape 9 (docs)
 ```
 
 **Estimation** : 1 journee de code (hors attente token BGG).

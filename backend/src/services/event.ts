@@ -92,7 +92,7 @@ export async function getEvent(eventId: string) {
     include: {
       participations: {
         include: {
-          user: { select: { id: true, username: true, role: true } },
+          user: { select: { id: true, username: true, displayName: true, role: true } },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -114,6 +114,7 @@ export async function getEvent(eventId: string) {
     participants: event.participations.map((p) => ({
       userId: p.user.id,
       username: p.user.username,
+      displayName: p.user.displayName ?? null,
       role: p.user.role,
       joinedAt: p.createdAt,
     })),

@@ -114,19 +114,58 @@ export async function createBoardGame(data: CreateBoardGameData) {
  * Find or create a BoardGame from a BGG search result.
  * Used when adding a BGG game to an event.
  */
-export async function findOrCreateFromBGG(bggId: string, name: string, yearPublished?: number) {
+export async function findOrCreateFromBGG(
+  bggId: string,
+  data: {
+    name: string;
+    yearPublished?: number;
+    minPlayers?: number;
+    maxPlayers?: number;
+    playingTime?: number;
+    description?: string;
+    imageUrl?: string;
+  }
+) {
   const existing = await prisma.boardGame.findFirst({
     where: { externalSource: "BGG", externalId: bggId },
   });
 
-  if (existing) return existing;
+  if (existing) {
+    // Enrichir si des champs manquent encore
+    const needsUpdate =
+      (data.description && !existing.description) ||
+      (data.imageUrl && !existing.imageUrl) ||
+      (data.minPlayers && !existing.minPlayers) ||
+      (data.maxPlayers && !existing.maxPlayers) ||
+      (data.playingTime && !existing.playingTime);
+
+    if (needsUpdate) {
+      return prisma.boardGame.update({
+        where: { id: existing.id },
+        data: {
+          description: existing.description ?? data.description,
+          imageUrl: existing.imageUrl ?? data.imageUrl,
+          minPlayers: existing.minPlayers ?? data.minPlayers,
+          maxPlayers: existing.maxPlayers ?? data.maxPlayers,
+          playingTime: existing.playingTime ?? data.playingTime,
+        },
+      });
+    }
+
+    return existing;
+  }
 
   return prisma.boardGame.create({
     data: {
-      name,
+      name: data.name,
       externalSource: "BGG",
       externalId: bggId,
-      yearPublished: yearPublished ?? null,
+      yearPublished: data.yearPublished ?? null,
+      minPlayers: data.minPlayers ?? null,
+      maxPlayers: data.maxPlayers ?? null,
+      playingTime: data.playingTime ?? null,
+      description: data.description ?? null,
+      imageUrl: data.imageUrl ?? null,
     },
   });
 }
