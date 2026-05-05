@@ -111,6 +111,11 @@ describe("AddBoardGameModal", () => {
         bggId: "42",
         name: "BGGGame",
         yearPublished: undefined,
+        minPlayers: undefined,
+        maxPlayers: undefined,
+        playingTime: undefined,
+        description: undefined,
+        imageUrl: undefined,
       });
       expect(apiPostMock).toHaveBeenNthCalledWith(2, "/api/events/ev1/boardgames", {
         boardGameId: "imported-id",

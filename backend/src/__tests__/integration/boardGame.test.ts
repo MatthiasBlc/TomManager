@@ -256,10 +256,123 @@ describe("BoardGame API", () => {
   });
 });
 
-describe("BGG XML Parsing", () => {
-  it("should parse search results correctly", async () => {
-    const results = await bggService.searchBGG("__nonexistent_game_xyz__");
-    // Real API call with nonsense query should return empty or results
-    expect(Array.isArray(results)).toBe(true);
+describe("GET /api/boardgames/search — bggAvailable flag", () => {
+  it("should include bggAvailable: false in test env (no token)", async () => {
+    const { playerCookie } = await setupEventWithParticipant();
+    vi.spyOn(bggService, "searchBGG").mockResolvedValue([]);
+
+    const res = await request.get("/api/boardgames/search?q=test").set("Cookie", playerCookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty("bggAvailable");
+    expect(typeof res.body.bggAvailable).toBe("boolean");
+  });
+});
+
+describe("GET /api/boardgames/bgg-preview/:bggId", () => {
+  it("should return BGG detail for a valid bggId", async () => {
+    const { playerCookie } = await setupEventWithParticipant();
+
+    vi.spyOn(bggService, "fetchBGGThing").mockResolvedValue({
+      bggId: "13",
+      name: "Catan",
+      yearPublished: 1995,
+      minPlayers: 3,
+      maxPlayers: 4,
+      playingTime: 90,
+      description: "Trade and build",
+      imageUrl: "https://example.com/catan.jpg",
+    });
+
+    const res = await request
+      .get("/api/boardgames/bgg-preview/13")
+      .set("Cookie", playerCookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({
+      bggId: "13",
+      name: "Catan",
+      minPlayers: 3,
+      maxPlayers: 4,
+      playingTime: 90,
+      description: "Trade and build",
+    });
+  });
+
+  it("should return 404 when BGG returns nothing", async () => {
+    const { playerCookie } = await setupEventWithParticipant();
+
+    vi.spyOn(bggService, "fetchBGGThing").mockResolvedValue(null);
+
+    const res = await request
+      .get("/api/boardgames/bgg-preview/99999")
+      .set("Cookie", playerCookie);
+
+    expect(res.status).toBe(404);
+  });
+
+  it("should require authentication", async () => {
+    const res = await request.get("/api/boardgames/bgg-preview/13");
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("POST /api/boardgames/from-bgg — full fields", () => {
+  it("should save all fields when provided", async () => {
+    const { playerCookie } = await setupEventWithParticipant();
+
+    const res = await request
+      .post("/api/boardgames/from-bgg")
+      .set("Cookie", playerCookie)
+      .send({
+        bggId: "13",
+        name: "Catan",
+        yearPublished: 1995,
+        minPlayers: 3,
+        maxPlayers: 4,
+        playingTime: 90,
+        description: "Trade and build",
+        imageUrl: "https://example.com/catan.jpg",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data).toMatchObject({
+      name: "Catan",
+      minPlayers: 3,
+      maxPlayers: 4,
+      playingTime: 90,
+      description: "Trade and build",
+      imageUrl: "https://example.com/catan.jpg",
+    });
+  });
+
+  it("should enrich existing stub with missing fields", async () => {
+    const { playerCookie } = await setupEventWithParticipant();
+
+    // Stub sans details
+    await prisma.boardGame.create({
+      data: { name: "Catan", externalSource: "BGG", externalId: "13" },
+    });
+
+    const res = await request
+      .post("/api/boardgames/from-bgg")
+      .set("Cookie", playerCookie)
+      .send({
+        bggId: "13",
+        name: "Catan",
+        description: "Trade and build",
+        minPlayers: 3,
+        maxPlayers: 4,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.description).toBe("Trade and build");
+    expect(res.body.data.minPlayers).toBe(3);
+
+    // Verifier en DB
+    const count = await prisma.boardGame.count({
+      where: { externalSource: "BGG", externalId: "13" },
+    });
+    expect(count).toBe(1);
   });
 });

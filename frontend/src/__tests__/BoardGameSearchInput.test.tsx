@@ -61,7 +61,22 @@ describe("BoardGameSearchInput", () => {
     expect(await screen.findByText("BGG")).toBeInTheDocument();
   });
 
-  it("calls onSelect and clears the input when a result is clicked", async () => {
+  it("shows preview panel when a local game is clicked", async () => {
+    const game = { id: "g1", name: "Catan", yearPublished: 1995 };
+    apiGetMock.mockResolvedValue({ data: { data: [game] } });
+
+    render(<BoardGameSearchInput onSelect={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText(/search board games/i), {
+      target: { value: "cat" },
+    });
+
+    const result = await screen.findByText("Catan");
+    fireEvent.click(result);
+
+    expect(await screen.findByRole("button", { name: /selectionner ce jeu/i })).toBeInTheDocument();
+  });
+
+  it("calls onSelect after confirming from preview (local game)", async () => {
     const game = { id: "g1", name: "Catan", yearPublished: 1995 };
     apiGetMock.mockResolvedValue({ data: { data: [game] } });
     const onSelect = vi.fn();
@@ -72,11 +87,65 @@ describe("BoardGameSearchInput", () => {
 
     const result = await screen.findByText("Catan");
     fireEvent.click(result);
-    expect(onSelect).toHaveBeenCalledWith(game);
+
+    const confirmBtn = await screen.findByRole("button", { name: /selectionner ce jeu/i });
+    fireEvent.click(confirmBtn);
+
+    expect(onSelect).toHaveBeenCalled();
     expect(input.value).toBe("");
-    await waitFor(() => {
-      expect(screen.queryByText("Catan")).not.toBeInTheDocument();
+  });
+
+  it("fetches bgg-preview when a BGG result is clicked", async () => {
+    apiGetMock
+      .mockResolvedValueOnce({
+        data: {
+          data: [{ id: null, name: "Catan", externalSource: "BGG", externalId: "13" }],
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            bggId: "13",
+            name: "Catan",
+            minPlayers: 3,
+            maxPlayers: 4,
+            playingTime: 90,
+            description: "Trade and build",
+          },
+        },
+      });
+
+    render(<BoardGameSearchInput onSelect={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText(/search board games/i), {
+      target: { value: "cat" },
     });
+
+    const result = await screen.findByText("Catan");
+    fireEvent.click(result);
+
+    await waitFor(() => {
+      expect(apiGetMock).toHaveBeenCalledWith("/api/boardgames/bgg-preview/13");
+    });
+    expect(await screen.findByText("Trade and build")).toBeInTheDocument();
+  });
+
+  it("goes back to results when Retour is clicked", async () => {
+    const game = { id: "g1", name: "Catan", yearPublished: 1995 };
+    apiGetMock.mockResolvedValue({ data: { data: [game] } });
+
+    render(<BoardGameSearchInput onSelect={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText(/search board games/i), {
+      target: { value: "cat" },
+    });
+
+    const result = await screen.findByText("Catan");
+    fireEvent.click(result);
+
+    const backBtn = await screen.findByRole("button", { name: /retour/i });
+    fireEvent.click(backBtn);
+
+    expect(await screen.findByText("Catan")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /selectionner ce jeu/i })).not.toBeInTheDocument();
   });
 
   it("clears results when the API call rejects", async () => {
