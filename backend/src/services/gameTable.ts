@@ -7,10 +7,12 @@ import { createNotification, createBulkNotifications } from "./notification";
 const BOARD_GAME_SELECT = {
   id: true,
   name: true,
+  yearPublished: true,
   minPlayers: true,
   maxPlayers: true,
   playingTime: true,
   imageUrl: true,
+  description: true,
 } as const;
 
 interface UpdateTableData {

@@ -1,8 +1,10 @@
 import { XMLParser } from "fast-xml-parser";
+import he from "he";
+import env from "../config/env";
+import logger from "../util/logger";
 
 const BGG_BASE_URL = "https://boardgamegeek.com/xmlapi2";
-const TIMEOUT_MS = 5000;
-const MAX_RETRIES = 1;
+const TIMEOUT_MS = 10000;
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -26,36 +28,100 @@ export interface BGGThingDetail {
   imageUrl?: string;
 }
 
-async function fetchWithRetry(url: string): Promise<string> {
-  let lastError: Error | null = null;
+export function isBggAvailable(): boolean {
+  return !!env.BGG_API_TOKEN;
+}
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+function buildHeaders(): HeadersInit {
+  if (env.BGG_API_TOKEN) {
+    return { Authorization: `Bearer ${env.BGG_API_TOKEN}` };
+  }
+  return {};
+}
+
+function sanitizeDescription(raw: string): string {
+  return he
+    .decode(raw)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeImageUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("//")) return `https:${url}`;
+  return url || undefined;
+}
+
+async function fetchWithTimeout(url: string): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: controller.signal, headers: buildHeaders() });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// Retry sur 202 (BGG processing) avec backoff 2s/4s/8s
+async function fetchBGGWithRetry(url: string): Promise<string> {
+  const backoffs = [2000, 4000, 8000];
+
+  for (let attempt = 0; attempt <= backoffs.length; attempt++) {
+    let response: Response;
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`BGG API returned ${response.status}`);
-      }
-
-      return await response.text();
-    } catch (err) {
-      lastError = err as Error;
+      response = await fetchWithTimeout(url);
+    } catch {
+      return Promise.reject(new Error("BGG network error or timeout"));
     }
+
+    if (response.status === 202) {
+      if (attempt < backoffs.length) {
+        await new Promise((r) => setTimeout(r, backoffs[attempt]));
+        continue;
+      }
+      throw new Error("BGG API still processing after max retries");
+    }
+
+    if (response.status === 401) {
+      logger.error("BGG API returned 401 — check BGG_API_TOKEN");
+      throw new Error("BGG API unauthorized");
+    }
+
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get("Retry-After") || "10", 10);
+      await new Promise((r) => setTimeout(r, retryAfter * 1000));
+      // Un seul retry apres 429
+      let retryResponse: Response;
+      try {
+        retryResponse = await fetchWithTimeout(url);
+      } catch {
+        throw new Error("BGG network error on 429 retry");
+      }
+      if (!retryResponse.ok) {
+        throw new Error(`BGG API returned ${retryResponse.status} after 429 retry`);
+      }
+      return retryResponse.text();
+    }
+
+    if (!response.ok) {
+      throw new Error(`BGG API returned ${response.status}`);
+    }
+
+    return response.text();
   }
 
-  throw lastError;
+  throw new Error("BGG API: max retries exceeded");
 }
 
 export async function searchBGG(query: string): Promise<BGGSearchResult[]> {
+  if (!env.BGG_API_TOKEN) return [];
+
   const url = `${BGG_BASE_URL}/search?query=${encodeURIComponent(query)}&type=boardgame`;
 
   let xml: string;
   try {
-    xml = await fetchWithRetry(url);
+    xml = await fetchBGGWithRetry(url);
   } catch {
     return [];
   }
@@ -91,11 +157,13 @@ export async function searchBGG(query: string): Promise<BGGSearchResult[]> {
 }
 
 export async function fetchBGGThing(bggId: string): Promise<BGGThingDetail | null> {
+  if (!env.BGG_API_TOKEN) return null;
+
   const url = `${BGG_BASE_URL}/thing?id=${encodeURIComponent(bggId)}&stats=1`;
 
   let xml: string;
   try {
-    xml = await fetchWithRetry(url);
+    xml = await fetchBGGWithRetry(url);
   } catch {
     return null;
   }
@@ -121,6 +189,9 @@ export async function fetchBGGThing(bggId: string): Promise<BGGThingDetail | nul
     return undefined;
   };
 
+  const rawDescription = typeof item.description === "string" ? item.description : undefined;
+  const rawImageUrl = typeof item.image === "string" ? item.image : undefined;
+
   return {
     bggId: String(item["@_id"]),
     name,
@@ -128,7 +199,7 @@ export async function fetchBGGThing(bggId: string): Promise<BGGThingDetail | nul
     minPlayers: getIntAttr(item.minplayers),
     maxPlayers: getIntAttr(item.maxplayers),
     playingTime: getIntAttr(item.playingtime),
-    description: typeof item.description === "string" ? item.description : undefined,
-    imageUrl: typeof item.image === "string" ? item.image : undefined,
+    description: rawDescription ? sanitizeDescription(rawDescription) : undefined,
+    imageUrl: normalizeImageUrl(rawImageUrl),
   };
 }

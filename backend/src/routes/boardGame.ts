@@ -7,6 +7,7 @@ import { createBoardGameSchema, fromBggSchema } from "../schemas/boardGame";
 const router = Router();
 
 router.get("/search", requireAuth, boardGameController.search);
+router.get("/bgg-preview/:bggId", requireAuth, boardGameController.bggPreview);
 router.get("/:boardGameId", requireAuth, validateUUID("boardGameId"), boardGameController.detail);
 router.post("/", requireAuth, validateBody(createBoardGameSchema), boardGameController.create);
 router.post(

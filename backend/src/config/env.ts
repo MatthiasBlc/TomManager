@@ -15,6 +15,7 @@ const env = cleanEnv(process.env, {
   DISCORD_REDIRECT_URI: str({ default: "" }),
   DISCORD_ADMIN_ROLE_ID: str({ default: "" }),
   DISCORD_BOT_TOKEN: str({ default: "" }),
+  BGG_API_TOKEN: str({ default: "" }),
 });
 
 export default env;

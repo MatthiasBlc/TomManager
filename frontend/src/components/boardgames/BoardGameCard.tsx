@@ -6,6 +6,7 @@ interface BoardGame {
   maxPlayers?: number | null;
   playingTime?: number | null;
   imageUrl?: string | null;
+  description?: string | null;
 }
 
 interface Props {
@@ -67,6 +68,9 @@ export default function BoardGameCard({
                   )}
                   {game.playingTime != null && <span>{game.playingTime} min</span>}
                 </div>
+                {game.description && (
+                  <p className="text-xs opacity-60 mt-1 line-clamp-2">{game.description}</p>
+                )}
                 <div className="mt-1 flex flex-wrap gap-1">
                   {broughtBy.map((user) => (
                     <span key={user.id} className="badge badge-outline badge-sm">

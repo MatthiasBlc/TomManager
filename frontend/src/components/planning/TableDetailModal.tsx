@@ -8,6 +8,7 @@ import ResponsiveModal from "../common/ResponsiveModal";
 import EditTableModal from "./EditTableModal";
 import EmptyState from "../common/EmptyState";
 import { SkeletonTableDetail } from "../common/Skeleton";
+import BoardGameDetailModal from "../boardgames/BoardGameDetailModal";
 
 interface BoardGameSummary {
   id: string;
@@ -16,6 +17,8 @@ interface BoardGameSummary {
   maxPlayers?: number | null;
   playingTime?: number | null;
   imageUrl?: string | null;
+  description?: string | null;
+  yearPublished?: number | null;
 }
 
 interface TableDetail {
@@ -64,6 +67,11 @@ export default function TableDetailModal({
   const [table, setTable] = useState<TableDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showBoardGame, setShowBoardGame] = useState(false);
+  const [boardGameEntry, setBoardGameEntry] = useState<{
+    broughtBy: { id: string; username: string }[];
+    linkedTables: { id: string; title: string }[];
+  } | null>(null);
 
   const isGM = user?.id === table?.createdBy;
   const isAdmin = user?.role === "ADMIN";
@@ -236,12 +244,30 @@ export default function TableDetailModal({
 
             {/* Jeu associe (JDS uniquement) */}
             {table.boardGame && (
-              <div className="flex items-center gap-3 p-2 bg-base-200 rounded-lg">
+              <button
+                type="button"
+                className="flex items-center gap-3 p-2 bg-base-200 rounded-lg w-full text-left hover:bg-base-300 transition-colors"
+                onClick={async () => {
+                  if (!table.boardGame) return;
+                  try {
+                    const res = await api.get(`/api/events/${eventId}/boardgames`);
+                    const entries: { boardGame: { id: string }; broughtBy: { id: string; username: string }; linkedTables: { id: string; title: string }[] }[] = res.data.data;
+                    const matching = entries.filter((e) => e.boardGame.id === table.boardGame!.id);
+                    setBoardGameEntry({
+                      broughtBy: matching.map((e) => e.broughtBy),
+                      linkedTables: matching[0]?.linkedTables ?? [],
+                    });
+                  } catch {
+                    setBoardGameEntry({ broughtBy: [], linkedTables: [{ id: table.id, title: table.title }] });
+                  }
+                  setShowBoardGame(true);
+                }}
+              >
                 {table.boardGame.imageUrl && (
                   <img
                     src={table.boardGame.imageUrl}
                     alt={table.boardGame.name}
-                    className="w-12 h-12 object-cover rounded"
+                    className="w-12 h-12 object-cover rounded shrink-0"
                   />
                 )}
                 <div className="flex-1 min-w-0">
@@ -259,7 +285,8 @@ export default function TableDetailModal({
                       .join(" · ")}
                   </p>
                 </div>
-              </div>
+                <span className="text-xs opacity-40 shrink-0">→</span>
+              </button>
             )}
 
             {/* Tags */}
@@ -507,6 +534,16 @@ export default function TableDetailModal({
           }}
           eventId={eventId}
           table={table}
+        />
+      )}
+
+      {table?.boardGame && (
+        <BoardGameDetailModal
+          open={showBoardGame}
+          onClose={() => setShowBoardGame(false)}
+          game={table.boardGame}
+          linkedTables={boardGameEntry?.linkedTables ?? []}
+          broughtBy={boardGameEntry?.broughtBy ?? []}
         />
       )}
     </>

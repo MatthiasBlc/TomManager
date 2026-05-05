@@ -13,6 +13,9 @@ initSocket(server);
 
 server.listen(env.PORT, () => {
   logger.info(`Server running on port ${env.PORT}`);
+  if (!env.BGG_API_TOKEN) {
+    logger.warn("BGG_API_TOKEN not configured — BGG search disabled");
+  }
 });
 
 process.on("SIGTERM", async () => {
