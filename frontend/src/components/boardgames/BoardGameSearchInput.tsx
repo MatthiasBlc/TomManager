@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import api from "../../config/api";
+import PoweredByBGG from "./PoweredByBGG";
 
 interface BoardGameResult {
   id: string | null;
@@ -183,6 +184,11 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
                 </button>
               </li>
             ))}
+            {results.some((g) => !g.id && g.externalSource === "BGG") && (
+              <li className="flex justify-end px-3 py-2 border-t border-base-300">
+                <PoweredByBGG />
+              </li>
+            )}
           </ul>,
           document.body
         )
