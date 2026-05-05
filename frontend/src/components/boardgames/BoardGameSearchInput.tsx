@@ -36,7 +36,10 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
-  const [preview, setPreview] = useState<{ game: BoardGameResult; detail: BGGPreview | null } | null>(null);
+  const [preview, setPreview] = useState<{
+    game: BoardGameResult;
+    detail: BGGPreview | null;
+  } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLUListElement>(null);
@@ -188,7 +191,11 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
   const previewPanel =
     preview && previewData
       ? createPortal(
-          <div ref={previewRef} style={dropdownStyle} className="bg-base-200 rounded-box shadow-lg overflow-hidden">
+          <div
+            ref={previewRef}
+            style={dropdownStyle}
+            className="bg-base-200 rounded-box shadow-lg overflow-hidden"
+          >
             {previewLoading ? (
               <div className="flex items-center justify-center p-6">
                 <span className="loading loading-spinner loading-md" />
@@ -207,7 +214,9 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
                     <div className="font-semibold truncate">
                       {previewData.name}
                       {previewData.yearPublished && (
-                        <span className="opacity-50 font-normal text-sm ml-1">({previewData.yearPublished})</span>
+                        <span className="opacity-50 font-normal text-sm ml-1">
+                          ({previewData.yearPublished})
+                        </span>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm mt-1 opacity-70">
@@ -221,15 +230,25 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
                       {previewData.playingTime && <span>{previewData.playingTime} min</span>}
                     </div>
                     {previewData.description && (
-                      <p className="text-xs mt-1 opacity-60 line-clamp-3">{previewData.description}</p>
+                      <p className="text-xs mt-1 opacity-60 line-clamp-3">
+                        {previewData.description}
+                      </p>
                     )}
                   </div>
                 </div>
                 <div className="flex gap-2 px-3 pb-3">
-                  <button type="button" className="btn btn-xs btn-ghost" onClick={handleBackToResults}>
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-ghost"
+                    onClick={handleBackToResults}
+                  >
                     ← Retour
                   </button>
-                  <button type="button" className="btn btn-xs btn-primary flex-1" onClick={handleConfirm}>
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-primary flex-1"
+                    onClick={handleConfirm}
+                  >
                     Selectionner ce jeu
                   </button>
                 </div>

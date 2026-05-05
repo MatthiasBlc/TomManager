@@ -191,7 +191,9 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       )}
 
       {processed.length === 0 && (
-        <p className="text-sm opacity-60 text-center py-4">Aucun participant dans cette categorie.</p>
+        <p className="text-sm opacity-60 text-center py-4">
+          Aucun participant dans cette categorie.
+        </p>
       )}
 
       {!isCreator && user && (

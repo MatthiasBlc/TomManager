@@ -42,7 +42,16 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function findOrCreateBGG(req: Request, res: Response, next: NextFunction) {
   try {
-    const { bggId, name, yearPublished, minPlayers, maxPlayers, playingTime, description, imageUrl } = req.body;
+    const {
+      bggId,
+      name,
+      yearPublished,
+      minPlayers,
+      maxPlayers,
+      playingTime,
+      description,
+      imageUrl,
+    } = req.body;
     const boardGame = await boardGameService.findOrCreateFromBGG(bggId, {
       name,
       yearPublished,

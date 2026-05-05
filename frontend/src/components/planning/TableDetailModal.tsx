@@ -251,14 +251,21 @@ export default function TableDetailModal({
                   if (!table.boardGame) return;
                   try {
                     const res = await api.get(`/api/events/${eventId}/boardgames`);
-                    const entries: { boardGame: { id: string }; broughtBy: { id: string; username: string }; linkedTables: { id: string; title: string }[] }[] = res.data.data;
+                    const entries: {
+                      boardGame: { id: string };
+                      broughtBy: { id: string; username: string };
+                      linkedTables: { id: string; title: string }[];
+                    }[] = res.data.data;
                     const matching = entries.filter((e) => e.boardGame.id === table.boardGame!.id);
                     setBoardGameEntry({
                       broughtBy: matching.map((e) => e.broughtBy),
                       linkedTables: matching[0]?.linkedTables ?? [],
                     });
                   } catch {
-                    setBoardGameEntry({ broughtBy: [], linkedTables: [{ id: table.id, title: table.title }] });
+                    setBoardGameEntry({
+                      broughtBy: [],
+                      linkedTables: [{ id: table.id, title: table.title }],
+                    });
                   }
                   setShowBoardGame(true);
                 }}

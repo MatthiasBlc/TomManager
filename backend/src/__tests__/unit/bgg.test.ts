@@ -94,7 +94,11 @@ describe("searchBGG", () => {
     const results = await searchBGG("catan");
     expect(results).toHaveLength(2);
     expect(results[0]).toMatchObject({ bggId: "13", name: "Catan", yearPublished: 1995 });
-    expect(results[1]).toMatchObject({ bggId: "42", name: "Catan: Seafarers", yearPublished: 1997 });
+    expect(results[1]).toMatchObject({
+      bggId: "42",
+      name: "Catan: Seafarers",
+      yearPublished: 1997,
+    });
   });
 
   it("returns [] when BGG returns 0 results", async () => {

@@ -284,9 +284,7 @@ describe("GET /api/boardgames/bgg-preview/:bggId", () => {
       imageUrl: "https://example.com/catan.jpg",
     });
 
-    const res = await request
-      .get("/api/boardgames/bgg-preview/13")
-      .set("Cookie", playerCookie);
+    const res = await request.get("/api/boardgames/bgg-preview/13").set("Cookie", playerCookie);
 
     expect(res.status).toBe(200);
     expect(res.body.data).toMatchObject({
@@ -304,9 +302,7 @@ describe("GET /api/boardgames/bgg-preview/:bggId", () => {
 
     vi.spyOn(bggService, "fetchBGGThing").mockResolvedValue(null);
 
-    const res = await request
-      .get("/api/boardgames/bgg-preview/99999")
-      .set("Cookie", playerCookie);
+    const res = await request.get("/api/boardgames/bgg-preview/99999").set("Cookie", playerCookie);
 
     expect(res.status).toBe(404);
   });
@@ -321,19 +317,16 @@ describe("POST /api/boardgames/from-bgg — full fields", () => {
   it("should save all fields when provided", async () => {
     const { playerCookie } = await setupEventWithParticipant();
 
-    const res = await request
-      .post("/api/boardgames/from-bgg")
-      .set("Cookie", playerCookie)
-      .send({
-        bggId: "13",
-        name: "Catan",
-        yearPublished: 1995,
-        minPlayers: 3,
-        maxPlayers: 4,
-        playingTime: 90,
-        description: "Trade and build",
-        imageUrl: "https://example.com/catan.jpg",
-      });
+    const res = await request.post("/api/boardgames/from-bgg").set("Cookie", playerCookie).send({
+      bggId: "13",
+      name: "Catan",
+      yearPublished: 1995,
+      minPlayers: 3,
+      maxPlayers: 4,
+      playingTime: 90,
+      description: "Trade and build",
+      imageUrl: "https://example.com/catan.jpg",
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.data).toMatchObject({
@@ -354,16 +347,13 @@ describe("POST /api/boardgames/from-bgg — full fields", () => {
       data: { name: "Catan", externalSource: "BGG", externalId: "13" },
     });
 
-    const res = await request
-      .post("/api/boardgames/from-bgg")
-      .set("Cookie", playerCookie)
-      .send({
-        bggId: "13",
-        name: "Catan",
-        description: "Trade and build",
-        minPlayers: 3,
-        maxPlayers: 4,
-      });
+    const res = await request.post("/api/boardgames/from-bgg").set("Cookie", playerCookie).send({
+      bggId: "13",
+      name: "Catan",
+      description: "Trade and build",
+      minPlayers: 3,
+      maxPlayers: 4,
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.data.description).toBe("Trade and build");
