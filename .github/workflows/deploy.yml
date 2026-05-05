@@ -493,6 +493,7 @@ jobs:
           DISCORD_REDIRECT_URI: ${{ secrets.DISCORD_REDIRECT_URI }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_ADMIN_ROLE_ID: ${{ secrets.DISCORD_ADMIN_ROLE_ID }}
+          BGG_API_TOKEN: ${{ secrets.BGG_API_TOKEN }}
 
   # ========================================
   # Deploy to Portainer (Preprod)
@@ -553,6 +554,7 @@ jobs:
           DISCORD_REDIRECT_URI: ${{ secrets.PREPROD_DISCORD_REDIRECT_URI }}
           DISCORD_BOT_TOKEN: ${{ secrets.PREPROD_DISCORD_BOT_TOKEN }}
           DISCORD_ADMIN_ROLE_ID: ${{ secrets.PREPROD_DISCORD_ADMIN_ROLE_ID }}
+          BGG_API_TOKEN: ${{ secrets.BGG_API_TOKEN }}
 
   # ========================================
   # Cleanup old images
