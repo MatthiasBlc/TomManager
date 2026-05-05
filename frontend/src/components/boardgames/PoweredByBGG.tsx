@@ -7,11 +7,7 @@ export default function PoweredByBGG({ className = "" }: { className?: string })
       className={`inline-flex items-center opacity-70 hover:opacity-100 transition-opacity ${className}`}
       aria-label="Powered by BoardGameGeek"
     >
-      <img
-        src="/poweredByBGG.webp"
-        alt="Powered by BoardGameGeek"
-        className="h-10"
-      />
+      <img src="/poweredByBGG.webp" alt="Powered by BoardGameGeek" className="h-10" />
     </a>
   );
 }
