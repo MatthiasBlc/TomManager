@@ -17,10 +17,11 @@ Application web de gestion d'evenements JDR (jeux de role et jeux de societe) av
 
 - **Evenements** : creation et gestion par les admins, inscription des membres
 - **Planning collaboratif** : tables de jeu avec creneaux, tags, GM, participants
-- **Inventaire de jeux** : integration BoardGameGeek, jeux apportes par evenement
-- **Auth Discord** : connexion via Discord, acces automatique par role de serveur
+- **Inventaire de jeux** : recherche et import depuis BoardGameGeek, fiches completes (image, description, stats), jeux apportes par evenement
+- **Auth Discord** : connexion via Discord, surnom serveur affiche, acces automatique par role de serveur
 - **Notifications temps reel** : via Socket.io
 - **Bot Discord** : sync automatique des participations lors des changements de role
+- **Participants** : liste avec tri (nom, date, role) et filtre (admins / membres)
 
 ## Architecture
 
@@ -65,22 +66,23 @@ L'application est disponible sur `http://localhost:3000`.
 
 ## Variables d'environnement
 
-| Variable                | Description                                             | Requis |
-| ----------------------- | ------------------------------------------------------- | ------ |
-| `POSTGRES_USER`         | Utilisateur PostgreSQL                                  | Oui    |
-| `POSTGRES_PASSWORD`     | Mot de passe PostgreSQL                                 | Oui    |
-| `POSTGRES_DB`           | Nom de la base de donnees                               | Oui    |
-| `SESSION_SECRET`        | Secret de session (min. 32 caracteres)                  | Oui    |
-| `CORS_ORIGIN`           | URL du frontend (ex: `http://localhost:3000`)           | Oui    |
-| `VITE_BACKEND_URL`      | URL du backend depuis le navigateur                     | Oui    |
-| `DISCORD_CLIENT_ID`     | Client ID de l'app Discord                              | Non    |
-| `DISCORD_CLIENT_SECRET` | Client Secret de l'app Discord                          | Non    |
-| `DISCORD_GUILD_ID`      | ID du serveur Discord                                   | Non    |
-| `DISCORD_REDIRECT_URI`  | URI de callback OAuth2                                  | Non    |
-| `DISCORD_BOT_TOKEN`     | Token du bot Discord                                    | Non    |
-| `DISCORD_ADMIN_ROLE_ID` | ID du role Discord donnant les droits ADMIN (optionnel) | Non    |
-| `SENTRY_DSN`            | DSN Sentry pour le tracking d'erreurs backend           | Non    |
-| `VITE_SENTRY_DSN`       | DSN Sentry pour le tracking d'erreurs frontend          | Non    |
+| Variable                | Description                                                    | Requis |
+| ----------------------- | -------------------------------------------------------------- | ------ |
+| `POSTGRES_USER`         | Utilisateur PostgreSQL                                         | Oui    |
+| `POSTGRES_PASSWORD`     | Mot de passe PostgreSQL                                        | Oui    |
+| `POSTGRES_DB`           | Nom de la base de donnees                                      | Oui    |
+| `SESSION_SECRET`        | Secret de session (min. 32 caracteres)                         | Oui    |
+| `CORS_ORIGIN`           | URL du frontend (ex: `http://localhost:3000`)                  | Oui    |
+| `VITE_BACKEND_URL`      | URL du backend depuis le navigateur                            | Oui    |
+| `DISCORD_CLIENT_ID`     | Client ID de l'app Discord                                     | Non    |
+| `DISCORD_CLIENT_SECRET` | Client Secret de l'app Discord                                 | Non    |
+| `DISCORD_GUILD_ID`      | ID du serveur Discord                                          | Non    |
+| `DISCORD_REDIRECT_URI`  | URI de callback OAuth2                                         | Non    |
+| `DISCORD_BOT_TOKEN`     | Token du bot Discord                                           | Non    |
+| `DISCORD_ADMIN_ROLE_ID` | ID du role Discord donnant les droits ADMIN (optionnel)        | Non    |
+| `BGG_API_TOKEN`         | Token Bearer BoardGameGeek (recherche BGG desactivee sans lui) | Non    |
+| `SENTRY_DSN`            | DSN Sentry pour le tracking d'erreurs backend                  | Non    |
+| `VITE_SENTRY_DSN`       | DSN Sentry pour le tracking d'erreurs frontend                 | Non    |
 
 > Les variables Discord sont optionnelles. Sans elles, le bouton "Login avec Discord" est masque et l'auth locale seule est disponible.
 
