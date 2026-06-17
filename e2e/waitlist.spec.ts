@@ -91,8 +91,8 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     await playerPage.getByText(tableTitle).click();
     await expect(playerPage.getByRole("dialog")).toBeVisible();
 
-    // Attendre que le contenu soit charge (le badge de statut est toujours visible)
-    await expect(playerPage.getByText(/CONFIRMED|WAITLIST/i).first()).toBeVisible();
+    // Attendre que le contenu soit charge (le nom du joueur visible dans le dialog)
+    await expect(playerPage.getByRole("dialog").getByText(player1.username).first()).toBeVisible();
 
     expect(await playerPage.getByRole("button", { name: /ajouter a la table/i }).count()).toBe(0);
     expect(await playerPage.getByRole("button", { name: /mettre sur liste/i }).count()).toBe(0);
