@@ -49,8 +49,8 @@ describe("Navbar (desktop)", () => {
   it("shows the Login link when no user is authenticated", () => {
     setAuth(null);
     renderNavbar();
-    expect(screen.getByRole("link", { name: "Login" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Logout" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Connexion" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Se deconnecter" })).not.toBeInTheDocument();
   });
 
   it("shows username, avatar, events link, logout when authenticated", () => {
@@ -65,8 +65,8 @@ describe("Navbar (desktop)", () => {
       "src",
       "https://example.com/a.png"
     );
-    expect(screen.getByRole("link", { name: "Events" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Evenements" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Se deconnecter" })).toBeInTheDocument();
     expect(screen.getByTestId("connection-status")).toBeInTheDocument();
     expect(screen.getByTestId("notification-bell")).toBeInTheDocument();
   });
@@ -81,7 +81,7 @@ describe("Navbar (desktop)", () => {
   it("calls logout and navigates home when Logout is clicked", async () => {
     setAuth({ id: "u1", username: "Alice", avatarUrl: null });
     renderNavbar();
-    fireEvent.click(screen.getByRole("button", { name: "Logout" }));
+    fireEvent.click(screen.getByRole("button", { name: "Se deconnecter" }));
     await waitFor(() => {
       expect(logoutMock).toHaveBeenCalled();
       expect(navigateMock).toHaveBeenCalledWith("/");
@@ -102,13 +102,13 @@ describe("Navbar (mobile)", () => {
     // MobileHeader logo
     expect(screen.getByText("TM")).toBeInTheDocument();
     // BottomTabBar Events link
-    expect(screen.getByRole("link", { name: /Events/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Evenements/ })).toBeInTheDocument();
   });
 
   it("renders MobileHeader without BottomTabBar when not authenticated", () => {
     setAuth(null);
     renderNavbar();
     expect(screen.getByText("TM")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Events/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Evenements/ })).not.toBeInTheDocument();
   });
 });

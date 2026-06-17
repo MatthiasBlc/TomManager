@@ -81,13 +81,13 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
         endDateTime: new Date(data.endDateTime).toISOString(),
         discordRoleId: data.discordRoleId.trim() || null,
       });
-      toast.success("Event updated!");
+      toast.success("Evenement mis a jour !");
       onUpdated();
       onClose();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to update event";
+          ?.message || "Echec de la mise a jour de l'evenement";
       toast.error(message);
     }
   };
@@ -95,19 +95,19 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
   if (!event) return null;
 
   return (
-    <ResponsiveModal open={open} onClose={onClose} title="Edit Event">
+    <ResponsiveModal open={open} onClose={onClose} title="Modifier l'evenement">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ee-name">
-            <span className="label-text">Name</span>
+            <span className="label-text">Nom</span>
           </label>
           <input
             id="ee-name"
             type="text"
             className="input input-bordered w-full"
             {...register("name", {
-              required: "Name is required",
-              maxLength: { value: 100, message: "Max 100 characters" },
+              required: "Le nom est obligatoire",
+              maxLength: { value: 100, message: "100 caracteres maximum" },
             })}
           />
           {errors.name && (
@@ -118,33 +118,33 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
         </div>
         <div className="form-control">
           <label className="label" htmlFor="ee-start">
-            <span className="label-text">Start</span>
+            <span className="label-text">Debut</span>
           </label>
           <input
             id="ee-start"
             type="datetime-local"
             className="input input-bordered w-full"
             {...register("startDateTime", {
-              required: "Start date is required",
+              required: "La date de debut est obligatoire",
             })}
           />
         </div>
         <div className="form-control">
           <label className="label" htmlFor="ee-end">
-            <span className="label-text">End</span>
+            <span className="label-text">Fin</span>
           </label>
           <input
             id="ee-end"
             type="datetime-local"
             className="input input-bordered w-full"
-            {...register("endDateTime", { required: "End date is required" })}
+            {...register("endDateTime", { required: "La date de fin est obligatoire" })}
           />
         </div>
         {user?.role === "ADMIN" && (
           <div className="form-control">
             <label className="label" htmlFor="ee-discord-role">
               <span className="label-text">Discord Role ID</span>
-              <span className="label-text-alt opacity-50">optional</span>
+              <span className="label-text-alt opacity-50">optionnel</span>
             </label>
             <input
               id="ee-discord-role"
@@ -154,7 +154,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
               {...register("discordRoleId", {
                 pattern: {
                   value: /^(\d{17,20})?$/,
-                  message: "Must be a Discord Snowflake (17-20 digits) or empty",
+                  message: "Doit etre un Discord Snowflake (17-20 chiffres) ou vide",
                 },
               })}
             />
@@ -177,10 +177,10 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
           )}
           <div className="flex gap-2 ml-auto">
             <button type="button" className="btn" onClick={onClose}>
-              Cancel
+              Annuler
             </button>
             <button type="submit" className="btn btn-primary">
-              Save
+              Enregistrer
             </button>
           </div>
         </div>

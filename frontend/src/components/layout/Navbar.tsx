@@ -15,9 +15,9 @@ function DesktopNavbar() {
     try {
       await logout();
       navigate("/");
-      toast.success("Logged out");
+      toast.success("Deconnecte");
     } catch {
-      toast.error("Logout failed");
+      toast.error("Echec de la deconnexion");
     }
   };
 
@@ -32,7 +32,7 @@ function DesktopNavbar() {
         {user && (
           <>
             <Link to="/events" className="btn btn-ghost btn-sm">
-              Events
+              Evenements
             </Link>
             <ConnectionStatus />
             <NotificationBell />
@@ -43,13 +43,13 @@ function DesktopNavbar() {
               <span className="text-sm opacity-70">{user.username}</span>
             </Link>
             <button onClick={handleLogout} className="btn btn-ghost btn-sm">
-              Logout
+              Se deconnecter
             </button>
           </>
         )}
         {!user && (
           <Link to="/login" className="btn btn-primary btn-sm">
-            Login
+            Connexion
           </Link>
         )}
       </div>

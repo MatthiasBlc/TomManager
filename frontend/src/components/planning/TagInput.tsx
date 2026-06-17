@@ -72,7 +72,7 @@ export default function TagInput({ value, onChange }: Props) {
               type="button"
               onClick={() => removeTag(tag)}
               className="text-xs"
-              aria-label={`Remove tag ${tag}`}
+              aria-label={`Retirer le tag ${tag}`}
             >
               x
             </button>
@@ -81,7 +81,7 @@ export default function TagInput({ value, onChange }: Props) {
         <input
           type="text"
           className="flex-1 min-w-[100px] outline-none bg-transparent text-sm"
-          placeholder={value.length === 0 ? "Add tags..." : ""}
+          placeholder={value.length === 0 ? "Ajouter des tags..." : ""}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}

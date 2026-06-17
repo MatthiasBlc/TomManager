@@ -32,29 +32,29 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
   const [filter, setFilter] = useState<FilterKey>("all");
 
   const handleRemove = async (userId: string) => {
-    if (!confirm("Remove this participant?")) return;
+    if (!confirm("Retirer ce participant ?")) return;
     try {
       await api.delete(`/api/events/${eventId}/participants/${userId}`);
-      toast.success("Participant removed");
+      toast.success("Participant retire");
       onChanged();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to remove participant";
+          ?.message || "Echec du retrait du participant";
       toast.error(message);
     }
   };
 
   const handleLeave = async () => {
-    if (!confirm("Leave this event?")) return;
+    if (!confirm("Quitter cet evenement ?")) return;
     try {
       await api.delete(`/api/events/${eventId}/participants/me`);
-      toast.success("You left the event");
+      toast.success("Vous avez quitte l'evenement");
       onChanged();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to leave event";
+          ?.message || "Echec en quittant l'evenement";
       toast.error(message);
     }
   };
@@ -80,8 +80,8 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
     return (
       <EmptyState
         icon={<span>👥</span>}
-        title="No participants yet"
-        description="Share the event link to invite people."
+        title="Aucun participant pour l'instant"
+        description="Partagez le lien de l'evenement pour inviter des gens."
       />
     );
   }
@@ -141,7 +141,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                     className="btn btn-ghost btn-sm text-error min-h-[44px]"
                     onClick={() => handleRemove(p.userId)}
                   >
-                    Remove
+                    Retirer
                   </button>
                 )}
               </div>
@@ -178,7 +178,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                           className="btn btn-ghost btn-xs text-error"
                           onClick={() => handleRemove(p.userId)}
                         >
-                          Remove
+                          Retirer
                         </button>
                       )}
                     </td>
@@ -199,7 +199,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       {!isCreator && user && (
         <div className="mt-4">
           <button className="btn btn-outline btn-error btn-sm" onClick={handleLeave}>
-            Leave event
+            Quitter l'evenement
           </button>
         </div>
       )}

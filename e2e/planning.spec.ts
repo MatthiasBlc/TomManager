@@ -7,7 +7,7 @@ async function loginAs(page: Page, email: string, password: string) {
   await page.goto("/login");
   await page.getByLabel(/email|identifiant/i).fill(email);
   await page.getByLabel(/mot de passe|password/i).fill(password);
-  await page.getByRole("button", { name: /^(connexion|login)$/i }).click();
+  await page.getByRole("button", { name: /^se connecter$/i }).click();
   await expect(page).toHaveURL(/\/events/);
 }
 
@@ -22,8 +22,8 @@ test.describe("Planning — tables", () => {
     // Aller sur l'onglet planning
     await page.getByRole("button", { name: "Planning", exact: true }).click();
 
-    // Clic sur "Create Table"
-    await page.getByRole("button", { name: /create table/i }).click();
+    // Clic sur "Creer une table"
+    await page.getByRole("button", { name: /creer une table/i }).click();
 
     // Remplir le formulaire
     await page.getByLabel(/titre/i).fill("Table E2E");
@@ -75,7 +75,7 @@ test.describe("Planning — tables", () => {
 
     await page.getByText("Table Rejoindre").click();
     await page.getByRole("button", { name: /rejoindre/i }).click();
-    await expect(page.getByText("Joined", { exact: true })).toBeVisible();
+    await expect(page.getByText("Inscrit", { exact: true })).toBeVisible();
 
     // Quitter (accepter le dialog confirm)
     page.once("dialog", (dialog) => dialog.accept());

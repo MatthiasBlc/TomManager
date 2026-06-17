@@ -51,13 +51,13 @@ export default function EventListPage() {
   return (
     <div className="container mx-auto px-4 py-4 md:py-8">
       <div className="flex items-center justify-between mb-4 md:mb-6">
-        <h1 className="text-xl font-bold md:text-2xl">Events</h1>
+        <h1 className="text-xl font-bold md:text-2xl">Evenements</h1>
         {user?.role === "ADMIN" && !isMobile && (
           <button
             className="btn btn-primary active:scale-95 transition-transform"
             onClick={() => setShowCreate(true)}
           >
-            Create Event
+            Creer un evenement
           </button>
         )}
       </div>
@@ -67,9 +67,9 @@ export default function EventListPage() {
       ) : events.length === 0 ? (
         <EmptyState
           icon={<span>📅</span>}
-          title="No events yet"
+          title="Aucun evenement pour l'instant"
           description={
-            user?.role === "ADMIN" ? "Create your first event to get started." : undefined
+            user?.role === "ADMIN" ? "Creez votre premier evenement pour commencer." : undefined
           }
         />
       ) : (
@@ -96,7 +96,7 @@ export default function EventListPage() {
       )}
 
       {user?.role === "ADMIN" && isMobile && (
-        <FAB onClick={() => setShowCreate(true)} label="Create Event" />
+        <FAB onClick={() => setShowCreate(true)} label="Creer un evenement" />
       )}
 
       <CreateEventModal

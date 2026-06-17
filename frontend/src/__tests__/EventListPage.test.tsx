@@ -45,7 +45,7 @@ describe("EventListPage", () => {
     useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });
     renderWithRouter(<EventListPage />);
 
-    expect(await screen.findByText("No events yet")).toBeInTheDocument();
+    expect(await screen.findByText("Aucun evenement pour l'instant")).toBeInTheDocument();
   });
 
   it("shows Create Event button only for ADMIN on desktop", async () => {
@@ -54,7 +54,7 @@ describe("EventListPage", () => {
     useIsMobileMock.mockReturnValue(false);
     renderWithRouter(<EventListPage />);
 
-    expect(await screen.findByRole("button", { name: "Create Event" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Creer un evenement" })).toBeInTheDocument();
   });
 
   it("does not show Create Event button for regular users", async () => {
@@ -62,8 +62,8 @@ describe("EventListPage", () => {
     useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });
     renderWithRouter(<EventListPage />);
 
-    await screen.findByText("No events yet");
-    expect(screen.queryByRole("button", { name: "Create Event" })).not.toBeInTheDocument();
+    await screen.findByText("Aucun evenement pour l'instant");
+    expect(screen.queryByRole("button", { name: "Creer un evenement" })).not.toBeInTheDocument();
   });
 
   it("uses FAB button for create on mobile instead of top button", async () => {
@@ -72,10 +72,10 @@ describe("EventListPage", () => {
     useIsMobileMock.mockReturnValue(true);
     renderWithRouter(<EventListPage />);
 
-    await screen.findByText("No events yet");
+    await screen.findByText("Aucun evenement pour l'instant");
     // On mobile, FAB is visible (renders from AppLayout/FAB integration)
     // Just verify page renders properly
-    expect(screen.getByText("Events")).toBeInTheDocument();
+    expect(screen.getByText("Evenements")).toBeInTheDocument();
   });
 
   it("renders events as links to their detail page", async () => {

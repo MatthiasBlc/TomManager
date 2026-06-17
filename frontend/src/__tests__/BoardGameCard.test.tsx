@@ -20,7 +20,7 @@ describe("BoardGameCard", () => {
 
   it("renders player count and duration", () => {
     render(<BoardGameCard game={baseGame} broughtBy={[]} />);
-    expect(screen.getByText("3-4 players")).toBeInTheDocument();
+    expect(screen.getByText("3-4 joueurs")).toBeInTheDocument();
     expect(screen.getByText("120 min")).toBeInTheDocument();
   });
 
@@ -35,7 +35,7 @@ describe("BoardGameCard", () => {
         currentUserId="user1"
       />
     );
-    const btn = screen.getByRole("button", { name: /Remove Catan/i });
+    const btn = screen.getByRole("button", { name: /Retirer Catan/i });
     fireEvent.click(btn);
     expect(onRemove).toHaveBeenCalledWith("entry1");
   });
@@ -113,7 +113,7 @@ describe("BoardGameCard", () => {
         onClick={onClick}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /Remove Catan/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Retirer Catan/i }));
     expect(onRemove).toHaveBeenCalledWith("entry1");
     expect(onClick).not.toHaveBeenCalled();
   });

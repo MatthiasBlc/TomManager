@@ -30,7 +30,7 @@ export default function ConnectionStatus() {
   return (
     <span
       className={`badge badge-xs ${connected ? "badge-success" : "badge-error"}`}
-      title={connected ? "Connected" : "Disconnected"}
+      title={connected ? "Connecte" : "Deconnecte"}
     />
   );
 }

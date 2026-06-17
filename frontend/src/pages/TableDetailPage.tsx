@@ -55,7 +55,7 @@ export default function TableDetailPage() {
       const res = await api.get(`/api/events/${eventId}/tables/${tableId}`);
       setTable(res.data.data);
     } catch {
-      toast.error("Failed to load table");
+      toast.error("Echec du chargement de la table");
       navigate(`/events/${eventId}/planning`);
     } finally {
       setLoading(false);
@@ -80,46 +80,46 @@ export default function TableDetailPage() {
     try {
       const res = await api.post(`/api/events/${eventId}/tables/${tableId}/join`);
       const status = res.data.data.status;
-      toast.success(status === "CONFIRMED" ? "Joined!" : "Added to waitlist");
+      toast.success(status === "CONFIRMED" ? "Inscrit !" : "Ajoute sur la liste d'attente");
       fetchTable();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to join";
+          ?.message || "Echec de l'inscription";
       toast.error(message);
     }
   };
 
   const handleLeave = async () => {
-    if (!confirm("Leave this table?")) return;
+    if (!confirm("Quitter cette table ?")) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${tableId}/leave`);
-      toast.success("Left table");
+      toast.success("Vous avez quitte la table");
       fetchTable();
     } catch {
-      toast.error("Failed to leave table");
+      toast.error("Echec en quittant la table");
     }
   };
 
   const handleKick = async (userId: string, username: string) => {
-    if (!confirm(`Remove ${username} from this table?`)) return;
+    if (!confirm(`Retirer ${username} de cette table ?`)) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${tableId}/participants/${userId}`);
-      toast.success(`${username} removed`);
+      toast.success(`${username} retire de la table`);
       fetchTable();
     } catch {
-      toast.error("Failed to remove player");
+      toast.error("Erreur lors du retrait du joueur");
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm("Delete this table? This cannot be undone.")) return;
+    if (!confirm("Supprimer cette table ? Cette action est irreversible.")) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${tableId}`);
-      toast.success("Table deleted");
+      toast.success("Table supprimee");
       navigate(`/events/${eventId}/planning`);
     } catch {
-      toast.error("Failed to delete table");
+      toast.error("Echec de la suppression de la table");
     }
   };
 
@@ -149,13 +149,13 @@ export default function TableDetailPage() {
           className="btn btn-ghost btn-sm mb-4"
           onClick={() => navigate(`/events/${eventId}/planning`)}
         >
-          &larr; Back to planning
+          &larr; Retour au planning
         </button>
       )}
 
       <div className="mb-4 md:mb-6">
         <h1 className="text-lg font-bold md:text-2xl">{table.title}</h1>
-        <p className="text-xs opacity-70 mt-1 md:text-sm">GM: {table.creator.username}</p>
+        <p className="text-xs opacity-70 mt-1 md:text-sm">MJ : {table.creator.username}</p>
         <p className="text-xs opacity-70 md:text-sm">
           {formatDateTime(table.startDateTime)} - {formatDateTime(table.endDateTime)}
         </p>
@@ -193,7 +193,7 @@ export default function TableDetailPage() {
         {table.comments && (
           <div className="card bg-base-100 shadow-sm">
             <div className="card-body p-3 md:p-4">
-              <h3 className="font-semibold text-sm">Comments</h3>
+              <h3 className="font-semibold text-sm">Commentaires</h3>
               <p className="whitespace-pre-wrap text-sm">{table.comments}</p>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function TableDetailPage() {
               Participants ({confirmedCount}/{table.maxPlayers})
             </h3>
             {confirmedCount === 0 ? (
-              <EmptyState icon={<span>👥</span>} title="No participants yet" />
+              <EmptyState icon={<span>👥</span>} title="Aucun participant pour l'instant" />
             ) : isMobile ? (
               <div className="space-y-2">
                 {table.participants
@@ -218,7 +218,7 @@ export default function TableDetailPage() {
                           className="btn btn-ghost btn-sm text-error min-h-[44px]"
                           onClick={() => handleKick(p.userId, p.username)}
                         >
-                          Remove
+                          Retirer
                         </button>
                       )}
                     </div>
@@ -229,7 +229,7 @@ export default function TableDetailPage() {
                 <table className="table table-sm">
                   <thead>
                     <tr>
-                      <th>Player</th>
+                      <th>Joueur</th>
                       {canEdit && <th>Actions</th>}
                     </tr>
                   </thead>
@@ -245,7 +245,7 @@ export default function TableDetailPage() {
                                 className="btn btn-ghost btn-xs text-error"
                                 onClick={() => handleKick(p.userId, p.username)}
                               >
-                                Remove
+                                Retirer
                               </button>
                             </td>
                           )}
@@ -262,7 +262,7 @@ export default function TableDetailPage() {
           <div className="card bg-base-100 shadow-sm border-l-4 border-warning">
             <div className="card-body p-3 md:p-4">
               <h3 className="font-semibold text-sm mb-2">
-                Waitlist ({table.participants.filter((p) => p.status === "WAITLIST").length})
+                Liste d'attente ({table.participants.filter((p) => p.status === "WAITLIST").length})
               </h3>
               {isMobile ? (
                 <div className="space-y-2">
@@ -276,7 +276,7 @@ export default function TableDetailPage() {
                             className="btn btn-ghost btn-sm text-error min-h-[44px]"
                             onClick={() => handleKick(p.userId, p.username)}
                           >
-                            Remove
+                            Retirer
                           </button>
                         )}
                       </div>
@@ -287,7 +287,7 @@ export default function TableDetailPage() {
                   <table className="table table-sm">
                     <thead>
                       <tr>
-                        <th>Player</th>
+                        <th>Joueur</th>
                         {canEdit && <th>Actions</th>}
                       </tr>
                     </thead>
@@ -303,7 +303,7 @@ export default function TableDetailPage() {
                                   className="btn btn-ghost btn-xs text-error"
                                   onClick={() => handleKick(p.userId, p.username)}
                                 >
-                                  Remove
+                                  Retirer
                                 </button>
                               </td>
                             )}
@@ -322,7 +322,7 @@ export default function TableDetailPage() {
       <div className="sticky bottom-20 mt-4 flex gap-2 md:static md:mt-6 md:bottom-auto">
         {!isGM && !currentParticipant && (
           <button className="btn btn-primary flex-1 md:flex-none md:btn-sm" onClick={handleJoin}>
-            Join
+            Rejoindre
           </button>
         )}
         {currentParticipant && (
@@ -330,7 +330,7 @@ export default function TableDetailPage() {
             className="btn btn-outline btn-warning flex-1 md:flex-none md:btn-sm"
             onClick={handleLeave}
           >
-            Leave
+            Quitter
           </button>
         )}
         {canEdit && (
@@ -339,13 +339,13 @@ export default function TableDetailPage() {
               className="btn btn-outline flex-1 md:flex-none md:btn-sm"
               onClick={() => setShowEdit(true)}
             >
-              Edit
+              Modifier
             </button>
             <button
               className="btn btn-outline btn-error flex-1 md:flex-none md:btn-sm"
               onClick={handleDelete}
             >
-              Delete
+              Supprimer
             </button>
           </>
         )}

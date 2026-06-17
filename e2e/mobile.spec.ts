@@ -11,7 +11,7 @@ test.describe("Navigation mobile", () => {
     await page.goto("/login");
     await page.getByLabel(/email|identifiant/i).fill(admin.email);
     await page.getByLabel(/mot de passe|password/i).fill(admin.password);
-    await page.getByRole("button", { name: /^(connexion|login)$/i }).click();
+    await page.getByRole("button", { name: /^se connecter$/i }).click();
     await expect(page).toHaveURL(/\/events/);
 
     await page.goto(`/events/${event.id}`);
@@ -22,9 +22,9 @@ test.describe("Navigation mobile", () => {
 
     // Naviguer vers l'onglet Planning
     await tabBar.getByText(/planning/i).click();
-    // En mobile, le bouton desktop "Create Table" n'est pas rendu :
-    // seul le FAB (aria-label="Create Table") est present.
-    const fab = page.locator("[aria-label='Create Table']");
+    // En mobile, le bouton desktop "Creer une table" n'est pas rendu :
+    // seul le FAB (aria-label="Creer une table") est present.
+    const fab = page.locator("[aria-label='Creer une table']");
     await expect(fab).toBeVisible();
     await expect(fab).toHaveClass(/fixed/); // garantit que c'est bien le FAB positionne fixed
   });

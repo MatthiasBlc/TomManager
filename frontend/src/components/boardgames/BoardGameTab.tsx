@@ -66,7 +66,7 @@ export default function BoardGameTab({ eventId }: Props) {
       const res = await api.get(`/api/events/${eventId}/boardgames`);
       setEntries(res.data.data);
     } catch {
-      toast.error("Failed to load board games");
+      toast.error("Echec du chargement des jeux");
     } finally {
       setLoading(false);
     }
@@ -84,10 +84,10 @@ export default function BoardGameTab({ eventId }: Props) {
   const handleRemove = async (entryId: string) => {
     try {
       await api.delete(`/api/events/${eventId}/boardgames/${entryId}`);
-      toast.success("Board game removed");
+      toast.success("Jeu retire");
       fetchEntries();
     } catch {
-      toast.error("Failed to remove board game");
+      toast.error("Echec du retrait du jeu");
     }
   };
 
@@ -137,20 +137,20 @@ export default function BoardGameTab({ eventId }: Props) {
             className={`tab tab-sm ${tab === "all" ? "tab-active" : ""}`}
             onClick={() => setTab("all")}
           >
-            All {!loading && `(${entries.length})`}
+            Tous les jeux {!loading && `(${entries.length})`}
           </button>
           <button
             className={`tab tab-sm ${tab === "mine" ? "tab-active" : ""}`}
             onClick={() => setTab("mine")}
           >
-            My List {!loading && `(${entries.filter((e) => e.broughtBy.id === user?.id).length})`}
+            Mes jeux {!loading && `(${entries.filter((e) => e.broughtBy.id === user?.id).length})`}
           </button>
         </div>
         <button
           className="btn btn-primary btn-sm active:scale-95 transition-transform"
           onClick={() => setShowAdd(true)}
         >
-          Add Game
+          Ajouter un jeu
         </button>
       </div>
 
@@ -203,7 +203,7 @@ export default function BoardGameTab({ eventId }: Props) {
           onClickGame={handleClickGame}
           currentUserId={user?.id}
           isAdmin={user?.role === "ADMIN"}
-          emptyDescription={tab === "mine" ? "You haven't added any games yet." : undefined}
+          emptyDescription={tab === "mine" ? "Vous n'avez pas encore ajoute de jeux." : undefined}
         />
       )}
 
