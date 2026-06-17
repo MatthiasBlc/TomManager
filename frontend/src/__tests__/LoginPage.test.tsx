@@ -112,7 +112,9 @@ describe("LoginPage", () => {
     apiGetMock.mockRejectedValueOnce({ response: { status: 503 } });
     renderLogin();
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: /se connecter avec discord/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /se connecter avec discord/i })
+      ).not.toBeInTheDocument();
     });
   });
 
