@@ -164,7 +164,7 @@ export default function TableDetailModal({
       await api.patch(`/api/events/${eventId}/tables/${table.id}/participants/${userId}/status`, {
         status: "WAITLIST",
       });
-      toast.success("Joueur rétrogradé");
+      toast.success("Joueur retrograde");
       fetchTable();
       onTableUpdated();
     } catch {

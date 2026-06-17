@@ -71,13 +71,13 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
 
     // Attendre que les participants soient charges (toBeVisible retente automatiquement)
     await expect(
-      page.getByRole("button", { name: /promouvoir|retrograder/i }).first()
+      page.getByRole("button", { name: /ajouter a la table|mettre sur liste/i }).first()
     ).toBeVisible();
 
-    // GM doit voir au moins un bouton Promouvoir ou Retrograder
+    // GM doit voir au moins un bouton Ajouter a la table ou Mettre sur liste d'attente
     const promoteOrDemoteGM =
-      (await page.getByRole("button", { name: /promouvoir/i }).count()) +
-      (await page.getByRole("button", { name: /retrograder/i }).count());
+      (await page.getByRole("button", { name: /ajouter a la table/i }).count()) +
+      (await page.getByRole("button", { name: /mettre sur liste/i }).count());
     expect(promoteOrDemoteGM).toBeGreaterThan(0);
 
     await page.keyboard.press("Escape");
@@ -94,8 +94,8 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     // Attendre que le contenu soit charge (le badge de statut est toujours visible)
     await expect(playerPage.getByText(/CONFIRMED|WAITLIST/i).first()).toBeVisible();
 
-    expect(await playerPage.getByRole("button", { name: /promouvoir/i }).count()).toBe(0);
-    expect(await playerPage.getByRole("button", { name: /retrograder/i }).count()).toBe(0);
+    expect(await playerPage.getByRole("button", { name: /ajouter a la table/i }).count()).toBe(0);
+    expect(await playerPage.getByRole("button", { name: /mettre sur liste/i }).count()).toBe(0);
 
     await playerCtx.close();
   });
@@ -125,11 +125,11 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     await page.getByText(tableTitle).click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
-    // Cliquer Promouvoir (un seul bouton visible — les deux joueurs sont en WAITLIST apres la retrograde)
+    // Cliquer Ajouter a la table (les deux joueurs sont en WAITLIST apres la retrograde)
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("button", { name: /promouvoir/i }).first()).toBeVisible();
+    await expect(dialog.getByRole("button", { name: /ajouter a la table/i }).first()).toBeVisible();
     await dialog
-      .getByRole("button", { name: /promouvoir/i })
+      .getByRole("button", { name: /ajouter a la table/i })
       .first()
       .click();
 
@@ -148,9 +148,11 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     await page.getByText(tableTitle).click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
-    // La table est pleine (1/1), le bouton Promouvoir du joueur WAITLIST doit etre desactive
+    // La table est pleine (1/1), le bouton Ajouter a la table du joueur WAITLIST doit etre desactive
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("button", { name: /promouvoir/i }).first()).toBeDisabled();
+    await expect(
+      dialog.getByRole("button", { name: /ajouter a la table/i }).first()
+    ).toBeDisabled();
   });
 
   test("GM demote un joueur confirme, le suivant en waitlist ne bouge pas", async ({ page }) => {
@@ -167,16 +169,16 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     await page.getByText(tableTitle).click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
-    // Retrograder player1 (seul CONFIRMED dans la table)
+    // Mettre sur liste d'attente player1 (seul CONFIRMED dans la table)
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("button", { name: /retrograder/i }).first()).toBeVisible();
+    await expect(dialog.getByRole("button", { name: /mettre sur liste/i }).first()).toBeVisible();
     await dialog
-      .getByRole("button", { name: /retrograder/i })
+      .getByRole("button", { name: /mettre sur liste/i })
       .first()
       .click();
 
     // Toast de succes
-    await expect(page.getByText(/retrograd/i)).toBeVisible();
+    await expect(page.getByText(/retrograde/i)).toBeVisible();
 
     // player2 doit toujours etre WAITLIST (pas de promotion automatique) — verification cote serveur
     const detail = await (
