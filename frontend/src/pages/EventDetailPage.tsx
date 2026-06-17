@@ -142,7 +142,7 @@ export default function EventDetailPage() {
             className={`tab ${tab === "games" ? "tab-active" : ""}`}
             onClick={() => setTab("games")}
           >
-            Games
+            Jeux de societe
           </button>
           <button
             className={`tab ${tab === "participants" ? "tab-active" : ""}`}
