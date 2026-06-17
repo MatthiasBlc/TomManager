@@ -77,8 +77,8 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    expect(screen.getByText("No Discord account linked")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Link Discord/i })).toBeInTheDocument();
+    expect(screen.getByText("Aucun compte Discord lie")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Lier/i })).toBeInTheDocument();
   });
 
   it("shows Discord unlink button when account is linked", () => {
@@ -93,7 +93,7 @@ describe("ProfilePage", () => {
     });
     renderWithRouter(<ProfilePage />);
     expect(screen.getByText("AliceDiscord")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Unlink/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Delier/i })).toBeInTheDocument();
   });
 
   it("calls initiateDiscordLogin when Link Discord button is clicked", async () => {
@@ -104,7 +104,7 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Lier/i }));
     await waitFor(() => {
       expect(initiateDiscordLoginMock).toHaveBeenCalledWith("/profile");
     });
@@ -123,7 +123,7 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    fireEvent.click(screen.getByRole("button", { name: /Unlink/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Delier/i }));
     await waitFor(() => {
       expect(unlinkDiscordMock).toHaveBeenCalled();
       expect(toastSuccess).toHaveBeenCalled();
@@ -138,9 +138,9 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Lier/i }));
     await waitFor(() => {
-      expect(toastSuccess).toHaveBeenCalledWith("Discord account linked!");
+      expect(toastSuccess).toHaveBeenCalledWith("Compte Discord lie !");
     });
   });
 
@@ -152,7 +152,7 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Lier/i }));
     await waitFor(() => {
       expect(initiateDiscordLoginMock).toHaveBeenCalled();
     });
@@ -168,10 +168,10 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Lier/i }));
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith(
-        "This Discord account is already linked to another user"
+        "Ce compte Discord est deja lie a un autre utilisateur"
       );
     });
   });
@@ -184,9 +184,9 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    fireEvent.click(screen.getByRole("button", { name: /Link Discord/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Lier/i }));
     await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith("Discord login unavailable");
+      expect(toastError).toHaveBeenCalledWith("Connexion Discord indisponible");
     });
   });
 
@@ -202,7 +202,7 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    const unlinkBtn = screen.getByRole("button", { name: /Unlink/i });
+    const unlinkBtn = screen.getByRole("button", { name: /Delier/i });
     expect(unlinkBtn).toBeDisabled();
   });
 });

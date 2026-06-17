@@ -53,21 +53,21 @@ describe("TableCard", () => {
 
   it("renders the waitlist badge when waitlistCount > 0", () => {
     render(<TableCard table={{ ...baseTable, waitlistCount: 2 }} onClick={() => {}} />);
-    expect(screen.getByText("+2 waitlist")).toBeInTheDocument();
+    expect(screen.getByText("+2 en attente")).toBeInTheDocument();
   });
 
   it("renders the Joined badge when currentUserStatus is CONFIRMED", () => {
     render(
       <TableCard table={{ ...baseTable, currentUserStatus: "CONFIRMED" }} onClick={() => {}} />
     );
-    expect(screen.getByText("Joined")).toBeInTheDocument();
+    expect(screen.getByText("Inscrit")).toBeInTheDocument();
   });
 
   it("renders the Waitlist badge when currentUserStatus is WAITLIST", () => {
     render(
       <TableCard table={{ ...baseTable, currentUserStatus: "WAITLIST" }} onClick={() => {}} />
     );
-    expect(screen.getByText("Waitlist")).toBeInTheDocument();
+    expect(screen.getByText("Liste d'attente")).toBeInTheDocument();
   });
 
   it("renders a conflict badge when currentUserConflict is true", () => {

@@ -63,7 +63,7 @@ export default function BoardGameCard({
                 <div className="text-sm opacity-70 space-x-3">
                   {game.minPlayers != null && game.maxPlayers != null && (
                     <span>
-                      {game.minPlayers}-{game.maxPlayers} players
+                      {game.minPlayers}-{game.maxPlayers} joueurs
                     </span>
                   )}
                   {game.playingTime != null && <span>{game.playingTime} min</span>}
@@ -94,9 +94,9 @@ export default function BoardGameCard({
                       e.stopPropagation();
                       onRemove!(entryToRemove.entryId);
                     }}
-                    aria-label={`Remove ${game.name}`}
+                    aria-label={`Retirer ${game.name}`}
                   >
-                    Remove
+                    Retirer
                   </button>
                 )}
               </div>

@@ -12,8 +12,8 @@ export default function TimelineView({ tables, onTableClick }: Props) {
     return (
       <EmptyState
         icon={<span>🎯</span>}
-        title="No tables yet"
-        description="Be the first to create one!"
+        title="Aucune table pour l'instant"
+        description="Soyez le premier a en creer une !"
       />
     );
   }

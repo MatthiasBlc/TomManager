@@ -47,7 +47,7 @@ describe("ConnectionStatus", () => {
     const { container } = render(<ConnectionStatus />);
     const badge = container.querySelector(".badge");
     expect(badge).toHaveClass("badge-error");
-    expect(badge).toHaveAttribute("title", "Disconnected");
+    expect(badge).toHaveAttribute("title", "Deconnecte");
   });
 
   it("renders a success badge when the socket is initially connected", () => {
@@ -55,7 +55,7 @@ describe("ConnectionStatus", () => {
     const { container } = render(<ConnectionStatus />);
     const badge = container.querySelector(".badge");
     expect(badge).toHaveClass("badge-success");
-    expect(badge).toHaveAttribute("title", "Connected");
+    expect(badge).toHaveAttribute("title", "Connecte");
   });
 
   it("updates when the socket emits connect / disconnect events", () => {

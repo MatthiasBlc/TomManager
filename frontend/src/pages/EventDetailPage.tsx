@@ -49,7 +49,7 @@ export default function EventDetailPage() {
       const res = await api.get(`/api/events/${eventId}`);
       setEvent(res.data.data);
     } catch {
-      toast.error("Failed to load event");
+      toast.error("Echec du chargement de l'evenement");
       navigate("/events");
     } finally {
       setLoading(false);
@@ -61,13 +61,13 @@ export default function EventDetailPage() {
   }, [fetchEvent]);
 
   const handleDelete = async () => {
-    if (!confirm("Delete this event? This cannot be undone.")) return;
+    if (!confirm("Supprimer cet evenement ? Cette action est irreversible.")) return;
     try {
       await api.delete(`/api/events/${eventId}`);
-      toast.success("Event deleted");
+      toast.success("Evenement supprime");
       navigate("/events");
     } catch {
-      toast.error("Failed to delete event");
+      toast.error("Echec de la suppression de l'evenement");
     }
   };
 
@@ -110,14 +110,14 @@ export default function EventDetailPage() {
         {canManageEvent && (
           <div className="flex flex-wrap gap-2 ml-2 shrink-0">
             <button className="btn btn-outline btn-sm" onClick={() => setShowEdit(true)}>
-              Edit
+              Modifier
             </button>
             <button className="btn btn-outline btn-error btn-sm" onClick={handleDelete}>
-              Delete
+              Supprimer
             </button>
             {isAdmin && gameDbEnabled && (
               <button className="btn btn-outline btn-sm" onClick={() => setShowGameDb(true)}>
-                Manage game database
+                Gerer la base de jeux
               </button>
             )}
           </div>
@@ -130,7 +130,7 @@ export default function EventDetailPage() {
             className={`tab ${tab === "info" ? "tab-active" : ""}`}
             onClick={() => setTab("info")}
           >
-            Info
+            Infos
           </button>
           <button
             className={`tab ${tab === "planning" ? "tab-active" : ""}`}
@@ -160,13 +160,13 @@ export default function EventDetailPage() {
               <h2 className="card-title text-base md:text-lg">{event.name}</h2>
               <div className="space-y-2 text-sm">
                 <p>
-                  <span className="font-medium">Start:</span> {formatDate(event.startDateTime)}
+                  <span className="font-medium">Debut :</span> {formatDate(event.startDateTime)}
                 </p>
                 <p>
-                  <span className="font-medium">End:</span> {formatDate(event.endDateTime)}
+                  <span className="font-medium">Fin :</span> {formatDate(event.endDateTime)}
                 </p>
                 <p>
-                  <span className="font-medium">Participants:</span> {event.participants.length}
+                  <span className="font-medium">Participants :</span> {event.participants.length}
                 </p>
               </div>
             </div>

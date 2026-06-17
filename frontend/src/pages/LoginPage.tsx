@@ -6,11 +6,11 @@ import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
 
 const DISCORD_ERROR_MESSAGES: Record<string, string> = {
-  discord_denied: "Discord login cancelled",
-  invalid_state: "Session expired, please try again",
-  not_in_guild: "You must be a member of the Discord server",
-  account_disabled: "This account has been disabled",
-  discord_token_exchange: "Discord authentication failed, please try again",
+  discord_denied: "Connexion Discord annulee",
+  invalid_state: "Session expiree, veuillez reessayer",
+  not_in_guild: "Vous devez etre membre du serveur Discord",
+  account_disabled: "Ce compte a ete desactive",
+  discord_token_exchange: "Echec de l'authentification Discord, veuillez reessayer",
 };
 
 interface LoginForm {
@@ -68,7 +68,7 @@ export default function LoginPage() {
       // Si redirect : la page navigue, on n'arrive jamais ici
     } catch (err) {
       const errorKey = (err as Error).message;
-      const message = DISCORD_ERROR_MESSAGES[errorKey] ?? "Discord login unavailable";
+      const message = DISCORD_ERROR_MESSAGES[errorKey] ?? "Connexion Discord indisponible";
       toast.error(message);
     }
   };
@@ -76,10 +76,10 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await login(data.identifier, data.password);
-      toast.success("Logged in!");
+      toast.success("Connexion reussie !");
       await redirectAfterLogin(from);
     } catch {
-      toast.error("Invalid credentials");
+      toast.error("Identifiants invalides");
     }
   };
 
@@ -87,12 +87,12 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-base-200 px-4">
       <div className="card w-full bg-base-100 shadow-xl sm:max-w-sm">
         <div className="card-body">
-          <h2 className="card-title justify-center">Login</h2>
+          <h2 className="card-title justify-center">Connexion</h2>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="form-control">
               <label className="label" htmlFor="login-identifier">
-                <span className="label-text">Email or username</span>
+                <span className="label-text">Email ou nom d'utilisateur</span>
               </label>
               <input
                 id="login-identifier"
@@ -104,7 +104,7 @@ export default function LoginPage() {
             </div>
             <div className="form-control">
               <label className="label" htmlFor="login-password">
-                <span className="label-text">Password</span>
+                <span className="label-text">Mot de passe</span>
               </label>
               <input
                 id="login-password"
@@ -114,13 +114,13 @@ export default function LoginPage() {
               />
             </div>
             <button type="submit" className="btn btn-primary btn-block">
-              Login
+              Se connecter
             </button>
           </form>
 
           {discordAvailable && (
             <>
-              <div className="divider text-xs opacity-50">or</div>
+              <div className="divider text-xs opacity-50">ou</div>
               <button
                 type="button"
                 className="btn btn-outline btn-block gap-2"
@@ -129,7 +129,7 @@ export default function LoginPage() {
                 <svg width="20" height="20" viewBox="0 0 127.14 96.36" fill="currentColor">
                   <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
                 </svg>
-                Login with Discord
+                Se connecter avec Discord
               </button>
             </>
           )}

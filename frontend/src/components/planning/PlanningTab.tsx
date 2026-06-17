@@ -58,7 +58,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
       const res = await api.get(`/api/events/${eventId}/tables`);
       setTables(res.data.data);
     } catch {
-      toast.error("Failed to load tables");
+      toast.error("Echec du chargement des tables");
     } finally {
       setLoading(false);
     }
@@ -177,7 +177,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
                   d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
                 />
               </svg>
-              Export PDF
+              Exporter en PDF
             </button>
           )}
           {!isMobile && (
@@ -188,7 +188,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
                 setShowCreate(true);
               }}
             >
-              Create Table
+              Creer une table
             </button>
           )}
         </div>
@@ -220,7 +220,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
               setCreateSlot(undefined);
               setShowCreate(true);
             }}
-            label="Create Table"
+            label="Creer une table"
           />
         </div>
       )}

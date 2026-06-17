@@ -104,7 +104,7 @@ describe("computeLayout", () => {
 describe("TimelineView", () => {
   it("renders the empty state when no tables", () => {
     render(<TimelineView tables={[]} onTableClick={vi.fn()} />);
-    expect(screen.getByText("No tables yet")).toBeInTheDocument();
+    expect(screen.getByText("Aucune table pour l'instant")).toBeInTheDocument();
   });
 
   it("renders one card per table", () => {

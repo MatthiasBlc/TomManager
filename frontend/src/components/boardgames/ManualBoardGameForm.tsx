@@ -24,13 +24,13 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
       <div className="form-control">
         <label className="label" htmlFor="mbg-name">
-          <span className="label-text">Name</span>
+          <span className="label-text">Nom</span>
         </label>
         <input
           id="mbg-name"
           type="text"
           className="input input-bordered"
-          {...register("name", { required: "Name is required" })}
+          {...register("name", { required: "Le nom est obligatoire" })}
         />
         {errors.name && (
           <label className="label">
@@ -42,7 +42,7 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <div className="form-control">
           <label className="label" htmlFor="mbg-year">
-            <span className="label-text">Year</span>
+            <span className="label-text">Annee</span>
           </label>
           <input
             id="mbg-year"
@@ -53,7 +53,7 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
         </div>
         <div className="form-control">
           <label className="label" htmlFor="mbg-playingTime">
-            <span className="label-text">Playing Time (min)</span>
+            <span className="label-text">Duree (min)</span>
           </label>
           <input
             id="mbg-playingTime"
@@ -67,7 +67,7 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <div className="form-control">
           <label className="label" htmlFor="mbg-minPlayers">
-            <span className="label-text">Min Players</span>
+            <span className="label-text">Joueurs min</span>
           </label>
           <input
             id="mbg-minPlayers"
@@ -79,7 +79,7 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
         </div>
         <div className="form-control">
           <label className="label" htmlFor="mbg-maxPlayers">
-            <span className="label-text">Max Players</span>
+            <span className="label-text">Joueurs max</span>
           </label>
           <input
             id="mbg-maxPlayers"
@@ -93,10 +93,10 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
 
       <div className="flex justify-end gap-2 mt-4">
         <button type="button" className="btn btn-sm" onClick={onCancel}>
-          Back to search
+          Retour a la recherche
         </button>
         <button type="submit" className="btn btn-primary btn-sm">
-          Create & Add
+          Creer et ajouter
         </button>
       </div>
     </form>

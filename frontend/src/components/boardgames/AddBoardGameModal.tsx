@@ -36,13 +36,13 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
   const addToEvent = async (boardGameId: string) => {
     try {
       await api.post(`/api/events/${eventId}/boardgames`, { boardGameId });
-      toast.success("Board game added!");
+      toast.success("Jeu ajoute !");
       onAdded();
       handleClose();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to add board game";
+          ?.message || "Echec de l'ajout du jeu";
       toast.error(message);
     }
   };
@@ -64,7 +64,7 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
         });
         await addToEvent(res.data.data.id);
       } catch {
-        toast.error("Failed to import from BGG");
+        toast.error("Echec de l'import depuis BGG");
       }
     }
   };
@@ -81,19 +81,19 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
       await addToEvent(res.data.data.id);
       setMode("search");
     } catch {
-      toast.error("Failed to create board game");
+      toast.error("Echec de la creation du jeu");
     }
   };
 
   return (
-    <ResponsiveModal open={open} onClose={handleClose} title="Add Board Game">
+    <ResponsiveModal open={open} onClose={handleClose} title="Ajouter un jeu">
       <div className="p-4 md:p-0 md:mt-4">
         {mode === "search" ? (
           <>
             <BoardGameSearchInput onSelect={handleSelect} />
-            <div className="divider text-sm opacity-50">or</div>
+            <div className="divider text-sm opacity-50">ou</div>
             <button className="btn btn-outline btn-sm w-full" onClick={() => setMode("manual")}>
-              Create manually
+              Creer manuellement
             </button>
           </>
         ) : (
@@ -102,7 +102,7 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
 
         <div className="flex justify-end pt-4">
           <button className="btn" onClick={handleClose}>
-            Close
+            Fermer
           </button>
         </div>
       </div>

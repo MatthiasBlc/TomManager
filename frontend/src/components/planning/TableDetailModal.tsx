@@ -87,7 +87,7 @@ export default function TableDetailModal({
       const res = await api.get(`/api/events/${eventId}/tables/${tableId}`);
       setTable(res.data.data);
     } catch {
-      toast.error("Failed to load table");
+      toast.error("Echec du chargement de la table");
       onClose();
     } finally {
       setLoading(false);
@@ -117,27 +117,27 @@ export default function TableDetailModal({
     try {
       const res = await api.post(`/api/events/${eventId}/tables/${table.id}/join`);
       const status = res.data.data.status;
-      toast.success(status === "CONFIRMED" ? "Joined!" : "Added to waitlist");
+      toast.success(status === "CONFIRMED" ? "Inscrit !" : "Ajoute sur la liste d'attente");
       fetchTable();
       onTableUpdated();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to join";
+          ?.message || "Echec de l'inscription";
       toast.error(message);
     }
   };
 
   const handleLeave = async () => {
     if (!table) return;
-    if (!confirm("Leave this table?")) return;
+    if (!confirm("Quitter cette table ?")) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}/leave`);
-      toast.success("Left table");
+      toast.success("Vous avez quitte la table");
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Failed to leave table");
+      toast.error("Echec en quittant la table");
     }
   };
 
@@ -153,7 +153,7 @@ export default function TableDetailModal({
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Failed to promote player";
+          ?.message || "Echec lors de l'ajout a la table";
       toast.error(message);
     }
   };
@@ -168,33 +168,33 @@ export default function TableDetailModal({
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Failed to demote player");
+      toast.error("Erreur lors du passage en liste d'attente");
     }
   };
 
   const handleKick = async (userId: string, username: string) => {
     if (!table) return;
-    if (!confirm(`Remove ${username} from this table?`)) return;
+    if (!confirm(`Retirer ${username} de cette table ?`)) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}/participants/${userId}`);
-      toast.success(`${username} removed`);
+      toast.success(`${username} retire de la table`);
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Failed to remove player");
+      toast.error("Erreur lors du retrait du joueur");
     }
   };
 
   const handleDelete = async () => {
     if (!table) return;
-    if (!confirm("Delete this table? This cannot be undone.")) return;
+    if (!confirm("Supprimer cette table ? Cette action est irreversible.")) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}`);
-      toast.success("Table deleted");
+      toast.success("Table supprimee");
       onTableDeleted();
       onClose();
     } catch {
-      toast.error("Failed to delete table");
+      toast.error("Echec de la suppression de la table");
     }
   };
 
@@ -236,7 +236,7 @@ export default function TableDetailModal({
                 {confirmedCount}/{table.maxPlayers} joueurs
                 {waitlistCount > 0 && (
                   <span className="ml-2 badge badge-warning badge-xs">
-                    +{waitlistCount} waitlist
+                    +{waitlistCount} en attente
                   </span>
                 )}
               </p>
@@ -358,7 +358,7 @@ export default function TableDetailModal({
                                 className="btn btn-ghost btn-xs text-warning min-h-[44px]"
                                 onClick={() => handleDemote(p.userId)}
                               >
-                                Retrograder
+                                Mettre sur liste d'attente
                               </button>
                               <button
                                 className="btn btn-ghost btn-xs text-error min-h-[44px]"
@@ -392,7 +392,7 @@ export default function TableDetailModal({
                                     className="btn btn-ghost btn-xs text-warning"
                                     onClick={() => handleDemote(p.userId)}
                                   >
-                                    Retrograder
+                                    Mettre sur liste d'attente
                                   </button>
                                   <button
                                     className="btn btn-ghost btn-xs text-error"
@@ -415,7 +415,7 @@ export default function TableDetailModal({
             {waitlistCount > 0 && (
               <div className="card bg-base-200 border-l-4 border-warning shadow-none">
                 <div className="card-body p-3">
-                  <h4 className="font-semibold text-sm mb-2">Waitlist ({waitlistCount})</h4>
+                  <h4 className="font-semibold text-sm mb-2">Liste d'attente ({waitlistCount})</h4>
                   {isMobile ? (
                     <div className="space-y-1">
                       {table.participants
@@ -432,10 +432,10 @@ export default function TableDetailModal({
                                   title={
                                     confirmedCount >= table.maxPlayers
                                       ? "Table pleine — retrogradez un joueur d'abord"
-                                      : "Promouvoir"
+                                      : "Ajouter a la table"
                                   }
                                 >
-                                  Promouvoir
+                                  Ajouter a la table
                                 </button>
                                 <button
                                   className="btn btn-ghost btn-xs text-error min-h-[44px]"
@@ -472,10 +472,10 @@ export default function TableDetailModal({
                                       title={
                                         confirmedCount >= table.maxPlayers
                                           ? "Table pleine — retrogradez un joueur d'abord"
-                                          : "Promouvoir"
+                                          : "Ajouter a la table"
                                       }
                                     >
-                                      Promouvoir
+                                      Ajouter a la table
                                     </button>
                                     <button
                                       className="btn btn-ghost btn-xs text-error"

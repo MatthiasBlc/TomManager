@@ -76,13 +76,13 @@ describe("AddBoardGameModal", () => {
 
   it("renders the search mode by default with a Create manually button", () => {
     render(<AddBoardGameModal open={true} onClose={vi.fn()} onAdded={vi.fn()} eventId="ev1" />);
-    expect(screen.getByRole("button", { name: /create manually/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /creer manuellement/i })).toBeInTheDocument();
   });
 
   it("switches to manual mode when Create manually is clicked", () => {
     render(<AddBoardGameModal open={true} onClose={vi.fn()} onAdded={vi.fn()} eventId="ev1" />);
-    fireEvent.click(screen.getByRole("button", { name: /create manually/i }));
-    expect(screen.getByLabelText("Name")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /creer manuellement/i }));
+    expect(screen.getByLabelText("Nom")).toBeInTheDocument();
   });
 
   it("posts to /events/:id/boardgames when a local game is selected", async () => {
@@ -126,7 +126,7 @@ describe("AddBoardGameModal", () => {
   it("calls onClose when the Close button is clicked", () => {
     const onClose = vi.fn();
     render(<AddBoardGameModal open={true} onClose={onClose} onAdded={vi.fn()} eventId="ev1" />);
-    fireEvent.click(screen.getByRole("button", { name: /^close$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^fermer$/i }));
     expect(onClose).toHaveBeenCalled();
   });
 });

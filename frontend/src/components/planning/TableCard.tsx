@@ -67,7 +67,7 @@ export default function TableCard({ table, onClick }: Props) {
             {table.confirmedCount}/{table.maxPlayers}
           </span>
           {table.waitlistCount > 0 && (
-            <span className="badge badge-warning badge-sm">+{table.waitlistCount} waitlist</span>
+            <span className="badge badge-warning badge-sm">+{table.waitlistCount} en attente</span>
           )}
           {table.currentUserStatus && (
             <span
@@ -75,7 +75,7 @@ export default function TableCard({ table, onClick }: Props) {
                 table.currentUserStatus === "CONFIRMED" ? "badge-success" : "badge-warning"
               }`}
             >
-              {table.currentUserStatus === "CONFIRMED" ? "Joined" : "Waitlist"}
+              {table.currentUserStatus === "CONFIRMED" ? "Inscrit" : "Liste d'attente"}
             </span>
           )}
         </div>

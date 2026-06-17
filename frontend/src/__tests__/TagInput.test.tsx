@@ -15,21 +15,21 @@ describe("TagInput", () => {
     render(<TagInput value={["jdr", "horreur"]} onChange={vi.fn()} />);
     expect(screen.getByText("jdr")).toBeInTheDocument();
     expect(screen.getByText("horreur")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove tag jdr" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Remove tag horreur" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retirer le tag jdr" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retirer le tag horreur" })).toBeInTheDocument();
   });
 
   it("removes a tag when the badge button is clicked", () => {
     const onChange = vi.fn();
     render(<TagInput value={["jdr", "horreur"]} onChange={onChange} />);
-    fireEvent.click(screen.getByRole("button", { name: "Remove tag jdr" }));
+    fireEvent.click(screen.getByRole("button", { name: "Retirer le tag jdr" }));
     expect(onChange).toHaveBeenCalledWith(["horreur"]);
   });
 
   it("adds a tag (lowercased, trimmed) when Enter is pressed", () => {
     const onChange = vi.fn();
     render(<TagInput value={[]} onChange={onChange} />);
-    const input = screen.getByPlaceholderText("Add tags...");
+    const input = screen.getByPlaceholderText("Ajouter des tags...");
     fireEvent.change(input, { target: { value: "  Donjon  " } });
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onChange).toHaveBeenCalledWith(["donjon"]);
@@ -38,7 +38,7 @@ describe("TagInput", () => {
   it("adds a tag when comma is pressed", () => {
     const onChange = vi.fn();
     render(<TagInput value={[]} onChange={onChange} />);
-    const input = screen.getByPlaceholderText("Add tags...");
+    const input = screen.getByPlaceholderText("Ajouter des tags...");
     fireEvent.change(input, { target: { value: "epee" } });
     fireEvent.keyDown(input, { key: "," });
     expect(onChange).toHaveBeenCalledWith(["epee"]);
@@ -66,7 +66,7 @@ describe("TagInput", () => {
       data: { data: [{ id: "t1", name: "donjon" }] },
     });
     render(<TagInput value={[]} onChange={vi.fn()} />);
-    fireEvent.change(screen.getByPlaceholderText("Add tags..."), {
+    fireEvent.change(screen.getByPlaceholderText("Ajouter des tags..."), {
       target: { value: "don" },
     });
     await waitFor(() => {

@@ -55,7 +55,7 @@ describe("ParticipantList", () => {
   it("renders the empty state when no participants", () => {
     useAuthMock.mockReturnValue({ user: { id: "u1" } });
     render(<ParticipantList eventId="ev1" createdBy="u1" participants={[]} onChanged={vi.fn()} />);
-    expect(screen.getByText("No participants yet")).toBeInTheDocument();
+    expect(screen.getByText("Aucun participant pour l'instant")).toBeInTheDocument();
   });
 
   it("renders all participants in a desktop table", () => {
@@ -83,7 +83,7 @@ describe("ParticipantList", () => {
         onChanged={vi.fn()}
       />
     );
-    const removes = screen.getAllByRole("button", { name: "Remove" });
+    const removes = screen.getAllByRole("button", { name: "Retirer" });
     expect(removes).toHaveLength(1);
   });
 
@@ -97,8 +97,8 @@ describe("ParticipantList", () => {
         onChanged={vi.fn()}
       />
     );
-    expect(screen.queryByRole("button", { name: "Remove" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /leave event/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Retirer" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /quitter l'evenement/i })).toBeInTheDocument();
   });
 
   it("does not show Leave button for the creator", () => {
@@ -111,7 +111,7 @@ describe("ParticipantList", () => {
         onChanged={vi.fn()}
       />
     );
-    expect(screen.queryByRole("button", { name: /leave event/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /quitter l'evenement/i })).not.toBeInTheDocument();
   });
 
   it("calls api.delete and onChanged when Remove is clicked", async () => {
@@ -126,7 +126,7 @@ describe("ParticipantList", () => {
         onChanged={onChanged}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    fireEvent.click(screen.getByRole("button", { name: "Retirer" }));
     await waitFor(() => {
       expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/participants/u2");
       expect(onChanged).toHaveBeenCalled();
@@ -146,7 +146,7 @@ describe("ParticipantList", () => {
         onChanged={onChanged}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /leave event/i }));
+    fireEvent.click(screen.getByRole("button", { name: /quitter l'evenement/i }));
     await waitFor(() => {
       expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/participants/me");
       expect(onChanged).toHaveBeenCalled();
