@@ -11,6 +11,7 @@ interface TableExtendedProps {
   conflictingPlayerCount: number;
   players: { id: string; username: string }[];
   gmUsername: string;
+  tags: { id: string; name: string }[];
 }
 
 export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
@@ -25,27 +26,29 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
     conflictingPlayerCount,
     players = [],
     gmUsername,
+    tags = [],
   } = arg.event.extendedProps as TableExtendedProps;
 
-  let classes = "bg-primary/80 border-primary text-primary-content";
-  if (currentUserConflict) classes = "bg-error border-error text-error-content";
-  else if (isGM) classes = "bg-secondary border-secondary text-secondary-content";
-  else if (currentUserStatus === "CONFIRMED")
-    classes = "bg-success border-success text-success-content";
-  else if (currentUserStatus === "WAITLIST")
-    classes = "bg-warning border-warning text-warning-content";
+  // La bordure gauche indique toujours le type (JDR = primary, JDS = accent)
+  const borderClass = type === "JDR" ? "border-primary" : "border-accent";
+
+  // Le fond indique le statut de l'utilisateur, avec le type comme couleur par defaut
+  let bgClasses =
+    type === "JDR" ? "bg-primary/80 text-primary-content" : "bg-accent/80 text-accent-content";
+  if (currentUserConflict) bgClasses = "bg-error/80 text-error-content";
+  else if (isGM) bgClasses = "bg-secondary/80 text-secondary-content";
+  else if (currentUserStatus === "CONFIRMED") bgClasses = "bg-success/80 text-success-content";
+  else if (currentUserStatus === "WAITLIST") bgClasses = "bg-warning/80 text-warning-content";
 
   return (
     <div
-      className={`h-full w-full overflow-hidden rounded border-l-[3px] px-1 py-0.5 ${classes}`}
+      className={`h-full w-full overflow-hidden rounded border-l-[3px] px-1 py-0.5 ${borderClass} ${bgClasses}`}
       style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.35)" }}
     >
       <p className="text-xs font-semibold leading-tight break-words">{arg.event.title}</p>
       <span className="badge badge-outline badge-xs opacity-80">{type}</span>
       <p className="text-xs opacity-80">{arg.timeText}</p>
-      <p className="text-xs opacity-70">
-        MJ : {gmUsername}
-      </p>
+      <p className="text-xs opacity-70">MJ : {gmUsername}</p>
       <p className="text-xs opacity-70">
         {confirmedCount}/{maxPlayers}
         {waitlistCount > 0 && ` +${waitlistCount}`}
@@ -59,6 +62,15 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       )}
       {players.length > 0 && (
         <p className="text-xs opacity-70 truncate">{players.map((p) => p.username).join(", ")}</p>
+      )}
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-0.5 mt-0.5">
+          {tags.map((tag) => (
+            <span key={tag.id} className="badge badge-ghost badge-xs opacity-80">
+              {tag.name}
+            </span>
+          ))}
+        </div>
       )}
     </div>
   );
