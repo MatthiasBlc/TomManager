@@ -10,6 +10,7 @@ interface TableExtendedProps {
   currentUserConflict: boolean;
   conflictingPlayerCount: number;
   players: { id: string; username: string }[];
+  gmUsername: string;
 }
 
 export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
@@ -23,6 +24,7 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
     currentUserConflict,
     conflictingPlayerCount,
     players = [],
+    gmUsername,
   } = arg.event.extendedProps as TableExtendedProps;
 
   let classes = "bg-primary/80 border-primary text-primary-content";
@@ -41,6 +43,9 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       <p className="text-xs font-semibold leading-tight break-words">{arg.event.title}</p>
       <span className="badge badge-outline badge-xs opacity-80">{type}</span>
       <p className="text-xs opacity-80">{arg.timeText}</p>
+      <p className="text-xs opacity-70">
+        MJ : {gmUsername}
+      </p>
       <p className="text-xs opacity-70">
         {confirmedCount}/{maxPlayers}
         {waitlistCount > 0 && ` +${waitlistCount}`}

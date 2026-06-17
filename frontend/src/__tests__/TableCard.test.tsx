@@ -30,7 +30,7 @@ describe("TableCard", () => {
   it("renders title, GM, pitch and counts", () => {
     render(<TableCard table={baseTable} onClick={() => {}} />);
     expect(screen.getByText("Donjon des morts")).toBeInTheDocument();
-    expect(screen.getByText("GM: Alice")).toBeInTheDocument();
+    expect(screen.getByText("MJ : Alice")).toBeInTheDocument();
     expect(screen.getByText("Une aventure mortelle")).toBeInTheDocument();
     expect(screen.getByText("3/5")).toBeInTheDocument();
   });
@@ -46,9 +46,9 @@ describe("TableCard", () => {
     expect(screen.getByText("Horreur")).toBeInTheDocument();
   });
 
-  it("renders the GM badge when isGM is true", () => {
+  it("renders the MJ badge when isGM is true", () => {
     render(<TableCard table={{ ...baseTable, isGM: true }} onClick={() => {}} />);
-    expect(screen.getByText("GM")).toBeInTheDocument();
+    expect(screen.getByText("MJ")).toBeInTheDocument();
   });
 
   it("renders the waitlist badge when waitlistCount > 0", () => {

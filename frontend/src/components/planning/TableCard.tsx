@@ -41,7 +41,7 @@ export default function TableCard({ table, onClick }: Props) {
             >
               {typeLabel}
             </span>
-            {table.isGM && <span className="badge badge-secondary badge-sm">GM</span>}
+            {table.isGM && <span className="badge badge-secondary badge-sm">MJ</span>}
             {table.currentUserConflict && (
               <span className="badge badge-error badge-sm">⚠ Conflit</span>
             )}
@@ -58,7 +58,7 @@ export default function TableCard({ table, onClick }: Props) {
           {formatTime(table.startDateTime)} - {formatTime(table.endDateTime)}
         </p>
 
-        <p className="text-sm opacity-60">GM: {table.creator.username}</p>
+        <p className="text-sm opacity-60">MJ : {table.creator.username}</p>
 
         {table.pitch && <p className="text-sm line-clamp-2">{table.pitch}</p>}
 

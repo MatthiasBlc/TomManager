@@ -205,6 +205,7 @@ export default function CalendarView({
           currentUserConflict: t.currentUserConflict,
           conflictingPlayerCount: t.conflictingPlayerCount,
           players: t.players,
+          gmUsername: t.creator.username,
         },
       })),
     [tables, isAdmin]
