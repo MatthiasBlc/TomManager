@@ -22,6 +22,7 @@ interface UpdateTableData {
   triggers?: string | null;
   comments?: string | null;
   maxPlayers?: number;
+  reservedSeats?: number;
   startDateTime?: string;
   endDateTime?: string;
   tags?: string[];
@@ -36,6 +37,7 @@ interface CreateTableData {
   triggers?: string;
   comments?: string;
   maxPlayers: number;
+  reservedSeats?: number;
   startDateTime: string;
   endDateTime: string;
   tags?: string[];
@@ -43,13 +45,11 @@ interface CreateTableData {
 }
 
 export async function createTable(eventId: string, userId: string, data: CreateTableData) {
-  // Validate title
   const title = data.title?.trim();
   if (!title || title.length === 0 || title.length > 150) {
     throw createError(400, "Title must be between 1 and 150 characters");
   }
 
-  // Validate optional text fields
   if (data.pitch && data.pitch.length > 2000) {
     throw createError(400, "Pitch must not exceed 2000 characters");
   }
@@ -60,12 +60,20 @@ export async function createTable(eventId: string, userId: string, data: CreateT
     throw createError(400, "Comments must not exceed 1000 characters");
   }
 
-  // Validate maxPlayers
   if (!Number.isInteger(data.maxPlayers) || data.maxPlayers < 1 || data.maxPlayers > 20) {
     throw createError(400, "maxPlayers must be an integer between 1 and 20");
   }
 
-  // Validate dates
+  const tableType = data.type ?? "JDR";
+  const gmIsPlayer = tableType === "JDR" ? (data.gmIsPlayer ?? false) : false;
+  const gmTakesASeat = tableType === "JDS" || gmIsPlayer;
+
+  const reservedSeats = data.reservedSeats ?? 0;
+  const maxReserved = gmTakesASeat ? data.maxPlayers - 1 : data.maxPlayers;
+  if (!Number.isInteger(reservedSeats) || reservedSeats < 0 || reservedSeats > maxReserved) {
+    throw createError(400, `reservedSeats must be between 0 and ${maxReserved}`);
+  }
+
   const start = new Date(data.startDateTime);
   const end = new Date(data.endDateTime);
   if (isNaN(start.getTime())) {
@@ -78,7 +86,6 @@ export async function createTable(eventId: string, userId: string, data: CreateT
     throw createError(400, "endDateTime must be after startDateTime");
   }
 
-  // Validate dates within event bounds
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
     throw createError(404, "Event not found");
@@ -97,11 +104,6 @@ export async function createTable(eventId: string, userId: string, data: CreateT
     if (!game) throw createError(400, "Board game not found");
   }
 
-  const tableType = data.type ?? "JDR";
-  const gmIsPlayer = tableType === "JDR" ? (data.gmIsPlayer ?? false) : false;
-  // GM takes a seat if JDS (they're always a player) or JDR with gmIsPlayer checked
-  const gmTakesASeat = tableType === "JDS" || gmIsPlayer;
-
   const table = await prisma.$transaction(async (tx) => {
     const created = await tx.gameTable.create({
       data: {
@@ -114,20 +116,19 @@ export async function createTable(eventId: string, userId: string, data: CreateT
         triggers: data.triggers || null,
         comments: data.comments || null,
         maxPlayers: data.maxPlayers,
+        reservedSeats,
         startDateTime: start,
         endDateTime: end,
         boardGameId: data.boardGameId ?? null,
       },
     });
 
-    // Auto-join GM as confirmed participant if they take a seat
     if (gmTakesASeat) {
       await tx.gameTableParticipant.create({
         data: { gameTableId: created.id, userId, status: "CONFIRMED" },
       });
     }
 
-    // Handle tags
     if (data.tags && data.tags.length > 0) {
       const tags = await findOrCreateTags(data.tags, tx);
       await Promise.all(
@@ -175,26 +176,20 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
     orderBy: { startDateTime: "asc" },
   });
 
-  // Calcul des conflits : toute personne presente sur une table (participant CONFIRMED ou GM/createur)
-  // sur deux tables qui se chevauchent est en conflit.
-  // confirmedTablesByUser : userId -> indices des tables ou il est present
   const confirmedTablesByUser = new Map<string, number[]>();
   tables.forEach((t, idx) => {
-    // Inclure le GM (createur) meme s'il n'est pas dans participants (cas JDR sans gmIsPlayer)
     if (!confirmedTablesByUser.has(t.createdBy)) confirmedTablesByUser.set(t.createdBy, []);
     confirmedTablesByUser.get(t.createdBy)!.push(idx);
 
     t.participants
       .filter((p) => p.status === "CONFIRMED")
       .forEach((p) => {
-        // Eviter le doublon si le GM est aussi dans participants (gmIsPlayer=true ou JDS)
         if (p.userId === t.createdBy) return;
         if (!confirmedTablesByUser.has(p.userId)) confirmedTablesByUser.set(p.userId, []);
         confirmedTablesByUser.get(p.userId)!.push(idx);
       });
   });
 
-  // conflictedUsersInTable : index table -> ensemble des userIds en conflit sur cette table
   const conflictedUsersInTable = new Map<number, Set<string>>();
   for (const [userId, indices] of confirmedTablesByUser) {
     if (indices.length < 2) continue;
@@ -228,6 +223,7 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       gmIsPlayer: t.gmIsPlayer,
       pitch: t.pitch,
       maxPlayers: t.maxPlayers,
+      reservedSeats: t.reservedSeats,
       startDateTime: t.startDateTime,
       endDateTime: t.endDateTime,
       createdAt: t.createdAt,
@@ -278,6 +274,7 @@ export async function getTable(tableId: string) {
     triggers: table.triggers,
     comments: table.comments,
     maxPlayers: table.maxPlayers,
+    reservedSeats: table.reservedSeats,
     startDateTime: table.startDateTime,
     endDateTime: table.endDateTime,
     createdAt: table.createdAt,
@@ -288,6 +285,7 @@ export async function getTable(tableId: string) {
       userId: p.user.id,
       username: p.user.username,
       status: p.status,
+      isOnReservedSeat: p.isOnReservedSeat,
       joinedAt: p.joinedAt,
     })),
     boardGame: table.boardGame ?? null,
@@ -314,17 +312,15 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     if (!game) throw createError(400, "Board game not found");
   }
 
-  // Merge with existing values
   const title = data.title !== undefined ? data.title.trim() : existing.title;
   const pitch = data.pitch !== undefined ? data.pitch : existing.pitch;
   const triggers = data.triggers !== undefined ? data.triggers : existing.triggers;
   const comments = data.comments !== undefined ? data.comments : existing.comments;
-  const maxPlayers = data.maxPlayers !== undefined ? data.maxPlayers : existing.maxPlayers;
+  const newMaxPlayers = data.maxPlayers !== undefined ? data.maxPlayers : existing.maxPlayers;
   const start = data.startDateTime ? new Date(data.startDateTime) : existing.startDateTime;
   const end = data.endDateTime ? new Date(data.endDateTime) : existing.endDateTime;
   const boardGameId = data.boardGameId !== undefined ? data.boardGameId : existing.boardGameId;
 
-  // Validate
   if (!title || title.length === 0 || title.length > 150) {
     throw createError(400, "Title must be between 1 and 150 characters");
   }
@@ -337,7 +333,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
   if (comments && comments.length > 1000) {
     throw createError(400, "Comments must not exceed 1000 characters");
   }
-  if (!Number.isInteger(maxPlayers) || maxPlayers < 1 || maxPlayers > 20) {
+  if (!Number.isInteger(newMaxPlayers) || newMaxPlayers < 1 || newMaxPlayers > 20) {
     throw createError(400, "maxPlayers must be an integer between 1 and 20");
   }
   if (data.startDateTime && isNaN(start.getTime())) {
@@ -356,90 +352,84 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     throw createError(400, "Table endDateTime must be within event bounds");
   }
 
+  // Calcul des reservedSeats finaux en tenant compte de maxPlayers et de la demande
+  let newReservedSeats = existing.reservedSeats;
+  if (data.reservedSeats !== undefined) {
+    newReservedSeats = Math.min(data.reservedSeats, newMaxPlayers);
+    if (!Number.isInteger(data.reservedSeats) || data.reservedSeats < 0) {
+      throw createError(400, "reservedSeats must be a non-negative integer");
+    }
+  }
+  // Si maxPlayers diminue, les reservedSeats sont cappees a newMaxPlayers
+  newReservedSeats = Math.min(newReservedSeats, newMaxPlayers);
+
+  const confirmedParticipants = existing.participants.filter((p) => p.status === "CONFIRMED");
+  const confirmedCount = confirmedParticipants.length;
+
+  // Combien de places confirmees peuvent tenir compte tenu de newMaxPlayers et newReservedSeats
+  const targetConfirmed = Math.max(0, newMaxPlayers - newReservedSeats);
+  const toDemoteCount = Math.max(0, confirmedCount - targetConfirmed);
+
   const demotedUserIds: string[] = [];
   const promotedUserIds: string[] = [];
+  let finalReservedSeats = newReservedSeats;
 
-  // Detecte si gmIsPlayer change (JDR uniquement)
   const gmIsPlayerChanged =
     existing.type === "JDR" &&
     data.gmIsPlayer !== undefined &&
     data.gmIsPlayer !== existing.gmIsPlayer;
 
   const result = await prisma.$transaction(async (tx) => {
-    // Handle maxPlayers change
-    const confirmedCount = existing.participants.filter((p) => p.status === "CONFIRMED").length;
+    // Demotion due au changement de maxPlayers ou reservedSeats
+    // Ordre : non-reserved d'abord (les plus recents), puis reserved si necessaire
+    if (toDemoteCount > 0) {
+      const nonReserved = confirmedParticipants
+        .filter((p) => !p.isOnReservedSeat)
+        .sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime());
+      const reserved = confirmedParticipants
+        .filter((p) => p.isOnReservedSeat)
+        .sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime());
 
-    if (maxPlayers < existing.maxPlayers && confirmedCount > maxPlayers) {
-      // Demotion: move last confirmed players to waitlist
-      const todemote = confirmedCount - maxPlayers;
-      const confirmed = await tx.gameTableParticipant.findMany({
-        where: { gameTableId: tableId, status: "CONFIRMED" },
-        orderBy: { joinedAt: "desc" },
-        take: todemote,
-      });
-      for (const p of confirmed) {
+      const todemote = [...nonReserved, ...reserved].slice(0, toDemoteCount);
+
+      for (const p of todemote) {
         await tx.gameTableParticipant.update({
           where: { id: p.id },
-          data: { status: "WAITLIST" },
+          data: { status: "WAITLIST", isOnReservedSeat: false },
         });
+        // Si ce joueur etait sur une reserved seat qui disparait, on n'a pas besoin
+        // d'incrementer reservedSeats car on fixe la valeur finale directement
         demotedUserIds.push(p.userId);
-      }
-    } else if (maxPlayers > existing.maxPlayers) {
-      // Promotion: promote waitlisted players
-      const availableSlots = maxPlayers - confirmedCount;
-      if (availableSlots > 0) {
-        const waitlisted = await tx.gameTableParticipant.findMany({
-          where: { gameTableId: tableId, status: "WAITLIST" },
-          orderBy: { joinedAt: "asc" },
-          take: availableSlots,
-        });
-        for (const p of waitlisted) {
-          await tx.gameTableParticipant.update({
-            where: { id: p.id },
-            data: { status: "CONFIRMED" },
-          });
-          promotedUserIds.push(p.userId);
-        }
       }
     }
 
-    // Handle gmIsPlayer toggle
+    // Pas d'auto-promotion quand maxPlayers augmente ou reservedSeats diminue (decision B)
+
+    // Toggle gmIsPlayer (JDR uniquement)
     if (gmIsPlayerChanged) {
       const gmId = existing.createdBy;
       const gmParticipant = existing.participants.find((p) => p.userId === gmId);
 
       if (data.gmIsPlayer && !gmParticipant) {
-        // MJ devient joueur : l'ajouter comme participant
         const currentConfirmed = await tx.gameTableParticipant.count({
           where: { gameTableId: tableId, status: "CONFIRMED" },
         });
-        const gmStatus = currentConfirmed < maxPlayers ? "CONFIRMED" : "WAITLIST";
+        const openSeats = newMaxPlayers - currentConfirmed - finalReservedSeats;
+        const gmStatus = openSeats > 0 ? "CONFIRMED" : "WAITLIST";
         await tx.gameTableParticipant.create({
           data: { gameTableId: tableId, userId: gmId, status: gmStatus },
         });
       } else if (!data.gmIsPlayer && gmParticipant) {
-        // MJ n'est plus joueur : le retirer des participants
         await tx.gameTableParticipant.delete({
           where: { id: gmParticipant.id },
         });
-        if (gmParticipant.status === "CONFIRMED") {
-          // Promouvoir le premier en waitlist
-          const firstWaitlisted = await tx.gameTableParticipant.findFirst({
-            where: { gameTableId: tableId, status: "WAITLIST" },
-            orderBy: { joinedAt: "asc" },
-          });
-          if (firstWaitlisted) {
-            await tx.gameTableParticipant.update({
-              where: { id: firstWaitlisted.id },
-              data: { status: "CONFIRMED" },
-            });
-            promotedUserIds.push(firstWaitlisted.userId);
-          }
+        // Si le GM etait sur une reserved seat, la liberer
+        if (gmParticipant.isOnReservedSeat) {
+          finalReservedSeats += 1;
         }
       }
     }
 
-    // Handle tags if provided
     if (data.tags !== undefined) {
       await tx.gameTableTag.deleteMany({ where: { gameTableId: tableId } });
       if (data.tags.length > 0) {
@@ -466,7 +456,8 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
         pitch,
         triggers,
         comments,
-        maxPlayers,
+        maxPlayers: newMaxPlayers,
+        reservedSeats: finalReservedSeats,
         startDateTime: start,
         endDateTime: end,
         boardGameId,
@@ -488,7 +479,6 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
 
   emitToEvent(existing.eventId, "table:updated", { table: updated });
 
-  // Notify participants about the update (except the updater)
   const participantUserIds = existing.participants
     .map((p) => p.userId)
     .filter((id) => id !== updatedByUserId);
@@ -505,7 +495,6 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     );
   }
 
-  // Notify demoted players
   if (demotedUserIds.length > 0) {
     await createBulkNotifications(
       demotedUserIds.map((userId) => ({
@@ -518,7 +507,6 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     );
   }
 
-  // Notify promoted players
   if (promotedUserIds.length > 0) {
     await createBulkNotifications(
       promotedUserIds.map((userId) => ({
@@ -543,17 +531,14 @@ export async function deleteTable(tableId: string, deletedByUserId: string) {
     throw createError(404, "Table not found");
   }
 
-  // Collect participant userIds before cascade delete removes them
   const participantUserIds = existing.participants
     .map((p) => p.userId)
     .filter((id) => id !== deletedByUserId);
 
-  // GameTableTag and GameTableParticipant have onDelete Cascade
   await prisma.gameTable.delete({ where: { id: tableId } });
 
   emitToEvent(existing.eventId, "table:deleted", { tableId });
 
-  // Notify all participants (except the one who deleted)
   if (participantUserIds.length > 0) {
     await createBulkNotifications(
       participantUserIds.map((userId) => ({
@@ -578,7 +563,6 @@ export async function joinTable(tableId: string, userId: string) {
       throw createError(404, "Table not found");
     }
 
-    // GM ne peut rejoindre que s'il prend une place (JDS ou gmIsPlayer=true en JDR)
     const gmTakesASeat = table.type === "JDS" || table.gmIsPlayer;
     if (table.createdBy === userId && !gmTakesASeat) {
       throw createError(400, "The GM cannot join their own table");
@@ -590,7 +574,8 @@ export async function joinTable(tableId: string, userId: string) {
     }
 
     const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
-    const status = confirmedCount < table.maxPlayers ? "CONFIRMED" : "WAITLIST";
+    const openSeats = table.maxPlayers - confirmedCount - table.reservedSeats;
+    const status = openSeats > 0 ? "CONFIRMED" : "WAITLIST";
 
     const participant = await tx.gameTableParticipant.create({
       data: { gameTableId: tableId, userId, status },
@@ -617,7 +602,7 @@ export async function leaveTable(tableId: string, userId: string) {
     throw createError(404, "Table not found");
   }
 
-  // If the GM leaves, delete the table entirely
+  // Le MJ qui quitte supprime la table
   if (table.createdBy === userId) {
     const participantUserIds = table.participants
       .map((p) => p.userId)
@@ -652,18 +637,26 @@ export async function leaveTable(tableId: string, userId: string) {
 
     await tx.gameTableParticipant.delete({ where: { id: participant.id } });
 
-    // If was confirmed and there's a waitlisted player, promote them
     if (participant.status === "CONFIRMED") {
-      const firstWaitlisted = await tx.gameTableParticipant.findFirst({
-        where: { gameTableId: tableId, status: "WAITLIST" },
-        orderBy: { joinedAt: "asc" },
-      });
-      if (firstWaitlisted) {
-        await tx.gameTableParticipant.update({
-          where: { id: firstWaitlisted.id },
-          data: { status: "CONFIRMED" },
+      if (participant.isOnReservedSeat) {
+        // La place retourne dans le pool reserve (decision A), pas d'auto-promotion
+        await tx.gameTable.update({
+          where: { id: tableId },
+          data: { reservedSeats: { increment: 1 } },
         });
-        promotedUserId = firstWaitlisted.userId;
+      } else {
+        // Place normale liberee : auto-promotion du premier en waitlist
+        const firstWaitlisted = await tx.gameTableParticipant.findFirst({
+          where: { gameTableId: tableId, status: "WAITLIST" },
+          orderBy: { joinedAt: "asc" },
+        });
+        if (firstWaitlisted) {
+          await tx.gameTableParticipant.update({
+            where: { id: firstWaitlisted.id },
+            data: { status: "CONFIRMED" },
+          });
+          promotedUserId = firstWaitlisted.userId;
+        }
       }
     }
   });
@@ -703,32 +696,72 @@ export async function setParticipantStatus(
     throw createError(404, "Participant not found");
   }
 
+  let usedReservedSeat = false;
+
   if (newStatus === "CONFIRMED") {
     const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
-    if (confirmedCount >= table.maxPlayers) {
+    const openSeats = table.maxPlayers - confirmedCount - table.reservedSeats;
+
+    if (table.reservedSeats > 0) {
+      // Priorite : affecter a une reserved seat
+      await prisma.$transaction(async (tx) => {
+        await tx.gameTableParticipant.update({
+          where: { id: participant.id },
+          data: { status: "CONFIRMED", isOnReservedSeat: true },
+        });
+        await tx.gameTable.update({
+          where: { id: tableId },
+          data: { reservedSeats: { decrement: 1 } },
+        });
+      });
+      usedReservedSeat = true;
+    } else if (openSeats > 0) {
+      await prisma.gameTableParticipant.update({
+        where: { id: participant.id },
+        data: { status: "CONFIRMED", isOnReservedSeat: false },
+      });
+    } else {
       throw createError(409, "Table is full");
     }
-  }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.gameTableParticipant.update({
-      where: { id: participant.id },
-      data: { status: newStatus },
+  } else {
+    // Demote vers WAITLIST
+    await prisma.$transaction(async (tx) => {
+      if (participant.isOnReservedSeat) {
+        // Libere la reserved seat
+        await tx.gameTable.update({
+          where: { id: tableId },
+          data: { reservedSeats: { increment: 1 } },
+        });
+      }
+      await tx.gameTableParticipant.update({
+        where: { id: participant.id },
+        data: { status: "WAITLIST", isOnReservedSeat: false },
+      });
     });
-  });
+  }
 
   if (newStatus === "CONFIRMED") {
     emitToEvent(table.eventId, "table:player:promoted", {
       tableId,
       userId: targetUserId,
     });
-    await createNotification({
-      userId: targetUserId,
-      type: "WAITLIST_PROMOTED",
-      title: "Place confirmee",
-      message: `Tu es confirme pour la table "${table.title}"`,
-      metadata: { eventId: table.eventId, tableId },
-    });
+    if (usedReservedSeat) {
+      await createNotification({
+        userId: targetUserId,
+        type: "RESERVED_SEAT_ASSIGNED",
+        title: "Place reservee attribuee",
+        message: `Le MJ t'a attribue une place reservee pour la table "${table.title}"`,
+        metadata: { eventId: table.eventId, tableId },
+      });
+    } else {
+      await createNotification({
+        userId: targetUserId,
+        type: "WAITLIST_PROMOTED",
+        title: "Place confirmee",
+        message: `Tu es confirme pour la table "${table.title}"`,
+        metadata: { eventId: table.eventId, tableId },
+      });
+    }
   } else {
     emitToEvent(table.eventId, "table:player:demoted", {
       tableId,
@@ -747,7 +780,10 @@ export async function setParticipantStatus(
 }
 
 export async function kickPlayer(tableId: string, userId: string) {
-  const table = await prisma.gameTable.findUnique({ where: { id: tableId } });
+  const table = await prisma.gameTable.findUnique({
+    where: { id: tableId },
+    include: { participants: true },
+  });
 
   let promotedUserId: string | null = null;
   await prisma.$transaction(async (tx) => {
@@ -762,16 +798,25 @@ export async function kickPlayer(tableId: string, userId: string) {
     await tx.gameTableParticipant.delete({ where: { id: participant.id } });
 
     if (participant.status === "CONFIRMED") {
-      const firstWaitlisted = await tx.gameTableParticipant.findFirst({
-        where: { gameTableId: tableId, status: "WAITLIST" },
-        orderBy: { joinedAt: "asc" },
-      });
-      if (firstWaitlisted) {
-        await tx.gameTableParticipant.update({
-          where: { id: firstWaitlisted.id },
-          data: { status: "CONFIRMED" },
+      if (participant.isOnReservedSeat) {
+        // La place retourne dans le pool reserve, pas d'auto-promotion
+        await tx.gameTable.update({
+          where: { id: tableId },
+          data: { reservedSeats: { increment: 1 } },
         });
-        promotedUserId = firstWaitlisted.userId;
+      } else {
+        // Place normale : auto-promotion
+        const firstWaitlisted = await tx.gameTableParticipant.findFirst({
+          where: { gameTableId: tableId, status: "WAITLIST" },
+          orderBy: { joinedAt: "asc" },
+        });
+        if (firstWaitlisted) {
+          await tx.gameTableParticipant.update({
+            where: { id: firstWaitlisted.id },
+            data: { status: "CONFIRMED" },
+          });
+          promotedUserId = firstWaitlisted.userId;
+        }
       }
     }
   });

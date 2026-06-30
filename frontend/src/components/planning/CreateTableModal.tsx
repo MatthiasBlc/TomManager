@@ -26,6 +26,7 @@ interface CreateTableForm {
   triggers: string;
   comments: string;
   maxPlayers: number;
+  reservedSeats: number;
   date: string;
   startTime: string;
   durationMinutes: number;
@@ -60,7 +61,7 @@ export default function CreateTableModal({
     setValue,
     formState: { errors },
   } = useForm<CreateTableForm>({
-    defaultValues: { durationMinutes: 120, type: "JDR", gmIsPlayer: false },
+    defaultValues: { durationMinutes: 120, type: "JDR", gmIsPlayer: false, reservedSeats: 0 },
   });
 
   const tableType = watch("type");
@@ -113,6 +114,7 @@ export default function CreateTableModal({
         triggers: data.triggers || undefined,
         comments: data.comments || undefined,
         maxPlayers: Number(data.maxPlayers),
+        reservedSeats: Number(data.reservedSeats) || 0,
         startDateTime: startDateTime.toISOString(),
         endDateTime: endDateTime.toISOString(),
         tags: tags.length > 0 ? tags : undefined,
@@ -249,29 +251,53 @@ export default function CreateTableModal({
           />
         </div>
 
-        <div className="form-control">
-          <label className="label" htmlFor="ct-maxPlayers">
-            <span className="label-text">Joueurs max</span>
-          </label>
-          <input
-            id="ct-maxPlayers"
-            type="number"
-            className="input input-bordered w-full"
-            inputMode="numeric"
-            min={1}
-            max={20}
-            {...register("maxPlayers", {
-              required: "Requis",
-              min: { value: 1, message: "Min 1" },
-              max: { value: 20, message: "Max 20" },
-              valueAsNumber: true,
-            })}
-          />
-          {errors.maxPlayers && (
-            <label className="label">
-              <span className="label-text-alt text-error">{errors.maxPlayers.message}</span>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="form-control">
+            <label className="label" htmlFor="ct-maxPlayers">
+              <span className="label-text">Joueurs max</span>
             </label>
-          )}
+            <input
+              id="ct-maxPlayers"
+              type="number"
+              className="input input-bordered w-full"
+              inputMode="numeric"
+              min={1}
+              max={20}
+              {...register("maxPlayers", {
+                required: "Requis",
+                min: { value: 1, message: "Min 1" },
+                max: { value: 20, message: "Max 20" },
+                valueAsNumber: true,
+              })}
+            />
+            {errors.maxPlayers && (
+              <label className="label">
+                <span className="label-text-alt text-error">{errors.maxPlayers.message}</span>
+              </label>
+            )}
+          </div>
+          <div className="form-control">
+            <label className="label" htmlFor="ct-reservedSeats">
+              <span className="label-text">Places reservees</span>
+            </label>
+            <input
+              id="ct-reservedSeats"
+              type="number"
+              className="input input-bordered w-full"
+              inputMode="numeric"
+              min={0}
+              max={20}
+              {...register("reservedSeats", {
+                min: { value: 0, message: "Min 0" },
+                valueAsNumber: true,
+              })}
+            />
+            {errors.reservedSeats && (
+              <label className="label">
+                <span className="label-text-alt text-error">{errors.reservedSeats.message}</span>
+              </label>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">

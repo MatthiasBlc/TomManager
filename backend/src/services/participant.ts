@@ -68,17 +68,25 @@ async function cascadeRemoveFromTables(
   for (const tp of tableParticipations) {
     await tx.gameTableParticipant.delete({ where: { id: tp.id } });
 
-    // Promote waitlist if the user was confirmed
     if (tp.status === "CONFIRMED") {
-      const firstWaitlisted = await tx.gameTableParticipant.findFirst({
-        where: { gameTableId: tp.gameTableId, status: "WAITLIST" },
-        orderBy: { joinedAt: "asc" },
-      });
-      if (firstWaitlisted) {
-        await tx.gameTableParticipant.update({
-          where: { id: firstWaitlisted.id },
-          data: { status: "CONFIRMED" },
+      if (tp.isOnReservedSeat) {
+        // La place reservee retourne dans le pool, pas d'auto-promotion
+        await tx.gameTable.update({
+          where: { id: tp.gameTableId },
+          data: { reservedSeats: { increment: 1 } },
         });
+      } else {
+        // Place normale liberee : auto-promotion
+        const firstWaitlisted = await tx.gameTableParticipant.findFirst({
+          where: { gameTableId: tp.gameTableId, status: "WAITLIST" },
+          orderBy: { joinedAt: "asc" },
+        });
+        if (firstWaitlisted) {
+          await tx.gameTableParticipant.update({
+            where: { id: firstWaitlisted.id },
+            data: { status: "CONFIRMED" },
+          });
+        }
       }
     }
   }

@@ -88,6 +88,7 @@ Relations: event (Event), user (User)
 | triggers      | String?   | max 1000 chars           |
 | comments      | String?   | max 1000 chars           |
 | maxPlayers    | Int       | required, 1-20           |
+| reservedSeats | Int       | default 0. Places bloquees par le MJ pour affectation manuelle |
 | startDateTime | DateTime  | >= event.startDateTime   |
 | endDateTime   | DateTime  | <= event.endDateTime     |
 | createdAt     | DateTime  | Auto                     |
@@ -118,13 +119,14 @@ Relations: gameTable (GameTable), tag (Tag)
 
 ## GameTableParticipant
 
-| Field       | Type                   | Notes              |
-| ----------- | ---------------------- | ------------------ |
-| id          | String                 | UUID PK            |
-| gameTableId | String                 | FK -> GameTable.id |
-| userId      | String                 | FK -> User.id      |
-| status      | TableParticipantStatus | CONFIRMED default  |
-| joinedAt    | DateTime               | Auto               |
+| Field            | Type                   | Notes              |
+| ---------------- | ---------------------- | ------------------ |
+| id               | String                 | UUID PK            |
+| gameTableId      | String                 | FK -> GameTable.id |
+| userId           | String                 | FK -> User.id      |
+| status           | TableParticipantStatus | CONFIRMED default  |
+| isOnReservedSeat | Boolean                | default false. True si le joueur a ete affecte sur une place reservee par le MJ |
+| joinedAt         | DateTime               | Auto               |
 
 Contrainte unique: (gameTableId, userId)
 Index: (gameTableId, status)
@@ -183,7 +185,7 @@ CONFIRMED | WAITLIST
 
 ## Enum NotificationType
 
-TABLE_DELETED | TABLE_UPDATED | WAITLIST_PROMOTED | WAITLIST_DEMOTED | PLAYER_KICKED | PARTICIPANT_REMOVED | EVENT_UPDATED | EVENT_DELETED
+TABLE_DELETED | TABLE_UPDATED | WAITLIST_PROMOTED | WAITLIST_DEMOTED | RESERVED_SEAT_ASSIGNED | PLAYER_KICKED | PARTICIPANT_REMOVED | EVENT_UPDATED | EVENT_DELETED
 
 ## Notification
 
