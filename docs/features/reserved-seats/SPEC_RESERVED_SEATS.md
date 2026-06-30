@@ -10,14 +10,14 @@ depuis la liste d'attente.
 
 ### GameTable
 
-| Champ          | Type | Notes                |
-| -------------- | ---- | -------------------- |
-| `reservedSeats`| Int  | Default 0, >= 0      |
+| Champ           | Type | Notes           |
+| --------------- | ---- | --------------- |
+| `reservedSeats` | Int  | Default 0, >= 0 |
 
 ### GameTableParticipant
 
-| Champ              | Type    | Notes                                              |
-| ------------------ | ------- | -------------------------------------------------- |
+| Champ              | Type    | Notes                                                       |
+| ------------------ | ------- | ----------------------------------------------------------- |
 | `isOnReservedSeat` | Boolean | Default false. True si le joueur occupe une place reservee. |
 
 ### Enum NotificationType
@@ -105,26 +105,27 @@ maxPlayers = newMaxPlayers
 
 Aucun nouvel endpoint. Champs ajoutes aux payloads existants :
 
-| Endpoint                       | Ajout                                       |
-| ------------------------------ | ------------------------------------------- |
-| `POST /tables`                 | Body: `reservedSeats?` (default 0)          |
-| `PATCH /:tableId`              | Body: `reservedSeats?`, `maxPlayers` updated |
-| `POST /:tableId/join`          | Calcul openSeats avec reservedSeats         |
-| `PATCH /:tableId/participants/:userId/status` | Logique priorite reserved    |
-| `DELETE /:tableId/leave`       | isOnReservedSeat → reservedSeats++          |
-| `DELETE /:tableId/participants/:userId` | idem                              |
+| Endpoint                                      | Ajout                                        |
+| --------------------------------------------- | -------------------------------------------- |
+| `POST /tables`                                | Body: `reservedSeats?` (default 0)           |
+| `PATCH /:tableId`                             | Body: `reservedSeats?`, `maxPlayers` updated |
+| `POST /:tableId/join`                         | Calcul openSeats avec reservedSeats          |
+| `PATCH /:tableId/participants/:userId/status` | Logique priorite reserved                    |
+| `DELETE /:tableId/leave`                      | isOnReservedSeat → reservedSeats++           |
+| `DELETE /:tableId/participants/:userId`       | idem                                         |
 
 Responses enrichies :
+
 - `getTable` : expose `reservedSeats` + `isOnReservedSeat` par participant
 - `listTables` : expose `reservedSeats` par table
 
 ## Notifications
 
-| Type                    | Quand                                               |
-| ----------------------- | --------------------------------------------------- |
-| `WAITLIST_PROMOTED`     | Promotion vers place normale                        |
-| `WAITLIST_DEMOTED`      | Demotion vers waitlist                              |
-| `RESERVED_SEAT_ASSIGNED`| Affectation a une place reservee par le MJ (nouveau)|
+| Type                     | Quand                                                |
+| ------------------------ | ---------------------------------------------------- |
+| `WAITLIST_PROMOTED`      | Promotion vers place normale                         |
+| `WAITLIST_DEMOTED`       | Demotion vers waitlist                               |
+| `RESERVED_SEAT_ASSIGNED` | Affectation a une place reservee par le MJ (nouveau) |
 
 ## UI
 

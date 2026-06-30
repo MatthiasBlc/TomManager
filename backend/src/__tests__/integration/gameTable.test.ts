@@ -792,7 +792,7 @@ describe("GameTable API", () => {
 
     it("join goes to WAITLIST when only reserved seats are left", async () => {
       // maxPlayers=3, reservedSeats=2 → openSeats=1
-      const { admin, event, tableId } = await setupTableWithReserved(2, 3);
+      const { admin: _admin, event, tableId } = await setupTableWithReserved(2, 3);
 
       // Premier joueur : prend la place ouverte
       const { cookie: c1 } = await addTestParticipant(event.id, {
@@ -819,7 +819,7 @@ describe("GameTable API", () => {
       // maxPlayers=3, reservedSeats=2 → openSeats=1
       const { admin, event, tableId } = await setupTableWithReserved(2, 3);
 
-      const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
         email: "rsp1@example.com",
         username: "rsp1",
       });
@@ -861,7 +861,7 @@ describe("GameTable API", () => {
       });
       await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
 
-      const { user: p2, cookie: c2 } = await addTestParticipant(event.id, {
+      const { user: _p2, cookie: c2 } = await addTestParticipant(event.id, {
         email: "nrs2@example.com",
         username: "nrs2",
       });
@@ -908,7 +908,7 @@ describe("GameTable API", () => {
       // maxPlayers=1, reservedSeats=0 → 1 place normale
       const { admin, event, tableId } = await setupTableWithReserved(0, 1);
 
-      const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
         email: "full1@example.com",
         username: "full1",
       });
@@ -932,7 +932,7 @@ describe("GameTable API", () => {
     it("demote player on reserved seat returns seat to pool and clears flag", async () => {
       const { admin, event, tableId } = await setupTableWithReserved(2, 4);
 
-      const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
         email: "dem1@example.com",
         username: "dem1",
       });
@@ -962,9 +962,7 @@ describe("GameTable API", () => {
         .set("Cookie", admin.cookie);
 
       expect(detail.body.data.reservedSeats).toBe(2);
-      const p2d = detail.body.data.participants.find(
-        (p: { userId: string }) => p.userId === p2.id
-      );
+      const p2d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p2.id);
       expect(p2d.isOnReservedSeat).toBe(false);
       expect(p2d.status).toBe("WAITLIST");
     });
@@ -1001,9 +999,7 @@ describe("GameTable API", () => {
       await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c3);
 
       // p2 quitte sa reserved seat
-      await request
-        .delete(`/api/events/${event.id}/tables/${tableId}/leave`)
-        .set("Cookie", c2);
+      await request.delete(`/api/events/${event.id}/tables/${tableId}/leave`).set("Cookie", c2);
 
       const detail = await request
         .get(`/api/events/${event.id}/tables/${tableId}`)
@@ -1022,7 +1018,7 @@ describe("GameTable API", () => {
       // maxPlayers=2, reservedSeats=0
       const { admin, event, tableId } = await setupTableWithReserved(0, 2);
 
-      const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
         email: "lan1@example.com",
         username: "lan1",
       });
@@ -1041,17 +1037,13 @@ describe("GameTable API", () => {
       // p1, p2 CONFIRMED; p3 WAITLIST
 
       // p1 quitte (place normale)
-      await request
-        .delete(`/api/events/${event.id}/tables/${tableId}/leave`)
-        .set("Cookie", c1);
+      await request.delete(`/api/events/${event.id}/tables/${tableId}/leave`).set("Cookie", c1);
 
       const detail = await request
         .get(`/api/events/${event.id}/tables/${tableId}`)
         .set("Cookie", admin.cookie);
 
-      const p3d = detail.body.data.participants.find(
-        (p: { userId: string }) => p.userId === p3.id
-      );
+      const p3d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p3.id);
       expect(p3d.status).toBe("CONFIRMED");
     });
 
@@ -1063,11 +1055,11 @@ describe("GameTable API", () => {
         email: "urd1@example.com",
         username: "urd1",
       });
-      const { user: p2, cookie: c2 } = await addTestParticipant(event.id, {
+      const { user: _p2, cookie: c2 } = await addTestParticipant(event.id, {
         email: "urd2@example.com",
         username: "urd2",
       });
-      const { user: p3, cookie: c3 } = await addTestParticipant(event.id, {
+      const { user: _p3, cookie: c3 } = await addTestParticipant(event.id, {
         email: "urd3@example.com",
         username: "urd3",
       });
@@ -1131,9 +1123,7 @@ describe("GameTable API", () => {
         .set("Cookie", admin.cookie);
 
       // p2 reste WAITLIST, pas d'auto-promotion
-      const p2d = detail.body.data.participants.find(
-        (p: { userId: string }) => p.userId === p2.id
-      );
+      const p2d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p2.id);
       expect(p2d.status).toBe("WAITLIST");
       expect(detail.body.data.reservedSeats).toBe(1);
     });
@@ -1188,11 +1178,9 @@ describe("GameTable API", () => {
     });
 
     it("listTables exposes reservedSeats", async () => {
-      const { admin, event, tableId } = await setupTableWithReserved(3, 5);
+      const { admin, event, tableId: _tableId } = await setupTableWithReserved(3, 5);
 
-      const res = await request
-        .get(`/api/events/${event.id}/tables`)
-        .set("Cookie", admin.cookie);
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data[0].reservedSeats).toBe(3);
@@ -1225,12 +1213,8 @@ describe("GameTable API", () => {
         .set("Cookie", admin.cookie);
 
       expect(detail.body.data.reservedSeats).toBe(1);
-      const p1d = detail.body.data.participants.find(
-        (p: { userId: string }) => p.userId === p1.id
-      );
-      const p2d = detail.body.data.participants.find(
-        (p: { userId: string }) => p.userId === p2.id
-      );
+      const p1d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p1.id);
+      const p2d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p2.id);
       expect(p1d.isOnReservedSeat).toBe(false);
       expect(p2d.isOnReservedSeat).toBe(true);
     });

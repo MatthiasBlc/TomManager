@@ -118,10 +118,9 @@ export default function TableDetailPage() {
 
   const handleSetStatus = async (userId: string, status: "CONFIRMED" | "WAITLIST") => {
     try {
-      await api.patch(
-        `/api/events/${eventId}/tables/${tableId}/participants/${userId}/status`,
-        { status }
-      );
+      await api.patch(`/api/events/${eventId}/tables/${tableId}/participants/${userId}/status`, {
+        status,
+      });
       fetchTable();
     } catch (err: unknown) {
       const message =
@@ -161,8 +160,7 @@ export default function TableDetailPage() {
 
   if (!table) return null;
 
-  const promoteLabel =
-    table.reservedSeats > 0 ? "Affecter (place reservee)" : "Promouvoir";
+  const promoteLabel = table.reservedSeats > 0 ? "Affecter (place reservee)" : "Promouvoir";
 
   return (
     <div className="container mx-auto px-4 py-4 md:py-8 max-w-3xl animate-fade-in">
@@ -329,9 +327,7 @@ export default function TableDetailPage() {
         {waitlistCount > 0 && (
           <div className="card bg-base-100 shadow-sm border-l-4 border-warning">
             <div className="card-body p-3 md:p-4">
-              <h3 className="font-semibold text-sm mb-2">
-                Liste d'attente ({waitlistCount})
-              </h3>
+              <h3 className="font-semibold text-sm mb-2">Liste d'attente ({waitlistCount})</h3>
               {isMobile ? (
                 <div className="space-y-2">
                   {table.participants
