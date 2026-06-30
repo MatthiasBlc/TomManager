@@ -82,6 +82,7 @@ model GameTable {
   triggers      String?
   comments      String?
   maxPlayers    Int
+  reservedSeats Int       @default(0)
   startDateTime DateTime
   endDateTime   DateTime
   boardGameId   String?
@@ -115,11 +116,12 @@ model GameTableTag {
 }
 
 model GameTableParticipant {
-  id          String                @id @default(uuid())
-  gameTableId String
-  userId      String
-  status      TableParticipantStatus @default(CONFIRMED)
-  joinedAt    DateTime              @default(now())
+  id               String                @id @default(uuid())
+  gameTableId      String
+  userId           String
+  status           TableParticipantStatus @default(CONFIRMED)
+  isOnReservedSeat Boolean               @default(false)
+  joinedAt         DateTime              @default(now())
 
   gameTable GameTable @relation(fields: [gameTableId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id])
@@ -185,6 +187,7 @@ enum NotificationType {
   TABLE_UPDATED
   WAITLIST_PROMOTED
   WAITLIST_DEMOTED
+  RESERVED_SEAT_ASSIGNED
   PLAYER_KICKED
   PARTICIPANT_REMOVED
   EVENT_UPDATED

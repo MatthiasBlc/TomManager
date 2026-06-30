@@ -32,6 +32,7 @@ interface TableDetail {
   triggers: string | null;
   comments: string | null;
   maxPlayers: number;
+  reservedSeats: number;
   startDateTime: string;
   endDateTime: string;
   creator: { id: string; username: string };
@@ -40,6 +41,7 @@ interface TableDetail {
     userId: string;
     username: string;
     status: string;
+    isOnReservedSeat: boolean;
     joinedAt: string;
   }[];
   boardGame?: BoardGameSummary | null;

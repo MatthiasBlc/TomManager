@@ -62,7 +62,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/event.test.ts` - Event API (CRUD: create, list, detail, update, delete + auth + cascade)
 - `integration/invitation.test.ts` - Invitation API (create, resend, validate token)
 - `integration/participant.test.ts` - Participant API (list, remove, leave) + Invitation listing
-- `integration/gameTable.test.ts` - GameTable API (CRUD, join/leave/kick, waitlist, demotion/promotion, promote/demote manuel GM) + Tag autocomplete
+- `integration/gameTable.test.ts` - GameTable API (CRUD, join/leave/kick, waitlist, demotion/promotion, promote/demote manuel GM, reserved seats) + Tag autocomplete
 - `integration/boardGame.test.ts` - BoardGame API (CRUD, search local + BGG fallback, lazy fetch, from-bgg, error format) + BGG XML parsing
 - `integration/eventBoardGame.test.ts` - EventBoardGame API (add, list, remove, duplicate, non-participant, cascade)
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
