@@ -853,7 +853,7 @@ describe("GameTable API", () => {
     });
 
     it("promote uses normal seat when reservedSeats=0", async () => {
-      const { admin, event, tableId } = await setupTableWithReserved(0, 3);
+      const { admin, event, tableId } = await setupTableWithReserved(0, 2);
 
       const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
         email: "nrs1@example.com",
@@ -872,7 +872,7 @@ describe("GameTable API", () => {
       });
       await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c3);
 
-      // p3 est en waitlist (table pleine a 3/3)
+      // p3 est en waitlist (table pleine a 2/2)
       const detail1 = await request
         .get(`/api/events/${event.id}/tables/${tableId}`)
         .set("Cookie", admin.cookie);
