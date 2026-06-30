@@ -15,6 +15,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       endDateTime,
       tags,
       boardGameId,
+      reservedSeats,
     } = req.body;
     const table = await gameTableService.createTable(req.params.eventId, req.session.userId!, {
       title,
@@ -28,6 +29,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       endDateTime,
       tags,
       boardGameId,
+      reservedSeats,
     });
     res.status(201).json({ data: table });
   } catch (err) {
@@ -76,6 +78,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
       endDateTime,
       tags,
       boardGameId,
+      reservedSeats,
     } = req.body;
     const table = await gameTableService.updateTable(
       req.params.tableId,
@@ -90,6 +93,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
         endDateTime,
         tags,
         boardGameId,
+        reservedSeats,
       },
       req.session.userId!
     );

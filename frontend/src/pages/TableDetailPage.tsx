@@ -20,6 +20,7 @@ interface TableDetail {
   triggers: string | null;
   comments: string | null;
   maxPlayers: number;
+  reservedSeats: number;
   startDateTime: string;
   endDateTime: string;
   creator: { id: string; username: string };
@@ -28,6 +29,7 @@ interface TableDetail {
     userId: string;
     username: string;
     status: string;
+    isOnReservedSeat: boolean;
     joinedAt: string;
   }[];
 }
@@ -49,6 +51,8 @@ export default function TableDetailPage() {
   const canEdit = isGM || isAdmin;
   const currentParticipant = table?.participants.find((p) => p.userId === user?.id);
   const confirmedCount = table?.participants.filter((p) => p.status === "CONFIRMED").length ?? 0;
+  const waitlistCount = table?.participants.filter((p) => p.status === "WAITLIST").length ?? 0;
+  const openSeats = table ? table.maxPlayers - confirmedCount - table.reservedSeats : 0;
 
   const fetchTable = useCallback(async () => {
     try {
@@ -112,6 +116,20 @@ export default function TableDetailPage() {
     }
   };
 
+  const handleSetStatus = async (userId: string, status: "CONFIRMED" | "WAITLIST") => {
+    try {
+      await api.patch(`/api/events/${eventId}/tables/${tableId}/participants/${userId}/status`, {
+        status,
+      });
+      fetchTable();
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Echec du changement de statut";
+      toast.error(message);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm("Supprimer cette table ? Cette action est irreversible.")) return;
     try {
@@ -141,6 +159,8 @@ export default function TableDetailPage() {
   }
 
   if (!table) return null;
+
+  const promoteLabel = table.reservedSeats > 0 ? "Affecter (place reservee)" : "Promouvoir";
 
   return (
     <div className="container mx-auto px-4 py-4 md:py-8 max-w-3xl animate-fade-in">
@@ -199,11 +219,29 @@ export default function TableDetailPage() {
           </div>
         )}
 
+        {/* Bloc capacite */}
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body p-3 md:p-4">
             <h3 className="font-semibold text-sm mb-2">
               Participants ({confirmedCount}/{table.maxPlayers})
             </h3>
+
+            {/* Repartition des places */}
+            {(table.reservedSeats > 0 || openSeats > 0) && (
+              <div className="flex flex-wrap gap-2 mb-3 text-xs">
+                {table.reservedSeats > 0 && (
+                  <span className="badge badge-outline badge-warning gap-1">
+                    {table.reservedSeats} reservee{table.reservedSeats > 1 ? "s" : ""}
+                  </span>
+                )}
+                {openSeats > 0 && (
+                  <span className="badge badge-outline badge-success gap-1">
+                    {openSeats} libre{openSeats > 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+            )}
+
             {confirmedCount === 0 ? (
               <EmptyState icon={<span>👥</span>} title="Aucun participant pour l'instant" />
             ) : isMobile ? (
@@ -212,14 +250,27 @@ export default function TableDetailPage() {
                   .filter((p) => p.status === "CONFIRMED")
                   .map((p) => (
                     <div key={p.userId} className="flex items-center justify-between py-1">
-                      <span className="text-sm font-medium">{p.username}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{p.username}</span>
+                        {p.isOnReservedSeat && (
+                          <span className="badge badge-warning badge-xs">reservee</span>
+                        )}
+                      </div>
                       {canEdit && (
-                        <button
-                          className="btn btn-ghost btn-sm text-error min-h-[44px]"
-                          onClick={() => handleKick(p.userId, p.username)}
-                        >
-                          Retirer
-                        </button>
+                        <div className="flex gap-1">
+                          <button
+                            className="btn btn-ghost btn-sm text-warning min-h-[44px]"
+                            onClick={() => handleSetStatus(p.userId, "WAITLIST")}
+                          >
+                            Retrograder
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm text-error min-h-[44px]"
+                            onClick={() => handleKick(p.userId, p.username)}
+                          >
+                            Retirer
+                          </button>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -238,15 +289,30 @@ export default function TableDetailPage() {
                       .filter((p) => p.status === "CONFIRMED")
                       .map((p) => (
                         <tr key={p.userId}>
-                          <td>{p.username}</td>
+                          <td>
+                            <div className="flex items-center gap-2">
+                              {p.username}
+                              {p.isOnReservedSeat && (
+                                <span className="badge badge-warning badge-xs">reservee</span>
+                              )}
+                            </div>
+                          </td>
                           {canEdit && (
                             <td>
-                              <button
-                                className="btn btn-ghost btn-xs text-error"
-                                onClick={() => handleKick(p.userId, p.username)}
-                              >
-                                Retirer
-                              </button>
+                              <div className="flex gap-1">
+                                <button
+                                  className="btn btn-ghost btn-xs text-warning"
+                                  onClick={() => handleSetStatus(p.userId, "WAITLIST")}
+                                >
+                                  Retrograder
+                                </button>
+                                <button
+                                  className="btn btn-ghost btn-xs text-error"
+                                  onClick={() => handleKick(p.userId, p.username)}
+                                >
+                                  Retirer
+                                </button>
+                              </div>
                             </td>
                           )}
                         </tr>
@@ -258,12 +324,10 @@ export default function TableDetailPage() {
           </div>
         </div>
 
-        {table.participants.filter((p) => p.status === "WAITLIST").length > 0 && (
+        {waitlistCount > 0 && (
           <div className="card bg-base-100 shadow-sm border-l-4 border-warning">
             <div className="card-body p-3 md:p-4">
-              <h3 className="font-semibold text-sm mb-2">
-                Liste d'attente ({table.participants.filter((p) => p.status === "WAITLIST").length})
-              </h3>
+              <h3 className="font-semibold text-sm mb-2">Liste d'attente ({waitlistCount})</h3>
               {isMobile ? (
                 <div className="space-y-2">
                   {table.participants
@@ -272,12 +336,20 @@ export default function TableDetailPage() {
                       <div key={p.userId} className="flex items-center justify-between py-1">
                         <span className="text-sm font-medium">{p.username}</span>
                         {canEdit && (
-                          <button
-                            className="btn btn-ghost btn-sm text-error min-h-[44px]"
-                            onClick={() => handleKick(p.userId, p.username)}
-                          >
-                            Retirer
-                          </button>
+                          <div className="flex gap-1">
+                            <button
+                              className="btn btn-ghost btn-sm text-success min-h-[44px]"
+                              onClick={() => handleSetStatus(p.userId, "CONFIRMED")}
+                            >
+                              {promoteLabel}
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-sm text-error min-h-[44px]"
+                              onClick={() => handleKick(p.userId, p.username)}
+                            >
+                              Retirer
+                            </button>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -299,12 +371,20 @@ export default function TableDetailPage() {
                             <td>{p.username}</td>
                             {canEdit && (
                               <td>
-                                <button
-                                  className="btn btn-ghost btn-xs text-error"
-                                  onClick={() => handleKick(p.userId, p.username)}
-                                >
-                                  Retirer
-                                </button>
+                                <div className="flex gap-1">
+                                  <button
+                                    className="btn btn-ghost btn-xs text-success"
+                                    onClick={() => handleSetStatus(p.userId, "CONFIRMED")}
+                                  >
+                                    {promoteLabel}
+                                  </button>
+                                  <button
+                                    className="btn btn-ghost btn-xs text-error"
+                                    onClick={() => handleKick(p.userId, p.username)}
+                                  >
+                                    Retirer
+                                  </button>
+                                </div>
                               </td>
                             )}
                           </tr>

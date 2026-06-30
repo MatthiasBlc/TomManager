@@ -332,7 +332,7 @@ describe("GameTable API", () => {
       expect(waitlisted).toHaveLength(1);
     });
 
-    it("should promote waitlisted players when increasing maxPlayers", async () => {
+    it("should NOT auto-promote waitlisted players when increasing maxPlayers (decision B)", async () => {
       const { admin, playerCookie, event } = await setupEventWithParticipant();
 
       // Admin creates table with maxPlayers=1
@@ -363,7 +363,7 @@ describe("GameTable API", () => {
         .set("Cookie", admin.cookie)
         .send({ maxPlayers: 3 });
 
-      // Check detail — both should be confirmed
+      // Le MJ controle manuellement — player2 reste en WAITLIST
       const detail = await request
         .get(`/api/events/${event.id}/tables/${tableId}`)
         .set("Cookie", admin.cookie);
@@ -371,7 +371,11 @@ describe("GameTable API", () => {
       const confirmed = detail.body.data.participants.filter(
         (p: { status: string }) => p.status === "CONFIRMED"
       );
-      expect(confirmed).toHaveLength(2);
+      const waitlisted = detail.body.data.participants.filter(
+        (p: { status: string }) => p.status === "WAITLIST"
+      );
+      expect(confirmed).toHaveLength(1);
+      expect(waitlisted).toHaveLength(1);
     });
   });
 
@@ -738,6 +742,481 @@ describe("GameTable API", () => {
         .send({ status: "WAITLIST" });
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe("Reserved Seats", () => {
+    async function setupTableWithReserved(reservedSeats: number, maxPlayers: number) {
+      const admin = await setupAdmin();
+      const event = await createTestEvent(admin.cookie);
+      const createRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({ ...validTableData, maxPlayers, reservedSeats });
+      return { admin, event, tableId: createRes.body.data.id };
+    }
+
+    it("should create a table with reservedSeats and expose it in response", async () => {
+      const { admin, event } = await setupEventWithParticipant();
+
+      const res = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({ ...validTableData, maxPlayers: 5, reservedSeats: 2 });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.reservedSeats).toBe(2);
+    });
+
+    it("should reject reservedSeats > maxPlayers", async () => {
+      const { admin, event } = await setupEventWithParticipant();
+
+      const res = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({ ...validTableData, maxPlayers: 3, reservedSeats: 4 });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("should reject negative reservedSeats", async () => {
+      const { admin, event } = await setupEventWithParticipant();
+
+      const res = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({ ...validTableData, maxPlayers: 5, reservedSeats: -1 });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("join goes to WAITLIST when only reserved seats are left", async () => {
+      // maxPlayers=3, reservedSeats=2 → openSeats=1
+      const { admin: _admin, event, tableId } = await setupTableWithReserved(2, 3);
+
+      // Premier joueur : prend la place ouverte
+      const { cookie: c1 } = await addTestParticipant(event.id, {
+        email: "rs1@example.com",
+        username: "rsplayer1",
+      });
+      const r1 = await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", c1);
+      expect(r1.body.data.status).toBe("CONFIRMED");
+
+      // Deuxieme joueur : plus de place ouverte → WAITLIST
+      const { cookie: c2 } = await addTestParticipant(event.id, {
+        email: "rs2@example.com",
+        username: "rsplayer2",
+      });
+      const r2 = await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", c2);
+      expect(r2.body.data.status).toBe("WAITLIST");
+    });
+
+    it("promote uses reserved seat first and decrements reservedSeats", async () => {
+      // maxPlayers=3, reservedSeats=2 → openSeats=1
+      const { admin, event, tableId } = await setupTableWithReserved(2, 3);
+
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "rsp1@example.com",
+        username: "rsp1",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+
+      // p1 est CONFIRMED sur place normale, plus de place ouverte → p2 en WAITLIST
+      const { user: p2, cookie: c2 } = await addTestParticipant(event.id, {
+        email: "rsp2@example.com",
+        username: "rsp2",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+
+      // Promouvoir p2 depuis la waitlist → doit utiliser une reserved seat
+      const promoteRes = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${p2.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "CONFIRMED" });
+
+      expect(promoteRes.status).toBe(200);
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+
+      expect(detail.body.data.reservedSeats).toBe(1); // decremente de 2 a 1
+      const p2Detail = detail.body.data.participants.find(
+        (p: { userId: string }) => p.userId === p2.id
+      );
+      expect(p2Detail.status).toBe("CONFIRMED");
+      expect(p2Detail.isOnReservedSeat).toBe(true);
+    });
+
+    it("promote uses normal seat when reservedSeats=0", async () => {
+      const { admin, event, tableId } = await setupTableWithReserved(0, 2);
+
+      const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "nrs1@example.com",
+        username: "nrs1",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+
+      const { user: _p2, cookie: c2 } = await addTestParticipant(event.id, {
+        email: "nrs2@example.com",
+        username: "nrs2",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+      const { user: p3, cookie: c3 } = await addTestParticipant(event.id, {
+        email: "nrs3@example.com",
+        username: "nrs3",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c3);
+
+      // p3 est en waitlist (table pleine a 2/2)
+      const detail1 = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+      const p3pre = detail1.body.data.participants.find(
+        (p: { userId: string }) => p.userId === p3.id
+      );
+      expect(p3pre.status).toBe("WAITLIST");
+
+      // Retrograder p1 pour liberer une place
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${p1.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "WAITLIST" });
+
+      // Promouvoir p3 → place normale
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${p3.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "CONFIRMED" });
+
+      const detail2 = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+      const p3post = detail2.body.data.participants.find(
+        (p: { userId: string }) => p.userId === p3.id
+      );
+      expect(p3post.status).toBe("CONFIRMED");
+      expect(p3post.isOnReservedSeat).toBe(false);
+      expect(detail2.body.data.reservedSeats).toBe(0); // inchange
+    });
+
+    it("promote returns 409 when no seats available at all", async () => {
+      // maxPlayers=1, reservedSeats=0 → 1 place normale
+      const { admin, event, tableId } = await setupTableWithReserved(0, 1);
+
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "full1@example.com",
+        username: "full1",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+
+      const { user: p2, cookie: c2 } = await addTestParticipant(event.id, {
+        email: "full2@example.com",
+        username: "full2",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+      // p2 est en WAITLIST
+
+      const res = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${p2.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "CONFIRMED" });
+
+      expect(res.status).toBe(409);
+    });
+
+    it("demote player on reserved seat returns seat to pool and clears flag", async () => {
+      const { admin, event, tableId } = await setupTableWithReserved(2, 4);
+
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "dem1@example.com",
+        username: "dem1",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+      // openSeats = 4-1-2 = 1
+      const { user: p2, cookie: c2 } = await addTestParticipant(event.id, {
+        email: "dem2@example.com",
+        username: "dem2",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+      // openSeats = 4-2-2 = 0, p2 en WAITLIST
+
+      // Promouvoir p2 → prend reserved seat, reservedSeats = 1
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${p2.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "CONFIRMED" });
+
+      // Retrograder p2 → reserved seat liberee, reservedSeats revient a 2
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${p2.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "WAITLIST" });
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+
+      expect(detail.body.data.reservedSeats).toBe(2);
+      const p2d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p2.id);
+      expect(p2d.isOnReservedSeat).toBe(false);
+      expect(p2d.status).toBe("WAITLIST");
+    });
+
+    it("leave from reserved seat returns seat to pool with no auto-promotion", async () => {
+      const { admin, event, tableId } = await setupTableWithReserved(1, 2);
+      // openSeats = 2-0-1 = 1
+
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "lrs1@example.com",
+        username: "lrs1",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+      // openSeats = 2-1-1 = 0, p1 CONFIRMED (place normale)
+
+      const { user: p2, cookie: c2 } = await addTestParticipant(event.id, {
+        email: "lrs2@example.com",
+        username: "lrs2",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+      // p2 en WAITLIST
+
+      // Promouvoir p2 → reserved seat, reservedSeats=0
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${p2.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "CONFIRMED" });
+
+      // Ajouter p3 en waitlist
+      const { user: _p3, cookie: c3 } = await addTestParticipant(event.id, {
+        email: "lrs3@example.com",
+        username: "lrs3",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c3);
+
+      // p2 quitte sa reserved seat
+      await request.delete(`/api/events/${event.id}/tables/${tableId}/leave`).set("Cookie", c2);
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+
+      // reservedSeats doit revenir a 1
+      expect(detail.body.data.reservedSeats).toBe(1);
+      // p3 ne doit PAS etre auto-promu
+      const p3d = detail.body.data.participants.find(
+        (p: { userId: string }) => p.userId === _p3.id
+      );
+      expect(p3d.status).toBe("WAITLIST");
+    });
+
+    it("leave from normal seat still auto-promotes", async () => {
+      // maxPlayers=2, reservedSeats=0
+      const { admin, event, tableId } = await setupTableWithReserved(0, 2);
+
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "lan1@example.com",
+        username: "lan1",
+      });
+      const { user: _p2, cookie: c2 } = await addTestParticipant(event.id, {
+        email: "lan2@example.com",
+        username: "lan2",
+      });
+      const { user: p3, cookie: c3 } = await addTestParticipant(event.id, {
+        email: "lan3@example.com",
+        username: "lan3",
+      });
+
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c3);
+      // p1, p2 CONFIRMED; p3 WAITLIST
+
+      // p1 quitte (place normale)
+      await request.delete(`/api/events/${event.id}/tables/${tableId}/leave`).set("Cookie", c1);
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+
+      const p3d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p3.id);
+      expect(p3d.status).toBe("CONFIRMED");
+    });
+
+    it("updateTable increasing reservedSeats demotes non-reserved players first", async () => {
+      // maxPlayers=4, reservedSeats=0
+      const { admin, event, tableId } = await setupTableWithReserved(0, 4);
+
+      const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "urd1@example.com",
+        username: "urd1",
+      });
+      const { user: _p2, cookie: c2 } = await addTestParticipant(event.id, {
+        email: "urd2@example.com",
+        username: "urd2",
+      });
+      const { user: _p3, cookie: c3 } = await addTestParticipant(event.id, {
+        email: "urd3@example.com",
+        username: "urd3",
+      });
+
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c3);
+      // p1, p2, p3 CONFIRMED (ordre join: p1 < p2 < p3)
+
+      // MJ reserve 3 places → targetConfirmed = 4-3 = 1 → 2 demotions
+      const updateRes = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie)
+        .send({ reservedSeats: 3 });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.data.reservedSeats).toBe(3);
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+
+      const confirmed = detail.body.data.participants.filter(
+        (p: { status: string }) => p.status === "CONFIRMED"
+      );
+      const waitlisted = detail.body.data.participants.filter(
+        (p: { status: string }) => p.status === "WAITLIST"
+      );
+      expect(confirmed).toHaveLength(1);
+      expect(waitlisted).toHaveLength(2);
+      // p1 (le plus ancien) doit rester CONFIRMED
+      expect(confirmed[0].userId).toBe(p1.id);
+    });
+
+    it("updateTable decreasing reservedSeats does NOT auto-promote", async () => {
+      // maxPlayers=4, reservedSeats=3 → openSeats=1
+      const { admin, event, tableId } = await setupTableWithReserved(3, 4);
+
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "rsd1@example.com",
+        username: "rsd1",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+      // p1 CONFIRMED (place normale), openSeats=0
+
+      const { user: p2, cookie: c2 } = await addTestParticipant(event.id, {
+        email: "rsd2@example.com",
+        username: "rsd2",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+      // p2 WAITLIST
+
+      // MJ reduit reservedSeats a 1 → openSeats = 4-1-1 = 2
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie)
+        .send({ reservedSeats: 1 });
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+
+      // p2 reste WAITLIST, pas d'auto-promotion
+      const p2d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p2.id);
+      expect(p2d.status).toBe("WAITLIST");
+      expect(detail.body.data.reservedSeats).toBe(1);
+    });
+
+    it("updateTable reducing maxPlayers caps reservedSeats and demotes confirmed", async () => {
+      // maxPlayers=6, reservedSeats=2 → openSeats=4
+      const { admin, event, tableId } = await setupTableWithReserved(2, 6);
+
+      // 4 joueurs rejoignent (places normales)
+      const players = [];
+      for (let i = 1; i <= 4; i++) {
+        const { user, cookie } = await addTestParticipant(event.id, {
+          email: `mp${i}@example.com`,
+          username: `mp${i}`,
+        });
+        await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", cookie);
+        players.push({ user, cookie });
+      }
+
+      // MJ reduit maxPlayers a 2 → newReservedSeats = min(2,2)=2, targetConfirmed=0, 4 demotions
+      const updateRes = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie)
+        .send({ maxPlayers: 2 });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.data.maxPlayers).toBe(2);
+      expect(updateRes.body.data.reservedSeats).toBe(2);
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+
+      const confirmed = detail.body.data.participants.filter(
+        (p: { status: string }) => p.status === "CONFIRMED"
+      );
+      expect(confirmed).toHaveLength(0);
+    });
+
+    it("updateTable reducing maxPlayers below reservedSeats caps reservedSeats", async () => {
+      // maxPlayers=6, reservedSeats=4
+      const { admin, event, tableId } = await setupTableWithReserved(4, 6);
+
+      // MJ reduit maxPlayers a 2 → newReservedSeats = min(4,2) = 2
+      const updateRes = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie)
+        .send({ maxPlayers: 2 });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.data.reservedSeats).toBe(2);
+    });
+
+    it("listTables exposes reservedSeats", async () => {
+      const { admin, event, tableId: _tableId } = await setupTableWithReserved(3, 5);
+
+      const res = await request.get(`/api/events/${event.id}/tables`).set("Cookie", admin.cookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data[0].reservedSeats).toBe(3);
+    });
+
+    it("getTable exposes reservedSeats and isOnReservedSeat on participants", async () => {
+      const { admin, event, tableId } = await setupTableWithReserved(2, 4);
+
+      const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "gexp1@example.com",
+        username: "gexp1",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+      // p1 CONFIRMED (openSeats = 4-1-2 = 1)
+      const { user: p2, cookie: c2 } = await addTestParticipant(event.id, {
+        email: "gexp2@example.com",
+        username: "gexp2",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+      // p2 WAITLIST (openSeats = 4-2-2 = 0... wait that's wrong, 4-1-2=1 then p2 joins: 4-2-2=0, so p2 is WAITLIST)
+
+      // Promouvoir p2 → reserved seat
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${p2.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "CONFIRMED" });
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+
+      expect(detail.body.data.reservedSeats).toBe(1);
+      const p1d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p1.id);
+      const p2d = detail.body.data.participants.find((p: { userId: string }) => p.userId === p2.id);
+      expect(p1d.isOnReservedSeat).toBe(false);
+      expect(p2d.isOnReservedSeat).toBe(true);
     });
   });
 
