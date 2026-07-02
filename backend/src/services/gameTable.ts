@@ -167,7 +167,12 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       creator: { select: { id: true, username: true } },
       tags: { include: { tag: true } },
       participants: {
-        select: { userId: true, status: true, user: { select: { id: true, username: true } } },
+        select: {
+          userId: true,
+          status: true,
+          isOnReservedSeat: true,
+          user: { select: { id: true, username: true } },
+        },
         orderBy: { joinedAt: "asc" },
       },
       boardGame: { select: BOARD_GAME_SELECT },
@@ -212,6 +217,9 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
   return tables.map((t, idx) => {
     const confirmedCount = t.participants.filter((p) => p.status === "CONFIRMED").length;
     const waitlistCount = t.participants.filter((p) => p.status === "WAITLIST").length;
+    const confirmedOnReserved = t.participants.filter(
+      (p) => p.status === "CONFIRMED" && p.isOnReservedSeat
+    ).length;
     const currentUserParticipant = t.participants.find((p) => p.userId === currentUserId);
     const conflictedUsers = conflictedUsersInTable.get(idx) ?? new Set<string>();
 
@@ -234,6 +242,7 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
         .map((p) => ({ id: p.user.id, username: p.user.username })),
       confirmedCount,
       waitlistCount,
+      confirmedOnReserved,
       currentUserStatus: currentUserParticipant?.status || null,
       isGM: t.createdBy === currentUserId,
       currentUserConflict: conflictedUsers.has(currentUserId),

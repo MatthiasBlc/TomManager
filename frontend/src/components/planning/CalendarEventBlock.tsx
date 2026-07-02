@@ -1,11 +1,14 @@
 import { EventContentArg } from "@fullcalendar/core";
+import { formatSeatSummary } from "./computeLayout";
 
 interface TableExtendedProps {
   isGM: boolean;
   currentUserStatus: string | null;
   confirmedCount: number;
   maxPlayers: number;
+  reservedSeats: number;
   waitlistCount: number;
+  confirmedOnReserved: number;
   type: "JDR" | "JDS";
   currentUserConflict: boolean;
   conflictingPlayerCount: number;
@@ -20,7 +23,9 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
     currentUserStatus,
     confirmedCount,
     maxPlayers,
+    reservedSeats,
     waitlistCount,
+    confirmedOnReserved,
     type,
     currentUserConflict,
     conflictingPlayerCount,
@@ -28,6 +33,13 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
     gmUsername,
     tags = [],
   } = arg.event.extendedProps as TableExtendedProps;
+
+  const seatSummary = formatSeatSummary({
+    confirmedCount,
+    maxPlayers,
+    reservedSeats,
+    confirmedOnReserved,
+  });
 
   // La bordure gauche indique toujours le type (JDR = primary, JDS = accent)
   const borderClass = type === "JDR" ? "border-primary" : "border-accent";
@@ -49,10 +61,13 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       <span className="badge badge-outline badge-xs opacity-80">{type}</span>
       <p className="text-xs opacity-80">{arg.timeText}</p>
       <p className="text-xs opacity-70">MJ : {gmUsername}</p>
-      <p className="text-xs opacity-70">
-        {confirmedCount}/{maxPlayers}
-        {waitlistCount > 0 && ` +${waitlistCount}`}
-      </p>
+      <p className="text-xs opacity-70">{seatSummary.total}</p>
+      {seatSummary.reserved && (
+        <p className="text-xs opacity-70">
+          {seatSummary.normal} · {seatSummary.reserved}
+        </p>
+      )}
+      {waitlistCount > 0 && <p className="text-xs opacity-70">+{waitlistCount} en attente</p>}
       {currentUserConflict && <p className="text-xs font-semibold">⚠ Conflit</p>}
       {!currentUserConflict && isGM && conflictingPlayerCount > 0 && (
         <p className="text-xs font-semibold">

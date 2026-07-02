@@ -9,6 +9,7 @@ import EditTableModal from "./EditTableModal";
 import EmptyState from "../common/EmptyState";
 import { SkeletonTableDetail } from "../common/Skeleton";
 import BoardGameDetailModal from "../boardgames/BoardGameDetailModal";
+import { formatSeatSummary } from "./computeLayout";
 
 interface BoardGameSummary {
   id: string;
@@ -81,11 +82,16 @@ export default function TableDetailModal({
   const currentParticipant = table?.participants.find((p) => p.userId === user?.id);
   const confirmedCount = table?.participants.filter((p) => p.status === "CONFIRMED").length ?? 0;
   const waitlistCount = table?.participants.filter((p) => p.status === "WAITLIST").length ?? 0;
-  const reservedSeats = table?.reservedSeats ?? 0;
-  const normalSeats = table ? table.maxPlayers - reservedSeats : 0;
   const confirmedOnReserved =
     table?.participants.filter((p) => p.status === "CONFIRMED" && p.isOnReservedSeat).length ?? 0;
-  const confirmedNormal = confirmedCount - confirmedOnReserved;
+  const seatSummary = table
+    ? formatSeatSummary({
+        confirmedCount,
+        maxPlayers: table.maxPlayers,
+        reservedSeats: table.reservedSeats,
+        confirmedOnReserved,
+      })
+    : null;
 
   const fetchTable = useCallback(async () => {
     if (!tableId) return;
@@ -240,10 +246,13 @@ export default function TableDetailModal({
                 {formatDateTime(table.startDateTime)} → {formatDateTime(table.endDateTime)}
               </p>
               <p>
-                {confirmedNormal}/{normalSeats} joueurs
-                {reservedSeats > 0 && (
-                  <span className="ml-2 badge badge-outline badge-warning badge-xs">
-                    {confirmedOnReserved}/{reservedSeats} reservee{reservedSeats > 1 ? "s" : ""}
+                {seatSummary?.total}
+                {seatSummary?.normal && (
+                  <span className="ml-2 badge badge-outline badge-sm">{seatSummary.normal}</span>
+                )}
+                {seatSummary?.reserved && (
+                  <span className="ml-2 badge badge-outline badge-warning badge-sm">
+                    {seatSummary.reserved}
                   </span>
                 )}
                 {waitlistCount > 0 && (

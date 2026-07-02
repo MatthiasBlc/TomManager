@@ -4,6 +4,7 @@ export interface TableSummary {
   type: "JDR" | "JDS";
   pitch: string | null;
   maxPlayers: number;
+  reservedSeats: number;
   startDateTime: string;
   endDateTime: string;
   creator: { id: string; username: string };
@@ -11,10 +12,41 @@ export interface TableSummary {
   players: { id: string; username: string }[];
   confirmedCount: number;
   waitlistCount: number;
+  confirmedOnReserved: number;
   currentUserStatus: string | null;
   isGM: boolean;
   currentUserConflict: boolean;
   conflictingPlayerCount: number;
+}
+
+export interface SeatSummary {
+  total: string;
+  normal: string | null;
+  reserved: string | null;
+}
+
+// Formate le detail des places (publiques vs reservees par le MJ).
+// normal/reserved restent a null quand la table n'a pas de place reservee,
+// pour que l'appelant puisse choisir de ne rien afficher dans ce cas.
+export function formatSeatSummary(table: {
+  confirmedCount: number;
+  maxPlayers: number;
+  reservedSeats: number;
+  confirmedOnReserved: number;
+}): SeatSummary {
+  const { confirmedCount, maxPlayers, reservedSeats, confirmedOnReserved } = table;
+  const total = `${confirmedCount}/${maxPlayers} joueurs`;
+
+  if (reservedSeats <= 0) return { total, normal: null, reserved: null };
+
+  const normalSeats = maxPlayers - reservedSeats;
+  const confirmedNormal = confirmedCount - confirmedOnReserved;
+
+  return {
+    total,
+    normal: `${confirmedNormal}/${normalSeats} publique${normalSeats > 1 ? "s" : ""}`,
+    reserved: `${confirmedOnReserved}/${reservedSeats} reservee${reservedSeats > 1 ? "s" : ""}`,
+  };
 }
 
 export interface LayoutItem {

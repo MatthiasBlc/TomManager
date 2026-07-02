@@ -1184,6 +1184,7 @@ describe("GameTable API", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data[0].reservedSeats).toBe(3);
+      expect(res.body.data[0].confirmedOnReserved).toBe(0);
     });
 
     it("getTable exposes reservedSeats and isOnReservedSeat on participants", async () => {

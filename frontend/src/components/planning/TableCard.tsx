@@ -1,4 +1,4 @@
-import { type TableSummary } from "./computeLayout";
+import { type TableSummary, formatSeatSummary } from "./computeLayout";
 
 interface TableCardTableSummary extends TableSummary {
   boardGame?: { id: string; name: string } | null;
@@ -19,6 +19,8 @@ export default function TableCard({ table, onClick }: Props) {
 
   const hasGmPlayerConflict =
     table.isGM && !table.currentUserConflict && table.conflictingPlayerCount > 0;
+
+  const seatSummary = formatSeatSummary(table);
 
   return (
     <div
@@ -62,12 +64,20 @@ export default function TableCard({ table, onClick }: Props) {
 
         {table.pitch && <p className="text-sm line-clamp-2">{table.pitch}</p>}
 
-        <div className="flex items-center gap-2 mt-2">
-          <span className="badge badge-outline badge-sm">
-            {table.confirmedCount}/{table.maxPlayers}
-          </span>
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <span className="badge badge-outline badge-sm">{seatSummary.total}</span>
+          {seatSummary.normal && (
+            <span className="badge badge-outline badge-sm">{seatSummary.normal}</span>
+          )}
+          {seatSummary.reserved && (
+            <span className="badge badge-outline badge-warning badge-sm">
+              {seatSummary.reserved}
+            </span>
+          )}
           {table.waitlistCount > 0 && (
-            <span className="badge badge-warning badge-sm">+{table.waitlistCount} en attente</span>
+            <span className="badge badge-warning badge-sm">
+              +{table.waitlistCount} en liste d'attente
+            </span>
           )}
           {table.currentUserStatus && (
             <span
