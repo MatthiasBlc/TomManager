@@ -81,6 +81,11 @@ export default function TableDetailModal({
   const currentParticipant = table?.participants.find((p) => p.userId === user?.id);
   const confirmedCount = table?.participants.filter((p) => p.status === "CONFIRMED").length ?? 0;
   const waitlistCount = table?.participants.filter((p) => p.status === "WAITLIST").length ?? 0;
+  const reservedSeats = table?.reservedSeats ?? 0;
+  const normalSeats = table ? table.maxPlayers - reservedSeats : 0;
+  const confirmedOnReserved =
+    table?.participants.filter((p) => p.status === "CONFIRMED" && p.isOnReservedSeat).length ?? 0;
+  const confirmedNormal = confirmedCount - confirmedOnReserved;
 
   const fetchTable = useCallback(async () => {
     if (!tableId) return;
@@ -235,7 +240,12 @@ export default function TableDetailModal({
                 {formatDateTime(table.startDateTime)} → {formatDateTime(table.endDateTime)}
               </p>
               <p>
-                {confirmedCount}/{table.maxPlayers} joueurs
+                {confirmedNormal}/{normalSeats} joueurs
+                {reservedSeats > 0 && (
+                  <span className="ml-2 badge badge-outline badge-warning badge-xs">
+                    {confirmedOnReserved}/{reservedSeats} reservee{reservedSeats > 1 ? "s" : ""}
+                  </span>
+                )}
                 {waitlistCount > 0 && (
                   <span className="ml-2 badge badge-warning badge-xs">
                     +{waitlistCount} en attente
