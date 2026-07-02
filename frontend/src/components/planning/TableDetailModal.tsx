@@ -246,14 +246,14 @@ export default function TableDetailModal({
                 {formatDateTime(table.startDateTime)} → {formatDateTime(table.endDateTime)}
               </p>
               <p>
-                {seatSummary?.total}
+                {seatSummary && (
+                  <span className="badge badge-warning badge-sm">{seatSummary.total}</span>
+                )}
                 {seatSummary?.normal && (
-                  <span className="ml-2 badge badge-outline badge-sm">{seatSummary.normal}</span>
+                  <span className="ml-2 text-xs opacity-70">{seatSummary.normal}</span>
                 )}
                 {seatSummary?.reserved && (
-                  <span className="ml-2 badge badge-outline badge-warning badge-sm">
-                    {seatSummary.reserved}
-                  </span>
+                  <span className="ml-2 text-xs opacity-70">{seatSummary.reserved}</span>
                 )}
                 {waitlistCount > 0 && (
                   <span className="ml-2 badge badge-warning badge-xs">

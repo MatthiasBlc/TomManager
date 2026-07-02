@@ -61,7 +61,9 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       <span className="badge badge-outline badge-xs opacity-80">{type}</span>
       <p className="text-xs opacity-80">{arg.timeText}</p>
       <p className="text-xs opacity-70">MJ : {gmUsername}</p>
-      <p className="text-xs opacity-70">{seatSummary.total}</p>
+      <p className="text-xs opacity-70">
+        <span className="badge badge-warning badge-xs">{seatSummary.total}</span>
+      </p>
       {seatSummary.reserved && (
         <p className="text-xs opacity-70">
           {seatSummary.normal} · {seatSummary.reserved}

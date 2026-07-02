@@ -65,14 +65,10 @@ export default function TableCard({ table, onClick }: Props) {
         {table.pitch && <p className="text-sm line-clamp-2">{table.pitch}</p>}
 
         <div className="flex items-center gap-2 mt-2 flex-wrap">
-          <span className="badge badge-outline badge-sm">{seatSummary.total}</span>
-          {seatSummary.normal && (
-            <span className="badge badge-outline badge-sm">{seatSummary.normal}</span>
-          )}
+          <span className="badge badge-warning badge-sm">{seatSummary.total}</span>
+          {seatSummary.normal && <span className="text-xs opacity-70">{seatSummary.normal}</span>}
           {seatSummary.reserved && (
-            <span className="badge badge-outline badge-warning badge-sm">
-              {seatSummary.reserved}
-            </span>
+            <span className="text-xs opacity-70">{seatSummary.reserved}</span>
           )}
           {table.waitlistCount > 0 && (
             <span className="badge badge-warning badge-sm">
