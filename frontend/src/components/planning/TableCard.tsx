@@ -24,7 +24,7 @@ export default function TableCard({ table, onClick }: Props) {
 
   return (
     <div
-      className={`card bg-base-100 border h-full transition-all cursor-pointer hover:shadow-lg active:scale-[0.98] ${
+      className={`card bg-base-100 border h-full overflow-hidden transition-all cursor-pointer hover:shadow-lg active:scale-[0.98] ${
         table.currentUserConflict
           ? "border-error border-2"
           : "border-base-content/15 hover:border-base-content/30"
@@ -32,12 +32,14 @@ export default function TableCard({ table, onClick }: Props) {
       onClick={onClick}
     >
       <div className="card-body p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="card-title text-base">{table.title}</h3>
-            {table.boardGame && <p className="text-xs opacity-60 mt-0.5">{table.boardGame.name}</p>}
+        <div className="flex items-start justify-between flex-wrap gap-1">
+          <div className="min-w-0">
+            <h3 className="card-title text-base truncate">{table.title}</h3>
+            {table.boardGame && (
+              <p className="text-xs opacity-60 mt-0.5 truncate">{table.boardGame.name}</p>
+            )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <span
               className={`badge badge-sm ${table.type === "JDR" ? "badge-primary" : "badge-accent"}`}
             >
@@ -60,7 +62,7 @@ export default function TableCard({ table, onClick }: Props) {
           {formatTime(table.startDateTime)} - {formatTime(table.endDateTime)}
         </p>
 
-        <p className="text-sm opacity-60">MJ : {table.creator.username}</p>
+        <p className="text-sm opacity-60 truncate">MJ : {table.creator.username}</p>
 
         {table.pitch && <p className="text-sm line-clamp-2">{table.pitch}</p>}
 
@@ -89,7 +91,10 @@ export default function TableCard({ table, onClick }: Props) {
         {table.players.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {table.players.map((p) => (
-              <span key={p.id} className="badge badge-outline badge-xs opacity-70">
+              <span
+                key={p.id}
+                className="badge badge-outline badge-xs opacity-70 max-w-full truncate"
+              >
                 {p.username}
               </span>
             ))}
@@ -99,7 +104,7 @@ export default function TableCard({ table, onClick }: Props) {
         {table.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {table.tags.map((tag) => (
-              <span key={tag.id} className="badge badge-ghost badge-xs">
+              <span key={tag.id} className="badge badge-ghost badge-xs max-w-full truncate">
                 {tag.name}
               </span>
             ))}

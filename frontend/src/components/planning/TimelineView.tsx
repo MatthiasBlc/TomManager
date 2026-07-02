@@ -52,6 +52,7 @@ export default function TimelineView({ tables, onTableClick }: Props) {
               {items.map(({ table, col, colSpan, cssRow, rowSpan }) => (
                 <div
                   key={table.id}
+                  className="min-w-0"
                   style={{
                     gridColumn: colSpan > 1 ? "1 / -1" : col + 1,
                     gridRow: `${cssRow} / span ${rowSpan}`,

@@ -58,21 +58,25 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.35)" }}
     >
       <p className="text-xs font-semibold leading-tight break-words">{arg.event.title}</p>
-      <span className="badge badge-outline badge-xs opacity-80">{type}</span>
-      <p className="text-xs opacity-80">{arg.timeText}</p>
-      <p className="text-xs opacity-70">MJ : {gmUsername}</p>
+      <span className="badge badge-outline badge-xs opacity-80 max-w-full truncate">{type}</span>
+      <p className="text-xs opacity-80 truncate">{arg.timeText}</p>
+      <p className="text-xs opacity-70 truncate">MJ : {gmUsername}</p>
       <p className="text-xs opacity-70">
-        <span className="badge badge-warning badge-xs">{seatSummary.total}</span>
+        <span className="badge badge-warning badge-xs max-w-full truncate">
+          {seatSummary.total}
+        </span>
       </p>
       {seatSummary.reserved && (
-        <p className="text-xs opacity-70">
+        <p className="text-xs opacity-70 truncate">
           {seatSummary.normal} · {seatSummary.reserved}
         </p>
       )}
-      {waitlistCount > 0 && <p className="text-xs opacity-70">+{waitlistCount} en attente</p>}
-      {currentUserConflict && <p className="text-xs font-semibold">⚠ Conflit</p>}
+      {waitlistCount > 0 && (
+        <p className="text-xs opacity-70 truncate">+{waitlistCount} en attente</p>
+      )}
+      {currentUserConflict && <p className="text-xs font-semibold truncate">⚠ Conflit</p>}
       {!currentUserConflict && isGM && conflictingPlayerCount > 0 && (
-        <p className="text-xs font-semibold">
+        <p className="text-xs font-semibold truncate">
           ⚠ {conflictingPlayerCount} conflit
           {conflictingPlayerCount > 1 ? "s" : ""}
         </p>
@@ -83,7 +87,10 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-0.5 mt-0.5">
           {tags.map((tag) => (
-            <span key={tag.id} className="badge badge-ghost badge-xs opacity-80">
+            <span
+              key={tag.id}
+              className="badge badge-ghost badge-xs opacity-80 max-w-full truncate"
+            >
               {tag.name}
             </span>
           ))}
