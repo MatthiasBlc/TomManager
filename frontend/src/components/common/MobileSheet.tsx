@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface Props {
   open: boolean;
@@ -109,7 +110,7 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       ref={containerRef}
       className="fixed inset-0 z-[100]"
@@ -140,6 +141,7 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
         {/* Content */}
         <div className="overflow-y-auto flex-1 overscroll-contain">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
