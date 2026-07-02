@@ -1,11 +1,14 @@
 import { EventContentArg } from "@fullcalendar/core";
+import { formatSeatSummary } from "./computeLayout";
 
 interface TableExtendedProps {
   isGM: boolean;
   currentUserStatus: string | null;
   confirmedCount: number;
   maxPlayers: number;
+  reservedSeats: number;
   waitlistCount: number;
+  confirmedOnReserved: number;
   type: "JDR" | "JDS";
   currentUserConflict: boolean;
   conflictingPlayerCount: number;
@@ -20,7 +23,9 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
     currentUserStatus,
     confirmedCount,
     maxPlayers,
+    reservedSeats,
     waitlistCount,
+    confirmedOnReserved,
     type,
     currentUserConflict,
     conflictingPlayerCount,
@@ -28,6 +33,13 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
     gmUsername,
     tags = [],
   } = arg.event.extendedProps as TableExtendedProps;
+
+  const seatSummary = formatSeatSummary({
+    confirmedCount,
+    maxPlayers,
+    reservedSeats,
+    confirmedOnReserved,
+  });
 
   // La bordure gauche indique toujours le type (JDR = primary, JDS = accent)
   const borderClass = type === "JDR" ? "border-primary" : "border-accent";
@@ -46,16 +58,25 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.35)" }}
     >
       <p className="text-xs font-semibold leading-tight break-words">{arg.event.title}</p>
-      <span className="badge badge-outline badge-xs opacity-80">{type}</span>
-      <p className="text-xs opacity-80">{arg.timeText}</p>
-      <p className="text-xs opacity-70">MJ : {gmUsername}</p>
+      <span className="badge badge-outline badge-xs opacity-80 max-w-full truncate">{type}</span>
+      <p className="text-xs opacity-80 truncate">{arg.timeText}</p>
+      <p className="text-xs opacity-70 truncate">MJ : {gmUsername}</p>
       <p className="text-xs opacity-70">
-        {confirmedCount}/{maxPlayers}
-        {waitlistCount > 0 && ` +${waitlistCount}`}
+        <span className="badge badge-warning badge-xs max-w-full truncate">
+          {seatSummary.total}
+        </span>
       </p>
-      {currentUserConflict && <p className="text-xs font-semibold">⚠ Conflit</p>}
+      {seatSummary.reserved && (
+        <p className="text-xs opacity-70 truncate">
+          {seatSummary.normal} · {seatSummary.reserved}
+        </p>
+      )}
+      {waitlistCount > 0 && (
+        <p className="text-xs opacity-70 truncate">+{waitlistCount} en attente</p>
+      )}
+      {currentUserConflict && <p className="text-xs font-semibold truncate">⚠ Conflit</p>}
       {!currentUserConflict && isGM && conflictingPlayerCount > 0 && (
-        <p className="text-xs font-semibold">
+        <p className="text-xs font-semibold truncate">
           ⚠ {conflictingPlayerCount} conflit
           {conflictingPlayerCount > 1 ? "s" : ""}
         </p>
@@ -66,7 +87,10 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-0.5 mt-0.5">
           {tags.map((tag) => (
-            <span key={tag.id} className="badge badge-ghost badge-xs opacity-80">
+            <span
+              key={tag.id}
+              className="badge badge-ghost badge-xs opacity-80 max-w-full truncate"
+            >
               {tag.name}
             </span>
           ))}

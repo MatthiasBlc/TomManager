@@ -7,6 +7,7 @@ const baseTable = {
   type: "JDR" as const,
   pitch: "Une aventure mortelle",
   maxPlayers: 5,
+  reservedSeats: 0,
   startDateTime: "2026-04-10T18:30:00.000Z",
   endDateTime: "2026-04-10T22:00:00.000Z",
   creator: { id: "u1", username: "Alice" },
@@ -20,6 +21,7 @@ const baseTable = {
   ],
   confirmedCount: 3,
   waitlistCount: 0,
+  confirmedOnReserved: 0,
   currentUserStatus: null,
   isGM: false,
   currentUserConflict: false,
@@ -32,7 +34,7 @@ describe("TableCard", () => {
     expect(screen.getByText("Donjon des morts")).toBeInTheDocument();
     expect(screen.getByText("MJ : Alice")).toBeInTheDocument();
     expect(screen.getByText("Une aventure mortelle")).toBeInTheDocument();
-    expect(screen.getByText("3/5")).toBeInTheDocument();
+    expect(screen.getByText("3/5 joueurs")).toBeInTheDocument();
   });
 
   it("renders the type badge (JDR or JDS)", () => {
@@ -51,9 +53,27 @@ describe("TableCard", () => {
     expect(screen.getByText("MJ")).toBeInTheDocument();
   });
 
+  it("renders the public/reserved seat split when reservedSeats > 0", () => {
+    render(
+      <TableCard
+        table={{ ...baseTable, maxPlayers: 4, reservedSeats: 3, confirmedCount: 0 }}
+        onClick={() => {}}
+      />
+    );
+    expect(screen.getByText("0/4 joueurs")).toBeInTheDocument();
+    expect(screen.getByText("0/1 publique")).toBeInTheDocument();
+    expect(screen.getByText("0/3 reservees")).toBeInTheDocument();
+  });
+
+  it("does not render the seat split when reservedSeats is 0", () => {
+    render(<TableCard table={baseTable} onClick={() => {}} />);
+    expect(screen.queryByText(/publique/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/reservee/)).not.toBeInTheDocument();
+  });
+
   it("renders the waitlist badge when waitlistCount > 0", () => {
     render(<TableCard table={{ ...baseTable, waitlistCount: 2 }} onClick={() => {}} />);
-    expect(screen.getByText("+2 en attente")).toBeInTheDocument();
+    expect(screen.getByText("+2 en liste d'attente")).toBeInTheDocument();
   });
 
   it("renders the Joined badge when currentUserStatus is CONFIRMED", () => {
