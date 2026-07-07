@@ -68,7 +68,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
 
-### Frontend (212 tests - ROADMAP COMPLETE)
+### Frontend (ROADMAP COMPLETE)
 
 - `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton Remove (aria-label "Remove <game>"), masquage pour autre utilisateur
 - `useIsMobile.test.tsx` - Hook : valeur initiale matchMedia, mise a jour sur change, cleanup listener
@@ -82,21 +82,25 @@ npx playwright test --grep "nom"         # Un test specifique
 - `ErrorBoundary.test.tsx` - Rendu enfant sans erreur, fallback par defaut, fallback custom
 - `ConnectionStatus.test.tsx` - Pas de rendu sans socket, badge selon etat initial, mise a jour sur connect/disconnect
 - `BoardGameSearchInput.test.tsx` - Pas de query <2 char, debounce + resultats, badge BGG, selection clear input, gestion erreur API
-- `Navbar.test.tsx` - Desktop/mobile, login/logout, avatar, evenements visibles selon auth
+- `Navbar.test.tsx` - Desktop/mobile, login/logout, avatar, evenements visibles selon auth, decalage sticky si hors-ligne
 - `BottomTabBar.test.tsx` - Pas de rendu sans user, tabs Events/Planning/Games selon route, logout
-- `MobileHeader.test.tsx` - Logo TM, bell + status visibles si auth
-- `AppLayout.test.tsx` - Padding mobile/desktop selon auth
+- `MobileHeader.test.tsx` - Logo TM, bell + status visibles si auth, decalage top-10 si hors-ligne
+- `AppLayout.test.tsx` - Padding mobile/desktop selon auth, padding supplementaire mobile si hors-ligne
+- `MobileSheet.test.tsx` - Verrou/deverrou du scroll body, compte-reference avec sheets imbriquees
 - `BoardGameList.test.tsx` - Empty state, liste, regroupement par jeu
-- `ParticipantList.test.tsx` - Empty state, table desktop / cards mobile, remove/leave selon role
+- `ParticipantList.test.tsx` - Empty state, table desktop / cards mobile, remove/leave selon role, troncature nom long, disabled pendant l'appel
 - `TimelineView.test.tsx` - Empty state, cartes, regroupement par date, click handler
-- `NotificationBell.test.tsx` - Bell badge, cap 99+, dropdown desktop, sheet mobile, mark all read
-- `ManualBoardGameForm.test.tsx` - Champs requis, validation Name, soumission valeurs numeriques, cancel
+- `NotificationBell.test.tsx` - Bell badge, cap 99+, dropdown desktop, sheet mobile, mark all read, cible tactile 44px mobile
+- `NumberStepper.test.tsx` - Increment/decrement, disable aux bornes min/max, prop step
+- `ManualBoardGameForm.test.tsx` - Champs requis, validation Name, soumission valeurs numeriques (stepper), cancel
 - `TagInput.test.tsx` - Badges, ajout (Enter/comma), suppression, dedupe, backspace, suggestions API
 - `LoginPage.test.tsx` - Render, submit success/fail, redirect si connecte, Discord 503, OAuth click, error param
 - `AddBoardGameModal.test.tsx` - Modes search/manual, ajout local, import BGG, close
+- `CreateEventModal.test.tsx` - Submit succes, validation croisee endDateTime > startDateTime
+- `EditEventModal.test.tsx` - Submit succes, validation croisee endDateTime > startDateTime
+- `ProfilePage.test.tsx` - Link/unlink Discord, confirmation avant unlink, disabled selon email
 - `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel, stepper reservedSeats plafonne a maxPlayers
 - `EditTableModal.test.tsx` - Encart occupation actuelle, avertissement + confirm avant demotion (maxPlayers/reservedSeats), submit sans confirm si pas d'impact
-- `NumberStepper.test.tsx` - Increment/decrement, disable aux bornes min/max
 - `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, libelle promotion conditionnel
 
 Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phase 8 - pages)

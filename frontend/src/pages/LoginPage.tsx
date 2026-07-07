@@ -19,7 +19,11 @@ interface LoginForm {
 }
 
 export default function LoginPage() {
-  const { register, handleSubmit } = useForm<LoginForm>();
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<LoginForm>();
   const { user, loading, login, initiateDiscordLogin } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -113,7 +117,8 @@ export default function LoginPage() {
                 {...register("password", { required: true })}
               />
             </div>
-            <button type="submit" className="btn btn-primary btn-block">
+            <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting}>
+              {isSubmitting && <span className="loading loading-spinner loading-xs" />}
               Se connecter
             </button>
           </form>

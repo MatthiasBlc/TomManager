@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
@@ -13,6 +13,8 @@ export default function ProfilePage() {
   const { gameDbEnabled, toggleGameDb } = useGameDbManagement();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [linking, setLinking] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("success") === "discord_linked") {
@@ -28,6 +30,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const handleLink = async () => {
+    setLinking(true);
     try {
       const completed = await initiateDiscordLogin("/profile");
       // En mode popup : afficher le toast de succes ici (le redirect le gere via searchParams)
@@ -39,10 +42,19 @@ export default function ProfilePage() {
       } else {
         toast.error("Connexion Discord indisponible");
       }
+    } finally {
+      setLinking(false);
     }
   };
 
   const handleUnlink = async () => {
+    if (
+      !confirm(
+        "Delier votre compte Discord ? Vous ne pourrez plus vous connecter avec Discord tant qu'il n'est pas relie."
+      )
+    )
+      return;
+    setUnlinking(true);
     try {
       await unlinkDiscord();
       toast.success("Compte Discord delie");
@@ -51,6 +63,8 @@ export default function ProfilePage() {
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
           ?.message || "Echec du deliage du compte Discord";
       toast.error(message);
+    } finally {
+      setUnlinking(false);
     }
   };
 
@@ -186,16 +200,21 @@ export default function ProfilePage() {
               <button
                 className="btn btn-sm btn-outline btn-error"
                 onClick={handleUnlink}
-                disabled={!user.email}
+                disabled={!user.email || unlinking}
                 title={!user.email ? "Impossible de delier : aucun compte local" : undefined}
               >
+                {unlinking && <span className="loading loading-spinner loading-xs" />}
                 Delier
               </button>
             </div>
           ) : (
             <div className="space-y-2">
               <p className="text-sm opacity-60">Aucun compte Discord lie</p>
-              <button className="btn btn-sm btn-outline gap-2" onClick={handleLink}>
+              <button
+                className="btn btn-sm btn-outline gap-2"
+                onClick={handleLink}
+                disabled={linking}
+              >
                 <svg width="16" height="16" viewBox="0 0 127.14 96.36" fill="currentColor">
                   <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
                 </svg>

@@ -35,6 +35,11 @@ describe("ProfilePage", () => {
     toastError.mockReset();
     unlinkDiscordMock.mockReset();
     initiateDiscordLoginMock.mockReset();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("renders nothing when user is not authenticated", () => {
@@ -188,6 +193,41 @@ describe("ProfilePage", () => {
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith("Connexion Discord indisponible");
     });
+  });
+
+  it("asks for confirmation before unlinking Discord", async () => {
+    unlinkDiscordMock.mockResolvedValue(undefined);
+    useAuthMock.mockReturnValue({
+      user: {
+        ...baseUser,
+        discordId: "discord123",
+        discordUsername: "AliceDiscord",
+        email: "alice@example.com",
+      },
+      initiateDiscordLogin: initiateDiscordLoginMock,
+      unlinkDiscord: unlinkDiscordMock,
+    });
+    renderWithRouter(<ProfilePage />);
+    fireEvent.click(screen.getByRole("button", { name: /Delier/i }));
+    expect(window.confirm).toHaveBeenCalled();
+    await waitFor(() => expect(unlinkDiscordMock).toHaveBeenCalled());
+  });
+
+  it("does not unlink Discord when confirmation is declined", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    useAuthMock.mockReturnValue({
+      user: {
+        ...baseUser,
+        discordId: "discord123",
+        discordUsername: "AliceDiscord",
+        email: "alice@example.com",
+      },
+      initiateDiscordLogin: initiateDiscordLoginMock,
+      unlinkDiscord: unlinkDiscordMock,
+    });
+    renderWithRouter(<ProfilePage />);
+    fireEvent.click(screen.getByRole("button", { name: /Delier/i }));
+    expect(unlinkDiscordMock).not.toHaveBeenCalled();
   });
 
   it("disables Unlink button when user has no email", () => {

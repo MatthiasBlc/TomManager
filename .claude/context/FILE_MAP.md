@@ -83,9 +83,10 @@ src/
 │   │   ├── ConnectionStatus.tsx   # WebSocket connection indicator
 │   │   ├── MobileSheet.tsx        # Bottom sheet modal (swipe-down to close)
 │   │   ├── ResponsiveModal.tsx    # MobileSheet on mobile, DaisyUI modal on desktop
-│   │   ├── FAB.tsx                # Floating Action Button (fixed bottom-right)
+│   │   ├── FAB.tsx                # Floating Action Button (fixed bottom-right, safe-area aware)
 │   │   ├── Skeleton.tsx           # Reusable skeleton loaders (card, grid, board game, notification, table detail)
-│   │   └── EmptyState.tsx         # Reusable empty state (icon + title + description + CTA)
+│   │   ├── EmptyState.tsx         # Reusable empty state (icon + title + description + CTA)
+│   │   └── NumberStepper.tsx      # +/- numeric input (min/max/step), used for player counts and durations
 │   ├── notifications/
 │   │   ├── NotificationBell.tsx   # Bell icon + badge + dropdown
 │   │   └── NotificationItem.tsx   # Single notification item with icon, nav, delete
