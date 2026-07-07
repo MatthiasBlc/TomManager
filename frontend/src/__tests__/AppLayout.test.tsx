@@ -3,6 +3,7 @@ import AppLayout from "../components/layout/AppLayout";
 
 const useAuthMock = vi.fn();
 const useIsMobileMock = vi.fn();
+const useOnlineStatusMock = vi.fn();
 
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => useAuthMock(),
@@ -10,11 +11,19 @@ vi.mock("../contexts/AuthContext", () => ({
 vi.mock("../hooks/useIsMobile", () => ({
   useIsMobile: () => useIsMobileMock(),
 }));
+vi.mock("../hooks/useOnlineStatus", () => ({
+  useOnlineStatus: () => useOnlineStatusMock(),
+}));
 
 describe("AppLayout", () => {
+  beforeEach(() => {
+    useOnlineStatusMock.mockReturnValue(true);
+  });
+
   afterEach(() => {
     useAuthMock.mockReset();
     useIsMobileMock.mockReset();
+    useOnlineStatusMock.mockReset();
   });
 
   it("renders children inside a main element", () => {
@@ -66,5 +75,19 @@ describe("AppLayout", () => {
     const main = screen.getByRole("main");
     expect(main.className).toContain("pt-12");
     expect(main.className).toContain("pb-20");
+  });
+
+  it("adds extra top padding on mobile when offline (banner + header)", () => {
+    useIsMobileMock.mockReturnValue(true);
+    useOnlineStatusMock.mockReturnValue(false);
+    useAuthMock.mockReturnValue({ user: null });
+    render(
+      <AppLayout>
+        <p>Hello</p>
+      </AppLayout>
+    );
+    const main = screen.getByRole("main");
+    expect(main.className).toContain("pt-[5.5rem]");
+    expect(main.className).not.toContain("pt-12");
   });
 });

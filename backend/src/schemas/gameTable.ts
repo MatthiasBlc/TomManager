@@ -23,6 +23,7 @@ export const createTableSchema = z.object({
 
 export const setStatusSchema = z.object({
   status: z.enum(["CONFIRMED", "WAITLIST"]),
+  seat: z.enum(["FREE", "RESERVED"]).optional(),
 });
 
 export const updateTableSchema = z.object({

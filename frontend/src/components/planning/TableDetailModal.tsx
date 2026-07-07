@@ -92,6 +92,9 @@ export default function TableDetailModal({
         confirmedOnReserved,
       })
     : null;
+  const openNormalSeats = table ? table.maxPlayers - confirmedCount - table.reservedSeats : 0;
+  const canPromoteFree = openNormalSeats > 0;
+  const canPromoteReserved = (table?.reservedSeats ?? 0) > 0;
 
   const fetchTable = useCallback(async () => {
     if (!tableId) return;
@@ -123,6 +126,7 @@ export default function TableDetailModal({
     onPlayerKicked: fetchTable,
     onPlayerPromoted: fetchTable,
     onPlayerDemoted: fetchTable,
+    onReconnected: fetchTable,
   });
 
   const handleJoin = async () => {
@@ -154,13 +158,18 @@ export default function TableDetailModal({
     }
   };
 
-  const handlePromote = async (userId: string) => {
+  const handlePromote = async (
+    userId: string,
+    seat?: "FREE" | "RESERVED",
+    successMessage = "Joueur promu"
+  ) => {
     if (!table) return;
     try {
       await api.patch(`/api/events/${eventId}/tables/${table.id}/participants/${userId}/status`, {
         status: "CONFIRMED",
+        ...(seat ? { seat } : {}),
       });
-      toast.success("Joueur promu");
+      toast.success(successMessage);
       fetchTable();
       onTableUpdated();
     } catch (err: unknown) {
@@ -181,8 +190,69 @@ export default function TableDetailModal({
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Erreur lors du passage en liste d'attente");
+      toast.error("Echec du passage en liste d'attente");
     }
+  };
+
+  const renderPromoteActions = (userId: string, btnClass: string) => {
+    if (canPromoteFree && canPromoteReserved) {
+      return (
+        <>
+          <button className={btnClass} onClick={() => handlePromote(userId, "FREE")}>
+            Ajouter (place libre)
+          </button>
+          <button className={btnClass} onClick={() => handlePromote(userId, "RESERVED")}>
+            Affecter (place reservee)
+          </button>
+        </>
+      );
+    }
+    if (canPromoteFree) {
+      return (
+        <button className={btnClass} onClick={() => handlePromote(userId, "FREE")}>
+          Ajouter a la table
+        </button>
+      );
+    }
+    if (canPromoteReserved) {
+      return (
+        <button className={btnClass} onClick={() => handlePromote(userId, "RESERVED")}>
+          Affecter (place reservee)
+        </button>
+      );
+    }
+    return (
+      <button className={btnClass} disabled title="Table pleine — retrogradez un joueur d'abord">
+        Aucune place disponible
+      </button>
+    );
+  };
+
+  const renderConvertSeatAction = (
+    p: { userId: string; isOnReservedSeat: boolean },
+    btnClass: string
+  ) => {
+    if (p.isOnReservedSeat) {
+      return (
+        <button
+          className={btnClass}
+          onClick={() => handlePromote(p.userId, "FREE", "Place liberee")}
+        >
+          Passer en place libre
+        </button>
+      );
+    }
+    if (canPromoteReserved) {
+      return (
+        <button
+          className={btnClass}
+          onClick={() => handlePromote(p.userId, "RESERVED", "Place reservee attribuee")}
+        >
+          Passer en place reservee
+        </button>
+      );
+    }
+    return null;
   };
 
   const handleKick = async (userId: string, username: string) => {
@@ -194,7 +264,7 @@ export default function TableDetailModal({
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Erreur lors du retrait du joueur");
+      toast.error("Echec du retrait du joueur");
     }
   };
 
@@ -372,9 +442,15 @@ export default function TableDetailModal({
                       .filter((p) => p.status === "CONFIRMED")
                       .map((p) => (
                         <div key={p.userId} className="flex items-center justify-between py-1">
-                          <span className="text-sm">{p.username}</span>
+                          <span className="text-sm flex items-center gap-1.5">
+                            {p.username}
+                            {p.isOnReservedSeat && (
+                              <span className="badge badge-warning badge-xs">reservee</span>
+                            )}
+                          </span>
                           {canEdit && (
                             <div className="flex items-center gap-1">
+                              {renderConvertSeatAction(p, "btn btn-ghost btn-xs min-h-[44px]")}
                               <button
                                 className="btn btn-ghost btn-xs text-warning min-h-[44px]"
                                 onClick={() => handleDemote(p.userId)}
@@ -406,9 +482,17 @@ export default function TableDetailModal({
                           .filter((p) => p.status === "CONFIRMED")
                           .map((p) => (
                             <tr key={p.userId}>
-                              <td>{p.username}</td>
+                              <td>
+                                <span className="flex items-center gap-1.5">
+                                  {p.username}
+                                  {p.isOnReservedSeat && (
+                                    <span className="badge badge-warning badge-xs">reservee</span>
+                                  )}
+                                </span>
+                              </td>
                               {canEdit && (
                                 <td className="flex gap-1">
+                                  {renderConvertSeatAction(p, "btn btn-ghost btn-xs")}
                                   <button
                                     className="btn btn-ghost btn-xs text-warning"
                                     onClick={() => handleDemote(p.userId)}
@@ -446,18 +530,10 @@ export default function TableDetailModal({
                             <span className="text-sm">{p.username}</span>
                             {canEdit && (
                               <div className="flex items-center gap-1">
-                                <button
-                                  className="btn btn-ghost btn-xs text-success min-h-[44px]"
-                                  onClick={() => handlePromote(p.userId)}
-                                  disabled={confirmedCount >= table.maxPlayers}
-                                  title={
-                                    confirmedCount >= table.maxPlayers
-                                      ? "Table pleine — retrogradez un joueur d'abord"
-                                      : "Ajouter a la table"
-                                  }
-                                >
-                                  Ajouter a la table
-                                </button>
+                                {renderPromoteActions(
+                                  p.userId,
+                                  "btn btn-ghost btn-xs text-success min-h-[44px]"
+                                )}
                                 <button
                                   className="btn btn-ghost btn-xs text-error min-h-[44px]"
                                   onClick={() => handleKick(p.userId, p.username)}
@@ -486,18 +562,10 @@ export default function TableDetailModal({
                                 <td>{p.username}</td>
                                 {canEdit && (
                                   <td className="flex gap-1">
-                                    <button
-                                      className="btn btn-ghost btn-xs text-success"
-                                      onClick={() => handlePromote(p.userId)}
-                                      disabled={confirmedCount >= table.maxPlayers}
-                                      title={
-                                        confirmedCount >= table.maxPlayers
-                                          ? "Table pleine — retrogradez un joueur d'abord"
-                                          : "Ajouter a la table"
-                                      }
-                                    >
-                                      Ajouter a la table
-                                    </button>
+                                    {renderPromoteActions(
+                                      p.userId,
+                                      "btn btn-ghost btn-xs text-success"
+                                    )}
                                     <button
                                       className="btn btn-ghost btn-xs text-error"
                                       onClick={() => handleKick(p.userId, p.username)}

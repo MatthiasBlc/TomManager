@@ -11,6 +11,24 @@ interface Props {
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+// Compte-reference partage : plusieurs MobileSheet peuvent etre imbriquees
+// (ex. panneau admin ouvert depuis la modale detail d'un event sur mobile).
+// Sans compteur, fermer la sheet interne deverrouille le scroll a tort tant
+// que la sheet externe est encore ouverte.
+let openSheetCount = 0;
+
+function lockBodyScroll() {
+  openSheetCount += 1;
+  document.body.style.overflow = "hidden";
+}
+
+function unlockBodyScroll() {
+  openSheetCount = Math.max(0, openSheetCount - 1);
+  if (openSheetCount === 0) {
+    document.body.style.overflow = "";
+  }
+}
+
 export default function MobileSheet({ open, onClose, title, children }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,16 +46,11 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
     return () => document.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  // Lock body scroll when open
+  // Lock body scroll when open (compte-reference pour les sheets imbriquees)
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    if (!open) return;
+    lockBodyScroll();
+    return () => unlockBodyScroll();
   }, [open]);
 
   // Focus trap + auto-focus + restore focus
@@ -89,6 +102,9 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
     currentY.current = 0;
+    if (sheetRef.current) {
+      sheetRef.current.style.transition = "";
+    }
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
@@ -104,6 +120,8 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
       onClose();
     }
     if (sheetRef.current) {
+      // Animer le retour a la position d'origine au lieu de sauter directement
+      sheetRef.current.style.transition = "transform 200ms ease-out";
       sheetRef.current.style.transform = "";
     }
   }, [onClose]);
@@ -139,7 +157,9 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
           </div>
         )}
         {/* Content */}
-        <div className="overflow-y-auto flex-1 overscroll-contain">{children}</div>
+        <div className="overflow-y-auto overflow-x-hidden flex-1 overscroll-contain">
+          {children}
+        </div>
       </div>
     </div>,
     document.body

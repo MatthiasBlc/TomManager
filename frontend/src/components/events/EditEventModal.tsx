@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
@@ -37,8 +37,11 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    getValues,
+    formState: { errors, isSubmitting },
   } = useForm<EditEventForm>();
+  const [purging, setPurging] = useState(false);
+  const busy = isSubmitting || purging;
 
   useEffect(() => {
     if (event && open) {
@@ -59,6 +62,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
       )
     )
       return;
+    setPurging(true);
     try {
       await api.post(`/api/events/${event.id}/purge`);
       toast.success("Event purge !");
@@ -69,6 +73,8 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
           ?.message || "Echec de la purge";
       toast.error(message);
+    } finally {
+      setPurging(false);
     }
   };
 
@@ -137,8 +143,18 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
             id="ee-end"
             type="datetime-local"
             className="input input-bordered w-full"
-            {...register("endDateTime", { required: "La date de fin est obligatoire" })}
+            {...register("endDateTime", {
+              required: "La date de fin est obligatoire",
+              validate: (value) =>
+                new Date(value) > new Date(getValues("startDateTime")) ||
+                "La fin doit etre apres le debut",
+            })}
           />
+          {errors.endDateTime && (
+            <label className="label">
+              <span className="label-text-alt text-error">{errors.endDateTime.message}</span>
+            </label>
+          )}
         </div>
         {user?.role === "ADMIN" && (
           <div className="form-control">
@@ -171,15 +187,18 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
               type="button"
               className="btn btn-error btn-outline btn-sm"
               onClick={handlePurge}
+              disabled={busy}
             >
+              {purging && <span className="loading loading-spinner loading-xs" />}
               Purger l'event
             </button>
           )}
           <div className="flex gap-2 ml-auto">
-            <button type="button" className="btn" onClick={onClose}>
+            <button type="button" className="btn" onClick={onClose} disabled={busy}>
               Annuler
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {isSubmitting && <span className="loading loading-spinner loading-xs" />}
               Enregistrer
             </button>
           </div>

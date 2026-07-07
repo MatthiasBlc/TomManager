@@ -28,7 +28,7 @@ test.describe("Planning — tables", () => {
     // Remplir le formulaire
     await page.getByLabel(/titre/i).fill("Table E2E");
     // Type JDR par defaut, laisser tel quel
-    await page.getByLabel(/joueurs max/i).fill("4");
+    // Joueurs max : stepper +/-, deja a 4 par defaut, rien a faire
 
     // Date = lendemain
     const tomorrow = new Date();

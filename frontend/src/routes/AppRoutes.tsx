@@ -4,7 +4,6 @@ import LoginPage from "../pages/LoginPage";
 import EventListPage from "../pages/EventListPage";
 import EventDetailPage from "../pages/EventDetailPage";
 import PlanningPage from "../pages/PlanningPage";
-import TableDetailPage from "../pages/TableDetailPage";
 import PrivateRoute from "../components/common/PrivateRoute";
 import NotFoundPage from "../pages/NotFoundPage";
 import OAuthPopupCallbackPage from "../pages/OAuthPopupCallbackPage";
@@ -37,14 +36,6 @@ export default function AppRoutes() {
         element={
           <PrivateRoute>
             <PlanningPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/events/:eventId/planning/:tableId"
-        element={
-          <PrivateRoute>
-            <TableDetailPage />
           </PrivateRoute>
         }
       />

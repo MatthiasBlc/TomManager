@@ -46,17 +46,17 @@
 
 ## GameTables (`/api/events/:eventId/tables`)
 
-| Method | Path                                    | Auth                                  | Description                      |
-| ------ | --------------------------------------- | ------------------------------------- | -------------------------------- |
-| POST   | `/`                                     | requireAuth + requireEventParticipant | Create table                     |
-| GET    | `/`                                     | requireAuth + requireEventParticipant | List tables                      |
-| GET    | `/:tableId`                             | requireAuth + requireEventParticipant | Table detail                     |
-| PATCH  | `/:tableId`                             | requireAuth + requireTableGMOrAdmin   | Update table                     |
-| DELETE | `/:tableId`                             | requireAuth + requireTableGMOrAdmin   | Delete table                     |
-| POST   | `/:tableId/join`                        | requireAuth + requireEventParticipant | Join table                       |
-| DELETE | `/:tableId/leave`                       | requireAuth                           | Leave table                      |
-| DELETE | `/:tableId/participants/:userId`        | requireAuth + requireTableGMOrAdmin   | Kick player                      |
-| PATCH  | `/:tableId/participants/:userId/status` | requireAuth + requireTableGMOrAdmin   | Promote/demote player (GM/admin) |
+| Method | Path                                    | Auth                                  | Description                                                                                             |
+| ------ | --------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| POST   | `/`                                     | requireAuth + requireEventParticipant | Create table                                                                                            |
+| GET    | `/`                                     | requireAuth + requireEventParticipant | List tables                                                                                             |
+| GET    | `/:tableId`                             | requireAuth + requireEventParticipant | Table detail                                                                                            |
+| PATCH  | `/:tableId`                             | requireAuth + requireTableGMOrAdmin   | Update table                                                                                            |
+| DELETE | `/:tableId`                             | requireAuth + requireTableGMOrAdmin   | Delete table                                                                                            |
+| POST   | `/:tableId/join`                        | requireAuth + requireEventParticipant | Join table                                                                                              |
+| DELETE | `/:tableId/leave`                       | requireAuth                           | Leave table                                                                                             |
+| DELETE | `/:tableId/participants/:userId`        | requireAuth + requireTableGMOrAdmin   | Kick player                                                                                             |
+| PATCH  | `/:tableId/participants/:userId/status` | requireAuth + requireTableGMOrAdmin   | Promote/demote player (GM/admin), body `{ status, seat? }` — `seat` choisit ou convertit libre/reservee |
 
 ## Tags (`/api/tags`)
 

@@ -30,9 +30,12 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
 
   const [sort, setSort] = useState<SortKey>("joined");
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
 
   const handleRemove = async (userId: string) => {
     if (!confirm("Retirer ce participant ?")) return;
+    setRemovingUserId(userId);
     try {
       await api.delete(`/api/events/${eventId}/participants/${userId}`);
       toast.success("Participant retire");
@@ -42,11 +45,14 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
           ?.message || "Echec du retrait du participant";
       toast.error(message);
+    } finally {
+      setRemovingUserId(null);
     }
   };
 
   const handleLeave = async () => {
     if (!confirm("Quitter cet evenement ?")) return;
+    setLeaving(true);
     try {
       await api.delete(`/api/events/${eventId}/participants/me`);
       toast.success("Vous avez quitte l'evenement");
@@ -56,6 +62,8 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
           ?.message || "Echec en quittant l'evenement";
       toast.error(message);
+    } finally {
+      setLeaving(false);
     }
   };
 
@@ -122,9 +130,9 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
               key={p.userId}
               className="card bg-base-100 shadow-sm active:scale-[0.98] transition-transform"
             >
-              <div className="card-body p-3 flex-row items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">{displayedName(p)}</p>
+              <div className="card-body p-3 flex-row items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{displayedName(p)}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <span
                       className={`badge badge-sm ${p.role === "ADMIN" ? "badge-primary" : "badge-ghost"}`}
@@ -138,8 +146,9 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                 </div>
                 {isCreator && p.userId !== createdBy && (
                   <button
-                    className="btn btn-ghost btn-sm text-error min-h-[44px]"
+                    className="btn btn-ghost btn-sm text-error min-h-[44px] flex-shrink-0"
                     onClick={() => handleRemove(p.userId)}
+                    disabled={removingUserId === p.userId}
                   >
                     Retirer
                   </button>
@@ -177,6 +186,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                         <button
                           className="btn btn-ghost btn-xs text-error"
                           onClick={() => handleRemove(p.userId)}
+                          disabled={removingUserId === p.userId}
                         >
                           Retirer
                         </button>
@@ -198,7 +208,11 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
 
       {!isCreator && user && (
         <div className="mt-4">
-          <button className="btn btn-outline btn-error btn-sm" onClick={handleLeave}>
+          <button
+            className="btn btn-outline btn-error btn-sm"
+            onClick={handleLeave}
+            disabled={leaving}
+          >
             Quitter l'evenement
           </button>
         </div>

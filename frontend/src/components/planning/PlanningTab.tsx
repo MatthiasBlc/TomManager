@@ -90,6 +90,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
     onPlayerKicked: fetchTables,
     onPlayerPromoted: fetchTables,
     onPlayerDemoted: fetchTables,
+    onReconnected: fetchTables,
   });
 
   const handleTableClick = (tableId: string) => {

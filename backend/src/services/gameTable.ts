@@ -239,7 +239,11 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       tags: t.tags.map((gt) => gt.tag),
       players: t.participants
         .filter((p) => p.status === "CONFIRMED")
-        .map((p) => ({ id: p.user.id, username: p.user.username })),
+        .map((p) => ({
+          id: p.user.id,
+          username: p.user.username,
+          isOnReservedSeat: p.isOnReservedSeat,
+        })),
       confirmedCount,
       waitlistCount,
       confirmedOnReserved,
@@ -689,7 +693,8 @@ export async function leaveTable(tableId: string, userId: string) {
 export async function setParticipantStatus(
   tableId: string,
   targetUserId: string,
-  newStatus: "CONFIRMED" | "WAITLIST"
+  newStatus: "CONFIRMED" | "WAITLIST",
+  seat?: "FREE" | "RESERVED"
 ) {
   const table = await prisma.gameTable.findUnique({
     where: { id: tableId },
@@ -707,12 +712,90 @@ export async function setParticipantStatus(
 
   let usedReservedSeat = false;
 
+  if (newStatus === "CONFIRMED" && participant.status === "CONFIRMED") {
+    // Deja confirme : conversion en place entre place libre et place reservee
+    const desiredReserved =
+      seat === "RESERVED" ? true : seat === "FREE" ? false : participant.isOnReservedSeat;
+
+    if (desiredReserved === participant.isOnReservedSeat) {
+      return { userId: targetUserId, status: newStatus };
+    }
+
+    if (desiredReserved) {
+      if (table.reservedSeats <= 0) {
+        throw createError(409, "No reserved seat available");
+      }
+      await prisma.$transaction(async (tx) => {
+        await tx.gameTableParticipant.update({
+          where: { id: participant.id },
+          data: { isOnReservedSeat: true },
+        });
+        await tx.gameTable.update({
+          where: { id: tableId },
+          data: { reservedSeats: { decrement: 1 } },
+        });
+      });
+      usedReservedSeat = true;
+    } else {
+      // Libere une place reservee, ne change pas le nombre de confirmes
+      await prisma.$transaction(async (tx) => {
+        await tx.gameTableParticipant.update({
+          where: { id: participant.id },
+          data: { isOnReservedSeat: false },
+        });
+        await tx.gameTable.update({
+          where: { id: tableId },
+          data: { reservedSeats: { increment: 1 } },
+        });
+      });
+    }
+
+    emitToEvent(table.eventId, "table:player:promoted", {
+      tableId,
+      userId: targetUserId,
+    });
+    if (usedReservedSeat) {
+      await createNotification({
+        userId: targetUserId,
+        type: "RESERVED_SEAT_ASSIGNED",
+        title: "Place reservee attribuee",
+        message: `Le MJ t'a attribue une place reservee pour la table "${table.title}"`,
+        metadata: { eventId: table.eventId, tableId },
+      });
+    }
+
+    return { userId: targetUserId, status: newStatus };
+  }
+
   if (newStatus === "CONFIRMED") {
     const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
     const openSeats = table.maxPlayers - confirmedCount - table.reservedSeats;
 
-    if (table.reservedSeats > 0) {
-      // Priorite : affecter a une reserved seat
+    if (seat === "RESERVED") {
+      if (table.reservedSeats <= 0) {
+        throw createError(409, "No reserved seat available");
+      }
+      await prisma.$transaction(async (tx) => {
+        await tx.gameTableParticipant.update({
+          where: { id: participant.id },
+          data: { status: "CONFIRMED", isOnReservedSeat: true },
+        });
+        await tx.gameTable.update({
+          where: { id: tableId },
+          data: { reservedSeats: { decrement: 1 } },
+        });
+      });
+      usedReservedSeat = true;
+    } else if (seat === "FREE") {
+      if (openSeats <= 0) {
+        throw createError(409, "No open seat available");
+      }
+      await prisma.gameTableParticipant.update({
+        where: { id: participant.id },
+        data: { status: "CONFIRMED", isOnReservedSeat: false },
+      });
+    } else if (table.reservedSeats > 0) {
+      // Pas de choix explicite : priorite par defaut a une reserved seat
       await prisma.$transaction(async (tx) => {
         await tx.gameTableParticipant.update({
           where: { id: participant.id },

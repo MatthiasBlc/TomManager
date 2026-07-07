@@ -14,13 +14,15 @@ function NotificationList({
   markAllAsRead,
   deleteNotification,
   unreadCount,
-}: ReturnType<typeof useNotifications>) {
+  isMobile,
+}: ReturnType<typeof useNotifications> & { isMobile: boolean }) {
+  const touchTarget = isMobile ? "min-h-[44px]" : "";
   return (
     <>
       <div className="flex items-center justify-between px-3 py-2 border-b border-base-300">
         <span className="text-sm font-semibold">Notifications</span>
         {unreadCount > 0 && (
-          <button className="btn btn-ghost btn-xs text-xs" onClick={markAllAsRead}>
+          <button className={`btn btn-ghost btn-xs text-xs ${touchTarget}`} onClick={markAllAsRead}>
             Tout marquer lu
           </button>
         )}
@@ -43,7 +45,7 @@ function NotificationList({
         ))}
         {hasMore && (
           <button
-            className="btn btn-ghost btn-sm w-full text-xs"
+            className={`btn btn-ghost btn-sm w-full text-xs ${touchTarget}`}
             onClick={loadMore}
             disabled={isLoading}
           >
@@ -78,7 +80,7 @@ export default function NotificationBell() {
     <>
       <div className="relative" ref={dropdownRef}>
         <button
-          className="btn btn-ghost btn-sm relative"
+          className={`btn btn-ghost btn-sm relative ${isMobile ? "min-h-[44px] min-w-[44px]" : ""}`}
           onClick={() => setOpen(!open)}
           aria-label="Notifications"
         >
@@ -106,7 +108,7 @@ export default function NotificationBell() {
         {/* Desktop dropdown */}
         {open && !isMobile && (
           <div className="absolute right-0 mt-2 w-80 bg-base-100 rounded-lg shadow-lg border border-base-300 z-50 max-h-96 flex flex-col">
-            <NotificationList {...notifData} />
+            <NotificationList {...notifData} isMobile={false} />
           </div>
         )}
       </div>
@@ -114,7 +116,7 @@ export default function NotificationBell() {
       {/* Mobile bottom sheet */}
       {isMobile && (
         <MobileSheet open={open} onClose={() => setOpen(false)} title="Notifications">
-          <NotificationList {...notifData} />
+          <NotificationList {...notifData} isMobile={true} />
         </MobileSheet>
       )}
     </>

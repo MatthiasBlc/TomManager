@@ -101,4 +101,21 @@ describe("NotificationBell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
     expect(screen.getByRole("button", { name: /Tout marquer lu/i })).toBeInTheDocument();
   });
+
+  it("uses a 44px touch target for the bell trigger on mobile", () => {
+    useIsMobileMock.mockReturnValue(true);
+    useNotificationsMock.mockReturnValue({ ...baseNotifData });
+    renderBell();
+    expect(screen.getByRole("button", { name: "Notifications" })).toHaveClass(
+      "min-h-[44px]",
+      "min-w-[44px]"
+    );
+  });
+
+  it("does not force a 44px touch target for the bell trigger on desktop", () => {
+    useIsMobileMock.mockReturnValue(false);
+    useNotificationsMock.mockReturnValue({ ...baseNotifData });
+    renderBell();
+    expect(screen.getByRole("button", { name: "Notifications" })).not.toHaveClass("min-h-[44px]");
+  });
 });

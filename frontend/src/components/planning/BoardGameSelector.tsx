@@ -64,7 +64,7 @@ export default function BoardGameSelector({ value, onChange }: Props) {
           playingTime: created.playingTime,
         });
       } catch {
-        toast.error("Impossible d'ajouter ce jeu BGG");
+        toast.error("Echec de l'ajout du jeu BGG");
       } finally {
         setResolving(false);
       }
@@ -90,7 +90,7 @@ export default function BoardGameSelector({ value, onChange }: Props) {
       });
       setMode("search");
     } catch {
-      toast.error("Impossible de creer le jeu");
+      toast.error("Echec de la creation du jeu");
     } finally {
       setResolving(false);
     }

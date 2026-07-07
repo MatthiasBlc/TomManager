@@ -23,7 +23,8 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    getValues,
+    formState: { errors, isSubmitting },
   } = useForm<CreateEventForm>();
 
   const onSubmit = async (data: CreateEventForm) => {
@@ -94,7 +95,12 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
             id="ce-end"
             type="datetime-local"
             className="input input-bordered w-full"
-            {...register("endDateTime", { required: "La date de fin est obligatoire" })}
+            {...register("endDateTime", {
+              required: "La date de fin est obligatoire",
+              validate: (value) =>
+                new Date(value) > new Date(getValues("startDateTime")) ||
+                "La fin doit etre apres le debut",
+            })}
           />
           {errors.endDateTime && (
             <label className="label">
@@ -131,7 +137,8 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
           <button type="button" className="btn" onClick={onClose}>
             Annuler
           </button>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting && <span className="loading loading-spinner loading-xs" />}
             Creer
           </button>
         </div>

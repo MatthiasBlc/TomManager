@@ -31,7 +31,7 @@ export default function ResponsiveModal({ open, onClose, title, children, size =
 
   return (
     <dialog className="modal modal-open" role="dialog" aria-modal="true" aria-label={title}>
-      <div className={`modal-box ${SIZE_CLASSES[size]}`}>
+      <div className={`modal-box overflow-x-hidden ${SIZE_CLASSES[size]}`}>
         <button
           className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
           onClick={onClose}

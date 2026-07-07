@@ -66,6 +66,18 @@ describe("AdminBoardGamePanel", () => {
     });
   });
 
+  it("shows an empty state when the search has no results", async () => {
+    apiGetMock.mockResolvedValue({
+      data: { data: { games: [], total: 0, page: 1, limit: 20 } },
+    });
+    render(<AdminBoardGamePanel />);
+    fireEvent.change(screen.getByPlaceholderText("Rechercher un jeu..."), {
+      target: { value: "zzznotfound" },
+    });
+    expect(await screen.findByText("Aucun resultat")).toBeInTheDocument();
+    expect(screen.getByText('Aucun jeu ne correspond a "zzznotfound".')).toBeInTheDocument();
+  });
+
   it("shows total count", async () => {
     render(<AdminBoardGamePanel />);
     await waitFor(() => expect(screen.getByText("2 jeux au total")).toBeInTheDocument());
