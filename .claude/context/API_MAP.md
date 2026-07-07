@@ -56,7 +56,7 @@
 | POST   | `/:tableId/join`                        | requireAuth + requireEventParticipant | Join table                       |
 | DELETE | `/:tableId/leave`                       | requireAuth                           | Leave table                      |
 | DELETE | `/:tableId/participants/:userId`        | requireAuth + requireTableGMOrAdmin   | Kick player                      |
-| PATCH  | `/:tableId/participants/:userId/status` | requireAuth + requireTableGMOrAdmin   | Promote/demote player (GM/admin) |
+| PATCH  | `/:tableId/participants/:userId/status` | requireAuth + requireTableGMOrAdmin   | Promote/demote player (GM/admin), body `{ status, seat? }` — `seat` choisit ou convertit libre/reservee |
 
 ## Tags (`/api/tags`)
 

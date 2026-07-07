@@ -299,8 +299,8 @@ export default function CreateTableModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-          <div className="form-control sm:col-span-1">
+        <div className="flex flex-wrap gap-3">
+          <div className="form-control flex-1 min-w-[150px]">
             <label className="label" htmlFor="ct-date">
               <span className="label-text">Date</span>
             </label>
@@ -318,7 +318,7 @@ export default function CreateTableModal({
               </label>
             )}
           </div>
-          <div className="form-control">
+          <div className="form-control flex-1 min-w-[120px]">
             <label className="label" htmlFor="ct-startTime">
               <span className="label-text">Heure de debut</span>
             </label>
@@ -334,7 +334,7 @@ export default function CreateTableModal({
               </label>
             )}
           </div>
-          <div className="form-control">
+          <div className="form-control flex-1 min-w-[110px]">
             <label className="label" htmlFor="ct-duration">
               <span className="label-text">Duree</span>
             </label>
