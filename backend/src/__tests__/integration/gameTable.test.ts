@@ -1087,7 +1087,7 @@ describe("GameTable API", () => {
     it("converts a confirmed player from reserved seat to free seat in place, always allowed", async () => {
       const { admin, event, tableId } = await setupTableWithReserved(1, 2);
 
-      const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
+      const { user: _p1, cookie: c1 } = await addTestParticipant(event.id, {
         email: "cvr1@example.com",
         username: "cvr1",
       });

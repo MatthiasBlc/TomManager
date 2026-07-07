@@ -228,7 +228,10 @@ export default function TableDetailModal({
     );
   };
 
-  const renderConvertSeatAction = (p: { userId: string; isOnReservedSeat: boolean }, btnClass: string) => {
+  const renderConvertSeatAction = (
+    p: { userId: string; isOnReservedSeat: boolean },
+    btnClass: string
+  ) => {
     if (p.isOnReservedSeat) {
       return (
         <button
@@ -527,7 +530,10 @@ export default function TableDetailModal({
                             <span className="text-sm">{p.username}</span>
                             {canEdit && (
                               <div className="flex items-center gap-1">
-                                {renderPromoteActions(p.userId, "btn btn-ghost btn-xs text-success min-h-[44px]")}
+                                {renderPromoteActions(
+                                  p.userId,
+                                  "btn btn-ghost btn-xs text-success min-h-[44px]"
+                                )}
                                 <button
                                   className="btn btn-ghost btn-xs text-error min-h-[44px]"
                                   onClick={() => handleKick(p.userId, p.username)}
@@ -556,7 +562,10 @@ export default function TableDetailModal({
                                 <td>{p.username}</td>
                                 {canEdit && (
                                   <td className="flex gap-1">
-                                    {renderPromoteActions(p.userId, "btn btn-ghost btn-xs text-success")}
+                                    {renderPromoteActions(
+                                      p.userId,
+                                      "btn btn-ghost btn-xs text-success"
+                                    )}
                                     <button
                                       className="btn btn-ghost btn-xs text-error"
                                       onClick={() => handleKick(p.userId, p.username)}

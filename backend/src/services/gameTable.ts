@@ -714,7 +714,8 @@ export async function setParticipantStatus(
 
   if (newStatus === "CONFIRMED" && participant.status === "CONFIRMED") {
     // Deja confirme : conversion en place entre place libre et place reservee
-    const desiredReserved = seat === "RESERVED" ? true : seat === "FREE" ? false : participant.isOnReservedSeat;
+    const desiredReserved =
+      seat === "RESERVED" ? true : seat === "FREE" ? false : participant.isOnReservedSeat;
 
     if (desiredReserved === participant.isOnReservedSeat) {
       return { userId: targetUserId, status: newStatus };

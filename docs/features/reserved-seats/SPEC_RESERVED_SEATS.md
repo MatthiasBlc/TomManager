@@ -127,14 +127,14 @@ maxPlayers = newMaxPlayers
 
 Aucun nouvel endpoint. Champs ajoutes aux payloads existants :
 
-| Endpoint                                      | Ajout                                        |
-| --------------------------------------------- | -------------------------------------------- |
-| `POST /tables`                                | Body: `reservedSeats?` (default 0)           |
-| `PATCH /:tableId`                             | Body: `reservedSeats?`, `maxPlayers` updated |
-| `POST /:tableId/join`                         | Calcul openSeats avec reservedSeats          |
+| Endpoint                                      | Ajout                                                                        |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
+| `POST /tables`                                | Body: `reservedSeats?` (default 0)                                           |
+| `PATCH /:tableId`                             | Body: `reservedSeats?`, `maxPlayers` updated                                 |
+| `POST /:tableId/join`                         | Calcul openSeats avec reservedSeats                                          |
 | `PATCH /:tableId/participants/:userId/status` | Body: `seat?: "FREE" \| "RESERVED"` — choix explicite ou conversion en place |
-| `DELETE /:tableId/leave`                      | isOnReservedSeat → reservedSeats++           |
-| `DELETE /:tableId/participants/:userId`       | idem                                         |
+| `DELETE /:tableId/leave`                      | isOnReservedSeat → reservedSeats++                                           |
+| `DELETE /:tableId/participants/:userId`       | idem                                                                         |
 
 Responses enrichies :
 

@@ -218,9 +218,7 @@ describe("TableDetailModal", () => {
     expect(
       await screen.findByRole("button", { name: /Affecter \(place reservee\)/i })
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Ajouter \(place libre\)/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ajouter \(place libre\)/i })).toBeInTheDocument();
   });
 
   it("promotes to a free seat with seat=FREE when the free-seat button is clicked", async () => {
@@ -245,10 +243,13 @@ describe("TableDetailModal", () => {
     const freeBtn = await screen.findByRole("button", { name: /Ajouter \(place libre\)/i });
     fireEvent.click(freeBtn);
     await waitFor(() => {
-      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1/participants/u3/status", {
-        status: "CONFIRMED",
-        seat: "FREE",
-      });
+      expect(apiPatchMock).toHaveBeenCalledWith(
+        "/api/events/ev1/tables/t1/participants/u3/status",
+        {
+          status: "CONFIRMED",
+          seat: "FREE",
+        }
+      );
     });
   });
 
@@ -274,10 +275,13 @@ describe("TableDetailModal", () => {
     const reservedBtn = await screen.findByRole("button", { name: /Affecter \(place reservee\)/i });
     fireEvent.click(reservedBtn);
     await waitFor(() => {
-      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1/participants/u3/status", {
-        status: "CONFIRMED",
-        seat: "RESERVED",
-      });
+      expect(apiPatchMock).toHaveBeenCalledWith(
+        "/api/events/ev1/tables/t1/participants/u3/status",
+        {
+          status: "CONFIRMED",
+          seat: "RESERVED",
+        }
+      );
     });
   });
 
@@ -300,7 +304,9 @@ describe("TableDetailModal", () => {
       },
     });
     renderModal({ user: { id: "u1", role: "USER" } });
-    expect(await screen.findByRole("button", { name: /^Ajouter a la table$/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /^Ajouter a la table$/i })
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Affecter \(place reservee\)/i })
     ).not.toBeInTheDocument();
@@ -359,10 +365,13 @@ describe("TableDetailModal", () => {
     const convertBtn = await screen.findByRole("button", { name: /Passer en place libre/i });
     fireEvent.click(convertBtn);
     await waitFor(() => {
-      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1/participants/u2/status", {
-        status: "CONFIRMED",
-        seat: "FREE",
-      });
+      expect(apiPatchMock).toHaveBeenCalledWith(
+        "/api/events/ev1/tables/t1/participants/u2/status",
+        {
+          status: "CONFIRMED",
+          seat: "FREE",
+        }
+      );
     });
   });
 
@@ -388,10 +397,13 @@ describe("TableDetailModal", () => {
     const convertBtn = await screen.findByRole("button", { name: /Passer en place reservee/i });
     fireEvent.click(convertBtn);
     await waitFor(() => {
-      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1/participants/u2/status", {
-        status: "CONFIRMED",
-        seat: "RESERVED",
-      });
+      expect(apiPatchMock).toHaveBeenCalledWith(
+        "/api/events/ev1/tables/t1/participants/u2/status",
+        {
+          status: "CONFIRMED",
+          seat: "RESERVED",
+        }
+      );
     });
   });
 
