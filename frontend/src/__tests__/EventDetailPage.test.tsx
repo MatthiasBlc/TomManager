@@ -1,3 +1,4 @@
+import { screen, waitFor } from "@testing-library/react";
 import { renderWithRouter } from "../test/renderWithRouter";
 import EventDetailPage from "../pages/EventDetailPage";
 
@@ -59,6 +60,17 @@ describe("EventDetailPage", () => {
       route: "/events/ev1",
     });
     expect(container).toBeInTheDocument();
+  });
+
+  it("shows a skeleton while loading, then the event content", async () => {
+    apiGetMock.mockResolvedValue({ data: { data: baseEvent } });
+    useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });
+    const { container } = renderWithRouter(<EventDetailPage />, {
+      route: "/events/ev1",
+    });
+    expect(container.querySelector(".skeleton")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText("Festival JDR").length).toBeGreaterThan(0));
+    expect(container.querySelector(".skeleton")).not.toBeInTheDocument();
   });
 
   it("handles undefined params gracefully", () => {

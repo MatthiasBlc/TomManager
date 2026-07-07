@@ -148,6 +148,15 @@ describe("BoardGameSearchInput", () => {
     expect(screen.queryByRole("button", { name: /selectionner ce jeu/i })).not.toBeInTheDocument();
   });
 
+  it("shows a no-results message instead of nothing when the search is empty", async () => {
+    apiGetMock.mockResolvedValue({ data: { data: [] } });
+    render(<BoardGameSearchInput onSelect={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText(/search board games/i), {
+      target: { value: "zzzznotfound" },
+    });
+    expect(await screen.findByText("Aucun resultat")).toBeInTheDocument();
+  });
+
   it("clears results when the API call rejects", async () => {
     apiGetMock.mockRejectedValue(new Error("network"));
     render(<BoardGameSearchInput onSelect={vi.fn()} />);

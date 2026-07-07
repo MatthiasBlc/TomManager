@@ -74,4 +74,34 @@ describe("TagInput", () => {
     });
     expect(await screen.findByText("donjon")).toBeInTheDocument();
   });
+
+  it("shows a loading indicator while the search is in flight", async () => {
+    let resolveFetch!: (value: { data: { data: never[] } }) => void;
+    apiGetMock.mockReturnValue(new Promise((resolve) => (resolveFetch = resolve)));
+    render(<TagInput value={[]} onChange={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText("Ajouter des tags..."), {
+      target: { value: "don" },
+    });
+    expect(await screen.findByText("Recherche...")).toBeInTheDocument();
+    resolveFetch({ data: { data: [] } });
+    await waitFor(() => expect(screen.queryByText("Recherche...")).not.toBeInTheDocument());
+  });
+
+  it("shows an error message when the search fails, distinct from no results", async () => {
+    apiGetMock.mockRejectedValue(new Error("network error"));
+    render(<TagInput value={[]} onChange={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText("Ajouter des tags..."), {
+      target: { value: "don" },
+    });
+    expect(await screen.findByText("Recherche de tags indisponible")).toBeInTheDocument();
+  });
+
+  it("shows a create hint when no existing tag matches", async () => {
+    apiGetMock.mockResolvedValue({ data: { data: [] } });
+    render(<TagInput value={[]} onChange={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText("Ajouter des tags..."), {
+      target: { value: "donjon" },
+    });
+    expect(await screen.findByText('Aucun tag existant — Entree pour creer "donjon"')).toBeInTheDocument();
+  });
 });

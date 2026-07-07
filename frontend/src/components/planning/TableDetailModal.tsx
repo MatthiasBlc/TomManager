@@ -123,6 +123,7 @@ export default function TableDetailModal({
     onPlayerKicked: fetchTable,
     onPlayerPromoted: fetchTable,
     onPlayerDemoted: fetchTable,
+    onReconnected: fetchTable,
   });
 
   const handleJoin = async () => {
@@ -181,7 +182,7 @@ export default function TableDetailModal({
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Erreur lors du passage en liste d'attente");
+      toast.error("Echec du passage en liste d'attente");
     }
   };
 
@@ -194,7 +195,7 @@ export default function TableDetailModal({
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Erreur lors du retrait du joueur");
+      toast.error("Echec du retrait du joueur");
     }
   };
 

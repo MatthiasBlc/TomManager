@@ -48,6 +48,24 @@ export function SkeletonTableDetail() {
   );
 }
 
+export function SkeletonEventDetail() {
+  return (
+    <div className="container mx-auto px-4 py-4 md:py-8 space-y-4 md:space-y-6 animate-fade-in">
+      <div className="space-y-2">
+        <SkeletonText className="h-6 w-2/3 md:h-8" />
+        <SkeletonText className="h-3 w-1/2" />
+      </div>
+      <div className="flex gap-2">
+        <SkeletonText className="h-8 w-20 rounded-lg" />
+        <SkeletonText className="h-8 w-24 rounded-lg" />
+        <SkeletonText className="h-8 w-20 rounded-lg" />
+        <SkeletonText className="h-8 w-28 rounded-lg" />
+      </div>
+      <SkeletonCard />
+    </div>
+  );
+}
+
 export function SkeletonCardGrid({ count = 3 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">

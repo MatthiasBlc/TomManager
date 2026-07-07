@@ -11,6 +11,7 @@ import PlanningTab from "../components/planning/PlanningTab";
 import ResponsiveModal from "../components/common/ResponsiveModal";
 import AdminBoardGamePanel from "../components/admin/AdminBoardGamePanel";
 import { useGameDbManagement } from "../hooks/useGameDbManagement";
+import { SkeletonEventDetail } from "../components/common/Skeleton";
 
 interface EventDetail {
   id: string;
@@ -83,11 +84,7 @@ export default function EventDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <span className="loading loading-spinner loading-lg" />
-      </div>
-    );
+    return <SkeletonEventDetail />;
   }
 
   if (!event) return null;

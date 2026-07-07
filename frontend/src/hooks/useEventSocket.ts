@@ -13,6 +13,10 @@ interface EventSocketCallbacks {
   onParticipantRemoved?: () => void;
   onBoardGameAdded?: () => void;
   onBoardGameRemoved?: () => void;
+  // Appele apres une reconnexion (pas au premier connect) : le join:event
+  // precedent est perdu cote serveur, et des evenements ont pu etre manques
+  // pendant la coupure — l'appelant doit refetcher les donnees actives.
+  onReconnected?: () => void;
 }
 
 export function useEventSocket(eventId: string | undefined, callbacks: EventSocketCallbacks) {
@@ -21,7 +25,19 @@ export function useEventSocket(eventId: string | undefined, callbacks: EventSock
   useEffect(() => {
     if (!socket || !eventId) return;
 
+    let hasConnectedOnce = socket.connected;
     socket.emit("join:event", { eventId });
+
+    const onConnect = () => {
+      // Le join:event precedent est perdu cote serveur apres une reconnexion :
+      // on rejoint la room a chaque connect, pas seulement au premier.
+      socket.emit("join:event", { eventId });
+      if (hasConnectedOnce) {
+        callbacks.onReconnected?.();
+      }
+      hasConnectedOnce = true;
+    };
+    socket.on("connect", onConnect);
 
     const events: [string, (() => void) | undefined][] = [
       ["table:created", callbacks.onTableCreated],
@@ -46,6 +62,7 @@ export function useEventSocket(eventId: string | undefined, callbacks: EventSock
     }
 
     return () => {
+      socket.off("connect", onConnect);
       socket.emit("leave:event", { eventId });
       for (const [event, cb] of handlers) {
         socket.off(event, cb);

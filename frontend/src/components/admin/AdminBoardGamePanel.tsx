@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
+import EmptyState from "../common/EmptyState";
 
 interface BoardGameAdmin {
   id: string;
@@ -103,7 +104,7 @@ export default function AdminBoardGamePanel() {
       const res = await api.get(`/api/admin/boardgames?${params}`);
       setResult(res.data.data);
     } catch {
-      toast.error("Impossible de charger les jeux");
+      toast.error("Echec du chargement des jeux");
     } finally {
       setLoading(false);
     }
@@ -317,6 +318,18 @@ export default function AdminBoardGamePanel() {
           <p className="text-xs opacity-60">
             {result.total} jeu{result.total !== 1 ? "x" : ""} au total
           </p>
+
+          {result.games.length === 0 && (
+            <EmptyState
+              icon={<span>🔍</span>}
+              title="Aucun resultat"
+              description={
+                search
+                  ? `Aucun jeu ne correspond a "${search}".`
+                  : "Aucun jeu dans la base pour l'instant."
+              }
+            />
+          )}
 
           <div className="space-y-2">
             {result.games.map((game) => (

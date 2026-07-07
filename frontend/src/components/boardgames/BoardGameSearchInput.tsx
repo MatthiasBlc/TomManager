@@ -159,15 +159,17 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
       }
     : null;
 
-  const dropdown =
-    open && results.length > 0
-      ? createPortal(
-          <ul
-            ref={dropdownRef}
-            style={dropdownStyle}
-            className="bg-base-200 rounded-box shadow-lg max-h-72 overflow-y-auto overflow-x-hidden"
-          >
-            {results.map((game, idx) => (
+  const dropdown = open
+    ? createPortal(
+        <ul
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="bg-base-200 rounded-box shadow-lg max-h-72 overflow-y-auto overflow-x-hidden"
+        >
+          {results.length === 0 ? (
+            <li className="px-4 py-2 text-sm opacity-60">Aucun resultat</li>
+          ) : (
+            results.map((game, idx) => (
               <li key={game.id || `bgg-${game.externalId}-${idx}`} className="w-full">
                 <button
                   type="button"
@@ -183,16 +185,17 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
                   )}
                 </button>
               </li>
-            ))}
-            {results.some((g) => !g.id && g.externalSource === "BGG") && (
-              <li className="flex justify-end px-3 py-2 border-t border-base-300">
-                <PoweredByBGG />
-              </li>
-            )}
-          </ul>,
-          document.body
-        )
-      : null;
+            ))
+          )}
+          {results.some((g) => !g.id && g.externalSource === "BGG") && (
+            <li className="flex justify-end px-3 py-2 border-t border-base-300">
+              <PoweredByBGG />
+            </li>
+          )}
+        </ul>,
+        document.body
+      )
+    : null;
 
   const previewPanel =
     preview && previewData
