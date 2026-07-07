@@ -40,6 +40,27 @@ describe("EventListPage", () => {
     expect(apiGetMock).toHaveBeenCalledWith("/api/events");
   });
 
+  it("shows a distinct error state (not the empty state) when the fetch fails", async () => {
+    apiGetMock.mockRejectedValue(new Error("network"));
+    useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });
+    renderWithRouter(<EventListPage />);
+
+    expect(await screen.findByText("Echec du chargement des evenements")).toBeInTheDocument();
+    expect(screen.queryByText("Aucun evenement pour l'instant")).not.toBeInTheDocument();
+  });
+
+  it("retries the fetch when clicking Reessayer after a failure", async () => {
+    apiGetMock.mockRejectedValueOnce(new Error("network"));
+    apiGetMock.mockResolvedValueOnce({ data: { data: [baseEvent] } });
+    useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });
+    renderWithRouter(<EventListPage />);
+
+    const retryBtn = await screen.findByRole("button", { name: "Reessayer" });
+    retryBtn.click();
+
+    expect(await screen.findByText("Festival JDR")).toBeInTheDocument();
+  });
+
   it("renders empty state when no events", async () => {
     apiGetMock.mockResolvedValue({ data: { data: [] } });
     useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });

@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import { useSocket } from "../../hooks/useSocket";
 
 export default function ConnectionStatus() {
   const socket = useSocket();
   const [connected, setConnected] = useState(false);
+  const wasDisconnected = useRef(false);
 
   useEffect(() => {
     if (!socket) {
@@ -13,8 +15,18 @@ export default function ConnectionStatus() {
 
     setConnected(socket.connected);
 
-    const onConnect = () => setConnected(true);
-    const onDisconnect = () => setConnected(false);
+    const onConnect = () => {
+      setConnected(true);
+      if (wasDisconnected.current) {
+        toast.success("Connexion retablie");
+        wasDisconnected.current = false;
+      }
+    };
+    const onDisconnect = () => {
+      setConnected(false);
+      wasDisconnected.current = true;
+      toast.error("Connexion perdue — reconnexion en cours...");
+    };
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);

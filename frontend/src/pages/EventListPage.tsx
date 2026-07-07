@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useIsMobile } from "../hooks/useIsMobile";
@@ -21,14 +22,17 @@ export default function EventListPage() {
   const isMobile = useIsMobile();
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     try {
       const res = await api.get("/api/events");
       setEvents(res.data.data);
+      setError(false);
     } catch {
-      // silently fail
+      setError(true);
+      toast.error("Echec du chargement des evenements");
     } finally {
       setLoading(false);
     }
@@ -64,6 +68,17 @@ export default function EventListPage() {
 
       {loading ? (
         <SkeletonCardGrid count={3} />
+      ) : error ? (
+        <EmptyState
+          icon={<span>⚠️</span>}
+          title="Echec du chargement des evenements"
+          description="Verifiez votre connexion et reessayez."
+          action={
+            <button className="btn btn-sm" onClick={fetchEvents}>
+              Reessayer
+            </button>
+          }
+        />
       ) : events.length === 0 ? (
         <EmptyState
           icon={<span>📅</span>}

@@ -15,22 +15,31 @@ export default function TagInput({ value, onChange }: Props) {
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<Tag[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (!input.trim()) {
       setSuggestions([]);
+      setSearching(false);
+      setSearchFailed(false);
       return;
     }
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSearching(true);
+    setShowSuggestions(true);
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await api.get(`/api/tags?q=${encodeURIComponent(input.trim())}`);
         setSuggestions(res.data.data.filter((t: Tag) => !value.includes(t.name)));
-        setShowSuggestions(true);
+        setSearchFailed(false);
       } catch {
         setSuggestions([]);
+        setSearchFailed(true);
+      } finally {
+        setSearching(false);
       }
     }, 200);
 
@@ -93,17 +102,30 @@ export default function TagInput({ value, onChange }: Props) {
           }}
         />
       </div>
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && input.trim() && (
         <ul className="absolute z-10 w-full bg-base-100 border rounded-lg mt-1 shadow-lg max-h-40 overflow-y-auto">
-          {suggestions.map((s) => (
-            <li
-              key={s.id}
-              className="px-3 py-2 hover:bg-base-200 cursor-pointer text-sm"
-              onMouseDown={() => addTag(s.name)}
-            >
-              {s.name}
+          {searching ? (
+            <li className="px-3 py-2 text-sm opacity-60 flex items-center gap-2">
+              <span className="loading loading-spinner loading-xs" />
+              Recherche...
             </li>
-          ))}
+          ) : searchFailed ? (
+            <li className="px-3 py-2 text-sm text-error">Recherche de tags indisponible</li>
+          ) : suggestions.length > 0 ? (
+            suggestions.map((s) => (
+              <li
+                key={s.id}
+                className="px-3 py-2 hover:bg-base-200 cursor-pointer text-sm"
+                onMouseDown={() => addTag(s.name)}
+              >
+                {s.name}
+              </li>
+            ))
+          ) : (
+            <li className="px-3 py-2 text-sm opacity-60">
+              Aucun tag existant — Entree pour creer "{input.trim()}"
+            </li>
+          )}
         </ul>
       )}
     </div>
