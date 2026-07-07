@@ -93,7 +93,9 @@ export default function TableCard({ table, onClick }: Props) {
             {table.players.map((p) => (
               <span
                 key={p.id}
-                className="badge badge-outline badge-xs opacity-70 max-w-full truncate"
+                className={`badge badge-xs max-w-full truncate ${
+                  p.isOnReservedSeat ? "badge-warning" : "badge-outline opacity-70"
+                }`}
               >
                 {p.username}
               </span>

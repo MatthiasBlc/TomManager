@@ -132,8 +132,7 @@ src/
 │   ├── InvitationLandingPage.tsx # /invite/:token — validates and redirects
 │   ├── EventListPage.tsx         # /events — event cards grid
 │   ├── EventDetailPage.tsx       # /events/:eventId — tabs info/planning/games/participants/invitations
-│   ├── PlanningPage.tsx          # /events/:eventId/planning — timeline view + create table
-│   └── TableDetailPage.tsx      # /events/:eventId/planning/:tableId — detail + join/leave/kick
+│   └── PlanningPage.tsx          # /events/:eventId/planning — timeline view + create table
 ├── routes/
 │   └── AppRoutes.tsx      # Route definitions
 ├── styles/

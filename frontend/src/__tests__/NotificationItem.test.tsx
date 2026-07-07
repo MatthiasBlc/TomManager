@@ -98,6 +98,7 @@ describe("NotificationItem", () => {
       ["TABLE_DELETED", "🗑"],
       ["WAITLIST_PROMOTED", "⬆"],
       ["WAITLIST_DEMOTED", "⬇"],
+      ["RESERVED_SEAT_ASSIGNED", "🔒"],
       ["PLAYER_KICKED", "🚫"],
       ["PARTICIPANT_REMOVED", "👋"],
       ["EVENT_UPDATED", "📅"],

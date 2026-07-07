@@ -17,6 +17,8 @@ function getIcon(type: string): string {
       return "⬆";
     case "WAITLIST_DEMOTED":
       return "⬇";
+    case "RESERVED_SEAT_ASSIGNED":
+      return "🔒";
     case "PLAYER_KICKED":
       return "🚫";
     case "PARTICIPANT_REMOVED":

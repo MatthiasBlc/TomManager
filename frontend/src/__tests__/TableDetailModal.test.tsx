@@ -169,4 +169,52 @@ describe("TableDetailModal", () => {
       expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1");
     });
   });
+
+  it("shows a 'reservee' badge on a confirmed participant occupying a reserved seat", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          reservedSeats: 1,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    await screen.findByText("Bob");
+    expect(screen.getByText("reservee")).toBeInTheDocument();
+  });
+
+  it("shows 'Affecter (place reservee)' as the promote label when reservedSeats > 0", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          reservedSeats: 1,
+          participants: [
+            {
+              userId: "u3",
+              username: "Chloe",
+              status: "WAITLIST",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    expect(
+      await screen.findByRole("button", { name: /Affecter \(place reservee\)/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Ajouter a la table$/i })).not.toBeInTheDocument();
+  });
 });

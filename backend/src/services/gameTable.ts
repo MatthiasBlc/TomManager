@@ -239,7 +239,11 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
       tags: t.tags.map((gt) => gt.tag),
       players: t.participants
         .filter((p) => p.status === "CONFIRMED")
-        .map((p) => ({ id: p.user.id, username: p.user.username })),
+        .map((p) => ({
+          id: p.user.id,
+          username: p.user.username,
+          isOnReservedSeat: p.isOnReservedSeat,
+        })),
       confirmedCount,
       waitlistCount,
       confirmedOnReserved,

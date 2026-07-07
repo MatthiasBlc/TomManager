@@ -850,6 +850,14 @@ describe("GameTable API", () => {
       );
       expect(p2Detail.status).toBe("CONFIRMED");
       expect(p2Detail.isOnReservedSeat).toBe(true);
+
+      // La liste des tables (GET /tables) doit aussi exposer isOnReservedSeat par joueur
+      const list = await request
+        .get(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie);
+      const listedTable = list.body.data.find((t: { id: string }) => t.id === tableId);
+      const p2Listed = listedTable.players.find((p: { id: string }) => p.id === p2.id);
+      expect(p2Listed.isOnReservedSeat).toBe(true);
     });
 
     it("promote uses normal seat when reservedSeats=0", async () => {

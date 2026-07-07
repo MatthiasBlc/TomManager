@@ -55,7 +55,7 @@ npx playwright test --grep "nom"         # Un test specifique
 
 ## Inventaire des tests
 
-### Backend (178 tests)
+### Backend (244 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me, error format consistency)
@@ -68,7 +68,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
 
-### Frontend (162 tests - ROADMAP COMPLETE)
+### Frontend (212 tests - ROADMAP COMPLETE)
 
 - `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton Remove (aria-label "Remove <game>"), masquage pour autre utilisateur
 - `useIsMobile.test.tsx` - Hook : valeur initiale matchMedia, mise a jour sur change, cleanup listener
@@ -76,7 +76,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `EmptyState.test.tsx` - Rendu titre, description optionnelle, icone, action
 - `FAB.test.tsx` - Rendu bouton, aria-label, click handler
 - `Skeleton.test.tsx` - Variantes (Text, Card, CardGrid, BoardGame, Notification, TableDetail)
-- `TableCard.test.tsx` - Rendu titre/GM/pitch/tags, badges (GM, conflit, waitlist, joined), click
+- `TableCard.test.tsx` - Rendu titre/GM/pitch/tags, badges (GM, conflit, waitlist, joined, joueur reserve), click
 - `NotificationItem.test.tsx` - Rendu contenu, lu/non-lu, navigation eventId, mark as read, delete, icones par type
 - `PrivateRoute.test.tsx` - Spinner pendant loading, redirection /login si non auth, rendu enfant si auth
 - `ErrorBoundary.test.tsx` - Rendu enfant sans erreur, fallback par defaut, fallback custom
@@ -94,8 +94,10 @@ npx playwright test --grep "nom"         # Un test specifique
 - `TagInput.test.tsx` - Badges, ajout (Enter/comma), suppression, dedupe, backspace, suggestions API
 - `LoginPage.test.tsx` - Render, submit success/fail, redirect si connecte, Discord 503, OAuth click, error param
 - `AddBoardGameModal.test.tsx` - Modes search/manual, ajout local, import BGG, close
-- `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel
-- `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API
+- `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel, stepper reservedSeats plafonne a maxPlayers
+- `EditTableModal.test.tsx` - Encart occupation actuelle, avertissement + confirm avant demotion (maxPlayers/reservedSeats), submit sans confirm si pas d'impact
+- `NumberStepper.test.tsx` - Increment/decrement, disable aux bornes min/max
+- `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, libelle promotion conditionnel
 
 Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phase 8 - pages)
 
