@@ -27,6 +27,7 @@ interface Props {
 
 export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: Props) {
   const [mode, setMode] = useState<"search" | "manual">("search");
+  const [selecting, setSelecting] = useState(false);
 
   const handleClose = () => {
     setMode("search");
@@ -48,24 +49,32 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
   };
 
   const handleSelect = async (game: BoardGameResult) => {
-    if (game.id) {
-      await addToEvent(game.id);
-    } else if (game.externalSource === "BGG" && game.externalId) {
-      try {
-        const res = await api.post("/api/boardgames/from-bgg", {
-          bggId: game.externalId,
-          name: game.name,
-          yearPublished: game.yearPublished ?? undefined,
-          minPlayers: game.minPlayers ?? undefined,
-          maxPlayers: game.maxPlayers ?? undefined,
-          playingTime: game.playingTime ?? undefined,
-          description: game.description ?? undefined,
-          imageUrl: game.imageUrl ?? undefined,
-        });
-        await addToEvent(res.data.data.id);
-      } catch {
-        toast.error("Echec de l'import depuis BGG");
+    setSelecting(true);
+    try {
+      if (game.id) {
+        await addToEvent(game.id);
+      } else if (game.externalSource === "BGG" && game.externalId) {
+        try {
+          const res = await api.post("/api/boardgames/from-bgg", {
+            bggId: game.externalId,
+            name: game.name,
+            yearPublished: game.yearPublished ?? undefined,
+            minPlayers: game.minPlayers ?? undefined,
+            maxPlayers: game.maxPlayers ?? undefined,
+            playingTime: game.playingTime ?? undefined,
+            description: game.description ?? undefined,
+            imageUrl: game.imageUrl ?? undefined,
+          });
+          await addToEvent(res.data.data.id);
+        } catch (err: unknown) {
+          const message =
+            (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
+              ?.error?.message || "Echec de l'import depuis BGG";
+          toast.error(message);
+        }
       }
+    } finally {
+      setSelecting(false);
     }
   };
 
@@ -80,8 +89,11 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
       const res = await api.post("/api/boardgames", data);
       await addToEvent(res.data.data.id);
       setMode("search");
-    } catch {
-      toast.error("Echec de la creation du jeu");
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
+          ?.message || "Echec de la creation du jeu";
+      toast.error(message);
     }
   };
 
@@ -89,13 +101,13 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
     <ResponsiveModal open={open} onClose={handleClose} title="Ajouter un jeu">
       <div className="p-4 md:p-0 md:mt-4">
         {mode === "search" ? (
-          <>
+          <fieldset disabled={selecting} className="contents">
             <BoardGameSearchInput onSelect={handleSelect} />
             <div className="divider text-sm opacity-50">ou</div>
             <button className="btn btn-outline btn-sm w-full" onClick={() => setMode("manual")}>
               Creer manuellement
             </button>
-          </>
+          </fieldset>
         ) : (
           <ManualBoardGameForm onSubmit={handleManualCreate} onCancel={() => setMode("search")} />
         )}

@@ -4,10 +4,19 @@ interface Props {
   onChange: (value: number) => void;
   min?: number;
   max?: number;
+  step?: number;
   disabled?: boolean;
 }
 
-export default function NumberStepper({ id, value, onChange, min = 0, max, disabled }: Props) {
+export default function NumberStepper({
+  id,
+  value,
+  onChange,
+  min = 0,
+  max,
+  step = 1,
+  disabled,
+}: Props) {
   const safeValue = Number.isFinite(value) ? value : min;
   const canDecrement = !disabled && safeValue > min;
   const canIncrement = !disabled && (max === undefined || safeValue < max);
@@ -18,7 +27,7 @@ export default function NumberStepper({ id, value, onChange, min = 0, max, disab
         type="button"
         className="btn btn-sm join-item"
         disabled={!canDecrement}
-        onClick={() => onChange(Math.max(min, safeValue - 1))}
+        onClick={() => onChange(Math.max(min, safeValue - step))}
         aria-label="Diminuer"
       >
         −
@@ -35,7 +44,7 @@ export default function NumberStepper({ id, value, onChange, min = 0, max, disab
         type="button"
         className="btn btn-sm join-item"
         disabled={!canIncrement}
-        onClick={() => onChange(max !== undefined ? Math.min(max, safeValue + 1) : safeValue + 1)}
+        onClick={() => onChange(max !== undefined ? Math.min(max, safeValue + step) : safeValue + step)}
         aria-label="Augmenter"
       >
         +

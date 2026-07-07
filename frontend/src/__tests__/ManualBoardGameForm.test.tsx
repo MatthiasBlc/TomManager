@@ -1,5 +1,11 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import ManualBoardGameForm from "../components/boardgames/ManualBoardGameForm";
+
+function clickStepper(label: string, direction: "Augmenter" | "Diminuer", times: number) {
+  const group = screen.getByLabelText(label).closest(".join") as HTMLElement;
+  const button = within(group).getByRole("button", { name: direction });
+  for (let i = 0; i < times; i++) fireEvent.click(button);
+}
 
 describe("ManualBoardGameForm", () => {
   it("renders all fields and action buttons", () => {
@@ -30,15 +36,9 @@ describe("ManualBoardGameForm", () => {
     fireEvent.input(screen.getByLabelText("Annee"), {
       target: { value: "1995" },
     });
-    fireEvent.input(screen.getByLabelText("Joueurs min"), {
-      target: { value: "3" },
-    });
-    fireEvent.input(screen.getByLabelText("Joueurs max"), {
-      target: { value: "4" },
-    });
-    fireEvent.input(screen.getByLabelText("Duree (min)"), {
-      target: { value: "120" },
-    });
+    // Defaults : minPlayers=1, maxPlayers=4 (deja la valeur voulue), playingTime=30 (pas 15)
+    clickStepper("Joueurs min", "Augmenter", 2);
+    clickStepper("Duree (min)", "Augmenter", 6);
 
     fireEvent.click(screen.getByRole("button", { name: /creer et ajouter/i }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());

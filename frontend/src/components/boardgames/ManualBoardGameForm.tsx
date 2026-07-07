@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import NumberStepper from "../common/NumberStepper";
 
 interface ManualFormData {
   name: string;
@@ -9,7 +10,7 @@ interface ManualFormData {
 }
 
 interface Props {
-  onSubmit: (data: ManualFormData) => void;
+  onSubmit: (data: ManualFormData) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -17,8 +18,15 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<ManualFormData>();
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<ManualFormData>({
+    defaultValues: { minPlayers: 1, maxPlayers: 4, playingTime: 30 },
+  });
+  const minPlayers = watch("minPlayers") ?? 1;
+  const maxPlayers = watch("maxPlayers") ?? 1;
+  const playingTime = watch("playingTime") ?? 0;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
@@ -55,11 +63,12 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
           <label className="label" htmlFor="mbg-playingTime">
             <span className="label-text">Duree (min)</span>
           </label>
-          <input
+          <NumberStepper
             id="mbg-playingTime"
-            type="number"
-            className="input input-bordered"
-            {...register("playingTime", { valueAsNumber: true })}
+            value={playingTime}
+            onChange={(v) => setValue("playingTime", v, { shouldValidate: true })}
+            min={0}
+            step={15}
           />
         </div>
       </div>
@@ -69,33 +78,32 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
           <label className="label" htmlFor="mbg-minPlayers">
             <span className="label-text">Joueurs min</span>
           </label>
-          <input
+          <NumberStepper
             id="mbg-minPlayers"
-            type="number"
-            className="input input-bordered"
+            value={minPlayers}
+            onChange={(v) => setValue("minPlayers", v, { shouldValidate: true })}
             min={1}
-            {...register("minPlayers", { valueAsNumber: true })}
           />
         </div>
         <div className="form-control">
           <label className="label" htmlFor="mbg-maxPlayers">
             <span className="label-text">Joueurs max</span>
           </label>
-          <input
+          <NumberStepper
             id="mbg-maxPlayers"
-            type="number"
-            className="input input-bordered"
+            value={maxPlayers}
+            onChange={(v) => setValue("maxPlayers", v, { shouldValidate: true })}
             min={1}
-            {...register("maxPlayers", { valueAsNumber: true })}
           />
         </div>
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
-        <button type="button" className="btn btn-sm" onClick={onCancel}>
+        <button type="button" className="btn btn-sm" onClick={onCancel} disabled={isSubmitting}>
           Retour a la recherche
         </button>
-        <button type="submit" className="btn btn-primary btn-sm">
+        <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting}>
+          {isSubmitting && <span className="loading loading-spinner loading-xs" />}
           Creer et ajouter
         </button>
       </div>

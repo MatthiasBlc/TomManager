@@ -30,4 +30,20 @@ describe("NumberStepper", () => {
     render(<NumberStepper value={5} onChange={() => {}} max={5} />);
     expect(screen.getByRole("button", { name: "Augmenter" })).toBeDisabled();
   });
+
+  it("increments/decrements by the given step", () => {
+    const onChange = vi.fn();
+    render(<NumberStepper value={90} onChange={onChange} step={15} />);
+    fireEvent.click(screen.getByRole("button", { name: "Augmenter" }));
+    expect(onChange).toHaveBeenCalledWith(105);
+    fireEvent.click(screen.getByRole("button", { name: "Diminuer" }));
+    expect(onChange).toHaveBeenCalledWith(75);
+  });
+
+  it("clamps to max even when it is not a multiple of step away", () => {
+    const onChange = vi.fn();
+    render(<NumberStepper value={90} onChange={onChange} max={100} step={15} />);
+    fireEvent.click(screen.getByRole("button", { name: "Augmenter" }));
+    expect(onChange).toHaveBeenCalledWith(100);
+  });
 });
