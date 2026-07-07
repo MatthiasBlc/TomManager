@@ -148,10 +148,10 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     await page.getByText(tableTitle).click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
-    // La table est pleine (1/1), le bouton Ajouter a la table du joueur WAITLIST doit etre desactive
+    // La table est pleine (1/1), le bouton du joueur WAITLIST doit etre desactive
     const dialog = page.getByRole("dialog");
     await expect(
-      dialog.getByRole("button", { name: /ajouter a la table/i }).first()
+      dialog.getByRole("button", { name: /aucune place disponible/i }).first()
     ).toBeDisabled();
   });
 
