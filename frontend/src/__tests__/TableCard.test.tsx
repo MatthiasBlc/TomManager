@@ -16,8 +16,8 @@ const baseTable = {
     { id: "tag2", name: "Horreur" },
   ],
   players: [
-    { id: "u2", username: "Bob" },
-    { id: "u3", username: "Charlie" },
+    { id: "u2", username: "Bob", isOnReservedSeat: false },
+    { id: "u3", username: "Charlie", isOnReservedSeat: false },
   ],
   confirmedCount: 3,
   waitlistCount: 0,
@@ -53,6 +53,19 @@ describe("TableCard", () => {
     expect(screen.getByText("MJ")).toBeInTheDocument();
   });
 
+  it("highlights a player occupying a reserved seat with badge-warning", () => {
+    render(
+      <TableCard
+        table={{
+          ...baseTable,
+          players: [{ id: "u2", username: "Bob", isOnReservedSeat: true }],
+        }}
+        onClick={() => {}}
+      />
+    );
+    expect(screen.getByText("Bob")).toHaveClass("badge-warning");
+  });
+
   it("renders the public/reserved seat split when reservedSeats > 0", () => {
     render(
       <TableCard
@@ -61,13 +74,13 @@ describe("TableCard", () => {
       />
     );
     expect(screen.getByText("0/4 joueurs")).toBeInTheDocument();
-    expect(screen.getByText("0/1 publique")).toBeInTheDocument();
+    expect(screen.getByText("0/1 libre")).toBeInTheDocument();
     expect(screen.getByText("0/3 reservees")).toBeInTheDocument();
   });
 
   it("does not render the seat split when reservedSeats is 0", () => {
     render(<TableCard table={baseTable} onClick={() => {}} />);
-    expect(screen.queryByText(/publique/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/libre/)).not.toBeInTheDocument();
     expect(screen.queryByText(/reservee/)).not.toBeInTheDocument();
   });
 

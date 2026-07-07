@@ -129,10 +129,19 @@ Responses enrichies :
 
 ## UI
 
-- `CreateTableModal` : champ "Places reservees" (0 a maxPlayers, default 0)
-- `EditTableModal` : idem, pre-remplit depuis la valeur actuelle
-- `TableDetailPage` :
-  - Repartition des places : badges "N reservees / N libres"
-  - Badge "reservee" sur les participants en place reservee
+- `CreateTableModal` / `EditTableModal` : champ "Places reservees" via un composant
+  `NumberStepper` (+/-), plafonne dynamiquement a la valeur de "Joueurs max"
+  (impossible de creer un etat invalide depuis l'UI). Texte d'aide explicitant
+  que ces places ne sont pas accessibles a l'inscription publique.
+- `EditTableModal` : encart d'occupation actuelle (confirmes/reserves/waitlist) et
+  avertissement + confirmation avant d'enregistrer un changement qui retrograderait
+  des joueurs confirmes.
+- `TableDetailModal` (modale de gestion d'une table, ouverte depuis la liste et le
+  calendrier) :
+  - Repartition des places : "X/Y libres" / "X/Y reservees" (`formatSeatSummary`)
+  - Badge "reservee" sur les participants confirmes en place reservee
   - Bouton "Retrograder" dans le bloc confirmes (canEdit)
-  - Bouton "Promouvoir" / "Affecter (place reservee)" dans le bloc waitlist (canEdit)
+  - Bouton "Ajouter a la table" / "Affecter (place reservee)" dans le bloc waitlist (canEdit)
+- `TableCard` (liste) : badge joueur colore (`badge-warning`) pour les joueurs sur
+  place reservee. Le calendrier (`CalendarEventBlock`) reste a l'agregat uniquement
+  (cellules trop exigues pour un detail par joueur).

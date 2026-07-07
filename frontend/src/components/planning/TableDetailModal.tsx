@@ -92,6 +92,8 @@ export default function TableDetailModal({
         confirmedOnReserved,
       })
     : null;
+  const promoteLabel =
+    table && table.reservedSeats > 0 ? "Affecter (place reservee)" : "Ajouter a la table";
 
   const fetchTable = useCallback(async () => {
     if (!tableId) return;
@@ -372,7 +374,12 @@ export default function TableDetailModal({
                       .filter((p) => p.status === "CONFIRMED")
                       .map((p) => (
                         <div key={p.userId} className="flex items-center justify-between py-1">
-                          <span className="text-sm">{p.username}</span>
+                          <span className="text-sm flex items-center gap-1.5">
+                            {p.username}
+                            {p.isOnReservedSeat && (
+                              <span className="badge badge-warning badge-xs">reservee</span>
+                            )}
+                          </span>
                           {canEdit && (
                             <div className="flex items-center gap-1">
                               <button
@@ -406,7 +413,14 @@ export default function TableDetailModal({
                           .filter((p) => p.status === "CONFIRMED")
                           .map((p) => (
                             <tr key={p.userId}>
-                              <td>{p.username}</td>
+                              <td>
+                                <span className="flex items-center gap-1.5">
+                                  {p.username}
+                                  {p.isOnReservedSeat && (
+                                    <span className="badge badge-warning badge-xs">reservee</span>
+                                  )}
+                                </span>
+                              </td>
                               {canEdit && (
                                 <td className="flex gap-1">
                                   <button
@@ -453,10 +467,10 @@ export default function TableDetailModal({
                                   title={
                                     confirmedCount >= table.maxPlayers
                                       ? "Table pleine — retrogradez un joueur d'abord"
-                                      : "Ajouter a la table"
+                                      : promoteLabel
                                   }
                                 >
-                                  Ajouter a la table
+                                  {promoteLabel}
                                 </button>
                                 <button
                                   className="btn btn-ghost btn-xs text-error min-h-[44px]"
@@ -493,10 +507,10 @@ export default function TableDetailModal({
                                       title={
                                         confirmedCount >= table.maxPlayers
                                           ? "Table pleine — retrogradez un joueur d'abord"
-                                          : "Ajouter a la table"
+                                          : promoteLabel
                                       }
                                     >
-                                      Ajouter a la table
+                                      {promoteLabel}
                                     </button>
                                     <button
                                       className="btn btn-ghost btn-xs text-error"

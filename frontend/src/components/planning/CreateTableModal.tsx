@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import TagInput from "./TagInput";
 import ResponsiveModal from "../common/ResponsiveModal";
+import NumberStepper from "../common/NumberStepper";
 import BoardGameSelector, { SelectedGame } from "./BoardGameSelector";
 
 const DURATION_OPTIONS = [
@@ -61,14 +62,28 @@ export default function CreateTableModal({
     setValue,
     formState: { errors },
   } = useForm<CreateTableForm>({
-    defaultValues: { durationMinutes: 120, type: "JDR", gmIsPlayer: false, reservedSeats: 0 },
+    defaultValues: {
+      durationMinutes: 120,
+      type: "JDR",
+      gmIsPlayer: false,
+      maxPlayers: 4,
+      reservedSeats: 0,
+    },
   });
 
   const tableType = watch("type");
+  const maxPlayers = watch("maxPlayers");
+  const reservedSeats = watch("reservedSeats");
   // Reset gmIsPlayer when switching to JDS
   useEffect(() => {
     if (tableType === "JDS") setValue("gmIsPlayer", false);
   }, [tableType, setValue]);
+
+  // Les places reservees ne peuvent jamais depasser le nombre de joueurs max
+  // (ex : maxPlayers baisse suite a la selection d'un jeu plus petit)
+  useEffect(() => {
+    if (reservedSeats > maxPlayers) setValue("reservedSeats", maxPlayers);
+  }, [maxPlayers, reservedSeats, setValue]);
 
   // Pre-remplissage reactif depuis le jeu selectionne (creation uniquement — ecrase a chaque changement)
   useEffect(() => {
@@ -256,47 +271,31 @@ export default function CreateTableModal({
             <label className="label" htmlFor="ct-maxPlayers">
               <span className="label-text">Joueurs max</span>
             </label>
-            <input
+            <NumberStepper
               id="ct-maxPlayers"
-              type="number"
-              className="input input-bordered w-full"
-              inputMode="numeric"
+              value={maxPlayers}
+              onChange={(v) => setValue("maxPlayers", v, { shouldValidate: true })}
               min={1}
               max={20}
-              {...register("maxPlayers", {
-                required: "Requis",
-                min: { value: 1, message: "Min 1" },
-                max: { value: 20, message: "Max 20" },
-                valueAsNumber: true,
-              })}
             />
-            {errors.maxPlayers && (
-              <label className="label">
-                <span className="label-text-alt text-error">{errors.maxPlayers.message}</span>
-              </label>
-            )}
           </div>
           <div className="form-control">
             <label className="label" htmlFor="ct-reservedSeats">
               <span className="label-text">Places reservees</span>
             </label>
-            <input
+            <NumberStepper
               id="ct-reservedSeats"
-              type="number"
-              className="input input-bordered w-full"
-              inputMode="numeric"
+              value={reservedSeats}
+              onChange={(v) => setValue("reservedSeats", v, { shouldValidate: true })}
               min={0}
-              max={20}
-              {...register("reservedSeats", {
-                min: { value: 0, message: "Min 0" },
-                valueAsNumber: true,
-              })}
+              max={maxPlayers}
             />
-            {errors.reservedSeats && (
-              <label className="label">
-                <span className="label-text-alt text-error">{errors.reservedSeats.message}</span>
-              </label>
-            )}
+            <label className="label">
+              <span className="label-text-alt opacity-60">
+                Non accessibles a l'inscription publique — a affecter manuellement depuis la liste
+                d'attente.
+              </span>
+            </label>
           </div>
         </div>
 

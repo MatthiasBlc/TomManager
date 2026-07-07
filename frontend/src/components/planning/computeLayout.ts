@@ -9,7 +9,7 @@ export interface TableSummary {
   endDateTime: string;
   creator: { id: string; username: string };
   tags: { id: string; name: string }[];
-  players: { id: string; username: string }[];
+  players: { id: string; username: string; isOnReservedSeat: boolean }[];
   confirmedCount: number;
   waitlistCount: number;
   confirmedOnReserved: number;
@@ -25,7 +25,7 @@ export interface SeatSummary {
   reserved: string | null;
 }
 
-// Formate le detail des places (publiques vs reservees par le MJ).
+// Formate le detail des places (libres vs reservees par le MJ).
 // normal/reserved restent a null quand la table n'a pas de place reservee,
 // pour que l'appelant puisse choisir de ne rien afficher dans ce cas.
 export function formatSeatSummary(table: {
@@ -44,7 +44,7 @@ export function formatSeatSummary(table: {
 
   return {
     total,
-    normal: `${confirmedNormal}/${normalSeats} publique${normalSeats > 1 ? "s" : ""}`,
+    normal: `${confirmedNormal}/${normalSeats} libre${normalSeats > 1 ? "s" : ""}`,
     reserved: `${confirmedOnReserved}/${reservedSeats} reservee${reservedSeats > 1 ? "s" : ""}`,
   };
 }
