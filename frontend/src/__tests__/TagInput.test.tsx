@@ -102,6 +102,8 @@ describe("TagInput", () => {
     fireEvent.change(screen.getByPlaceholderText("Ajouter des tags..."), {
       target: { value: "donjon" },
     });
-    expect(await screen.findByText('Aucun tag existant — Entree pour creer "donjon"')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Aucun tag existant — Entree pour creer "donjon"')
+    ).toBeInTheDocument();
   });
 });

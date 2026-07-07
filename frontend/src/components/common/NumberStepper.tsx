@@ -44,7 +44,9 @@ export default function NumberStepper({
         type="button"
         className="btn btn-sm join-item"
         disabled={!canIncrement}
-        onClick={() => onChange(max !== undefined ? Math.min(max, safeValue + step) : safeValue + step)}
+        onClick={() =>
+          onChange(max !== undefined ? Math.min(max, safeValue + step) : safeValue + step)
+        }
         aria-label="Augmenter"
       >
         +

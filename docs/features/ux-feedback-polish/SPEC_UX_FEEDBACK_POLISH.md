@@ -24,6 +24,7 @@ donnees, perte de connexion) coherent et jamais silencieux, partout dans l'app.
 ### 1. Convention de wording pour les toasts
 
 **Constat** : 3 idiomes francais coexistent pour les erreurs sans regle de choix :
+
 - "Echec de..." (ex. `PlanningTab.tsx` — "Echec du chargement des tables")
 - "Erreur lors de..." (ex. `TableDetailModal.tsx` — "Erreur lors du passage en liste d'attente")
 - "Impossible de..." (ex. `BoardGameSelector.tsx` — "Impossible d'ajouter ce jeu BGG")
@@ -59,6 +60,7 @@ recherche pendant le debounce.
 `frontend/src/components/common/EmptyState.tsx` existe et est deja utilise dans
 5 endroits (`TableDetailModal`, `TimelineView`, `BoardGameList`, `EventListPage`,
 `ParticipantList`) mais pas ici :
+
 - `frontend/src/components/admin/AdminBoardGamePanel.tsx` : une recherche sans
   resultat n'affiche rien (juste le compteur "0 jeu au total" au-dessus) — la
   sous-liste de fusion, elle, affiche bien "Aucun resultat" (ligne ~552), a
@@ -94,6 +96,7 @@ n'a change pendant la coupure.
 ### 5. Erreurs silencieuses
 
 Des `catch` avalent l'erreur sans aucun retour utilisateur :
+
 - `frontend/src/pages/EventListPage.tsx` (fetch liste d'evenements) — un fetch
   qui echoue rend une liste vide, indistinguable d'une liste reellement vide.
 - `frontend/src/hooks/useNotifications.ts` — tous les catch (fetch, markAsRead,

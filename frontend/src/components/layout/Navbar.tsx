@@ -23,9 +23,7 @@ function DesktopNavbar({ isOnline }: { isOnline: boolean }) {
   };
 
   return (
-    <div
-      className={`navbar bg-base-100 shadow-sm sticky z-50 ${isOnline ? "top-0" : "top-10"}`}
-    >
+    <div className={`navbar bg-base-100 shadow-sm sticky z-50 ${isOnline ? "top-0" : "top-10"}`}>
       <div className="flex-1">
         <Link to="/" className="btn btn-ghost text-xl">
           TomManager

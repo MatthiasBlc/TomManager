@@ -22,10 +22,7 @@ function NotificationList({
       <div className="flex items-center justify-between px-3 py-2 border-b border-base-300">
         <span className="text-sm font-semibold">Notifications</span>
         {unreadCount > 0 && (
-          <button
-            className={`btn btn-ghost btn-xs text-xs ${touchTarget}`}
-            onClick={markAllAsRead}
-          >
+          <button className={`btn btn-ghost btn-xs text-xs ${touchTarget}`} onClick={markAllAsRead}>
             Tout marquer lu
           </button>
         )}

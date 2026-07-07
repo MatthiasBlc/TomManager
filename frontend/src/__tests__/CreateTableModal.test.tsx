@@ -61,7 +61,9 @@ describe("CreateTableModal", () => {
     expect(screen.getByLabelText("Date")).toBeInTheDocument();
     expect(screen.getByLabelText("Heure de debut")).toBeInTheDocument();
     expect(screen.getByLabelText("Duree")).toBeInTheDocument();
-    expect(screen.getByText(/a affecter manuellement depuis la liste d'attente/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/a affecter manuellement depuis la liste d'attente/)
+    ).toBeInTheDocument();
   });
 
   it("shows the GM-is-player checkbox only for JDR type", () => {
@@ -121,9 +123,7 @@ describe("CreateTableModal", () => {
   it("caps the reserved seats stepper at the current maxPlayers value", () => {
     render(<CreateTableModal open={true} onClose={vi.fn()} onCreated={vi.fn()} eventId="ev1" />);
     // maxPlayers default = 4
-    const reservedGroup = screen
-      .getByLabelText("Places reservees")
-      .closest(".join") as HTMLElement;
+    const reservedGroup = screen.getByLabelText("Places reservees").closest(".join") as HTMLElement;
     const increment = within(reservedGroup).getByRole("button", { name: "Augmenter" });
     for (let i = 0; i < 4; i++) fireEvent.click(increment);
     expect(screen.getByLabelText("Places reservees")).toHaveValue("4");

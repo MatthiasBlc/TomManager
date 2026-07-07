@@ -75,7 +75,9 @@ describe("useNotifications", () => {
   it("shows an error toast when the initial fetch fails", async () => {
     apiGetMock.mockRejectedValue(new Error("network"));
     const { result } = renderHook(() => useNotifications());
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith("Echec du chargement des notifications"));
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith("Echec du chargement des notifications")
+    );
     expect(result.current.notifications).toEqual([]);
   });
 

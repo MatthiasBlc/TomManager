@@ -68,9 +68,7 @@ describe("EditEventModal", () => {
   });
 
   it("rejects an end date before the start date without calling the API", async () => {
-    render(
-      <EditEventModal open={true} onClose={vi.fn()} onUpdated={vi.fn()} event={baseEvent} />
-    );
+    render(<EditEventModal open={true} onClose={vi.fn()} onUpdated={vi.fn()} event={baseEvent} />);
 
     fireEvent.input(screen.getByLabelText("Fin"), {
       target: { value: "2026-05-01T10:00" },

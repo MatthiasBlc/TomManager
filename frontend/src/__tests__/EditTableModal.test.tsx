@@ -87,7 +87,9 @@ describe("EditTableModal", () => {
       />
     );
     expect(
-      screen.getByText(/Actuellement : 1\/3 confirmes \(1 sur place reservee\), 1 en liste d'attente/)
+      screen.getByText(
+        /Actuellement : 1\/3 confirmes \(1 sur place reservee\), 1 en liste d'attente/
+      )
     ).toBeInTheDocument();
   });
 
