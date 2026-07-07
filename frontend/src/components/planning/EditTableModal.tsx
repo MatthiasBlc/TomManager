@@ -307,7 +307,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           <div className="form-control">
             <label className="label" htmlFor="et-maxPlayers">
               <span className="label-text">Joueurs max</span>
@@ -331,12 +331,10 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
               min={0}
               max={watchedMaxPlayers}
             />
-            <label className="label">
-              <span className="label-text-alt opacity-60">
-                Non accessibles a l'inscription publique — a affecter manuellement depuis la liste
-                d'attente.
-              </span>
-            </label>
+            <p className="text-xs opacity-60 mt-1">
+              Non accessibles a l'inscription publique — a affecter manuellement depuis la liste
+              d'attente.
+            </p>
           </div>
         </div>
 
