@@ -68,20 +68,22 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
 
-### Frontend (162 tests - ROADMAP COMPLETE)
+### Frontend (221 tests - ROADMAP COMPLETE)
 
 - `BoardGameCard.test.tsx` - Rendu nom/annee, joueurs/duree, bouton Remove (aria-label "Remove <game>"), masquage pour autre utilisateur
 - `useIsMobile.test.tsx` - Hook : valeur initiale matchMedia, mise a jour sur change, cleanup listener
 - `useOnlineStatus.test.tsx` - Hook : valeur initiale navigator.onLine, evenements online/offline, cleanup listeners
+- `useEventSocket.test.tsx` - Join immediat, re-join + onReconnected apres une reconnexion (pas au premier connect), cleanup listener
+- `useNotifications.test.tsx` - Fetch initial + unread count, toast d'erreur sur chaque catch (fetch/markAsRead/delete), refetch au reconnect socket
 - `EmptyState.test.tsx` - Rendu titre, description optionnelle, icone, action
 - `FAB.test.tsx` - Rendu bouton, aria-label, click handler
-- `Skeleton.test.tsx` - Variantes (Text, Card, CardGrid, BoardGame, Notification, TableDetail)
+- `Skeleton.test.tsx` - Variantes (Text, Card, CardGrid, BoardGame, Notification, TableDetail, EventDetail)
 - `TableCard.test.tsx` - Rendu titre/GM/pitch/tags, badges (GM, conflit, waitlist, joined), click
 - `NotificationItem.test.tsx` - Rendu contenu, lu/non-lu, navigation eventId, mark as read, delete, icones par type
 - `PrivateRoute.test.tsx` - Spinner pendant loading, redirection /login si non auth, rendu enfant si auth
 - `ErrorBoundary.test.tsx` - Rendu enfant sans erreur, fallback par defaut, fallback custom
-- `ConnectionStatus.test.tsx` - Pas de rendu sans socket, badge selon etat initial, mise a jour sur connect/disconnect
-- `BoardGameSearchInput.test.tsx` - Pas de query <2 char, debounce + resultats, badge BGG, selection clear input, gestion erreur API
+- `ConnectionStatus.test.tsx` - Pas de rendu sans socket, badge selon etat initial, mise a jour sur connect/disconnect, toast disconnect/reconnect (jamais au premier connect)
+- `BoardGameSearchInput.test.tsx` - Pas de query <2 char, debounce + resultats, badge BGG, selection clear input, gestion erreur API, message "Aucun resultat"
 - `Navbar.test.tsx` - Desktop/mobile, login/logout, avatar, evenements visibles selon auth
 - `BottomTabBar.test.tsx` - Pas de rendu sans user, tabs Events/Planning/Games selon route, logout
 - `MobileHeader.test.tsx` - Logo TM, bell + status visibles si auth
@@ -91,9 +93,12 @@ npx playwright test --grep "nom"         # Un test specifique
 - `TimelineView.test.tsx` - Empty state, cartes, regroupement par date, click handler
 - `NotificationBell.test.tsx` - Bell badge, cap 99+, dropdown desktop, sheet mobile, mark all read
 - `ManualBoardGameForm.test.tsx` - Champs requis, validation Name, soumission valeurs numeriques, cancel
-- `TagInput.test.tsx` - Badges, ajout (Enter/comma), suppression, dedupe, backspace, suggestions API
+- `TagInput.test.tsx` - Badges, ajout (Enter/comma), suppression, dedupe, backspace, suggestions API, loading/erreur/aucun-resultat pendant la recherche
 - `LoginPage.test.tsx` - Render, submit success/fail, redirect si connecte, Discord 503, OAuth click, error param
 - `AddBoardGameModal.test.tsx` - Modes search/manual, ajout local, import BGG, close
+- `AdminBoardGamePanel.test.tsx` - Liste, total, edit/delete/merge modals, empty state recherche sans resultat
+- `EventListPage.test.tsx` - Fetch/affichage, empty state, etat d'erreur distinct + retry, FAB/bouton creation selon role
+- `EventDetailPage.test.tsx` - Skeleton pendant le chargement puis contenu, params non definis
 - `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel
 - `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API
 

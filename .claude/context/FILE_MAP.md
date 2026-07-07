@@ -84,7 +84,7 @@ src/
 │   │   ├── MobileSheet.tsx        # Bottom sheet modal (swipe-down to close)
 │   │   ├── ResponsiveModal.tsx    # MobileSheet on mobile, DaisyUI modal on desktop
 │   │   ├── FAB.tsx                # Floating Action Button (fixed bottom-right)
-│   │   ├── Skeleton.tsx           # Reusable skeleton loaders (card, grid, board game, notification, table detail)
+│   │   ├── Skeleton.tsx           # Reusable skeleton loaders (card, grid, board game, notification, table detail, event detail)
 │   │   └── EmptyState.tsx         # Reusable empty state (icon + title + description + CTA)
 │   ├── notifications/
 │   │   ├── NotificationBell.tsx   # Bell icon + badge + dropdown
