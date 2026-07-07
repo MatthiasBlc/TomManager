@@ -144,7 +144,8 @@ export async function setStatus(req: Request, res: Response, next: NextFunction)
     const result = await gameTableService.setParticipantStatus(
       req.params.tableId,
       req.params.userId,
-      req.body.status
+      req.body.status,
+      req.body.seat
     );
     res.json({ data: result });
   } catch (err) {

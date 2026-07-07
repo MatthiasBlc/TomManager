@@ -3,6 +3,7 @@ import TableDetailModal from "../components/planning/TableDetailModal";
 
 const apiGetMock = vi.fn();
 const apiPostMock = vi.fn();
+const apiPatchMock = vi.fn();
 const apiDeleteMock = vi.fn();
 const useAuthMock = vi.fn();
 const useIsMobileMock = vi.fn();
@@ -13,6 +14,7 @@ vi.mock("../config/api", () => ({
   default: {
     get: (...args: unknown[]) => apiGetMock(...args),
     post: (...args: unknown[]) => apiPostMock(...args),
+    patch: (...args: unknown[]) => apiPatchMock(...args),
     delete: (...args: unknown[]) => apiDeleteMock(...args),
   },
 }));
@@ -96,6 +98,7 @@ describe("TableDetailModal", () => {
   beforeEach(() => {
     apiGetMock.mockReset().mockResolvedValue({ data: { data: baseTable } });
     apiPostMock.mockReset();
+    apiPatchMock.mockReset().mockResolvedValue({});
     apiDeleteMock.mockReset();
     toastSuccess.mockReset();
     toastError.mockReset();
@@ -193,7 +196,7 @@ describe("TableDetailModal", () => {
     expect(screen.getByText("reservee")).toBeInTheDocument();
   });
 
-  it("shows 'Affecter (place reservee)' as the promote label when reservedSeats > 0", async () => {
+  it("shows both promote buttons when a free seat and a reserved seat are both available", async () => {
     apiGetMock.mockReset().mockResolvedValue({
       data: {
         data: {
@@ -215,6 +218,208 @@ describe("TableDetailModal", () => {
     expect(
       await screen.findByRole("button", { name: /Affecter \(place reservee\)/i })
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Ajouter a la table$/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Ajouter \(place libre\)/i })
+    ).toBeInTheDocument();
+  });
+
+  it("promotes to a free seat with seat=FREE when the free-seat button is clicked", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          reservedSeats: 1,
+          participants: [
+            {
+              userId: "u3",
+              username: "Chloe",
+              status: "WAITLIST",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    const freeBtn = await screen.findByRole("button", { name: /Ajouter \(place libre\)/i });
+    fireEvent.click(freeBtn);
+    await waitFor(() => {
+      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1/participants/u3/status", {
+        status: "CONFIRMED",
+        seat: "FREE",
+      });
+    });
+  });
+
+  it("promotes to a reserved seat with seat=RESERVED when the reserved-seat button is clicked", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          reservedSeats: 1,
+          participants: [
+            {
+              userId: "u3",
+              username: "Chloe",
+              status: "WAITLIST",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    const reservedBtn = await screen.findByRole("button", { name: /Affecter \(place reservee\)/i });
+    fireEvent.click(reservedBtn);
+    await waitFor(() => {
+      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1/participants/u3/status", {
+        status: "CONFIRMED",
+        seat: "RESERVED",
+      });
+    });
+  });
+
+  it("shows a single 'Ajouter a la table' button when only a free seat is available", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          reservedSeats: 0,
+          participants: [
+            {
+              userId: "u3",
+              username: "Chloe",
+              status: "WAITLIST",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    expect(await screen.findByRole("button", { name: /^Ajouter a la table$/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Affecter \(place reservee\)/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows a disabled 'Aucune place disponible' button when the table is entirely full", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          maxPlayers: 1,
+          reservedSeats: 0,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+            {
+              userId: "u3",
+              username: "Chloe",
+              status: "WAITLIST",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    const disabledBtn = await screen.findByRole("button", { name: /Aucune place disponible/i });
+    expect(disabledBtn).toBeDisabled();
+  });
+
+  it("shows 'Passer en place libre' for a confirmed participant on a reserved seat, and converts it", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          reservedSeats: 0,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    const convertBtn = await screen.findByRole("button", { name: /Passer en place libre/i });
+    fireEvent.click(convertBtn);
+    await waitFor(() => {
+      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1/participants/u2/status", {
+        status: "CONFIRMED",
+        seat: "FREE",
+      });
+    });
+  });
+
+  it("shows 'Passer en place reservee' for a confirmed participant on a free seat when reserved seats remain", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          reservedSeats: 1,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    const convertBtn = await screen.findByRole("button", { name: /Passer en place reservee/i });
+    fireEvent.click(convertBtn);
+    await waitFor(() => {
+      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1/participants/u2/status", {
+        status: "CONFIRMED",
+        seat: "RESERVED",
+      });
+    });
+  });
+
+  it("hides the convert-to-reserved action for a confirmed player on a free seat when reservedSeats=0", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          reservedSeats: 0,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    await screen.findByText("Bob");
+    expect(
+      screen.queryByRole("button", { name: /Passer en place reservee/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Passer en place libre/i })
+    ).not.toBeInTheDocument();
   });
 });

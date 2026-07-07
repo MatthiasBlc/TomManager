@@ -40,17 +40,39 @@ sinon            → WAITLIST
 
 ### Promouvoir depuis la waitlist (PATCH status → CONFIRMED)
 
-Priorite : reserved seat d'abord, puis place normale.
+Body optionnel `seat: "FREE" | "RESERVED"` pour choisir explicitement le type
+de place. Sans `seat` (comportement par defaut, retro-compatible) :
+priorite reserved seat d'abord, puis place normale.
 
 ```
-si reservedSeats > 0 :
-  → CONFIRMED, isOnReservedSeat = true, reservedSeats--
-  → notification RESERVED_SEAT_ASSIGNED
-sinon si openSeats > 0 :
-  → CONFIRMED, isOnReservedSeat = false
-  → notification WAITLIST_PROMOTED
-sinon :
-  → 409 "aucune place disponible"
+si seat === "RESERVED" :
+  reservedSeats > 0 ? CONFIRMED, isOnReservedSeat = true, reservedSeats-- : 409
+si seat === "FREE" :
+  openSeats > 0 ? CONFIRMED, isOnReservedSeat = false : 409
+si seat absent (defaut) :
+  si reservedSeats > 0 :
+    → CONFIRMED, isOnReservedSeat = true, reservedSeats--
+    → notification RESERVED_SEAT_ASSIGNED
+  sinon si openSeats > 0 :
+    → CONFIRMED, isOnReservedSeat = false
+    → notification WAITLIST_PROMOTED
+  sinon :
+    → 409 "aucune place disponible"
+```
+
+### Convertir un joueur deja confirme (PATCH status → CONFIRMED, seat explicite)
+
+Meme endpoint que la promotion, mais applique quand le participant cible est
+deja `CONFIRMED` : permet de basculer un joueur entre place libre et place
+reservee sans repasser par la liste d'attente.
+
+```
+seat === desiredReserved deja actuel → no-op
+FREE -> RESERVED : reservedSeats > 0 ? reservedSeats--, isOnReservedSeat = true : 409
+                   notification RESERVED_SEAT_ASSIGNED
+RESERVED -> FREE : toujours autorise (le nombre de confirmes ne change pas)
+                   reservedSeats++, isOnReservedSeat = false
+                   pas de notification
 ```
 
 ### Retrograder (PATCH status → WAITLIST)
@@ -110,7 +132,7 @@ Aucun nouvel endpoint. Champs ajoutes aux payloads existants :
 | `POST /tables`                                | Body: `reservedSeats?` (default 0)           |
 | `PATCH /:tableId`                             | Body: `reservedSeats?`, `maxPlayers` updated |
 | `POST /:tableId/join`                         | Calcul openSeats avec reservedSeats          |
-| `PATCH /:tableId/participants/:userId/status` | Logique priorite reserved                    |
+| `PATCH /:tableId/participants/:userId/status` | Body: `seat?: "FREE" \| "RESERVED"` — choix explicite ou conversion en place |
 | `DELETE /:tableId/leave`                      | isOnReservedSeat → reservedSeats++           |
 | `DELETE /:tableId/participants/:userId`       | idem                                         |
 
@@ -140,8 +162,13 @@ Responses enrichies :
   calendrier) :
   - Repartition des places : "X/Y libres" / "X/Y reservees" (`formatSeatSummary`)
   - Badge "reservee" sur les participants confirmes en place reservee
-  - Bouton "Retrograder" dans le bloc confirmes (canEdit)
-  - Bouton "Ajouter a la table" / "Affecter (place reservee)" dans le bloc waitlist (canEdit)
+  - Bouton "Retrograder" (vers waitlist) dans le bloc confirmes (canEdit), et bouton de
+    conversion en place ("Passer en place reservee" / "Passer en place libre") quand
+    l'autre type de place est disponible
+  - Bloc waitlist (canEdit) : un seul bouton de promotion ("Ajouter a la table" ou
+    "Affecter (place reservee)") quand un seul type de place est libre ; deux boutons
+    distincts ("Ajouter (place libre)" et "Affecter (place reservee)") quand les deux
+    sont disponibles simultanement, pour laisser le MJ choisir explicitement
 - `TableCard` (liste) : badge joueur colore (`badge-warning`) pour les joueurs sur
   place reservee. Le calendrier (`CalendarEventBlock`) reste a l'agregat uniquement
   (cellules trop exigues pour un detail par joueur).

@@ -55,14 +55,14 @@ npx playwright test --grep "nom"         # Un test specifique
 
 ## Inventaire des tests
 
-### Backend (244 tests)
+### Backend (250 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me, error format consistency)
 - `integration/event.test.ts` - Event API (CRUD: create, list, detail, update, delete + auth + cascade)
 - `integration/invitation.test.ts` - Invitation API (create, resend, validate token)
 - `integration/participant.test.ts` - Participant API (list, remove, leave) + Invitation listing
-- `integration/gameTable.test.ts` - GameTable API (CRUD, join/leave/kick, waitlist, demotion/promotion, promote/demote manuel GM, reserved seats) + Tag autocomplete
+- `integration/gameTable.test.ts` - GameTable API (CRUD, join/leave/kick, waitlist, demotion/promotion, promote/demote manuel GM, reserved seats, choix explicite libre/reservee, conversion en place d'un joueur confirme) + Tag autocomplete
 - `integration/boardGame.test.ts` - BoardGame API (CRUD, search local + BGG fallback, lazy fetch, from-bgg, error format) + BGG XML parsing
 - `integration/eventBoardGame.test.ts` - EventBoardGame API (add, list, remove, duplicate, non-participant, cascade)
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
@@ -106,7 +106,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `ProfilePage.test.tsx` - Link/unlink Discord, confirmation avant unlink, disabled selon email
 - `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel, stepper reservedSeats plafonne a maxPlayers
 - `EditTableModal.test.tsx` - Encart occupation actuelle, avertissement + confirm avant demotion (maxPlayers/reservedSeats), submit sans confirm si pas d'impact
-- `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, libelle promotion conditionnel
+- `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, boutons de promotion waitlist (simple ou double libre+reservee selon disponibilite, payload `seat`), bouton disabled si table pleine, conversion en place d'un joueur confirme (libre<->reservee)
 
 Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phase 8 - pages)
 

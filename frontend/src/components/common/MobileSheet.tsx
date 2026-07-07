@@ -157,7 +157,7 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
           </div>
         )}
         {/* Content */}
-        <div className="overflow-y-auto flex-1 overscroll-contain">{children}</div>
+        <div className="overflow-y-auto overflow-x-hidden flex-1 overscroll-contain">{children}</div>
       </div>
     </div>,
     document.body
