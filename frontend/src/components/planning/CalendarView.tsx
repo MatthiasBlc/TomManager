@@ -242,7 +242,7 @@ export default function CalendarView({
       {isMobile && (
         <div className="mb-2 flex items-center justify-between">
           <button
-            className="btn btn-ghost btn-sm btn-square"
+            className="btn btn-ghost btn-sm btn-square min-h-[44px] min-w-[44px]"
             onClick={goPrev}
             aria-label="Jour precedent"
           >
@@ -259,7 +259,7 @@ export default function CalendarView({
           </button>
           <span className="text-sm font-medium capitalize">{formatMobileHeader(currentDate)}</span>
           <button
-            className="btn btn-ghost btn-sm btn-square"
+            className="btn btn-ghost btn-sm btn-square min-h-[44px] min-w-[44px]"
             onClick={goNext}
             aria-label="Jour suivant"
           >

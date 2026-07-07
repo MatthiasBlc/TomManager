@@ -4,10 +4,11 @@ import toast from "react-hot-toast";
 import ConnectionStatus from "../common/ConnectionStatus";
 import NotificationBell from "../notifications/NotificationBell";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 import MobileHeader from "./MobileHeader";
 import BottomTabBar from "./BottomTabBar";
 
-function DesktopNavbar() {
+function DesktopNavbar({ isOnline }: { isOnline: boolean }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -22,7 +23,9 @@ function DesktopNavbar() {
   };
 
   return (
-    <div className="navbar bg-base-100 shadow-sm sticky top-0 z-50">
+    <div
+      className={`navbar bg-base-100 shadow-sm sticky z-50 ${isOnline ? "top-0" : "top-10"}`}
+    >
       <div className="flex-1">
         <Link to="/" className="btn btn-ghost text-xl">
           TomManager
@@ -60,15 +63,16 @@ function DesktopNavbar() {
 export default function Navbar() {
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const isOnline = useOnlineStatus();
 
   if (isMobile) {
     return (
       <>
-        <MobileHeader />
+        <MobileHeader isOnline={isOnline} />
         {user && <BottomTabBar />}
       </>
     );
   }
 
-  return <DesktopNavbar />;
+  return <DesktopNavbar isOnline={isOnline} />;
 }

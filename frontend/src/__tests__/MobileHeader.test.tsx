@@ -14,10 +14,10 @@ vi.mock("../components/notifications/NotificationBell", () => ({
   default: () => <span data-testid="notification-bell" />,
 }));
 
-function renderHeader() {
+function renderHeader(isOnline = true) {
   return render(
     <MemoryRouter>
-      <MobileHeader />
+      <MobileHeader isOnline={isOnline} />
     </MemoryRouter>
   );
 }
@@ -46,5 +46,17 @@ describe("MobileHeader", () => {
     renderHeader();
     expect(screen.getByTestId("connection-status")).toBeInTheDocument();
     expect(screen.getByTestId("notification-bell")).toBeInTheDocument();
+  });
+
+  it("shifts down below the offline banner when isOnline is false", () => {
+    useAuthMock.mockReturnValue({ user: null });
+    renderHeader(false);
+    expect(screen.getByRole("banner")).toHaveClass("top-10");
+  });
+
+  it("sits at the top when online", () => {
+    useAuthMock.mockReturnValue({ user: null });
+    renderHeader(true);
+    expect(screen.getByRole("banner")).toHaveClass("top-0");
   });
 });

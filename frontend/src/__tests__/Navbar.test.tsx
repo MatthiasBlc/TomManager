@@ -4,6 +4,7 @@ import Navbar from "../components/layout/Navbar";
 
 const useAuthMock = vi.fn();
 const useIsMobileMock = vi.fn();
+const useOnlineStatusMock = vi.fn();
 const logoutMock = vi.fn();
 const navigateMock = vi.fn();
 
@@ -12,6 +13,9 @@ vi.mock("../contexts/AuthContext", () => ({
 }));
 vi.mock("../hooks/useIsMobile", () => ({
   useIsMobile: () => useIsMobileMock(),
+}));
+vi.mock("../hooks/useOnlineStatus", () => ({
+  useOnlineStatus: () => useOnlineStatusMock(),
 }));
 vi.mock("../components/common/ConnectionStatus", () => ({
   default: () => <span data-testid="connection-status" />,
@@ -42,8 +46,16 @@ function renderNavbar() {
 describe("Navbar (desktop)", () => {
   beforeEach(() => {
     useIsMobileMock.mockReturnValue(false);
+    useOnlineStatusMock.mockReturnValue(true);
     logoutMock.mockReset().mockResolvedValue(undefined);
     navigateMock.mockReset();
+  });
+
+  it("sticks below the offline banner when offline", () => {
+    useOnlineStatusMock.mockReturnValue(false);
+    setAuth(null);
+    const { container } = renderNavbar();
+    expect(container.querySelector(".navbar")).toHaveClass("top-10");
   });
 
   it("shows the Login link when no user is authenticated", () => {
@@ -92,6 +104,7 @@ describe("Navbar (desktop)", () => {
 describe("Navbar (mobile)", () => {
   beforeEach(() => {
     useIsMobileMock.mockReturnValue(true);
+    useOnlineStatusMock.mockReturnValue(true);
     logoutMock.mockReset().mockResolvedValue(undefined);
     navigateMock.mockReset();
   });

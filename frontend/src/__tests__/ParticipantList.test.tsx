@@ -168,4 +168,27 @@ describe("ParticipantList", () => {
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
+
+  it("truncates long usernames instead of overflowing the mobile card", () => {
+    useIsMobileMock.mockReturnValue(true);
+    useAuthMock.mockReturnValue({ user: { id: "u1" } });
+    render(
+      <ParticipantList
+        eventId="ev1"
+        createdBy="u1"
+        participants={[
+          {
+            userId: "u2",
+            username: "Un-nom-d-utilisateur-vraiment-tres-long-qui-deborde",
+            role: "USER",
+            joinedAt: "2026-01-02T10:00:00.000Z",
+          },
+        ]}
+        onChanged={vi.fn()}
+      />
+    );
+    const name = screen.getByText("Un-nom-d-utilisateur-vraiment-tres-long-qui-deborde");
+    expect(name).toHaveClass("truncate");
+    expect(name.parentElement).toHaveClass("min-w-0");
+  });
 });
