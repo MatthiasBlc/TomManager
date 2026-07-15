@@ -173,7 +173,7 @@ describe("TableDetailModal", () => {
     });
   });
 
-  it("shows a 'reservee' badge on a confirmed participant occupying a reserved seat", async () => {
+  it("shows a 'réservée' badge on a confirmed participant occupying a reserved seat", async () => {
     apiGetMock.mockReset().mockResolvedValue({
       data: {
         data: {
@@ -193,7 +193,7 @@ describe("TableDetailModal", () => {
     });
     renderModal({ user: { id: "u1", role: "USER" } });
     await screen.findByText("Bob");
-    expect(screen.getByText("reservee")).toBeInTheDocument();
+    expect(screen.getByText("réservée")).toBeInTheDocument();
   });
 
   it("shows both promote buttons when a free seat and a reserved seat are both available", async () => {
@@ -216,7 +216,7 @@ describe("TableDetailModal", () => {
     });
     renderModal({ user: { id: "u1", role: "USER" } });
     expect(
-      await screen.findByRole("button", { name: /Affecter \(place reservee\)/i })
+      await screen.findByRole("button", { name: /Affecter \(place réservée\)/i })
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Ajouter \(place libre\)/i })).toBeInTheDocument();
   });
@@ -272,7 +272,7 @@ describe("TableDetailModal", () => {
       },
     });
     renderModal({ user: { id: "u1", role: "USER" } });
-    const reservedBtn = await screen.findByRole("button", { name: /Affecter \(place reservee\)/i });
+    const reservedBtn = await screen.findByRole("button", { name: /Affecter \(place réservée\)/i });
     fireEvent.click(reservedBtn);
     await waitFor(() => {
       expect(apiPatchMock).toHaveBeenCalledWith(
@@ -285,7 +285,7 @@ describe("TableDetailModal", () => {
     });
   });
 
-  it("shows a single 'Ajouter a la table' button when only a free seat is available", async () => {
+  it("shows a single 'Ajouter à la table' button when only a free seat is available", async () => {
     apiGetMock.mockReset().mockResolvedValue({
       data: {
         data: {
@@ -305,10 +305,10 @@ describe("TableDetailModal", () => {
     });
     renderModal({ user: { id: "u1", role: "USER" } });
     expect(
-      await screen.findByRole("button", { name: /^Ajouter a la table$/i })
+      await screen.findByRole("button", { name: /^Ajouter à la table$/i })
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /Affecter \(place reservee\)/i })
+      screen.queryByRole("button", { name: /Affecter \(place réservée\)/i })
     ).not.toBeInTheDocument();
   });
 
@@ -375,7 +375,7 @@ describe("TableDetailModal", () => {
     });
   });
 
-  it("shows 'Passer en place reservee' for a confirmed participant on a free seat when reserved seats remain", async () => {
+  it("shows 'Passer en place réservée' for a confirmed participant on a free seat when reserved seats remain", async () => {
     apiGetMock.mockReset().mockResolvedValue({
       data: {
         data: {
@@ -394,7 +394,7 @@ describe("TableDetailModal", () => {
       },
     });
     renderModal({ user: { id: "u1", role: "USER" } });
-    const convertBtn = await screen.findByRole("button", { name: /Passer en place reservee/i });
+    const convertBtn = await screen.findByRole("button", { name: /Passer en place réservée/i });
     fireEvent.click(convertBtn);
     await waitFor(() => {
       expect(apiPatchMock).toHaveBeenCalledWith(
@@ -405,6 +405,101 @@ describe("TableDetailModal", () => {
         }
       );
     });
+  });
+
+  it("still offers the free-seat promotion when a reserved seat is occupied (regression : places libres sous-comptees)", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          maxPlayers: 2,
+          reservedSeats: 1,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+            {
+              userId: "u3",
+              username: "Chloe",
+              status: "WAITLIST",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T11:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    // 1 place libre reste disponible (l'occupant de la place réservée ne compte pas dedans)
+    expect(
+      await screen.findByRole("button", { name: /^Ajouter à la table$/i })
+    ).toBeInTheDocument();
+    // La seule place réservée est occupee : pas de bouton Affecter
+    expect(
+      screen.queryByRole("button", { name: /Affecter \(place réservée\)/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not offer demote/kick actions on the GM's own participant row", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          type: "JDS",
+          reservedSeats: 0,
+          participants: [
+            {
+              userId: "u1",
+              username: "Alice",
+              status: "CONFIRMED",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T09:00:00.000Z",
+            },
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    await screen.findByText("Bob");
+    // Seule la ligne de Bob propose les actions, pas celle du MJ (Alice)
+    expect(screen.getAllByRole("button", { name: /Mettre sur liste d'attente/i })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /^Retirer$/i })).toHaveLength(1);
+  });
+
+  it("labels the join button as joining the waitlist when no free seat is left", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          maxPlayers: 1,
+          reservedSeats: 0,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u3", role: "USER" } });
+    expect(
+      await screen.findByRole("button", { name: /^Rejoindre la liste d'attente$/i })
+    ).toBeInTheDocument();
   });
 
   it("hides the convert-to-reserved action for a confirmed player on a free seat when reservedSeats=0", async () => {
@@ -428,7 +523,7 @@ describe("TableDetailModal", () => {
     renderModal({ user: { id: "u1", role: "USER" } });
     await screen.findByText("Bob");
     expect(
-      screen.queryByRole("button", { name: /Passer en place reservee/i })
+      screen.queryByRole("button", { name: /Passer en place réservée/i })
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Passer en place libre/i })

@@ -59,10 +59,10 @@ describe("CreateTableModal", () => {
     expect(screen.getByLabelText("Pitch")).toBeInTheDocument();
     expect(screen.getByLabelText("Joueurs max")).toBeInTheDocument();
     expect(screen.getByLabelText("Date")).toBeInTheDocument();
-    expect(screen.getByLabelText("Heure de debut")).toBeInTheDocument();
-    expect(screen.getByLabelText("Duree")).toBeInTheDocument();
+    expect(screen.getByLabelText("Heure de début")).toBeInTheDocument();
+    expect(screen.getByLabelText("Durée")).toBeInTheDocument();
     expect(
-      screen.getByText(/a affecter manuellement depuis la liste d'attente/)
+      screen.getByText(/à affecter manuellement depuis la liste d'attente/)
     ).toBeInTheDocument();
   });
 
@@ -78,7 +78,7 @@ describe("CreateTableModal", () => {
 
   it("shows validation errors when submitting an empty form", async () => {
     render(<CreateTableModal open={true} onClose={vi.fn()} onCreated={vi.fn()} eventId="ev1" />);
-    fireEvent.click(screen.getByRole("button", { name: /^Creer$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Créer$/i }));
     expect(await screen.findByText("Le titre est requis")).toBeInTheDocument();
     expect(apiPostMock).not.toHaveBeenCalled();
   });
@@ -97,11 +97,11 @@ describe("CreateTableModal", () => {
     fireEvent.input(screen.getByLabelText("Date"), {
       target: { value: "2026-04-10" },
     });
-    fireEvent.input(screen.getByLabelText("Heure de debut"), {
+    fireEvent.input(screen.getByLabelText("Heure de début"), {
       target: { value: "18:00" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /^Creer$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Créer$/i }));
 
     await waitFor(() => {
       expect(apiPostMock).toHaveBeenCalled();
@@ -123,10 +123,21 @@ describe("CreateTableModal", () => {
   it("caps the reserved seats stepper at the current maxPlayers value", () => {
     render(<CreateTableModal open={true} onClose={vi.fn()} onCreated={vi.fn()} eventId="ev1" />);
     // maxPlayers default = 4
-    const reservedGroup = screen.getByLabelText("Places reservees").closest(".join") as HTMLElement;
+    const reservedGroup = screen.getByLabelText("Places réservées").closest(".join") as HTMLElement;
     const increment = within(reservedGroup).getByRole("button", { name: "Augmenter" });
     for (let i = 0; i < 4; i++) fireEvent.click(increment);
-    expect(screen.getByLabelText("Places reservees")).toHaveValue("4");
+    expect(screen.getByLabelText("Places réservées")).toHaveValue("4");
+    expect(increment).toBeDisabled();
+  });
+
+  it("caps the reserved seats stepper at maxPlayers - 1 when the GM takes a seat (JDS)", () => {
+    render(<CreateTableModal open={true} onClose={vi.fn()} onCreated={vi.fn()} eventId="ev1" />);
+    fireEvent.click(screen.getByLabelText(/JDS/i));
+    // maxPlayers default = 4, le createur JDS occupe une place → borne a 3
+    const reservedGroup = screen.getByLabelText("Places réservées").closest(".join") as HTMLElement;
+    const increment = within(reservedGroup).getByRole("button", { name: "Augmenter" });
+    for (let i = 0; i < 4; i++) fireEvent.click(increment);
+    expect(screen.getByLabelText("Places réservées")).toHaveValue("3");
     expect(increment).toBeDisabled();
   });
 

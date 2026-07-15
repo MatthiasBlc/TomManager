@@ -75,13 +75,13 @@ describe("TableCard", () => {
     );
     expect(screen.getByText("0/4 joueurs")).toBeInTheDocument();
     expect(screen.getByText("0/1 libre")).toBeInTheDocument();
-    expect(screen.getByText("0/3 reservees")).toBeInTheDocument();
+    expect(screen.getByText("0/3 réservées")).toBeInTheDocument();
   });
 
   it("does not render the seat split when reservedSeats is 0", () => {
     render(<TableCard table={baseTable} onClick={() => {}} />);
     expect(screen.queryByText(/libre/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/reservee/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/réservée/)).not.toBeInTheDocument();
   });
 
   it("renders the waitlist badge when waitlistCount > 0", () => {

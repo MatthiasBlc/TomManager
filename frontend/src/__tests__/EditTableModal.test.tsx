@@ -88,7 +88,7 @@ describe("EditTableModal", () => {
     );
     expect(
       screen.getByText(
-        /Actuellement : 1\/3 confirmes \(1 sur place reservee\), 1 en liste d'attente/
+        /Actuellement : 1\/3 confirmés \(1 sur place réservée\), 1 en liste d'attente/
       )
     ).toBeInTheDocument();
   });
@@ -117,7 +117,7 @@ describe("EditTableModal", () => {
     fireEvent.click(decrement);
     fireEvent.click(decrement);
     expect(
-      await screen.findByText(/1 joueur confirme sera mis en liste d.attente/)
+      await screen.findByText(/1 joueur confirmé sera mis en liste d.attente/)
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /^Enregistrer$/i }));
@@ -182,7 +182,7 @@ describe("EditTableModal", () => {
       />
     );
 
-    const reservedGroup = screen.getByLabelText("Places reservees").closest(".join") as HTMLElement;
+    const reservedGroup = screen.getByLabelText("Places réservées").closest(".join") as HTMLElement;
     fireEvent.click(within(reservedGroup).getByRole("button", { name: "Diminuer" }));
 
     // 3 -> 2 : une place libre s'ouvre exactement pour le joueur reserve en trop, pas de demotion
@@ -195,6 +195,25 @@ describe("EditTableModal", () => {
       expect(onUpdated).toHaveBeenCalled();
     });
     expect(window.confirm).not.toHaveBeenCalled();
+  });
+
+  it("caps the reserved seats stepper at maxPlayers - 1 when the GM plays (JDR gmIsPlayer)", () => {
+    render(
+      <EditTableModal
+        open={true}
+        onClose={vi.fn()}
+        onUpdated={vi.fn()}
+        eventId="ev1"
+        table={{ ...baseTable, gmIsPlayer: true, maxPlayers: 3 }}
+      />
+    );
+
+    // Le MJ joueur occupe une place → borne a maxPlayers - 1 = 2
+    const reservedGroup = screen.getByLabelText("Places réservées").closest(".join") as HTMLElement;
+    const increment = within(reservedGroup).getByRole("button", { name: "Augmenter" });
+    for (let i = 0; i < 3; i++) fireEvent.click(increment);
+    expect(screen.getByLabelText("Places réservées")).toHaveValue("2");
+    expect(increment).toBeDisabled();
   });
 
   it("submits without confirmation when no demotion is caused", async () => {

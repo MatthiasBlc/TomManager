@@ -50,13 +50,13 @@ describe("CreateEventModal", () => {
     render(<CreateEventModal open={true} onClose={onClose} onCreated={onCreated} />);
 
     fireEvent.input(screen.getByLabelText("Nom"), { target: { value: "Soiree JDR" } });
-    fireEvent.input(screen.getByLabelText("Debut"), {
+    fireEvent.input(screen.getByLabelText("Début"), {
       target: { value: "2026-05-01T18:00" },
     });
     fireEvent.input(screen.getByLabelText("Fin"), {
       target: { value: "2026-05-01T22:00" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Creer$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Créer$/i }));
 
     await waitFor(() => {
       expect(apiPostMock).toHaveBeenCalled();
@@ -69,15 +69,15 @@ describe("CreateEventModal", () => {
     render(<CreateEventModal open={true} onClose={vi.fn()} onCreated={vi.fn()} />);
 
     fireEvent.input(screen.getByLabelText("Nom"), { target: { value: "Soiree JDR" } });
-    fireEvent.input(screen.getByLabelText("Debut"), {
+    fireEvent.input(screen.getByLabelText("Début"), {
       target: { value: "2026-05-01T18:00" },
     });
     fireEvent.input(screen.getByLabelText("Fin"), {
       target: { value: "2026-05-01T10:00" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /^Creer$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Créer$/i }));
 
-    expect(await screen.findByText("La fin doit etre apres le debut")).toBeInTheDocument();
+    expect(await screen.findByText("La fin doit être après le début")).toBeInTheDocument();
     expect(apiPostMock).not.toHaveBeenCalled();
   });
 });

@@ -103,7 +103,7 @@ describe("TagInput", () => {
       target: { value: "donjon" },
     });
     expect(
-      await screen.findByText('Aucun tag existant — Entree pour creer "donjon"')
+      await screen.findByText('Aucun tag existant — Entrée pour créer "donjon"')
     ).toBeInTheDocument();
   });
 });

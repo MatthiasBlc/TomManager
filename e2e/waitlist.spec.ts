@@ -71,12 +71,12 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
 
     // Attendre que les participants soient charges (toBeVisible retente automatiquement)
     await expect(
-      page.getByRole("button", { name: /ajouter a la table|mettre sur liste/i }).first()
+      page.getByRole("button", { name: /ajouter à la table|mettre sur liste/i }).first()
     ).toBeVisible();
 
     // GM doit voir au moins un bouton Ajouter a la table ou Mettre sur liste d'attente
     const promoteOrDemoteGM =
-      (await page.getByRole("button", { name: /ajouter a la table/i }).count()) +
+      (await page.getByRole("button", { name: /ajouter à la table/i }).count()) +
       (await page.getByRole("button", { name: /mettre sur liste/i }).count());
     expect(promoteOrDemoteGM).toBeGreaterThan(0);
 
@@ -94,7 +94,7 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     // Attendre que le contenu soit charge (le nom du joueur visible dans le dialog)
     await expect(playerPage.getByRole("dialog").getByText(player1.username).first()).toBeVisible();
 
-    expect(await playerPage.getByRole("button", { name: /ajouter a la table/i }).count()).toBe(0);
+    expect(await playerPage.getByRole("button", { name: /ajouter à la table/i }).count()).toBe(0);
     expect(await playerPage.getByRole("button", { name: /mettre sur liste/i }).count()).toBe(0);
 
     await playerCtx.close();
@@ -127,9 +127,9 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
 
     // Cliquer Ajouter a la table (les deux joueurs sont en WAITLIST apres la retrograde)
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("button", { name: /ajouter a la table/i }).first()).toBeVisible();
+    await expect(dialog.getByRole("button", { name: /ajouter à la table/i }).first()).toBeVisible();
     await dialog
-      .getByRole("button", { name: /ajouter a la table/i })
+      .getByRole("button", { name: /ajouter à la table/i })
       .first()
       .click();
 
@@ -178,7 +178,7 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
       .click();
 
     // Toast de succes
-    await expect(page.getByText(/retrograde/i)).toBeVisible();
+    await expect(page.getByText(/rétrogradé/i)).toBeVisible();
 
     // player2 doit toujours etre WAITLIST (pas de promotion automatique) — verification cote serveur
     const detail = await (

@@ -76,12 +76,12 @@ describe("AddBoardGameModal", () => {
 
   it("renders the search mode by default with a Create manually button", () => {
     render(<AddBoardGameModal open={true} onClose={vi.fn()} onAdded={vi.fn()} eventId="ev1" />);
-    expect(screen.getByRole("button", { name: /creer manuellement/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /créer manuellement/i })).toBeInTheDocument();
   });
 
   it("switches to manual mode when Create manually is clicked", () => {
     render(<AddBoardGameModal open={true} onClose={vi.fn()} onAdded={vi.fn()} eventId="ev1" />);
-    fireEvent.click(screen.getByRole("button", { name: /creer manuellement/i }));
+    fireEvent.click(screen.getByRole("button", { name: /créer manuellement/i }));
     expect(screen.getByLabelText("Nom")).toBeInTheDocument();
   });
 
