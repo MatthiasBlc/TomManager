@@ -44,8 +44,8 @@ export default function BoardGameList({
     return (
       <EmptyState
         icon={<span>🎲</span>}
-        title="Aucun jeu ajoute pour l'instant"
-        description={emptyDescription ?? "Ajoutez un jeu a partager avec le groupe."}
+        title="Aucun jeu ajouté pour l'instant"
+        description={emptyDescription ?? "Ajoutez un jeu à partager avec le groupe."}
       />
     );
   }

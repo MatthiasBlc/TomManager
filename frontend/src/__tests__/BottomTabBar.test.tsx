@@ -38,9 +38,9 @@ describe("BottomTabBar", () => {
       user: { id: "u1", username: "Alice" },
     });
     renderAt("/");
-    expect(screen.getByRole("link", { name: /Evenements/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Événements/ })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Planning/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Jeux de societe/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Jeux de société/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Alice/ })).toBeInTheDocument();
   });
 
@@ -49,10 +49,10 @@ describe("BottomTabBar", () => {
       user: { id: "u1", username: "Alice" },
     });
     renderAt("/events/ev42/planning");
-    expect(screen.getByRole("link", { name: /Evenements/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Événements/ })).toBeInTheDocument();
     const planning = screen.getByRole("link", { name: /Planning/ });
     expect(planning).toHaveAttribute("href", "/events/ev42/planning");
-    const games = screen.getByRole("link", { name: /Jeux de societe/ });
+    const games = screen.getByRole("link", { name: /Jeux de société/ });
     expect(games).toHaveAttribute("href", "/events/ev42");
   });
 

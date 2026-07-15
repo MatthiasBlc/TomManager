@@ -167,7 +167,7 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
           className="bg-base-200 rounded-box shadow-lg max-h-72 overflow-y-auto overflow-x-hidden"
         >
           {results.length === 0 ? (
-            <li className="px-4 py-2 text-sm opacity-60">Aucun resultat</li>
+            <li className="px-4 py-2 text-sm opacity-60">Aucun résultat</li>
           ) : (
             results.map((game, idx) => (
               <li key={game.id || `bgg-${game.externalId}-${idx}`} className="w-full">
@@ -258,7 +258,7 @@ export default function BoardGameSearchInput({ onSelect }: Props) {
                     className="btn btn-xs btn-primary flex-1"
                     onClick={handleConfirm}
                   >
-                    Selectionner ce jeu
+                    Sélectionner ce jeu
                   </button>
                 </div>
               </>

@@ -23,7 +23,7 @@ test.describe("Planning — tables", () => {
     await page.getByRole("button", { name: "Planning", exact: true }).click();
 
     // Clic sur "Creer une table"
-    await page.getByRole("button", { name: /creer une table/i }).click();
+    await page.getByRole("button", { name: /créer une table/i }).click();
 
     // Remplir le formulaire
     await page.getByLabel(/titre/i).fill("Table E2E");
@@ -35,9 +35,9 @@ test.describe("Planning — tables", () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateStr = tomorrow.toISOString().slice(0, 10);
     await page.getByLabel(/date/i).fill(dateStr);
-    await page.getByLabel(/heure de debut/i).fill("14:00");
+    await page.getByLabel(/heure de début/i).fill("14:00");
 
-    await page.getByRole("button", { name: "Creer", exact: true }).click();
+    await page.getByRole("button", { name: "Créer", exact: true }).click();
 
     // La table apparait dans la liste
     await expect(page.getByText("Table E2E")).toBeVisible();

@@ -12,7 +12,7 @@ describe("NotFoundPage", () => {
 
   it("renders a link back to home", () => {
     renderWithRouter(<NotFoundPage />);
-    const link = screen.getByRole("link", { name: /Retour a l'accueil/i });
+    const link = screen.getByRole("link", { name: /Retour à l'accueil/i });
     expect(link).toHaveAttribute("href", "/");
   });
 });

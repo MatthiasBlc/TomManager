@@ -82,7 +82,7 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    expect(screen.getByText("Aucun compte Discord lie")).toBeInTheDocument();
+    expect(screen.getByText("Aucun compte Discord lié")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Lier/i })).toBeInTheDocument();
   });
 
@@ -98,7 +98,7 @@ describe("ProfilePage", () => {
     });
     renderWithRouter(<ProfilePage />);
     expect(screen.getByText("AliceDiscord")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Delier/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Délier/i })).toBeInTheDocument();
   });
 
   it("calls initiateDiscordLogin when Link Discord button is clicked", async () => {
@@ -128,7 +128,7 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    fireEvent.click(screen.getByRole("button", { name: /Delier/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Délier/i }));
     await waitFor(() => {
       expect(unlinkDiscordMock).toHaveBeenCalled();
       expect(toastSuccess).toHaveBeenCalled();
@@ -145,7 +145,7 @@ describe("ProfilePage", () => {
     renderWithRouter(<ProfilePage />);
     fireEvent.click(screen.getByRole("button", { name: /Lier/i }));
     await waitFor(() => {
-      expect(toastSuccess).toHaveBeenCalledWith("Compte Discord lie !");
+      expect(toastSuccess).toHaveBeenCalledWith("Compte Discord lié !");
     });
   });
 
@@ -176,7 +176,7 @@ describe("ProfilePage", () => {
     fireEvent.click(screen.getByRole("button", { name: /Lier/i }));
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith(
-        "Ce compte Discord est deja lie a un autre utilisateur"
+        "Ce compte Discord est déjà lié à un autre utilisateur"
       );
     });
   });
@@ -208,7 +208,7 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    fireEvent.click(screen.getByRole("button", { name: /Delier/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Délier/i }));
     expect(window.confirm).toHaveBeenCalled();
     await waitFor(() => expect(unlinkDiscordMock).toHaveBeenCalled());
   });
@@ -226,7 +226,7 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    fireEvent.click(screen.getByRole("button", { name: /Delier/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Délier/i }));
     expect(unlinkDiscordMock).not.toHaveBeenCalled();
   });
 
@@ -242,7 +242,7 @@ describe("ProfilePage", () => {
       unlinkDiscord: unlinkDiscordMock,
     });
     renderWithRouter(<ProfilePage />);
-    const unlinkBtn = screen.getByRole("button", { name: /Delier/i });
+    const unlinkBtn = screen.getByRole("button", { name: /Délier/i });
     expect(unlinkBtn).toBeDisabled();
   });
 });

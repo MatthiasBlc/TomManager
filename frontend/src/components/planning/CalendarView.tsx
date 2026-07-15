@@ -131,7 +131,7 @@ export default function CalendarView({
         revertFunc();
         const message =
           (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-            ?.message || "Echec du deplacement";
+            ?.message || "Échec du déplacement";
         toast.error(message);
       }
     },
@@ -244,7 +244,7 @@ export default function CalendarView({
           <button
             className="btn btn-ghost btn-sm btn-square min-h-[44px] min-w-[44px]"
             onClick={goPrev}
-            aria-label="Jour precedent"
+            aria-label="Jour précédent"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

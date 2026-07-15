@@ -4,7 +4,7 @@ import BoardGameList from "../components/boardgames/BoardGameList";
 describe("BoardGameList", () => {
   it("renders the empty state when no entries are provided", () => {
     render(<BoardGameList entries={[]} onRemove={vi.fn()} />);
-    expect(screen.getByText("Aucun jeu ajoute pour l'instant")).toBeInTheDocument();
+    expect(screen.getByText("Aucun jeu ajouté pour l'instant")).toBeInTheDocument();
   });
 
   it("renders one card per unique board game", () => {

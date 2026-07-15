@@ -123,7 +123,7 @@ export default function TagInput({ value, onChange }: Props) {
             ))
           ) : (
             <li className="px-3 py-2 text-sm opacity-60">
-              Aucun tag existant — Entree pour creer "{input.trim()}"
+              Aucun tag existant — Entrée pour créer "{input.trim()}"
             </li>
           )}
         </ul>

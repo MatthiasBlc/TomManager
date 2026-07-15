@@ -135,7 +135,7 @@ describe("LoginPage", () => {
     setUpAuth();
     renderLogin(["/login?error=discord_denied"]);
     await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith("Connexion Discord annulee");
+      expect(toastError).toHaveBeenCalledWith("Connexion Discord annulée");
     });
   });
 
@@ -148,7 +148,7 @@ describe("LoginPage", () => {
     });
     fireEvent.click(btn);
     await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith("Vous devez etre membre du serveur Discord");
+      expect(toastError).toHaveBeenCalledWith("Vous devez être membre du serveur Discord");
     });
   });
 

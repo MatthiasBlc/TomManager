@@ -64,7 +64,7 @@ export default function BoardGameSelector({ value, onChange }: Props) {
           playingTime: created.playingTime,
         });
       } catch {
-        toast.error("Echec de l'ajout du jeu BGG");
+        toast.error("Échec de l'ajout du jeu BGG");
       } finally {
         setResolving(false);
       }
@@ -90,7 +90,7 @@ export default function BoardGameSelector({ value, onChange }: Props) {
       });
       setMode("search");
     } catch {
-      toast.error("Echec de la creation du jeu");
+      toast.error("Échec de la création du jeu");
     } finally {
       setResolving(false);
     }
@@ -127,7 +127,7 @@ export default function BoardGameSelector({ value, onChange }: Props) {
         className="btn btn-ghost btn-xs text-base-content/60"
         onClick={() => setMode("manual")}
       >
-        + Creer manuellement
+        + Créer manuellement
       </button>
     </div>
   );

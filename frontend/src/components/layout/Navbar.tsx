@@ -16,9 +16,9 @@ function DesktopNavbar({ isOnline }: { isOnline: boolean }) {
     try {
       await logout();
       navigate("/");
-      toast.success("Deconnecte");
+      toast.success("Déconnecté");
     } catch {
-      toast.error("Echec de la deconnexion");
+      toast.error("Échec de la déconnexion");
     }
   };
 
@@ -33,7 +33,7 @@ function DesktopNavbar({ isOnline }: { isOnline: boolean }) {
         {user && (
           <>
             <Link to="/events" className="btn btn-ghost btn-sm">
-              Evenements
+              Événements
             </Link>
             <ConnectionStatus />
             <NotificationBell />
@@ -44,7 +44,7 @@ function DesktopNavbar({ isOnline }: { isOnline: boolean }) {
               <span className="text-sm opacity-70">{user.username}</span>
             </Link>
             <button onClick={handleLogout} className="btn btn-ghost btn-sm">
-              Se deconnecter
+              Se déconnecter
             </button>
           </>
         )}
