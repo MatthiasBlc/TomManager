@@ -66,7 +66,7 @@ export default function BoardGameTab({ eventId }: Props) {
       const res = await api.get(`/api/events/${eventId}/boardgames`);
       setEntries(res.data.data);
     } catch {
-      toast.error("Echec du chargement des jeux");
+      toast.error("Échec du chargement des jeux");
     } finally {
       setLoading(false);
     }
@@ -84,10 +84,10 @@ export default function BoardGameTab({ eventId }: Props) {
   const handleRemove = async (entryId: string) => {
     try {
       await api.delete(`/api/events/${eventId}/boardgames/${entryId}`);
-      toast.success("Jeu retire");
+      toast.success("Jeu retiré");
       fetchEntries();
     } catch {
-      toast.error("Echec du retrait du jeu");
+      toast.error("Échec du retrait du jeu");
     }
   };
 
@@ -203,7 +203,7 @@ export default function BoardGameTab({ eventId }: Props) {
           onClickGame={handleClickGame}
           currentUserId={user?.id}
           isAdmin={user?.role === "ADMIN"}
-          emptyDescription={tab === "mine" ? "Vous n'avez pas encore ajoute de jeux." : undefined}
+          emptyDescription={tab === "mine" ? "Vous n'avez pas encore ajouté de jeux." : undefined}
         />
       )}
 

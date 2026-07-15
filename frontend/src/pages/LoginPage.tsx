@@ -6,11 +6,11 @@ import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
 
 const DISCORD_ERROR_MESSAGES: Record<string, string> = {
-  discord_denied: "Connexion Discord annulee",
-  invalid_state: "Session expiree, veuillez reessayer",
-  not_in_guild: "Vous devez etre membre du serveur Discord",
-  account_disabled: "Ce compte a ete desactive",
-  discord_token_exchange: "Echec de l'authentification Discord, veuillez reessayer",
+  discord_denied: "Connexion Discord annulée",
+  invalid_state: "Session expirée, veuillez réessayer",
+  not_in_guild: "Vous devez être membre du serveur Discord",
+  account_disabled: "Ce compte a été désactivé",
+  discord_token_exchange: "Échec de l'authentification Discord, veuillez réessayer",
 };
 
 interface LoginForm {
@@ -80,7 +80,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       await login(data.identifier, data.password);
-      toast.success("Connexion reussie !");
+      toast.success("Connexion réussie !");
       await redirectAfterLogin(from);
     } catch {
       toast.error("Identifiants invalides");

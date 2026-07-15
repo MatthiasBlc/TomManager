@@ -9,7 +9,7 @@ React 18 + TS + Vite + TailwindCSS + DaisyUI | Node.js + Express + TS | PostgreS
 ## Conventions
 
 - **Langue**: Code 100% anglais (variables, fonctions, modeles). Commentaires francais OK
-- **Accents**: Aucun dans le code/docs (ASCII only)
+- **Accents**: ASCII only partout (code, commentaires, docs) SAUF le texte visible par l'utilisateur dans le front (labels UI, messages, textes affiches a l'ecran) qui doit utiliser les accents francais corrects
 - **Soft delete**: `deletedAt` sur entites principales (User)
 - **IDs**: UUID v4 partout
 - **Roles**: USER | ADMIN (dans le meme systeme User)

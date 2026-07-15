@@ -104,7 +104,7 @@ export default function AdminBoardGamePanel() {
       const res = await api.get(`/api/admin/boardgames?${params}`);
       setResult(res.data.data);
     } catch {
-      toast.error("Echec du chargement des jeux");
+      toast.error("Échec du chargement des jeux");
     } finally {
       setLoading(false);
     }
@@ -167,11 +167,11 @@ export default function AdminBoardGamePanel() {
         maxPlayers: data.maxPlayers ? parseInt(data.maxPlayers) : null,
         playingTime: data.playingTime ? parseInt(data.playingTime) : null,
       });
-      toast.success("Jeu mis a jour");
+      toast.success("Jeu mis à jour");
       setEditTarget(null);
       fetchGames();
     } catch {
-      toast.error("Echec de la mise a jour");
+      toast.error("Échec de la mise à jour");
     }
   };
 
@@ -181,11 +181,11 @@ export default function AdminBoardGamePanel() {
     setDeleting(true);
     try {
       await api.delete(`/api/admin/boardgames/${deleteTarget.id}`);
-      toast.success(`"${deleteTarget.name}" supprime`);
+      toast.success(`"${deleteTarget.name}" supprimé`);
       setDeleteTarget(null);
       fetchGames();
     } catch {
-      toast.error("Echec de la suppression");
+      toast.error("Échec de la suppression");
     } finally {
       setDeleting(false);
     }
@@ -217,12 +217,12 @@ export default function AdminBoardGamePanel() {
         targetId: mergeTarget.id,
         fieldPicks,
       });
-      toast.success(`"${mergeSource.name}" fusionne dans "${mergeTarget.name}"`);
+      toast.success(`"${mergeSource.name}" fusionné dans "${mergeTarget.name}"`);
       setMergeSource(null);
       setFieldPicks(null);
       fetchGames();
     } catch {
-      toast.error("Echec de la fusion");
+      toast.error("Échec de la fusion");
     } finally {
       setMerging(false);
     }
@@ -241,7 +241,7 @@ export default function AdminBoardGamePanel() {
             },
             {
               key: "yearPublished" as MergeFieldKey,
-              label: "Annee",
+              label: "Année",
               src: mergeSource.yearPublished?.toString() ?? null,
               tgt: mergeTarget.yearPublished?.toString() ?? null,
             },
@@ -259,7 +259,7 @@ export default function AdminBoardGamePanel() {
             },
             {
               key: "playingTime" as MergeFieldKey,
-              label: "Duree (min)",
+              label: "Durée (min)",
               src: mergeSource.playingTime?.toString() ?? null,
               tgt: mergeTarget.playingTime?.toString() ?? null,
             },
@@ -322,10 +322,10 @@ export default function AdminBoardGamePanel() {
           {result.games.length === 0 && (
             <EmptyState
               icon={<span>🔍</span>}
-              title="Aucun resultat"
+              title="Aucun résultat"
               description={
                 search
-                  ? `Aucun jeu ne correspond a "${search}".`
+                  ? `Aucun jeu ne correspond à "${search}".`
                   : "Aucun jeu dans la base pour l'instant."
               }
             />
@@ -351,14 +351,14 @@ export default function AdminBoardGamePanel() {
                     )}
                   </p>
                   <p className="text-xs opacity-50">
-                    {game._count.eventBoardGames} evenement
+                    {game._count.eventBoardGames} événement
                     {game._count.eventBoardGames !== 1 ? "s" : ""} · {game._count.gameTables} table
                     {game._count.gameTables !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button className="btn btn-ghost btn-xs" onClick={() => openEdit(game)}>
-                    Editer
+                    Éditer
                   </button>
                   <button
                     className="btn btn-ghost btn-xs text-info"
@@ -427,7 +427,7 @@ export default function AdminBoardGamePanel() {
           <div className="grid grid-cols-2 gap-3">
             <div className="form-control">
               <label className="label" htmlFor="abg-year">
-                <span className="label-text">Annee</span>
+                <span className="label-text">Année</span>
               </label>
               <input
                 id="abg-year"
@@ -438,7 +438,7 @@ export default function AdminBoardGamePanel() {
             </div>
             <div className="form-control">
               <label className="label" htmlFor="abg-time">
-                <span className="label-text">Duree (min)</span>
+                <span className="label-text">Durée (min)</span>
               </label>
               <input
                 id="abg-time"
@@ -495,11 +495,11 @@ export default function AdminBoardGamePanel() {
             {(deleteTarget._count.eventBoardGames > 0 || deleteTarget._count.gameTables > 0) && (
               <div className="alert alert-warning">
                 <span className="text-sm">
-                  Impact : {deleteTarget._count.eventBoardGames} entree
-                  {deleteTarget._count.eventBoardGames !== 1 ? "s" : ""} evenement supprimee
+                  Impact : {deleteTarget._count.eventBoardGames} entrée
+                  {deleteTarget._count.eventBoardGames !== 1 ? "s" : ""} événement supprimée
                   {deleteTarget._count.eventBoardGames !== 1 ? "s" : ""},{" "}
                   {deleteTarget._count.gameTables} table
-                  {deleteTarget._count.gameTables !== 1 ? "s" : ""} deliee
+                  {deleteTarget._count.gameTables !== 1 ? "s" : ""} déliée
                   {deleteTarget._count.gameTables !== 1 ? "s" : ""}.
                 </span>
               </div>
@@ -563,7 +563,7 @@ export default function AdminBoardGamePanel() {
                   </div>
                 )}
                 {mergeSearch && mergeResults.length === 0 && (
-                  <p className="text-sm opacity-50">Aucun resultat</p>
+                  <p className="text-sm opacity-50">Aucun résultat</p>
                 )}
               </>
             ) : (
@@ -641,7 +641,7 @@ export default function AdminBoardGamePanel() {
                 })}
 
                 <p className="text-xs opacity-50">
-                  Toutes les liaisons (evenements, tables) seront transferees.
+                  Toutes les liaisons (événements, tables) seront transférées.
                 </p>
 
                 <div className="flex gap-2 justify-between">

@@ -45,7 +45,7 @@ export function formatSeatSummary(table: {
   return {
     total,
     normal: `${confirmedNormal}/${normalSeats} libre${normalSeats > 1 ? "s" : ""}`,
-    reserved: `${confirmedOnReserved}/${reservedSeats} reservee${reservedSeats > 1 ? "s" : ""}`,
+    reserved: `${confirmedOnReserved}/${reservedSeats} réservée${reservedSeats > 1 ? "s" : ""}`,
   };
 }
 

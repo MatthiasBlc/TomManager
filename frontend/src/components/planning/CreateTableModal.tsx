@@ -74,16 +74,21 @@ export default function CreateTableModal({
   const tableType = watch("type");
   const maxPlayers = watch("maxPlayers");
   const reservedSeats = watch("reservedSeats");
+  const gmIsPlayer = watch("gmIsPlayer");
+  // Meme borne que le backend : le siege du MJ (JDS ou MJ joueur) n'est jamais
+  // convertible en place reservee
+  const gmTakesASeat = tableType === "JDS" || gmIsPlayer;
+  const reservedSeatsMax = Math.max(0, (maxPlayers || 0) - (gmTakesASeat ? 1 : 0));
   // Reset gmIsPlayer when switching to JDS
   useEffect(() => {
     if (tableType === "JDS") setValue("gmIsPlayer", false);
   }, [tableType, setValue]);
 
-  // Les places reservees ne peuvent jamais depasser le nombre de joueurs max
-  // (ex : maxPlayers baisse suite a la selection d'un jeu plus petit)
+  // Les places reservees ne peuvent jamais depasser la borne (joueurs max, moins le
+  // siege du MJ le cas echeant — ex : maxPlayers baisse apres selection d'un jeu plus petit)
   useEffect(() => {
-    if (reservedSeats > maxPlayers) setValue("reservedSeats", maxPlayers);
-  }, [maxPlayers, reservedSeats, setValue]);
+    if (reservedSeats > reservedSeatsMax) setValue("reservedSeats", reservedSeatsMax);
+  }, [reservedSeatsMax, reservedSeats, setValue]);
 
   // Pre-remplissage reactif depuis le jeu selectionne (creation uniquement — ecrase a chaque changement)
   useEffect(() => {
@@ -135,7 +140,7 @@ export default function CreateTableModal({
         tags: tags.length > 0 ? tags : undefined,
         boardGameId: selectedGame?.id ?? undefined,
       });
-      toast.success("Table creee !");
+      toast.success("Table créée !");
       reset();
       setTags([]);
       setSelectedGame(null);
@@ -144,13 +149,13 @@ export default function CreateTableModal({
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de la creation";
+          ?.message || "Échec de la création";
       toast.error(message);
     }
   };
 
   return (
-    <ResponsiveModal open={open} onClose={onClose} title="Creer une table">
+    <ResponsiveModal open={open} onClose={onClose} title="Créer une table">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ct-title">
@@ -162,7 +167,7 @@ export default function CreateTableModal({
             className="input input-bordered w-full"
             {...register("title", {
               required: "Le titre est requis",
-              maxLength: { value: 150, message: "Max 150 caracteres" },
+              maxLength: { value: 150, message: "Max 150 caractères" },
             })}
           />
           {errors.title && (
@@ -185,7 +190,7 @@ export default function CreateTableModal({
                 value="JDR"
                 {...register("type")}
               />
-              <span className="text-sm">JDR (jeu de role)</span>
+              <span className="text-sm">JDR (jeu de rôle)</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -194,7 +199,7 @@ export default function CreateTableModal({
                 value="JDS"
                 {...register("type")}
               />
-              <span className="text-sm">JDS (jeu de societe)</span>
+              <span className="text-sm">JDS (jeu de société)</span>
             </label>
           </div>
         </div>
@@ -217,7 +222,7 @@ export default function CreateTableModal({
         {tableType === "JDS" && (
           <div className="form-control">
             <label className="label">
-              <span className="label-text">Jeu associe</span>
+              <span className="label-text">Jeu associé</span>
               <span className="label-text-alt opacity-50">optionnel</span>
             </label>
             <BoardGameSelector value={selectedGame} onChange={setSelectedGame} />
@@ -233,7 +238,7 @@ export default function CreateTableModal({
             className="textarea textarea-bordered w-full"
             rows={3}
             {...register("pitch", {
-              maxLength: { value: 2000, message: "Max 2000 caracteres" },
+              maxLength: { value: 2000, message: "Max 2000 caractères" },
             })}
           />
         </div>
@@ -247,7 +252,7 @@ export default function CreateTableModal({
             className="textarea textarea-bordered w-full"
             rows={2}
             {...register("triggers", {
-              maxLength: { value: 1000, message: "Max 1000 caracteres" },
+              maxLength: { value: 1000, message: "Max 1000 caractères" },
             })}
           />
         </div>
@@ -261,7 +266,7 @@ export default function CreateTableModal({
             className="textarea textarea-bordered w-full"
             rows={2}
             {...register("comments", {
-              maxLength: { value: 1000, message: "Max 1000 caracteres" },
+              maxLength: { value: 1000, message: "Max 1000 caractères" },
             })}
           />
         </div>
@@ -281,17 +286,17 @@ export default function CreateTableModal({
           </div>
           <div className="form-control">
             <label className="label" htmlFor="ct-reservedSeats">
-              <span className="label-text">Places reservees</span>
+              <span className="label-text">Places réservées</span>
             </label>
             <NumberStepper
               id="ct-reservedSeats"
               value={reservedSeats}
               onChange={(v) => setValue("reservedSeats", v, { shouldValidate: true })}
               min={0}
-              max={maxPlayers}
+              max={reservedSeatsMax}
             />
             <p className="text-xs opacity-60 mt-1">
-              Non accessibles a l'inscription publique — a affecter manuellement depuis la liste
+              Non accessibles à l'inscription publique — à affecter manuellement depuis la liste
               d'attente.
             </p>
           </div>
@@ -318,7 +323,7 @@ export default function CreateTableModal({
           </div>
           <div className="form-control flex-1 min-w-[120px]">
             <label className="label" htmlFor="ct-startTime">
-              <span className="label-text">Heure de debut</span>
+              <span className="label-text">Heure de début</span>
             </label>
             <input
               id="ct-startTime"
@@ -334,7 +339,7 @@ export default function CreateTableModal({
           </div>
           <div className="form-control flex-1 min-w-[110px]">
             <label className="label" htmlFor="ct-duration">
-              <span className="label-text">Duree</span>
+              <span className="label-text">Durée</span>
             </label>
             <select
               id="ct-duration"
@@ -365,7 +370,7 @@ export default function CreateTableModal({
             Annuler
           </button>
           <button type="submit" className="btn btn-primary">
-            Creer
+            Créer
           </button>
         </div>
       </form>

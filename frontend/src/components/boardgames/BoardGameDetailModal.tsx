@@ -83,7 +83,7 @@ export default function BoardGameDetailModal({
         )}
 
         <div>
-          <h3 className="text-sm font-semibold opacity-70 mb-1">Apporte par</h3>
+          <h3 className="text-sm font-semibold opacity-70 mb-1">Apporté par</h3>
           <div className="flex flex-wrap gap-1">
             {broughtBy.map((u) => (
               <span key={u.id} className="badge badge-outline badge-sm">
@@ -96,7 +96,7 @@ export default function BoardGameDetailModal({
         {linkedTables.length > 0 && (
           <div>
             <h3 className="text-sm font-semibold opacity-70 mb-1">
-              Tables associees ({linkedTables.length})
+              Tables associées ({linkedTables.length})
             </h3>
             <div className="space-y-1">
               {linkedTables.map((t) => (
@@ -108,7 +108,7 @@ export default function BoardGameDetailModal({
           </div>
         )}
 
-        {linkedTables.length === 0 && <p className="text-sm opacity-50">Aucune table associee</p>}
+        {linkedTables.length === 0 && <p className="text-sm opacity-50">Aucune table associée</p>}
       </div>
     </ResponsiveModal>
   );

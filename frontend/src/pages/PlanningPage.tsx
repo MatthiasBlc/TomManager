@@ -19,7 +19,7 @@ export default function PlanningPage() {
             className="btn btn-ghost btn-sm mb-2"
             onClick={() => navigate(`/events/${eventId}`)}
           >
-            &larr; Retour a l'evenement
+            &larr; Retour à l'événement
           </button>
         )}
         <h1 className="text-xl font-bold md:text-2xl">Planning</h1>

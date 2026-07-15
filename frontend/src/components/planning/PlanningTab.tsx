@@ -58,7 +58,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
       const res = await api.get(`/api/events/${eventId}/tables`);
       setTables(res.data.data);
     } catch {
-      toast.error("Echec du chargement des tables");
+      toast.error("Échec du chargement des tables");
     } finally {
       setLoading(false);
     }
@@ -189,7 +189,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
                 setShowCreate(true);
               }}
             >
-              Creer une table
+              Créer une table
             </button>
           )}
         </div>
@@ -221,7 +221,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
               setCreateSlot(undefined);
               setShowCreate(true);
             }}
-            label="Creer une table"
+            label="Créer une table"
           />
         </div>
       )}

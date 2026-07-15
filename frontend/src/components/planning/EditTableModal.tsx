@@ -105,7 +105,12 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
 
   const watchedMaxPlayers = watch("maxPlayers");
   const watchedReservedSeats = watch("reservedSeats");
-  const newReservedSeats = Math.min(watchedReservedSeats || 0, watchedMaxPlayers || 0);
+  const watchedGmIsPlayer = watch("gmIsPlayer");
+  // Meme borne que le backend : le siege du MJ (JDS ou MJ joueur) n'est jamais
+  // convertible en place reservee
+  const gmTakesASeat = table.type === "JDS" || (table.type === "JDR" && watchedGmIsPlayer);
+  const reservedSeatsMax = Math.max(0, (watchedMaxPlayers || 0) - (gmTakesASeat ? 1 : 0));
+  const newReservedSeats = Math.min(watchedReservedSeats || 0, reservedSeatsMax);
   const normalCapacity = Math.max(0, (watchedMaxPlayers || 0) - newReservedSeats);
 
   // Miroir de la logique backend (updateTable) : une place reservee en trop est
@@ -121,10 +126,11 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
 
   const toDemoteCount = toWaitlistFromReserved + toWaitlistFromNormal;
 
-  // Les places reservees ne peuvent jamais depasser le nombre de joueurs max
+  // Les places reservees ne peuvent jamais depasser la borne (joueurs max,
+  // moins le siege du MJ le cas echeant)
   useEffect(() => {
-    if (watchedReservedSeats > watchedMaxPlayers) setValue("reservedSeats", watchedMaxPlayers);
-  }, [watchedMaxPlayers, watchedReservedSeats, setValue]);
+    if (watchedReservedSeats > reservedSeatsMax) setValue("reservedSeats", reservedSeatsMax);
+  }, [reservedSeatsMax, watchedReservedSeats, setValue]);
 
   useEffect(() => {
     if (open && table) {
@@ -178,7 +184,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
     if (
       toDemoteCount > 0 &&
       !confirm(
-        `${toDemoteCount} joueur${toDemoteCount > 1 ? "s" : ""} confirme${toDemoteCount > 1 ? "s" : ""} ${toDemoteCount > 1 ? "seront" : "sera"} mis en liste d'attente si vous enregistrez ces valeurs. Continuer ?`
+        `${toDemoteCount} joueur${toDemoteCount > 1 ? "s" : ""} confirmé${toDemoteCount > 1 ? "s" : ""} ${toDemoteCount > 1 ? "seront" : "sera"} mis en liste d'attente si vous enregistrez ces valeurs. Continuer ?`
       )
     ) {
       return;
@@ -200,13 +206,13 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
         tags,
         boardGameId: selectedGame?.id ?? null,
       });
-      toast.success("Table mise a jour !");
+      toast.success("Table mise à jour !");
       onUpdated();
       onClose();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de la mise a jour";
+          ?.message || "Échec de la mise à jour";
       toast.error(message);
     }
   };
@@ -217,7 +223,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
         {/* Type — lecture seule */}
         <div className="flex items-center gap-2">
           <span className="badge badge-outline badge-sm">{table.type}</span>
-          <span className="text-xs opacity-60">Le type ne peut pas etre modifie</span>
+          <span className="text-xs opacity-60">Le type ne peut pas être modifié</span>
         </div>
 
         {/* MJ joueur — uniquement pour JDR */}
@@ -238,7 +244,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
         {table.type === "JDS" && (
           <div className="form-control">
             <label className="label">
-              <span className="label-text">Jeu associe</span>
+              <span className="label-text">Jeu associé</span>
               <span className="label-text-alt opacity-50">optionnel</span>
             </label>
             <BoardGameSelector value={selectedGame} onChange={handleGameChange} />
@@ -255,7 +261,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             className="input input-bordered w-full"
             {...register("title", {
               required: "Le titre est requis",
-              maxLength: { value: 150, message: "Max 150 caracteres" },
+              maxLength: { value: 150, message: "Max 150 caractères" },
             })}
           />
           {errors.title && (
@@ -274,7 +280,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             className="textarea textarea-bordered w-full"
             rows={3}
             {...register("pitch", {
-              maxLength: { value: 2000, message: "Max 2000 caracteres" },
+              maxLength: { value: 2000, message: "Max 2000 caractères" },
             })}
           />
         </div>
@@ -288,7 +294,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             className="textarea textarea-bordered w-full"
             rows={2}
             {...register("triggers", {
-              maxLength: { value: 1000, message: "Max 1000 caracteres" },
+              maxLength: { value: 1000, message: "Max 1000 caractères" },
             })}
           />
         </div>
@@ -302,19 +308,19 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             className="textarea textarea-bordered w-full"
             rows={2}
             {...register("comments", {
-              maxLength: { value: 1000, message: "Max 1000 caracteres" },
+              maxLength: { value: 1000, message: "Max 1000 caractères" },
             })}
           />
         </div>
 
         <div className="text-xs opacity-70 bg-base-200 rounded-lg p-2">
-          Actuellement : {confirmedCount}/{table.maxPlayers} confirmes
-          {confirmedOnReserved > 0 && ` (${confirmedOnReserved} sur place reservee)`}
+          Actuellement : {confirmedCount}/{table.maxPlayers} confirmés
+          {confirmedOnReserved > 0 && ` (${confirmedOnReserved} sur place réservée)`}
           {waitlistCount > 0 && `, ${waitlistCount} en liste d'attente`}
         </div>
         {toDemoteCount > 0 && (
           <div className="text-xs text-warning font-medium bg-warning/10 rounded-lg p-2">
-            ⚠ {toDemoteCount} joueur{toDemoteCount > 1 ? "s" : ""} confirme
+            ⚠ {toDemoteCount} joueur{toDemoteCount > 1 ? "s" : ""} confirmé
             {toDemoteCount > 1 ? "s" : ""} {toDemoteCount > 1 ? "seront" : "sera"} mis en liste
             d'attente si vous enregistrez ces valeurs.
           </div>
@@ -335,17 +341,17 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
           </div>
           <div className="form-control">
             <label className="label" htmlFor="et-reservedSeats">
-              <span className="label-text">Places reservees</span>
+              <span className="label-text">Places réservées</span>
             </label>
             <NumberStepper
               id="et-reservedSeats"
               value={watchedReservedSeats}
               onChange={(v) => setValue("reservedSeats", v, { shouldValidate: true })}
               min={0}
-              max={watchedMaxPlayers}
+              max={reservedSeatsMax}
             />
             <p className="text-xs opacity-60 mt-1">
-              Non accessibles a l'inscription publique — a affecter manuellement depuis la liste
+              Non accessibles à l'inscription publique — à affecter manuellement depuis la liste
               d'attente.
             </p>
           </div>
@@ -370,7 +376,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
           </div>
           <div className="form-control flex-1 min-w-[120px]">
             <label className="label" htmlFor="et-startTime">
-              <span className="label-text">Heure de debut</span>
+              <span className="label-text">Heure de début</span>
             </label>
             <input
               id="et-startTime"
@@ -386,7 +392,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
           </div>
           <div className="form-control flex-1 min-w-[110px]">
             <label className="label" htmlFor="et-duration">
-              <span className="label-text">Duree</span>
+              <span className="label-text">Durée</span>
             </label>
             <select
               id="et-duration"
