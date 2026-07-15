@@ -11,7 +11,7 @@ depuis la liste d'attente.
 ### GameTable
 
 | Champ           | Type | Notes                                                                                                                                                    |
-| --------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| --------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `reservedSeats` | Int  | Default 0, >= 0. **Total fixe** configure par le MJ, uniquement mute via `updateTable`. Jamais incremente/decremente par join/promote/demote/leave/kick. |
 
 Le nombre de places reservees encore disponibles se **derive** a la volee et n'est
@@ -56,24 +56,19 @@ sinon                  → WAITLIST
 
 ### Promouvoir depuis la waitlist (PATCH status → CONFIRMED)
 
-Body optionnel `seat: "FREE" | "RESERVED"` pour choisir explicitement le type
-de place. Sans `seat` (comportement par defaut, retro-compatible) :
-priorite reserved seat d'abord, puis place normale.
+Body `seat: "FREE" | "RESERVED"` **obligatoire** des que `status = CONFIRMED`
+(400 sinon, valide au niveau du schema). Le choix de place est toujours
+explicite : il n'y a plus de priorite par defaut (l'UI envoie systematiquement
+`seat`, un client API doit faire de meme).
 
 ```
 si seat === "RESERVED" :
   availableReserved > 0 ? CONFIRMED, isOnReservedSeat = true : 409
+  → notification RESERVED_SEAT_ASSIGNED
+  cible = MJ → 400 (le MJ n'est jamais sur une place reservee)
 si seat === "FREE" :
   availableNormal > 0 ? CONFIRMED, isOnReservedSeat = false : 409
-si seat absent (defaut) :
-  si availableReserved > 0 :
-    → CONFIRMED, isOnReservedSeat = true
-    → notification RESERVED_SEAT_ASSIGNED
-  sinon si availableNormal > 0 :
-    → CONFIRMED, isOnReservedSeat = false
-    → notification WAITLIST_PROMOTED
-  sinon :
-    → 409 "aucune place disponible"
+  → notification WAITLIST_PROMOTED
 ```
 
 `reservedSeats` n'est jamais modifie par cette action.
@@ -88,9 +83,13 @@ reservee sans repasser par la liste d'attente.
 seat === desiredReserved deja actuel → no-op
 FREE -> RESERVED : availableReserved > 0 ? isOnReservedSeat = true : 409
                    notification RESERVED_SEAT_ASSIGNED
-RESERVED -> FREE : toujours autorise (le nombre de confirmes ne change pas)
-                   isOnReservedSeat = false
+RESERVED -> FREE : availableNormal > 0 ? isOnReservedSeat = false : 409
                    pas de notification
+                   (le total de confirmes ne change pas, mais sans place libre
+                   disponible le compartiment libre deborderait, et la place
+                   reservee liberee permettrait ensuite une sur-reservation
+                   reelle : confirmes > maxPlayers. Meme regle que la conversion
+                   automatique d'updateTable.)
 ```
 
 `reservedSeats` n'est jamais modifie par cette action.
@@ -98,8 +97,20 @@ RESERVED -> FREE : toujours autorise (le nombre de confirmes ne change pas)
 ### Retrograder (PATCH status → WAITLIST)
 
 ```
-→ WAITLIST, isOnReservedSeat = false, notification WAITLIST_DEMOTED
+cible = MJ                → 400 (le MJ ne passe jamais par la waitlist)
+cible deja en WAITLIST    → 409 (retrograder un joueur en attente n'a pas de sens)
+sinon → WAITLIST, isOnReservedSeat = false, joinedAt = now(),
+        notification WAITLIST_DEMOTED
 ```
+
+`joinedAt` est reinitialise : un joueur retrograde par le MJ repart **en fin de
+file** d'attente, sinon il garderait son anciennete et serait re-promu
+automatiquement en premier des qu'une place se libere, annulant la decision du MJ.
+
+**Asymetrie voulue avec updateTable** : une retrogradation _par capacite_
+(maxPlayers baisse, reservedSeats augmente) conserve le `joinedAt` d'origine —
+le joueur ejecte involontairement garde sa priorite dans la file. Seule la
+retrogradation _manuelle_ par le MJ envoie en fin de file.
 
 La place reservee liberee redevient disponible via le calcul derive
 (`availableReserved` augmente mecaniquement) — `reservedSeats` (le total) ne bouge pas.
@@ -149,6 +160,28 @@ maxPlayers    = newMaxPlayers
 
 Pas d'auto-promotion dans un sens ou dans l'autre (decision B).
 
+Borne de `reservedSeats` (create et update) : `maxPlayers - 1` quand le MJ
+occupe une place (JDS ou MJ joueur), `maxPlayers` sinon — le siege du MJ n'est
+jamais convertible en place reservee. Le MJ n'est par ailleurs jamais candidat
+a la retrogradation par capacite (sa place est garantie par cette borne).
+
+### MJ joueur (toggle gmIsPlayer, JDR uniquement)
+
+La place du MJ joueur vit avec le toggle — elle n'entre jamais dans la
+redistribution :
+
+```
+cocher   → maxPlayers +1, MJ cree CONFIRMED sur place libre
+           (400 si maxPlayers atteindrait 21)
+decocher → participation du MJ supprimee ET maxPlayers -1
+           (sa place part avec lui : pas de place liberee, donc AUCUNE
+           promotion depuis la waitlist ; 400 si maxPlayers atteindrait 0)
+```
+
+Invariants : le MJ assis a sa table (JDS ou MJ joueur) n'est **jamais** sur une
+place reservee, **jamais** en waitlist, ne peut etre ni retrograde ni kicke
+(400). Son depart passe par le toggle (JDR) ou la suppression de la table.
+
 ## Piege historique (corrige)
 
 Premiere implementation : `reservedSeats` stockait le **pool restant non
@@ -179,7 +212,7 @@ Aucun nouvel endpoint. Champs ajoutes aux payloads existants :
 | `PATCH /:tableId`                             | Body: `reservedSeats?`, `maxPlayers` updated                                 |
 | `POST /:tableId/join`                         | Calcul openSeats avec reservedSeats                                          |
 | `PATCH /:tableId/participants/:userId/status` | Body: `seat?: "FREE" \| "RESERVED"` — choix explicite ou conversion en place |
-| `DELETE /:tableId/leave`                      | Place reservee liberee (calcul derive, `reservedSeats` inchange)            |
+| `DELETE /:tableId/leave`                      | Place reservee liberee (calcul derive, `reservedSeats` inchange)             |
 | `DELETE /:tableId/participants/:userId`       | idem                                                                         |
 
 Responses enrichies :

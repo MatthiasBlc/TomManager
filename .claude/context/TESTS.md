@@ -62,7 +62,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/event.test.ts` - Event API (CRUD: create, list, detail, update, delete + auth + cascade)
 - `integration/invitation.test.ts` - Invitation API (create, resend, validate token)
 - `integration/participant.test.ts` - Participant API (list, remove, leave) + Invitation listing
-- `integration/gameTable.test.ts` - GameTable API (CRUD, join/leave/kick, waitlist, demotion/promotion, promote/demote manuel GM, reserved seats, choix explicite libre/reservee, conversion en place d'un joueur confirme, borne reservedSeats <= maxPlayers-1 si le MJ prend une place (create + update), garde-fous MJ (pas de demote/kick du MJ assis a sa table), demote = fin de file waitlist) + Tag autocomplete
+- `integration/gameTable.test.ts` - GameTable API (CRUD, join/leave/kick, waitlist, demotion/promotion, promote/demote manuel GM, reserved seats, choix explicite libre/reservee, conversion en place d'un joueur confirme, borne reservedSeats <= maxPlayers-1 si le MJ prend une place (create + update), garde-fous MJ (pas de demote/kick/place reservee pour le MJ assis a sa table), demote = fin de file waitlist (409 si deja en waitlist), seat obligatoire pour status=CONFIRMED, toggle gmIsPlayer = place du MJ creee/supprimee avec maxPlayers +1/-1) + Tag autocomplete
 - `integration/boardGame.test.ts` - BoardGame API (CRUD, search local + BGG fallback, lazy fetch, from-bgg, error format) + BGG XML parsing
 - `integration/eventBoardGame.test.ts` - EventBoardGame API (add, list, remove, duplicate, non-participant, cascade)
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)

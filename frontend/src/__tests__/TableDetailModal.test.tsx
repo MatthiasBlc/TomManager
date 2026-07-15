@@ -444,13 +444,13 @@ describe("TableDetailModal", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("does not offer demote/kick actions on the GM's own participant row", async () => {
+  it("does not offer demote/kick/convert actions on the GM's own participant row", async () => {
     apiGetMock.mockReset().mockResolvedValue({
       data: {
         data: {
           ...baseTable,
           type: "JDS",
-          reservedSeats: 0,
+          reservedSeats: 1,
           participants: [
             {
               userId: "u1",
@@ -475,6 +475,8 @@ describe("TableDetailModal", () => {
     // Seule la ligne de Bob propose les actions, pas celle du MJ (Alice)
     expect(screen.getAllByRole("button", { name: /Mettre sur liste d'attente/i })).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: /^Retirer$/i })).toHaveLength(1);
+    // Le MJ n'est jamais sur une place réservée : pas de conversion sur sa ligne
+    expect(screen.getAllByRole("button", { name: /Passer en place réservée/i })).toHaveLength(1);
   });
 
   it("labels the join button as joining the waitlist when no free seat is left", async () => {
@@ -500,6 +502,40 @@ describe("TableDetailModal", () => {
     expect(
       await screen.findByRole("button", { name: /^Rejoindre la liste d'attente$/i })
     ).toBeInTheDocument();
+  });
+
+  it("hides 'Passer en place libre' when no free seat is open (prevents overbooking)", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          maxPlayers: 2,
+          reservedSeats: 1,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+            {
+              userId: "u3",
+              username: "Chloe",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T11:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    await screen.findByText("Chloe");
+    // Table 2/2 : liberer la place réservée de Chloe ferait deborder les places libres
+    expect(
+      screen.queryByRole("button", { name: /Passer en place libre/i })
+    ).not.toBeInTheDocument();
   });
 
   it("hides the convert-to-reserved action for a confirmed player on a free seat when reservedSeats=0", async () => {

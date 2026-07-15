@@ -197,6 +197,24 @@ describe("EditTableModal", () => {
     expect(window.confirm).not.toHaveBeenCalled();
   });
 
+  it("shows a hint that a seat will be created/deleted when the gmIsPlayer checkbox changes", async () => {
+    render(
+      <EditTableModal
+        open={true}
+        onClose={vi.fn()}
+        onUpdated={vi.fn()}
+        eventId="ev1"
+        table={{ ...baseTable, gmIsPlayer: false }}
+      />
+    );
+
+    expect(screen.queryByText(/sera créée pour le MJ/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText(/MJ est aussi joueur/i));
+    expect(
+      await screen.findByText(/Une place supplémentaire sera créée pour le MJ/)
+    ).toBeInTheDocument();
+  });
+
   it("caps the reserved seats stepper at maxPlayers - 1 when the GM plays (JDR gmIsPlayer)", () => {
     render(
       <EditTableModal

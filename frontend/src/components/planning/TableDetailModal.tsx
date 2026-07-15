@@ -237,6 +237,9 @@ export default function TableDetailModal({
     btnClass: string
   ) => {
     if (p.isOnReservedSeat) {
+      // Liberer une place reservee exige une place libre disponible (meme regle
+      // que le backend), sinon le compartiment libre deborderait
+      if (!canPromoteFree) return null;
       return (
         <button
           className={btnClass}
@@ -454,10 +457,11 @@ export default function TableDetailModal({
                           </span>
                           {canEdit && (
                             <div className="flex items-center gap-1">
-                              {renderConvertSeatAction(p, "btn btn-ghost btn-xs min-h-[44px]")}
-                              {/* Le MJ ne se retrograde/retire pas lui-meme : il quitte via la suppression de table */}
+                              {/* Aucune action sur la ligne du MJ : jamais de place reservee,
+                                  jamais de waitlist, il quitte via la suppression de table */}
                               {p.userId !== table.createdBy && (
                                 <>
+                                  {renderConvertSeatAction(p, "btn btn-ghost btn-xs min-h-[44px]")}
                                   <button
                                     className="btn btn-ghost btn-xs text-warning min-h-[44px]"
                                     onClick={() => handleDemote(p.userId)}
@@ -501,10 +505,11 @@ export default function TableDetailModal({
                               </td>
                               {canEdit && (
                                 <td className="flex gap-1">
-                                  {renderConvertSeatAction(p, "btn btn-ghost btn-xs")}
-                                  {/* Le MJ ne se retrograde/retire pas lui-meme : il quitte via la suppression de table */}
+                                  {/* Aucune action sur la ligne du MJ : jamais de place reservee,
+                                      jamais de waitlist, il quitte via la suppression de table */}
                                   {p.userId !== table.createdBy && (
                                     <>
+                                      {renderConvertSeatAction(p, "btn btn-ghost btn-xs")}
                                       <button
                                         className="btn btn-ghost btn-xs text-warning"
                                         onClick={() => handleDemote(p.userId)}
@@ -548,12 +553,14 @@ export default function TableDetailModal({
                                   p.userId,
                                   "btn btn-ghost btn-xs text-success min-h-[44px]"
                                 )}
-                                <button
-                                  className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                                  onClick={() => handleKick(p.userId, p.username)}
-                                >
-                                  Retirer
-                                </button>
+                                {p.userId !== table.createdBy && (
+                                  <button
+                                    className="btn btn-ghost btn-xs text-error min-h-[44px]"
+                                    onClick={() => handleKick(p.userId, p.username)}
+                                  >
+                                    Retirer
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
@@ -580,12 +587,14 @@ export default function TableDetailModal({
                                       p.userId,
                                       "btn btn-ghost btn-xs text-success"
                                     )}
-                                    <button
-                                      className="btn btn-ghost btn-xs text-error"
-                                      onClick={() => handleKick(p.userId, p.username)}
-                                    >
-                                      Retirer
-                                    </button>
+                                    {p.userId !== table.createdBy && (
+                                      <button
+                                        className="btn btn-ghost btn-xs text-error"
+                                        onClick={() => handleKick(p.userId, p.username)}
+                                      >
+                                        Retirer
+                                      </button>
+                                    )}
                                   </td>
                                 )}
                               </tr>

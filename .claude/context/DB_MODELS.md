@@ -83,7 +83,7 @@ Relations: event (Event), user (User)
 | createdBy     | String    | FK -> User.id (GM)                                             |
 | title         | String    | required, 1-150 chars                                          |
 | type          | TableType | JDR (default) or JDS                                           |
-| gmIsPlayer    | Boolean   | default false (JDR only)                                       |
+| gmIsPlayer    | Boolean   | default false (JDR only). Toggle en edition : cree/supprime la place du MJ (maxPlayers +1/-1) |
 | pitch         | String?   | max 2000 chars                                                 |
 | triggers      | String?   | max 1000 chars                                                 |
 | comments      | String?   | max 1000 chars                                                 |

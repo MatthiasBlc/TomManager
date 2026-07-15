@@ -106,10 +106,11 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
   const watchedMaxPlayers = watch("maxPlayers");
   const watchedReservedSeats = watch("reservedSeats");
   const watchedGmIsPlayer = watch("gmIsPlayer");
-  // Meme borne que le backend : le siege du MJ (JDS ou MJ joueur) n'est jamais
-  // convertible en place reservee
-  const gmTakesASeat = table.type === "JDS" || (table.type === "JDR" && watchedGmIsPlayer);
-  const reservedSeatsMax = Math.max(0, (watchedMaxPlayers || 0) - (gmTakesASeat ? 1 : 0));
+  // Meme borne que le backend : le siege du MJ n'est jamais convertible en place
+  // reservee. Cocher "MJ joueur" CREE une place en plus pour lui (total +1), donc
+  // la borne ne depend que de l'etat actuellement enregistre, pas de la case cochee.
+  const gmSeatCurrentlyTaken = table.type === "JDS" || (table.type === "JDR" && table.gmIsPlayer);
+  const reservedSeatsMax = Math.max(0, (watchedMaxPlayers || 0) - (gmSeatCurrentlyTaken ? 1 : 0));
   const newReservedSeats = Math.min(watchedReservedSeats || 0, reservedSeatsMax);
   const normalCapacity = Math.max(0, (watchedMaxPlayers || 0) - newReservedSeats);
 
@@ -237,6 +238,13 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
               />
               <span className="label-text">Le MJ est aussi joueur (se compte dans les places)</span>
             </label>
+            {watchedGmIsPlayer !== table.gmIsPlayer && (
+              <p className="text-xs opacity-60 mt-1">
+                {watchedGmIsPlayer
+                  ? "Une place supplémentaire sera créée pour le MJ (joueurs max +1)."
+                  : "La place du MJ sera supprimée avec lui (joueurs max −1)."}
+              </p>
+            )}
           </div>
         )}
 
