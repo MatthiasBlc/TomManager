@@ -2,6 +2,7 @@ import prisma from "../util/db";
 import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
 import { createNotification } from "./notification";
+import { lockTableRow } from "./gameTable";
 
 export async function listParticipants(
   eventId: string,
@@ -66,6 +67,8 @@ async function cascadeRemoveFromTables(
   });
 
   for (const tp of tableParticipations) {
+    // Serialise avec les autres operations de places sur cette table (cf. lockTableRow)
+    await lockTableRow(tx, tp.gameTableId);
     await tx.gameTableParticipant.delete({ where: { id: tp.id } });
 
     if (tp.status === "CONFIRMED") {

@@ -126,7 +126,7 @@ Relations: gameTable (GameTable), tag (Tag)
 | userId           | String                 | FK -> User.id                                                                   |
 | status           | TableParticipantStatus | CONFIRMED default                                                               |
 | isOnReservedSeat | Boolean                | default false. True si le joueur a ete affecte sur une place reservee par le MJ |
-| joinedAt         | DateTime               | Auto                                                                            |
+| joinedAt         | DateTime               | Auto. Reinitialise a now() lors d'un demote MJ : le joueur repart en fin de file |
 
 Contrainte unique: (gameTableId, userId)
 Index: (gameTableId, status)

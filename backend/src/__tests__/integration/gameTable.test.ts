@@ -1538,6 +1538,122 @@ describe("GameTable API", () => {
       expect(p1d.isOnReservedSeat).toBe(false);
       expect(p2d.isOnReservedSeat).toBe(true);
     });
+
+    it("updateTable rejects reservedSeats that would take the GM seat (JDS)", async () => {
+      const admin = await setupAdmin();
+      const event = await createTestEvent(admin.cookie);
+      const createRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({ ...validTableData, type: "JDS", maxPlayers: 4, reservedSeats: 0 });
+      const tableId = createRes.body.data.id;
+
+      // Le MJ (createur JDS) occupe une place : borne = maxPlayers - 1, comme a la creation
+      const rejected = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie)
+        .send({ reservedSeats: 4 });
+      expect(rejected.status).toBe(400);
+
+      const accepted = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie)
+        .send({ reservedSeats: 3 });
+      expect(accepted.status).toBe(200);
+      expect(accepted.body.data.reservedSeats).toBe(3);
+    });
+
+    it("updateTable caps reservedSeats silently when gmIsPlayer is turned on", async () => {
+      // JDR sans MJ joueur : reservedSeats = maxPlayers autorise a la creation
+      const { admin, event, tableId } = await setupTableWithReserved(3, 3);
+
+      // Le MJ devient joueur sans toucher reservedSeats → cap silencieux a maxPlayers - 1
+      const updateRes = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie)
+        .send({ gmIsPlayer: true });
+
+      expect(updateRes.status).toBe(200);
+      expect(updateRes.body.data.reservedSeats).toBe(2);
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+      const gm = detail.body.data.participants.find(
+        (p: { userId: string }) => p.userId === admin.user.id
+      );
+      expect(gm.status).toBe("CONFIRMED");
+      expect(gm.isOnReservedSeat).toBe(false);
+    });
+
+    it("refuses to waitlist or kick the GM seated at their own table", async () => {
+      const admin = await setupAdmin();
+      const event = await createTestEvent(admin.cookie);
+      const createRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", admin.cookie)
+        .send({ ...validTableData, type: "JDS", maxPlayers: 4 });
+      const tableId = createRes.body.data.id;
+
+      const demote = await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${admin.user.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "WAITLIST" });
+      expect(demote.status).toBe(400);
+
+      const kick = await request
+        .delete(`/api/events/${event.id}/tables/${tableId}/participants/${admin.user.id}`)
+        .set("Cookie", admin.cookie);
+      expect(kick.status).toBe(400);
+
+      // Le MJ est toujours confirme a sa table
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+      const gm = detail.body.data.participants.find(
+        (p: { userId: string }) => p.userId === admin.user.id
+      );
+      expect(gm.status).toBe("CONFIRMED");
+    });
+
+    it("a demoted player goes to the back of the waitlist queue", async () => {
+      // maxPlayers=2, reservedSeats=0 → 2 places normales
+      const { admin, event, tableId } = await setupTableWithReserved(0, 2);
+
+      const { user: p1, cookie: c1 } = await addTestParticipant(event.id, {
+        email: "queue1@example.com",
+        username: "queue1",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c1);
+      const { cookie: c2 } = await addTestParticipant(event.id, {
+        email: "queue2@example.com",
+        username: "queue2",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c2);
+      const { user: p3, cookie: c3 } = await addTestParticipant(event.id, {
+        email: "queue3@example.com",
+        username: "queue3",
+      });
+      await request.post(`/api/events/${event.id}/tables/${tableId}/join`).set("Cookie", c3);
+      // p1, p2 CONFIRMED ; p3 WAITLIST
+
+      // Le MJ retrograde p1 : il repart en fin de file, derriere p3
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}/participants/${p1.id}/status`)
+        .set("Cookie", admin.cookie)
+        .send({ status: "WAITLIST" });
+
+      // p2 quitte : l'auto-promotion doit prendre p3 (premier de la file), pas p1
+      await request.delete(`/api/events/${event.id}/tables/${tableId}/leave`).set("Cookie", c2);
+
+      const detail = await request
+        .get(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie);
+      const byId = (id: string) =>
+        detail.body.data.participants.find((p: { userId: string }) => p.userId === id);
+      expect(byId(p3.id).status).toBe("CONFIRMED");
+      expect(byId(p1.id).status).toBe("WAITLIST");
+    });
   });
 
   describe("Conflict detection (GET /api/events/:eventId/tables)", () => {

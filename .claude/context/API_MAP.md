@@ -55,8 +55,8 @@
 | DELETE | `/:tableId`                             | requireAuth + requireTableGMOrAdmin   | Delete table                                                                                            |
 | POST   | `/:tableId/join`                        | requireAuth + requireEventParticipant | Join table                                                                                              |
 | DELETE | `/:tableId/leave`                       | requireAuth                           | Leave table                                                                                             |
-| DELETE | `/:tableId/participants/:userId`        | requireAuth + requireTableGMOrAdmin   | Kick player                                                                                             |
-| PATCH  | `/:tableId/participants/:userId/status` | requireAuth + requireTableGMOrAdmin   | Promote/demote player (GM/admin), body `{ status, seat? }` — `seat` choisit ou convertit libre/reservee |
+| DELETE | `/:tableId/participants/:userId`        | requireAuth + requireTableGMOrAdmin   | Kick player — 400 si la cible est le MJ assis a sa table (JDS/MJ joueur)                                |
+| PATCH  | `/:tableId/participants/:userId/status` | requireAuth + requireTableGMOrAdmin   | Promote/demote player (GM/admin), body `{ status, seat? }` — `seat` choisit ou convertit libre/reservee. Demote : 400 si cible = MJ, et le joueur repart en fin de waitlist (joinedAt reinitialise) |
 
 ## Tags (`/api/tags`)
 
