@@ -76,23 +76,23 @@ Relations: event (Event), user (User)
 
 ## GameTable
 
-| Field         | Type      | Notes                                                          |
-| ------------- | --------- | -------------------------------------------------------------- |
-| id            | String    | UUID PK                                                        |
-| eventId       | String    | FK -> Event.id                                                 |
-| createdBy     | String    | FK -> User.id (GM)                                             |
-| title         | String    | required, 1-150 chars                                          |
-| type          | TableType | JDR (default) or JDS                                           |
-| gmIsPlayer    | Boolean   | default false (JDR only). Toggle en edition : cree/supprime la place du MJ (maxPlayers +1/-1) |
-| pitch         | String?   | max 2000 chars                                                 |
-| triggers      | String?   | max 1000 chars                                                 |
-| comments      | String?   | max 1000 chars                                                 |
-| maxPlayers    | Int       | required, 1-20                                                 |
+| Field         | Type      | Notes                                                                                                                                                                                                                                 |
+| ------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id            | String    | UUID PK                                                                                                                                                                                                                               |
+| eventId       | String    | FK -> Event.id                                                                                                                                                                                                                        |
+| createdBy     | String    | FK -> User.id (GM)                                                                                                                                                                                                                    |
+| title         | String    | required, 1-150 chars                                                                                                                                                                                                                 |
+| type          | TableType | JDR (default) or JDS                                                                                                                                                                                                                  |
+| gmIsPlayer    | Boolean   | default false (JDR only). Toggle en edition : cree/supprime la place du MJ (maxPlayers +1/-1)                                                                                                                                         |
+| pitch         | String?   | max 2000 chars                                                                                                                                                                                                                        |
+| triggers      | String?   | max 1000 chars                                                                                                                                                                                                                        |
+| comments      | String?   | max 1000 chars                                                                                                                                                                                                                        |
+| maxPlayers    | Int       | required, 1-20                                                                                                                                                                                                                        |
 | reservedSeats | Int       | default 0. Total FIXE configure par le MJ (uniquement mute via update table). Le nombre de places reservees occupees se derive des participants (CONFIRMED + isOnReservedSeat), jamais stocke/mute par join/promote/demote/leave/kick |
-| startDateTime | DateTime  | >= event.startDateTime                                         |
-| endDateTime   | DateTime  | <= event.endDateTime                                           |
-| createdAt     | DateTime  | Auto                                                           |
-| updatedAt     | DateTime  | Auto                                                           |
+| startDateTime | DateTime  | >= event.startDateTime                                                                                                                                                                                                                |
+| endDateTime   | DateTime  | <= event.endDateTime                                                                                                                                                                                                                  |
+| createdAt     | DateTime  | Auto                                                                                                                                                                                                                                  |
+| updatedAt     | DateTime  | Auto                                                                                                                                                                                                                                  |
 
 Index: (eventId, startDateTime)
 Relations: event (Event), creator (User), tags (GameTableTag[]), participants (GameTableParticipant[])
@@ -119,13 +119,13 @@ Relations: gameTable (GameTable), tag (Tag)
 
 ## GameTableParticipant
 
-| Field            | Type                   | Notes                                                                           |
-| ---------------- | ---------------------- | ------------------------------------------------------------------------------- |
-| id               | String                 | UUID PK                                                                         |
-| gameTableId      | String                 | FK -> GameTable.id                                                              |
-| userId           | String                 | FK -> User.id                                                                   |
-| status           | TableParticipantStatus | CONFIRMED default                                                               |
-| isOnReservedSeat | Boolean                | default false. True si le joueur a ete affecte sur une place reservee par le MJ |
+| Field            | Type                   | Notes                                                                            |
+| ---------------- | ---------------------- | -------------------------------------------------------------------------------- |
+| id               | String                 | UUID PK                                                                          |
+| gameTableId      | String                 | FK -> GameTable.id                                                               |
+| userId           | String                 | FK -> User.id                                                                    |
+| status           | TableParticipantStatus | CONFIRMED default                                                                |
+| isOnReservedSeat | Boolean                | default false. True si le joueur a ete affecte sur une place reservee par le MJ  |
 | joinedAt         | DateTime               | Auto. Reinitialise a now() lors d'un demote MJ : le joueur repart en fin de file |
 
 Contrainte unique: (gameTableId, userId)
