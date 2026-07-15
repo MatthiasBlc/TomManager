@@ -10,9 +10,20 @@ depuis la liste d'attente.
 
 ### GameTable
 
-| Champ           | Type | Notes           |
-| --------------- | ---- | --------------- |
-| `reservedSeats` | Int  | Default 0, >= 0 |
+| Champ           | Type | Notes                                                                                                                                                    |
+| --------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reservedSeats` | Int  | Default 0, >= 0. **Total fixe** configure par le MJ, uniquement mute via `updateTable`. Jamais incremente/decremente par join/promote/demote/leave/kick. |
+
+Le nombre de places reservees encore disponibles se **derive** a la volee et n'est
+jamais stocke :
+
+```
+confirmedOnReserved = count(participants CONFIRMED ET isOnReservedSeat)
+availableReserved    = reservedSeats - confirmedOnReserved
+normalCapacity       = maxPlayers - reservedSeats
+confirmedNormal      = confirmedCount - confirmedOnReserved
+availableNormal      = normalCapacity - confirmedNormal
+```
 
 ### GameTableParticipant
 
@@ -26,16 +37,21 @@ Valeur ajoutee : `RESERVED_SEAT_ASSIGNED`
 
 ## Invariant permanent
 
-`maxPlayers >= confirmedCount + reservedSeats` (openSeats >= 0)
+`maxPlayers >= confirmedCount + max(0, reservedSeats - confirmedOnReserved)` — en
+pratique, deux compartiments etanches : `normalCapacity = maxPlayers - reservedSeats`
+pour les places libres, `reservedSeats` pour les places reservees. `reservedSeats`
+lui-meme ne bouge jamais suite a une action participant, seulement via `updateTable`.
 
 ## Regles metier
 
 ### Rejoindre une table (join)
 
+Le join ne prend jamais une place reservee (uniquement le MJ peut l'affecter).
+
 ```
-openSeats = maxPlayers - confirmedCount - reservedSeats
-si openSeats > 0 → CONFIRMED (isOnReservedSeat = false)
-sinon            → WAITLIST
+availableNormal = normalCapacity - confirmedNormal
+si availableNormal > 0 → CONFIRMED (isOnReservedSeat = false)
+sinon                  → WAITLIST
 ```
 
 ### Promouvoir depuis la waitlist (PATCH status → CONFIRMED)
@@ -46,19 +62,21 @@ priorite reserved seat d'abord, puis place normale.
 
 ```
 si seat === "RESERVED" :
-  reservedSeats > 0 ? CONFIRMED, isOnReservedSeat = true, reservedSeats-- : 409
+  availableReserved > 0 ? CONFIRMED, isOnReservedSeat = true : 409
 si seat === "FREE" :
-  openSeats > 0 ? CONFIRMED, isOnReservedSeat = false : 409
+  availableNormal > 0 ? CONFIRMED, isOnReservedSeat = false : 409
 si seat absent (defaut) :
-  si reservedSeats > 0 :
-    → CONFIRMED, isOnReservedSeat = true, reservedSeats--
+  si availableReserved > 0 :
+    → CONFIRMED, isOnReservedSeat = true
     → notification RESERVED_SEAT_ASSIGNED
-  sinon si openSeats > 0 :
+  sinon si availableNormal > 0 :
     → CONFIRMED, isOnReservedSeat = false
     → notification WAITLIST_PROMOTED
   sinon :
     → 409 "aucune place disponible"
 ```
+
+`reservedSeats` n'est jamais modifie par cette action.
 
 ### Convertir un joueur deja confirme (PATCH status → CONFIRMED, seat explicite)
 
@@ -68,60 +86,88 @@ reservee sans repasser par la liste d'attente.
 
 ```
 seat === desiredReserved deja actuel → no-op
-FREE -> RESERVED : reservedSeats > 0 ? reservedSeats--, isOnReservedSeat = true : 409
+FREE -> RESERVED : availableReserved > 0 ? isOnReservedSeat = true : 409
                    notification RESERVED_SEAT_ASSIGNED
 RESERVED -> FREE : toujours autorise (le nombre de confirmes ne change pas)
-                   reservedSeats++, isOnReservedSeat = false
+                   isOnReservedSeat = false
                    pas de notification
 ```
+
+`reservedSeats` n'est jamais modifie par cette action.
 
 ### Retrograder (PATCH status → WAITLIST)
 
 ```
-si participant.isOnReservedSeat :
-  → isOnReservedSeat = false, reservedSeats++
-→ WAITLIST, notification WAITLIST_DEMOTED
+→ WAITLIST, isOnReservedSeat = false, notification WAITLIST_DEMOTED
 ```
+
+La place reservee liberee redevient disponible via le calcul derive
+(`availableReserved` augmente mecaniquement) — `reservedSeats` (le total) ne bouge pas.
 
 ### Quitter / etre kicte (leave / kick)
 
 ```
 si participant.isOnReservedSeat :
-  → reservedSeats++   // place retourne dans le pool
-  // pas d'auto-promotion
+  // place reservee liberee (calcul derive), pas d'auto-promotion
 sinon :
   → auto-promotion du premier en waitlist (place normale)
 ```
 
-### Modifier reservedSeats (updateTable)
+### Modifier reservedSeats / maxPlayers (updateTable)
+
+`reservedSeats` est ecrit directement a partir de la valeur envoyee par le MJ
+(cappee a `maxPlayers`) — ce n'est plus un pool a ajuster, juste une config.
+La reconciliation des joueurs confirmes se fait en deux phases independantes,
+dans cet ordre (l'ordre compte : la conversion de la phase 1 consomme de la
+place libre evaluee par la phase 2) :
 
 ```
-N = min(N, maxPlayers)
-targetConfirmed = max(0, maxPlayers - N)
-toDemote = max(0, confirmedCount - targetConfirmed)
+normalCapacity = max(0, newMaxPlayers - newReservedSeats)
 
-// Ordre demotion : non-reserved first (plus recent en premier), puis reserved
-// isOnReservedSeat = false sur chaque demote
+// Phase 1 — debordement des places reservees (reservedSeats a diminue) :
+// le(s) joueur(s) reserve(s) le(s) plus recent(s) sont convertis en place
+// libre si la capacite libre le permet, sinon liste d'attente. Entre
+// plusieurs candidats en trop, les plus anciens du lot recuperent la
+// conversion, les plus recents partent en liste d'attente.
+reservedOverflow    = max(0, confirmedOnReserved - newReservedSeats)
+availableNormalRoom = max(0, normalCapacity - confirmedNormal)
+convertCount        = min(reservedOverflow, availableNormalRoom)
+→ convertCount joueurs (les plus anciens du lot en trop) : isOnReservedSeat = false
+→ (reservedOverflow - convertCount) joueurs (les plus recents du lot) : WAITLIST
 
-si N < current : pas d'auto-promotion (decision B)
-si N > current : demotions si necessaire
-
-reservedSeats = N
-```
-
-### Modifier maxPlayers (updateTable)
-
-```
-newReservedSeats = min(reservedSeats, newMaxPlayers)
-targetConfirmed = max(0, newMaxPlayers - newReservedSeats)
-toDemote = max(0, confirmedCount - targetConfirmed)
-
-// Ordre demotion : non-reserved first (plus recent en premier), puis reserved
-// Pas d'auto-promotion si augmentation (decision B)
+// Phase 2 — debordement des places libres (maxPlayers a diminue ou
+// reservedSeats a augmente) : liste d'attente directe, JAMAIS de bascule
+// automatique vers une place reservee (decision B — une place reservee est
+// toujours affectee a la main par le MJ).
+confirmedNormalAfterConversion = confirmedNormal + convertCount
+normalOverflow = max(0, confirmedNormalAfterConversion - normalCapacity)
+→ normalOverflow joueurs libres les plus recents : WAITLIST
 
 reservedSeats = newReservedSeats
-maxPlayers = newMaxPlayers
+maxPlayers    = newMaxPlayers
 ```
+
+Pas d'auto-promotion dans un sens ou dans l'autre (decision B).
+
+## Piege historique (corrige)
+
+Premiere implementation : `reservedSeats` stockait le **pool restant non
+attribue** (decremente a l'attribution, incremente a la liberation) au lieu
+d'un total fixe. Deux consequences en prod :
+
+- L'affichage (`formatSeatSummary`) et le formulaire d'edition traitaient
+  `reservedSeats` comme un total, alors qu'il etait deja decremente → chiffres
+  faux des qu'une place reservee etait attribuee (ex: 0/1 libre au lieu de
+  0/0, 1/1 reservee au lieu de 1/2).
+- `updateTable` ecrivait directement la saisie du MJ dans ce pool sans tenir
+  compte des places deja attribuees, et comparait `confirmedCount` (total) a
+  une capacite normale seule → un joueur deja sur une place reservee pouvait
+  se retrouver retrograde en liste d'attente en remettant `reservedSeats` a
+  sa valeur d'origine.
+
+Fixe en migrant `reservedSeats` vers un total fixe (jamais mute par les
+actions participants) + migration de donnees (`20260715120000_backfill_reserved_seats_total`)
+pour corriger les valeurs deja decrementees en prod au moment du deploiement.
 
 ## API
 
@@ -133,7 +179,7 @@ Aucun nouvel endpoint. Champs ajoutes aux payloads existants :
 | `PATCH /:tableId`                             | Body: `reservedSeats?`, `maxPlayers` updated                                 |
 | `POST /:tableId/join`                         | Calcul openSeats avec reservedSeats                                          |
 | `PATCH /:tableId/participants/:userId/status` | Body: `seat?: "FREE" \| "RESERVED"` — choix explicite ou conversion en place |
-| `DELETE /:tableId/leave`                      | isOnReservedSeat → reservedSeats++                                           |
+| `DELETE /:tableId/leave`                      | Place reservee liberee (calcul derive, `reservedSeats` inchange)            |
 | `DELETE /:tableId/participants/:userId`       | idem                                                                         |
 
 Responses enrichies :

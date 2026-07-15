@@ -101,12 +101,25 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
   const confirmedOnReserved = table.participants.filter(
     (p) => p.status === "CONFIRMED" && p.isOnReservedSeat
   ).length;
+  const confirmedNormal = confirmedCount - confirmedOnReserved;
 
   const watchedMaxPlayers = watch("maxPlayers");
   const watchedReservedSeats = watch("reservedSeats");
   const newReservedSeats = Math.min(watchedReservedSeats || 0, watchedMaxPlayers || 0);
-  const targetConfirmed = Math.max(0, (watchedMaxPlayers || 0) - newReservedSeats);
-  const toDemoteCount = Math.max(0, confirmedCount - targetConfirmed);
+  const normalCapacity = Math.max(0, (watchedMaxPlayers || 0) - newReservedSeats);
+
+  // Miroir de la logique backend (updateTable) : une place reservee en trop est
+  // convertie en place libre si la capacite libre le permet, sinon liste d'attente.
+  // Une place libre en trop part toujours directement en liste d'attente (decision B).
+  const reservedOverflowCount = Math.max(0, confirmedOnReserved - newReservedSeats);
+  const availableNormalRoom = Math.max(0, normalCapacity - confirmedNormal);
+  const convertCount = Math.min(reservedOverflowCount, availableNormalRoom);
+  const toWaitlistFromReserved = reservedOverflowCount - convertCount;
+
+  const confirmedNormalAfterConversion = confirmedNormal + convertCount;
+  const toWaitlistFromNormal = Math.max(0, confirmedNormalAfterConversion - normalCapacity);
+
+  const toDemoteCount = toWaitlistFromReserved + toWaitlistFromNormal;
 
   // Les places reservees ne peuvent jamais depasser le nombre de joueurs max
   useEffect(() => {

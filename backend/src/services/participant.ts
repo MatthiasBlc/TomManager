@@ -70,11 +70,7 @@ async function cascadeRemoveFromTables(
 
     if (tp.status === "CONFIRMED") {
       if (tp.isOnReservedSeat) {
-        // La place reservee retourne dans le pool, pas d'auto-promotion
-        await tx.gameTable.update({
-          where: { id: tp.gameTableId },
-          data: { reservedSeats: { increment: 1 } },
-        });
+        // La place reservee redevient disponible (pool derive), pas d'auto-promotion
       } else {
         // Place normale liberee : auto-promotion
         const firstWaitlisted = await tx.gameTableParticipant.findFirst({

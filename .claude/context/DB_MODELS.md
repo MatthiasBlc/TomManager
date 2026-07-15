@@ -88,7 +88,7 @@ Relations: event (Event), user (User)
 | triggers      | String?   | max 1000 chars                                                 |
 | comments      | String?   | max 1000 chars                                                 |
 | maxPlayers    | Int       | required, 1-20                                                 |
-| reservedSeats | Int       | default 0. Places bloquees par le MJ pour affectation manuelle |
+| reservedSeats | Int       | default 0. Total FIXE configure par le MJ (uniquement mute via update table). Le nombre de places reservees occupees se derive des participants (CONFIRMED + isOnReservedSeat), jamais stocke/mute par join/promote/demote/leave/kick |
 | startDateTime | DateTime  | >= event.startDateTime                                         |
 | endDateTime   | DateTime  | <= event.endDateTime                                           |
 | createdAt     | DateTime  | Auto                                                           |

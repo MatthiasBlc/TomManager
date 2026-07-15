@@ -160,6 +160,43 @@ describe("EditTableModal", () => {
     expect(apiPatchMock).not.toHaveBeenCalled();
   });
 
+  it("does not warn when lowering reservedSeats converts the reserved overflow to a free seat instead of waitlisting", async () => {
+    const onUpdated = vi.fn();
+    render(
+      <EditTableModal
+        open={true}
+        onClose={vi.fn()}
+        onUpdated={onUpdated}
+        eventId="ev1"
+        table={{
+          ...baseTable,
+          maxPlayers: 4,
+          reservedSeats: 3,
+          participants: [
+            { userId: "u0", status: "CONFIRMED", isOnReservedSeat: false },
+            { userId: "u1", status: "CONFIRMED", isOnReservedSeat: true },
+            { userId: "u2", status: "CONFIRMED", isOnReservedSeat: true },
+            { userId: "u3", status: "CONFIRMED", isOnReservedSeat: true },
+          ],
+        }}
+      />
+    );
+
+    const reservedGroup = screen.getByLabelText("Places reservees").closest(".join") as HTMLElement;
+    fireEvent.click(within(reservedGroup).getByRole("button", { name: "Diminuer" }));
+
+    // 3 -> 2 : une place libre s'ouvre exactement pour le joueur reserve en trop, pas de demotion
+    expect(screen.queryByText(/mis en liste d.attente/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Enregistrer$/i }));
+
+    await waitFor(() => {
+      expect(apiPatchMock).toHaveBeenCalled();
+      expect(onUpdated).toHaveBeenCalled();
+    });
+    expect(window.confirm).not.toHaveBeenCalled();
+  });
+
   it("submits without confirmation when no demotion is caused", async () => {
     const onUpdated = vi.fn();
     render(
