@@ -21,10 +21,15 @@ export const createTableSchema = z.object({
   reservedSeats: z.number().int().min(0).optional(),
 });
 
-export const setStatusSchema = z.object({
-  status: z.enum(["CONFIRMED", "WAITLIST"]),
-  seat: z.enum(["FREE", "RESERVED"]).optional(),
-});
+export const setStatusSchema = z
+  .object({
+    status: z.enum(["CONFIRMED", "WAITLIST"]),
+    seat: z.enum(["FREE", "RESERVED"]).optional(),
+  })
+  .refine((d) => d.status !== "CONFIRMED" || d.seat !== undefined, {
+    message: "seat is required when status is CONFIRMED",
+    path: ["seat"],
+  });
 
 export const updateTableSchema = z.object({
   title: z.string().min(1).max(150).optional(),

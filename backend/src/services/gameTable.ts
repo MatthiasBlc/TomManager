@@ -4,6 +4,15 @@ import { findOrCreateTags } from "./tag";
 import { emitToEvent } from "../socket/emitter";
 import { createNotification, createBulkNotifications } from "./notification";
 
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+// Verrouille la ligne de la table (SELECT ... FOR UPDATE) pour serialiser les
+// operations concurrentes sur les places d'une meme table (sinon deux actions
+// simultanees peuvent lire le meme nombre de places libres et surreserver)
+export async function lockTableRow(tx: TxClient, tableId: string) {
+  await tx.$queryRaw`SELECT id FROM "GameTable" WHERE id = ${tableId} FOR UPDATE`;
+}
+
 const BOARD_GAME_SELECT = {
   id: true,
   name: true,
@@ -365,83 +374,133 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     throw createError(400, "Table endDateTime must be within event bounds");
   }
 
-  // Calcul des reservedSeats finaux en tenant compte de maxPlayers et de la demande
-  let newReservedSeats = existing.reservedSeats;
-  if (data.reservedSeats !== undefined) {
-    newReservedSeats = Math.min(data.reservedSeats, newMaxPlayers);
-    if (!Number.isInteger(data.reservedSeats) || data.reservedSeats < 0) {
-      throw createError(400, "reservedSeats must be a non-negative integer");
-    }
-  }
-  // Si maxPlayers diminue, les reservedSeats sont cappees a newMaxPlayers
-  newReservedSeats = Math.min(newReservedSeats, newMaxPlayers);
-
-  const confirmedParticipants = existing.participants.filter((p) => p.status === "CONFIRMED");
-  const confirmedCount = confirmedParticipants.length;
-
-  // Combien de places confirmees peuvent tenir compte tenu de newMaxPlayers et newReservedSeats
-  const targetConfirmed = Math.max(0, newMaxPlayers - newReservedSeats);
-  const toDemoteCount = Math.max(0, confirmedCount - targetConfirmed);
-
-  const demotedUserIds: string[] = [];
-  const promotedUserIds: string[] = [];
-  let finalReservedSeats = newReservedSeats;
-
   const gmIsPlayerChanged =
     existing.type === "JDR" &&
     data.gmIsPlayer !== undefined &&
     data.gmIsPlayer !== existing.gmIsPlayer;
+  const gmSeatAdded = gmIsPlayerChanged && data.gmIsPlayer === true;
+  const gmSeatRemoved = gmIsPlayerChanged && data.gmIsPlayer === false;
+
+  // La place du MJ joueur vit avec le toggle : cocher "MJ joueur" CREE une place
+  // pour lui (maxPlayers +1), decocher SUPPRIME sa place avec lui (maxPlayers -1).
+  // Personne d'autre n'est retrograde ni promu par ce toggle : capacite et
+  // occupation bougent ensemble, seul le total de joueurs change.
+  const adjustedMaxPlayers = newMaxPlayers + (gmSeatAdded ? 1 : gmSeatRemoved ? -1 : 0);
+  if (adjustedMaxPlayers > 20) {
+    throw createError(400, "Enabling gmIsPlayer would exceed the maximum of 20 players");
+  }
+  if (adjustedMaxPlayers < 1) {
+    throw createError(400, "Disabling gmIsPlayer would leave the table without any seat");
+  }
+
+  const newGmIsPlayer =
+    existing.type === "JDR" && data.gmIsPlayer !== undefined
+      ? data.gmIsPlayer
+      : existing.gmIsPlayer;
+  const gmTakesASeat = existing.type === "JDS" || newGmIsPlayer;
+
+  // reservedSeats est un total fixe configure par le MJ : jamais mute par les actions
+  // participants (join/promote/demote/leave/kick), uniquement ici sur demande explicite.
+  // Meme borne qu'a la creation : le siege du MJ (JDS ou MJ joueur) n'est jamais
+  // convertible en place reservee, le MJ n'est jamais sur une place reservee.
+  const maxReserved = gmTakesASeat ? adjustedMaxPlayers - 1 : adjustedMaxPlayers;
+  let newReservedSeats = existing.reservedSeats;
+  if (data.reservedSeats !== undefined) {
+    if (
+      !Number.isInteger(data.reservedSeats) ||
+      data.reservedSeats < 0 ||
+      data.reservedSeats > maxReserved
+    ) {
+      throw createError(400, `reservedSeats must be between 0 and ${maxReserved}`);
+    }
+    newReservedSeats = data.reservedSeats;
+  }
+  // Si maxPlayers diminue (sans reservedSeats explicite), les reservedSeats
+  // existantes sont cappees silencieusement a la meme borne
+  newReservedSeats = Math.min(newReservedSeats, Math.max(0, maxReserved));
+
+  const normalCapacity = Math.max(0, adjustedMaxPlayers - newReservedSeats);
+
+  const demotedUserIds: string[] = [];
+  const finalReservedSeats = newReservedSeats;
+
+  const gmId = existing.createdBy;
 
   const result = await prisma.$transaction(async (tx) => {
-    // Demotion due au changement de maxPlayers ou reservedSeats
-    // Ordre : non-reserved d'abord (les plus recents), puis reserved si necessaire
-    if (toDemoteCount > 0) {
-      const nonReserved = confirmedParticipants
-        .filter((p) => !p.isOnReservedSeat)
-        .sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime());
-      const reserved = confirmedParticipants
-        .filter((p) => p.isOnReservedSeat)
-        .sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime());
+    // Verrou + relecture des participants : la repartition se decide sur un etat a jour,
+    // pas sur le snapshot pris avant la transaction (course avec un join simultane)
+    await lockTableRow(tx, tableId);
+    let participants = await tx.gameTableParticipant.findMany({
+      where: { gameTableId: tableId },
+    });
 
-      const todemote = [...nonReserved, ...reserved].slice(0, toDemoteCount);
-
-      for (const p of todemote) {
-        await tx.gameTableParticipant.update({
-          where: { id: p.id },
-          data: { status: "WAITLIST", isOnReservedSeat: false },
-        });
-        // Si ce joueur etait sur une reserved seat qui disparait, on n'a pas besoin
-        // d'incrementer reservedSeats car on fixe la valeur finale directement
-        demotedUserIds.push(p.userId);
+    // Toggle gmIsPlayer (JDR uniquement) — traite AVANT le calcul des debordements :
+    // la place du MJ arrive/part avec lui, elle n'entre jamais dans la redistribution
+    if (gmSeatAdded && !participants.some((p) => p.userId === gmId)) {
+      const created = await tx.gameTableParticipant.create({
+        data: { gameTableId: tableId, userId: gmId, status: "CONFIRMED" },
+      });
+      participants = [...participants, created];
+    } else if (gmSeatRemoved) {
+      const gmParticipant = participants.find((p) => p.userId === gmId);
+      if (gmParticipant) {
+        // La place du MJ est supprimee avec lui (maxPlayers -1) : elle ne devient
+        // pas libre, donc aucune promotion depuis la liste d'attente
+        await tx.gameTableParticipant.delete({ where: { id: gmParticipant.id } });
+        participants = participants.filter((p) => p.id !== gmParticipant.id);
       }
+    }
+
+    const confirmedParticipants = participants.filter((p) => p.status === "CONFIRMED");
+    const reservedParticipants = confirmedParticipants.filter((p) => p.isOnReservedSeat);
+    const normalParticipants = confirmedParticipants.filter((p) => !p.isOnReservedSeat);
+    // Le MJ assis a sa table n'est jamais candidat a la retrogradation : sa place
+    // est garantie par la borne maxReserved (au moins une place libre lui revient)
+    const demotableNormal = normalParticipants.filter((p) => p.userId !== gmId);
+
+    // Debordement des places reservees (reservedSeats baisse sous l'occupation actuelle) :
+    // le(s) joueur(s) reserve(s) le(s) plus recent(s) sont convertis en place libre si la
+    // capacite libre le permet ; sinon ils partent en liste d'attente. Entre plusieurs
+    // candidats en trop, les plus anciens du lot recuperent la conversion.
+    const reservedOverflowCount = Math.max(0, reservedParticipants.length - newReservedSeats);
+    // Le MJ est exclu des candidats (etat legacy uniquement : les gardes actuelles
+    // l'empechent d'occuper une place reservee)
+    const reservedOverflowGroup = reservedParticipants
+      .filter((p) => p.userId !== gmId)
+      .sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime())
+      .slice(0, reservedOverflowCount);
+    const availableNormalRoom = Math.max(0, normalCapacity - normalParticipants.length);
+    const convertCount = Math.min(reservedOverflowCount, availableNormalRoom);
+    const toWaitlistFromReserved = reservedOverflowGroup.slice(
+      0,
+      reservedOverflowCount - convertCount
+    );
+    const toConvertToNormal = reservedOverflowGroup.slice(reservedOverflowCount - convertCount);
+
+    // Debordement des places libres (maxPlayers baisse ou reservedSeats augmente) :
+    // liste d'attente directe, jamais de bascule automatique vers une place reservee (decision B)
+    const normalAfterConversion = normalParticipants.length + convertCount;
+    const normalOverflowCount = Math.max(0, normalAfterConversion - normalCapacity);
+    const toWaitlistFromNormal = [...demotableNormal]
+      .sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime())
+      .slice(0, normalOverflowCount);
+
+    for (const p of toConvertToNormal) {
+      await tx.gameTableParticipant.update({
+        where: { id: p.id },
+        data: { isOnReservedSeat: false },
+      });
+    }
+
+    for (const p of [...toWaitlistFromReserved, ...toWaitlistFromNormal]) {
+      await tx.gameTableParticipant.update({
+        where: { id: p.id },
+        data: { status: "WAITLIST", isOnReservedSeat: false },
+      });
+      demotedUserIds.push(p.userId);
     }
 
     // Pas d'auto-promotion quand maxPlayers augmente ou reservedSeats diminue (decision B)
-
-    // Toggle gmIsPlayer (JDR uniquement)
-    if (gmIsPlayerChanged) {
-      const gmId = existing.createdBy;
-      const gmParticipant = existing.participants.find((p) => p.userId === gmId);
-
-      if (data.gmIsPlayer && !gmParticipant) {
-        const currentConfirmed = await tx.gameTableParticipant.count({
-          where: { gameTableId: tableId, status: "CONFIRMED" },
-        });
-        const openSeats = newMaxPlayers - currentConfirmed - finalReservedSeats;
-        const gmStatus = openSeats > 0 ? "CONFIRMED" : "WAITLIST";
-        await tx.gameTableParticipant.create({
-          data: { gameTableId: tableId, userId: gmId, status: gmStatus },
-        });
-      } else if (!data.gmIsPlayer && gmParticipant) {
-        await tx.gameTableParticipant.delete({
-          where: { id: gmParticipant.id },
-        });
-        // Si le GM etait sur une reserved seat, la liberer
-        if (gmParticipant.isOnReservedSeat) {
-          finalReservedSeats += 1;
-        }
-      }
-    }
 
     if (data.tags !== undefined) {
       await tx.gameTableTag.deleteMany({ where: { gameTableId: tableId } });
@@ -469,7 +528,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
         pitch,
         triggers,
         comments,
-        maxPlayers: newMaxPlayers,
+        maxPlayers: adjustedMaxPlayers,
         reservedSeats: finalReservedSeats,
         startDateTime: start,
         endDateTime: end,
@@ -492,9 +551,17 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
 
   emitToEvent(existing.eventId, "table:updated", { table: updated });
 
+  // Les joueurs retrogrades recoivent deja une notification dediee (WAITLIST_DEMOTED),
+  // pas la peine de doubler avec TABLE_UPDATED
   const participantUserIds = existing.participants
     .map((p) => p.userId)
-    .filter((id) => id !== updatedByUserId);
+    .filter((id) => id !== updatedByUserId && !demotedUserIds.includes(id));
+
+  // Le MJ ajoute comme joueur par un admin n'etait pas encore participant :
+  // il doit aussi etre prevenu de la modification
+  if (gmSeatAdded && gmId !== updatedByUserId && !participantUserIds.includes(gmId)) {
+    participantUserIds.push(gmId);
+  }
 
   if (participantUserIds.length > 0) {
     await createBulkNotifications(
@@ -515,18 +582,6 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
         type: "WAITLIST_DEMOTED" as const,
         title: "Place en liste d'attente",
         message: `Tu es en liste d'attente pour la table "${existing.title}"`,
-        metadata: { eventId: existing.eventId, tableId },
-      }))
-    );
-  }
-
-  if (promotedUserIds.length > 0) {
-    await createBulkNotifications(
-      promotedUserIds.map((userId) => ({
-        userId,
-        type: "WAITLIST_PROMOTED" as const,
-        title: "Place confirmee",
-        message: `Tu es confirme pour la table "${existing.title}"`,
         metadata: { eventId: existing.eventId, tableId },
       }))
     );
@@ -567,6 +622,7 @@ export async function deleteTable(tableId: string, deletedByUserId: string) {
 
 export async function joinTable(tableId: string, userId: string) {
   const result = await prisma.$transaction(async (tx) => {
+    await lockTableRow(tx, tableId);
     const table = await tx.gameTable.findUnique({
       where: { id: tableId },
       include: { participants: true },
@@ -587,7 +643,12 @@ export async function joinTable(tableId: string, userId: string) {
     }
 
     const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
-    const openSeats = table.maxPlayers - confirmedCount - table.reservedSeats;
+    const confirmedOnReserved = table.participants.filter(
+      (p) => p.status === "CONFIRMED" && p.isOnReservedSeat
+    ).length;
+    const confirmedNormal = confirmedCount - confirmedOnReserved;
+    const normalCapacity = table.maxPlayers - table.reservedSeats;
+    const openSeats = normalCapacity - confirmedNormal;
     const status = openSeats > 0 ? "CONFIRMED" : "WAITLIST";
 
     const participant = await tx.gameTableParticipant.create({
@@ -640,6 +701,7 @@ export async function leaveTable(tableId: string, userId: string) {
 
   let promotedUserId: string | null = null;
   await prisma.$transaction(async (tx) => {
+    await lockTableRow(tx, tableId);
     const participant = await tx.gameTableParticipant.findUnique({
       where: { gameTableId_userId: { gameTableId: tableId, userId } },
     });
@@ -652,11 +714,7 @@ export async function leaveTable(tableId: string, userId: string) {
 
     if (participant.status === "CONFIRMED") {
       if (participant.isOnReservedSeat) {
-        // La place retourne dans le pool reserve (decision A), pas d'auto-promotion
-        await tx.gameTable.update({
-          where: { id: tableId },
-          data: { reservedSeats: { increment: 1 } },
-        });
+        // La place reservee redevient disponible (pool derive), decision A : pas d'auto-promotion
       } else {
         // Place normale liberee : auto-promotion du premier en waitlist
         const firstWaitlisted = await tx.gameTableParticipant.findFirst({
@@ -696,60 +754,132 @@ export async function setParticipantStatus(
   newStatus: "CONFIRMED" | "WAITLIST",
   seat?: "FREE" | "RESERVED"
 ) {
-  const table = await prisma.gameTable.findUnique({
-    where: { id: tableId },
-    include: { participants: true },
-  });
+  const outcome = await prisma.$transaction(async (tx) => {
+    await lockTableRow(tx, tableId);
+    const table = await tx.gameTable.findUnique({
+      where: { id: tableId },
+      include: { participants: true },
+    });
 
-  if (!table) {
-    throw createError(404, "Table not found");
-  }
-
-  const participant = table.participants.find((p) => p.userId === targetUserId);
-  if (!participant) {
-    throw createError(404, "Participant not found");
-  }
-
-  let usedReservedSeat = false;
-
-  if (newStatus === "CONFIRMED" && participant.status === "CONFIRMED") {
-    // Deja confirme : conversion en place entre place libre et place reservee
-    const desiredReserved =
-      seat === "RESERVED" ? true : seat === "FREE" ? false : participant.isOnReservedSeat;
-
-    if (desiredReserved === participant.isOnReservedSeat) {
-      return { userId: targetUserId, status: newStatus };
+    if (!table) {
+      throw createError(404, "Table not found");
     }
 
-    if (desiredReserved) {
-      if (table.reservedSeats <= 0) {
-        throw createError(409, "No reserved seat available");
-      }
-      await prisma.$transaction(async (tx) => {
+    const participant = table.participants.find((p) => p.userId === targetUserId);
+    if (!participant) {
+      throw createError(404, "Participant not found");
+    }
+
+    // Le MJ assis a sa propre table (JDS ou MJ joueur) ne passe pas par la waitlist
+    // et n'occupe jamais une place reservee : son depart se gere par la suppression
+    // de la table ou le toggle gmIsPlayer
+    if (newStatus === "WAITLIST" && targetUserId === table.createdBy) {
+      throw createError(400, "The GM cannot be moved to the waitlist of their own table");
+    }
+    if (seat === "RESERVED" && targetUserId === table.createdBy) {
+      throw createError(400, "The GM's seat can never be a reserved seat");
+    }
+
+    // Retrograder un joueur deja en liste d'attente n'a pas de sens (et
+    // reinitialiserait sa position dans la file par effet de bord)
+    if (newStatus === "WAITLIST" && participant.status === "WAITLIST") {
+      throw createError(409, "Participant is already on the waitlist");
+    }
+
+    // Le choix de place est toujours explicite : plus de priorite par defaut
+    // (le front envoie systematiquement seat, un client API doit faire de meme)
+    if (newStatus === "CONFIRMED" && !seat) {
+      throw createError(400, "seat is required when confirming a participant");
+    }
+
+    // reservedSeats est un total fixe configure par le MJ (cf. updateTable).
+    // Les places reellement disponibles se derivent des participants, jamais stockees.
+    const confirmedOnReserved = table.participants.filter(
+      (p) => p.status === "CONFIRMED" && p.isOnReservedSeat
+    ).length;
+    const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
+    const confirmedNormal = confirmedCount - confirmedOnReserved;
+    const normalCapacity = table.maxPlayers - table.reservedSeats;
+
+    const wasConversion = newStatus === "CONFIRMED" && participant.status === "CONFIRMED";
+    let usedReservedSeat = false;
+    let changed = true;
+
+    if (wasConversion) {
+      // Deja confirme : conversion en place entre place libre et place reservee
+      const desiredReserved = seat === "RESERVED";
+
+      if (desiredReserved === participant.isOnReservedSeat) {
+        changed = false;
+      } else if (desiredReserved) {
+        const availableReserved = table.reservedSeats - confirmedOnReserved;
+        if (availableReserved <= 0) {
+          throw createError(409, "No reserved seat available");
+        }
         await tx.gameTableParticipant.update({
           where: { id: participant.id },
           data: { isOnReservedSeat: true },
         });
-        await tx.gameTable.update({
-          where: { id: tableId },
-          data: { reservedSeats: { decrement: 1 } },
-        });
-      });
-      usedReservedSeat = true;
-    } else {
-      // Libere une place reservee, ne change pas le nombre de confirmes
-      await prisma.$transaction(async (tx) => {
+        usedReservedSeat = true;
+      } else {
+        // Liberer une place reservee vers une place libre exige une place libre
+        // disponible : le total de confirmes ne change pas, mais le compartiment
+        // libre deborderait, et la place reservee ainsi liberee permettrait ensuite
+        // une vraie sur-reservation (confirmes > maxPlayers). Meme regle que la
+        // conversion automatique d'updateTable (availableNormalRoom).
+        const availableNormal = normalCapacity - confirmedNormal;
+        if (availableNormal <= 0) {
+          throw createError(409, "No open seat available");
+        }
         await tx.gameTableParticipant.update({
           where: { id: participant.id },
           data: { isOnReservedSeat: false },
         });
-        await tx.gameTable.update({
-          where: { id: tableId },
-          data: { reservedSeats: { increment: 1 } },
+      }
+    } else if (newStatus === "CONFIRMED") {
+      const availableReserved = table.reservedSeats - confirmedOnReserved;
+      const availableNormal = normalCapacity - confirmedNormal;
+
+      if (seat === "RESERVED") {
+        if (availableReserved <= 0) {
+          throw createError(409, "No reserved seat available");
+        }
+        await tx.gameTableParticipant.update({
+          where: { id: participant.id },
+          data: { status: "CONFIRMED", isOnReservedSeat: true },
         });
+        usedReservedSeat = true;
+      } else {
+        if (availableNormal <= 0) {
+          throw createError(409, "No open seat available");
+        }
+        await tx.gameTableParticipant.update({
+          where: { id: participant.id },
+          data: { status: "CONFIRMED", isOnReservedSeat: false },
+        });
+      }
+    } else {
+      // Demote vers WAITLIST : la place reservee (le cas echeant) retourne
+      // simplement dans le pool derive, reservedSeats (fixe) ne bouge pas.
+      // joinedAt est reinitialise pour que le joueur retrograde reparte en fin de
+      // file : sinon il garderait son anciennete et serait re-promu automatiquement
+      // en premier des qu'une place se libere, annulant la decision du MJ.
+      await tx.gameTableParticipant.update({
+        where: { id: participant.id },
+        data: { status: "WAITLIST", isOnReservedSeat: false, joinedAt: new Date() },
       });
     }
 
+    return { table, usedReservedSeat, wasConversion, changed };
+  });
+
+  const { table, usedReservedSeat, wasConversion, changed } = outcome;
+
+  if (!changed) {
+    return { userId: targetUserId, status: newStatus };
+  }
+
+  if (wasConversion) {
     emitToEvent(table.eventId, "table:player:promoted", {
       tableId,
       userId: targetUserId,
@@ -765,71 +895,6 @@ export async function setParticipantStatus(
     }
 
     return { userId: targetUserId, status: newStatus };
-  }
-
-  if (newStatus === "CONFIRMED") {
-    const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
-    const openSeats = table.maxPlayers - confirmedCount - table.reservedSeats;
-
-    if (seat === "RESERVED") {
-      if (table.reservedSeats <= 0) {
-        throw createError(409, "No reserved seat available");
-      }
-      await prisma.$transaction(async (tx) => {
-        await tx.gameTableParticipant.update({
-          where: { id: participant.id },
-          data: { status: "CONFIRMED", isOnReservedSeat: true },
-        });
-        await tx.gameTable.update({
-          where: { id: tableId },
-          data: { reservedSeats: { decrement: 1 } },
-        });
-      });
-      usedReservedSeat = true;
-    } else if (seat === "FREE") {
-      if (openSeats <= 0) {
-        throw createError(409, "No open seat available");
-      }
-      await prisma.gameTableParticipant.update({
-        where: { id: participant.id },
-        data: { status: "CONFIRMED", isOnReservedSeat: false },
-      });
-    } else if (table.reservedSeats > 0) {
-      // Pas de choix explicite : priorite par defaut a une reserved seat
-      await prisma.$transaction(async (tx) => {
-        await tx.gameTableParticipant.update({
-          where: { id: participant.id },
-          data: { status: "CONFIRMED", isOnReservedSeat: true },
-        });
-        await tx.gameTable.update({
-          where: { id: tableId },
-          data: { reservedSeats: { decrement: 1 } },
-        });
-      });
-      usedReservedSeat = true;
-    } else if (openSeats > 0) {
-      await prisma.gameTableParticipant.update({
-        where: { id: participant.id },
-        data: { status: "CONFIRMED", isOnReservedSeat: false },
-      });
-    } else {
-      throw createError(409, "Table is full");
-    }
-  } else {
-    // Demote vers WAITLIST
-    await prisma.$transaction(async (tx) => {
-      if (participant.isOnReservedSeat) {
-        // Libere la reserved seat
-        await tx.gameTable.update({
-          where: { id: tableId },
-          data: { reservedSeats: { increment: 1 } },
-        });
-      }
-      await tx.gameTableParticipant.update({
-        where: { id: participant.id },
-        data: { status: "WAITLIST", isOnReservedSeat: false },
-      });
-    });
   }
 
   if (newStatus === "CONFIRMED") {
@@ -877,8 +942,19 @@ export async function kickPlayer(tableId: string, userId: string) {
     include: { participants: true },
   });
 
+  if (!table) {
+    throw createError(404, "Table not found");
+  }
+
+  // Meme logique que setParticipantStatus : le siege du MJ ne se libere pas par
+  // un kick, mais par la suppression de la table ou le toggle gmIsPlayer
+  if (table.createdBy === userId) {
+    throw createError(400, "The GM cannot be removed from their own table");
+  }
+
   let promotedUserId: string | null = null;
   await prisma.$transaction(async (tx) => {
+    await lockTableRow(tx, tableId);
     const participant = await tx.gameTableParticipant.findUnique({
       where: { gameTableId_userId: { gameTableId: tableId, userId } },
     });
@@ -891,11 +967,7 @@ export async function kickPlayer(tableId: string, userId: string) {
 
     if (participant.status === "CONFIRMED") {
       if (participant.isOnReservedSeat) {
-        // La place retourne dans le pool reserve, pas d'auto-promotion
-        await tx.gameTable.update({
-          where: { id: tableId },
-          data: { reservedSeats: { increment: 1 } },
-        });
+        // La place reservee redevient disponible (pool derive), pas d'auto-promotion
       } else {
         // Place normale : auto-promotion
         const firstWaitlisted = await tx.gameTableParticipant.findFirst({
@@ -913,27 +985,25 @@ export async function kickPlayer(tableId: string, userId: string) {
     }
   });
 
-  if (table) {
-    emitToEvent(table.eventId, "table:player:kicked", { tableId, userId });
+  emitToEvent(table.eventId, "table:player:kicked", { tableId, userId });
+  await createNotification({
+    userId,
+    type: "PLAYER_KICKED",
+    title: "Expulse d'une table",
+    message: `Tu as ete expulse de la table "${table.title}"`,
+    metadata: { eventId: table.eventId, tableId },
+  });
+  if (promotedUserId) {
+    emitToEvent(table.eventId, "table:player:promoted", {
+      tableId,
+      userId: promotedUserId,
+    });
     await createNotification({
-      userId,
-      type: "PLAYER_KICKED",
-      title: "Expulse d'une table",
-      message: `Tu as ete expulse de la table "${table.title}"`,
+      userId: promotedUserId,
+      type: "WAITLIST_PROMOTED",
+      title: "Place confirmee",
+      message: `Tu es confirme pour la table "${table.title}"`,
       metadata: { eventId: table.eventId, tableId },
     });
-    if (promotedUserId) {
-      emitToEvent(table.eventId, "table:player:promoted", {
-        tableId,
-        userId: promotedUserId,
-      });
-      await createNotification({
-        userId: promotedUserId,
-        type: "WAITLIST_PROMOTED",
-        title: "Place confirmee",
-        message: `Tu es confirme pour la table "${table.title}"`,
-        metadata: { eventId: table.eventId, tableId },
-      });
-    }
   }
 }

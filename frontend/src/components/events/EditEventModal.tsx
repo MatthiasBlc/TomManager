@@ -58,20 +58,20 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     if (!event) return;
     if (
       !confirm(
-        "Purger cet event ?\n\nCela supprimera definitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-meme sera conserve."
+        "Purger cet event ?\n\nCela supprimera définitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-même sera conservé."
       )
     )
       return;
     setPurging(true);
     try {
       await api.post(`/api/events/${event.id}/purge`);
-      toast.success("Event purge !");
+      toast.success("Event purgé !");
       onUpdated();
       onClose();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de la purge";
+          ?.message || "Échec de la purge";
       toast.error(message);
     } finally {
       setPurging(false);
@@ -87,13 +87,13 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
         endDateTime: new Date(data.endDateTime).toISOString(),
         discordRoleId: data.discordRoleId.trim() || null,
       });
-      toast.success("Evenement mis a jour !");
+      toast.success("Événement mis à jour !");
       onUpdated();
       onClose();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de la mise a jour de l'evenement";
+          ?.message || "Échec de la mise à jour de l'événement";
       toast.error(message);
     }
   };
@@ -101,7 +101,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
   if (!event) return null;
 
   return (
-    <ResponsiveModal open={open} onClose={onClose} title="Modifier l'evenement">
+    <ResponsiveModal open={open} onClose={onClose} title="Modifier l'événement">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ee-name">
@@ -113,7 +113,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
             className="input input-bordered w-full"
             {...register("name", {
               required: "Le nom est obligatoire",
-              maxLength: { value: 100, message: "100 caracteres maximum" },
+              maxLength: { value: 100, message: "100 caractères maximum" },
             })}
           />
           {errors.name && (
@@ -124,14 +124,14 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
         </div>
         <div className="form-control">
           <label className="label" htmlFor="ee-start">
-            <span className="label-text">Debut</span>
+            <span className="label-text">Début</span>
           </label>
           <input
             id="ee-start"
             type="datetime-local"
             className="input input-bordered w-full"
             {...register("startDateTime", {
-              required: "La date de debut est obligatoire",
+              required: "La date de début est obligatoire",
             })}
           />
         </div>
@@ -147,7 +147,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
               required: "La date de fin est obligatoire",
               validate: (value) =>
                 new Date(value) > new Date(getValues("startDateTime")) ||
-                "La fin doit etre apres le debut",
+                "La fin doit être après le début",
             })}
           />
           {errors.endDateTime && (
@@ -170,7 +170,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
               {...register("discordRoleId", {
                 pattern: {
                   value: /^(\d{17,20})?$/,
-                  message: "Doit etre un Discord Snowflake (17-20 chiffres) ou vide",
+                  message: "Doit être un Discord Snowflake (17-20 chiffres) ou vide",
                 },
               })}
             />

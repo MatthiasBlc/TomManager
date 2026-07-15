@@ -22,9 +22,9 @@ test.describe("Navigation mobile", () => {
 
     // Naviguer vers l'onglet Planning
     await tabBar.getByText(/planning/i).click();
-    // En mobile, le bouton desktop "Creer une table" n'est pas rendu :
-    // seul le FAB (aria-label="Creer une table") est present.
-    const fab = page.locator("[aria-label='Creer une table']");
+    // En mobile, le bouton desktop "Créer une table" n'est pas rendu :
+    // seul le FAB (aria-label="Créer une table") est present.
+    const fab = page.locator("[aria-label='Créer une table']");
     await expect(fab).toBeVisible();
     await expect(fab).toHaveClass(/fixed/); // garantit que c'est bien le FAB positionne fixed
   });

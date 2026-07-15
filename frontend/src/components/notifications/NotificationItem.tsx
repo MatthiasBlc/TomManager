@@ -38,7 +38,7 @@ function formatTimeAgo(dateStr: string): string {
   const diff = now - date;
 
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "a l'instant";
+  if (minutes < 1) return "à l'instant";
   if (minutes < 60) return `${minutes}min`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h`;

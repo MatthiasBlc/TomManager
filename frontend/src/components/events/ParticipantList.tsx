@@ -38,12 +38,12 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
     setRemovingUserId(userId);
     try {
       await api.delete(`/api/events/${eventId}/participants/${userId}`);
-      toast.success("Participant retire");
+      toast.success("Participant retiré");
       onChanged();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec du retrait du participant";
+          ?.message || "Échec du retrait du participant";
       toast.error(message);
     } finally {
       setRemovingUserId(null);
@@ -51,16 +51,16 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
   };
 
   const handleLeave = async () => {
-    if (!confirm("Quitter cet evenement ?")) return;
+    if (!confirm("Quitter cet événement ?")) return;
     setLeaving(true);
     try {
       await api.delete(`/api/events/${eventId}/participants/me`);
-      toast.success("Vous avez quitte l'evenement");
+      toast.success("Vous avez quitté l'événement");
       onChanged();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec en quittant l'evenement";
+          ?.message || "Échec en quittant l'événement";
       toast.error(message);
     } finally {
       setLeaving(false);
@@ -89,7 +89,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       <EmptyState
         icon={<span>👥</span>}
         title="Aucun participant pour l'instant"
-        description="Partagez le lien de l'evenement pour inviter des gens."
+        description="Partagez le lien de l'événement pour inviter des gens."
       />
     );
   }
@@ -114,7 +114,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       >
         <option value="joined">Par date d'inscription</option>
         <option value="name">Par nom (A-Z)</option>
-        <option value="role">Par role</option>
+        <option value="role">Par rôle</option>
       </select>
     </div>
   );
@@ -163,7 +163,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
             <thead>
               <tr>
                 <th>Nom</th>
-                <th>Role</th>
+                <th>Rôle</th>
                 <th>Inscrit le</th>
                 {isCreator && <th>Actions</th>}
               </tr>
@@ -202,7 +202,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
 
       {processed.length === 0 && (
         <p className="text-sm opacity-60 text-center py-4">
-          Aucun participant dans cette categorie.
+          Aucun participant dans cette catégorie.
         </p>
       )}
 
@@ -213,7 +213,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
             onClick={handleLeave}
             disabled={leaving}
           >
-            Quitter l'evenement
+            Quitter l'événement
           </button>
         </div>
       )}

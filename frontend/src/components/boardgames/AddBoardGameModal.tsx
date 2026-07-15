@@ -37,13 +37,13 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
   const addToEvent = async (boardGameId: string) => {
     try {
       await api.post(`/api/events/${eventId}/boardgames`, { boardGameId });
-      toast.success("Jeu ajoute !");
+      toast.success("Jeu ajouté !");
       onAdded();
       handleClose();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de l'ajout du jeu";
+          ?.message || "Échec de l'ajout du jeu";
       toast.error(message);
     }
   };
@@ -69,7 +69,7 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
         } catch (err: unknown) {
           const message =
             (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-              ?.error?.message || "Echec de l'import depuis BGG";
+              ?.error?.message || "Échec de l'import depuis BGG";
           toast.error(message);
         }
       }
@@ -92,7 +92,7 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de la creation du jeu";
+          ?.message || "Échec de la création du jeu";
       toast.error(message);
     }
   };
@@ -105,7 +105,7 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
             <BoardGameSearchInput onSelect={handleSelect} />
             <div className="divider text-sm opacity-50">ou</div>
             <button className="btn btn-outline btn-sm w-full" onClick={() => setMode("manual")}>
-              Creer manuellement
+              Créer manuellement
             </button>
           </fieldset>
         ) : (

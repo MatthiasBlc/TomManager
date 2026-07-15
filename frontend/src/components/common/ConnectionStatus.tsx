@@ -18,7 +18,7 @@ export default function ConnectionStatus() {
     const onConnect = () => {
       setConnected(true);
       if (wasDisconnected.current) {
-        toast.success("Connexion retablie");
+        toast.success("Connexion rétablie");
         wasDisconnected.current = false;
       }
     };
@@ -42,7 +42,7 @@ export default function ConnectionStatus() {
   return (
     <span
       className={`badge badge-xs ${connected ? "badge-success" : "badge-error"}`}
-      title={connected ? "Connecte" : "Deconnecte"}
+      title={connected ? "Connecté" : "Déconnecté"}
     />
   );
 }

@@ -50,7 +50,7 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <div className="form-control">
           <label className="label" htmlFor="mbg-year">
-            <span className="label-text">Annee</span>
+            <span className="label-text">Année</span>
           </label>
           <input
             id="mbg-year"
@@ -61,7 +61,7 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
         </div>
         <div className="form-control">
           <label className="label" htmlFor="mbg-playingTime">
-            <span className="label-text">Duree (min)</span>
+            <span className="label-text">Durée (min)</span>
           </label>
           <NumberStepper
             id="mbg-playingTime"
@@ -100,11 +100,11 @@ export default function ManualBoardGameForm({ onSubmit, onCancel }: Props) {
 
       <div className="flex justify-end gap-2 mt-4">
         <button type="button" className="btn btn-sm" onClick={onCancel} disabled={isSubmitting}>
-          Retour a la recherche
+          Retour à la recherche
         </button>
         <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting}>
           {isSubmitting && <span className="loading loading-spinner loading-xs" />}
-          Creer et ajouter
+          Créer et ajouter
         </button>
       </div>
     </form>

@@ -51,12 +51,12 @@
 | POST   | `/`                                     | requireAuth + requireEventParticipant | Create table                                                                                            |
 | GET    | `/`                                     | requireAuth + requireEventParticipant | List tables                                                                                             |
 | GET    | `/:tableId`                             | requireAuth + requireEventParticipant | Table detail                                                                                            |
-| PATCH  | `/:tableId`                             | requireAuth + requireTableGMOrAdmin   | Update table                                                                                            |
+| PATCH  | `/:tableId`                             | requireAuth + requireTableGMOrAdmin   | Update table — toggle gmIsPlayer : cree/supprime la place du MJ (maxPlayers +1/-1), personne demote/promu |
 | DELETE | `/:tableId`                             | requireAuth + requireTableGMOrAdmin   | Delete table                                                                                            |
 | POST   | `/:tableId/join`                        | requireAuth + requireEventParticipant | Join table                                                                                              |
 | DELETE | `/:tableId/leave`                       | requireAuth                           | Leave table                                                                                             |
-| DELETE | `/:tableId/participants/:userId`        | requireAuth + requireTableGMOrAdmin   | Kick player                                                                                             |
-| PATCH  | `/:tableId/participants/:userId/status` | requireAuth + requireTableGMOrAdmin   | Promote/demote player (GM/admin), body `{ status, seat? }` — `seat` choisit ou convertit libre/reservee |
+| DELETE | `/:tableId/participants/:userId`        | requireAuth + requireTableGMOrAdmin   | Kick player — 400 si la cible est le MJ assis a sa table (JDS/MJ joueur)                                |
+| PATCH  | `/:tableId/participants/:userId/status` | requireAuth + requireTableGMOrAdmin   | Promote/demote player (GM/admin), body `{ status, seat }` — `seat` OBLIGATOIRE si status=CONFIRMED (choisit ou convertit libre/reservee ; RESERVED interdit pour le MJ). Demote : 400 si cible = MJ, 409 si deja en waitlist, le joueur repart en fin de file (joinedAt reinitialise) |
 
 ## Tags (`/api/tags`)
 

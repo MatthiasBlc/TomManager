@@ -33,7 +33,7 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
 
     // 403 : acces refuse
     if (res.status === 403) {
-      toast.error("Acces refuse");
+      toast.error("Accès refusé");
     }
 
     return Promise.reject(error);

@@ -92,9 +92,13 @@ export default function TableDetailModal({
         confirmedOnReserved,
       })
     : null;
-  const openNormalSeats = table ? table.maxPlayers - confirmedCount - table.reservedSeats : 0;
+  // Places libres = capacite libre (maxPlayers - reservedSeats) moins les confirmes
+  // sur place libre uniquement (les occupants de places reservees ne comptent pas ici)
+  const openNormalSeats = table
+    ? table.maxPlayers - table.reservedSeats - (confirmedCount - confirmedOnReserved)
+    : 0;
   const canPromoteFree = openNormalSeats > 0;
-  const canPromoteReserved = (table?.reservedSeats ?? 0) > 0;
+  const canPromoteReserved = (table?.reservedSeats ?? 0) - confirmedOnReserved > 0;
 
   const fetchTable = useCallback(async () => {
     if (!tableId) return;
@@ -103,7 +107,7 @@ export default function TableDetailModal({
       const res = await api.get(`/api/events/${eventId}/tables/${tableId}`);
       setTable(res.data.data);
     } catch {
-      toast.error("Echec du chargement de la table");
+      toast.error("Échec du chargement de la table");
       onClose();
     } finally {
       setLoading(false);
@@ -134,13 +138,13 @@ export default function TableDetailModal({
     try {
       const res = await api.post(`/api/events/${eventId}/tables/${table.id}/join`);
       const status = res.data.data.status;
-      toast.success(status === "CONFIRMED" ? "Inscrit !" : "Ajoute sur la liste d'attente");
+      toast.success(status === "CONFIRMED" ? "Inscrit !" : "Ajouté sur la liste d'attente");
       fetchTable();
       onTableUpdated();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de l'inscription";
+          ?.message || "Échec de l'inscription";
       toast.error(message);
     }
   };
@@ -150,11 +154,11 @@ export default function TableDetailModal({
     if (!confirm("Quitter cette table ?")) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}/leave`);
-      toast.success("Vous avez quitte la table");
+      toast.success("Vous avez quitté la table");
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Echec en quittant la table");
+      toast.error("Échec en quittant la table");
     }
   };
 
@@ -175,7 +179,7 @@ export default function TableDetailModal({
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec lors de l'ajout a la table";
+          ?.message || "Échec lors de l'ajout à la table";
       toast.error(message);
     }
   };
@@ -186,11 +190,11 @@ export default function TableDetailModal({
       await api.patch(`/api/events/${eventId}/tables/${table.id}/participants/${userId}/status`, {
         status: "WAITLIST",
       });
-      toast.success("Joueur retrograde");
+      toast.success("Joueur rétrogradé");
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Echec du passage en liste d'attente");
+      toast.error("Échec du passage en liste d'attente");
     }
   };
 
@@ -202,7 +206,7 @@ export default function TableDetailModal({
             Ajouter (place libre)
           </button>
           <button className={btnClass} onClick={() => handlePromote(userId, "RESERVED")}>
-            Affecter (place reservee)
+            Affecter (place réservée)
           </button>
         </>
       );
@@ -210,19 +214,19 @@ export default function TableDetailModal({
     if (canPromoteFree) {
       return (
         <button className={btnClass} onClick={() => handlePromote(userId, "FREE")}>
-          Ajouter a la table
+          Ajouter à la table
         </button>
       );
     }
     if (canPromoteReserved) {
       return (
         <button className={btnClass} onClick={() => handlePromote(userId, "RESERVED")}>
-          Affecter (place reservee)
+          Affecter (place réservée)
         </button>
       );
     }
     return (
-      <button className={btnClass} disabled title="Table pleine — retrogradez un joueur d'abord">
+      <button className={btnClass} disabled title="Table pleine — rétrogradez un joueur d'abord">
         Aucune place disponible
       </button>
     );
@@ -233,10 +237,13 @@ export default function TableDetailModal({
     btnClass: string
   ) => {
     if (p.isOnReservedSeat) {
+      // Liberer une place reservee exige une place libre disponible (meme regle
+      // que le backend), sinon le compartiment libre deborderait
+      if (!canPromoteFree) return null;
       return (
         <button
           className={btnClass}
-          onClick={() => handlePromote(p.userId, "FREE", "Place liberee")}
+          onClick={() => handlePromote(p.userId, "FREE", "Place libérée")}
         >
           Passer en place libre
         </button>
@@ -246,9 +253,9 @@ export default function TableDetailModal({
       return (
         <button
           className={btnClass}
-          onClick={() => handlePromote(p.userId, "RESERVED", "Place reservee attribuee")}
+          onClick={() => handlePromote(p.userId, "RESERVED", "Place réservée attribuée")}
         >
-          Passer en place reservee
+          Passer en place réservée
         </button>
       );
     }
@@ -260,24 +267,24 @@ export default function TableDetailModal({
     if (!confirm(`Retirer ${username} de cette table ?`)) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}/participants/${userId}`);
-      toast.success(`${username} retire de la table`);
+      toast.success(`${username} retiré de la table`);
       fetchTable();
       onTableUpdated();
     } catch {
-      toast.error("Echec du retrait du joueur");
+      toast.error("Échec du retrait du joueur");
     }
   };
 
   const handleDelete = async () => {
     if (!table) return;
-    if (!confirm("Supprimer cette table ? Cette action est irreversible.")) return;
+    if (!confirm("Supprimer cette table ? Cette action est irréversible.")) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}`);
-      toast.success("Table supprimee");
+      toast.success("Table supprimée");
       onTableDeleted();
       onClose();
     } catch {
-      toast.error("Echec de la suppression de la table");
+      toast.error("Échec de la suppression de la table");
     }
   };
 
@@ -310,7 +317,7 @@ export default function TableDetailModal({
             </div>
             <div className="text-sm opacity-70 space-y-0.5">
               <p>
-                {table.type === "JDR" ? "MJ" : "Createur"} : {table.creator.username}
+                {table.type === "JDR" ? "MJ" : "Créateur"} : {table.creator.username}
               </p>
               <p>
                 {formatDateTime(table.startDateTime)} → {formatDateTime(table.endDateTime)}
@@ -445,24 +452,30 @@ export default function TableDetailModal({
                           <span className="text-sm flex items-center gap-1.5">
                             {p.username}
                             {p.isOnReservedSeat && (
-                              <span className="badge badge-warning badge-xs">reservee</span>
+                              <span className="badge badge-warning badge-xs">réservée</span>
                             )}
                           </span>
                           {canEdit && (
                             <div className="flex items-center gap-1">
-                              {renderConvertSeatAction(p, "btn btn-ghost btn-xs min-h-[44px]")}
-                              <button
-                                className="btn btn-ghost btn-xs text-warning min-h-[44px]"
-                                onClick={() => handleDemote(p.userId)}
-                              >
-                                Mettre sur liste d'attente
-                              </button>
-                              <button
-                                className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                                onClick={() => handleKick(p.userId, p.username)}
-                              >
-                                Retirer
-                              </button>
+                              {/* Aucune action sur la ligne du MJ : jamais de place reservee,
+                                  jamais de waitlist, il quitte via la suppression de table */}
+                              {p.userId !== table.createdBy && (
+                                <>
+                                  {renderConvertSeatAction(p, "btn btn-ghost btn-xs min-h-[44px]")}
+                                  <button
+                                    className="btn btn-ghost btn-xs text-warning min-h-[44px]"
+                                    onClick={() => handleDemote(p.userId)}
+                                  >
+                                    Mettre sur liste d'attente
+                                  </button>
+                                  <button
+                                    className="btn btn-ghost btn-xs text-error min-h-[44px]"
+                                    onClick={() => handleKick(p.userId, p.username)}
+                                  >
+                                    Retirer
+                                  </button>
+                                </>
+                              )}
                             </div>
                           )}
                         </div>
@@ -486,25 +499,31 @@ export default function TableDetailModal({
                                 <span className="flex items-center gap-1.5">
                                   {p.username}
                                   {p.isOnReservedSeat && (
-                                    <span className="badge badge-warning badge-xs">reservee</span>
+                                    <span className="badge badge-warning badge-xs">réservée</span>
                                   )}
                                 </span>
                               </td>
                               {canEdit && (
                                 <td className="flex gap-1">
-                                  {renderConvertSeatAction(p, "btn btn-ghost btn-xs")}
-                                  <button
-                                    className="btn btn-ghost btn-xs text-warning"
-                                    onClick={() => handleDemote(p.userId)}
-                                  >
-                                    Mettre sur liste d'attente
-                                  </button>
-                                  <button
-                                    className="btn btn-ghost btn-xs text-error"
-                                    onClick={() => handleKick(p.userId, p.username)}
-                                  >
-                                    Retirer
-                                  </button>
+                                  {/* Aucune action sur la ligne du MJ : jamais de place reservee,
+                                      jamais de waitlist, il quitte via la suppression de table */}
+                                  {p.userId !== table.createdBy && (
+                                    <>
+                                      {renderConvertSeatAction(p, "btn btn-ghost btn-xs")}
+                                      <button
+                                        className="btn btn-ghost btn-xs text-warning"
+                                        onClick={() => handleDemote(p.userId)}
+                                      >
+                                        Mettre sur liste d'attente
+                                      </button>
+                                      <button
+                                        className="btn btn-ghost btn-xs text-error"
+                                        onClick={() => handleKick(p.userId, p.username)}
+                                      >
+                                        Retirer
+                                      </button>
+                                    </>
+                                  )}
                                 </td>
                               )}
                             </tr>
@@ -534,12 +553,14 @@ export default function TableDetailModal({
                                   p.userId,
                                   "btn btn-ghost btn-xs text-success min-h-[44px]"
                                 )}
-                                <button
-                                  className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                                  onClick={() => handleKick(p.userId, p.username)}
-                                >
-                                  Retirer
-                                </button>
+                                {p.userId !== table.createdBy && (
+                                  <button
+                                    className="btn btn-ghost btn-xs text-error min-h-[44px]"
+                                    onClick={() => handleKick(p.userId, p.username)}
+                                  >
+                                    Retirer
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
@@ -566,12 +587,14 @@ export default function TableDetailModal({
                                       p.userId,
                                       "btn btn-ghost btn-xs text-success"
                                     )}
-                                    <button
-                                      className="btn btn-ghost btn-xs text-error"
-                                      onClick={() => handleKick(p.userId, p.username)}
-                                    >
-                                      Retirer
-                                    </button>
+                                    {p.userId !== table.createdBy && (
+                                      <button
+                                        className="btn btn-ghost btn-xs text-error"
+                                        onClick={() => handleKick(p.userId, p.username)}
+                                      >
+                                        Retirer
+                                      </button>
+                                    )}
                                   </td>
                                 )}
                               </tr>
@@ -588,7 +611,7 @@ export default function TableDetailModal({
             <div className={`flex flex-wrap gap-2 pt-1 ${isMobile ? "pb-2" : ""}`}>
               {!currentParticipant && (!isGM || table.type === "JDS" || table.gmIsPlayer) && (
                 <button className="btn btn-primary btn-sm flex-1 md:flex-none" onClick={handleJoin}>
-                  Rejoindre
+                  {openNormalSeats <= 0 ? "Rejoindre la liste d'attente" : "Rejoindre"}
                 </button>
               )}
               {currentParticipant && (

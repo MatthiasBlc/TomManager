@@ -73,7 +73,7 @@ describe("BoardGameSearchInput", () => {
     const result = await screen.findByText("Catan");
     fireEvent.click(result);
 
-    expect(await screen.findByRole("button", { name: /selectionner ce jeu/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /sélectionner ce jeu/i })).toBeInTheDocument();
   });
 
   it("calls onSelect after confirming from preview (local game)", async () => {
@@ -88,7 +88,7 @@ describe("BoardGameSearchInput", () => {
     const result = await screen.findByText("Catan");
     fireEvent.click(result);
 
-    const confirmBtn = await screen.findByRole("button", { name: /selectionner ce jeu/i });
+    const confirmBtn = await screen.findByRole("button", { name: /sélectionner ce jeu/i });
     fireEvent.click(confirmBtn);
 
     expect(onSelect).toHaveBeenCalled();
@@ -145,7 +145,7 @@ describe("BoardGameSearchInput", () => {
     fireEvent.click(backBtn);
 
     expect(await screen.findByText("Catan")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /selectionner ce jeu/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sélectionner ce jeu/i })).not.toBeInTheDocument();
   });
 
   it("shows a no-results message instead of nothing when the search is empty", async () => {
@@ -154,7 +154,7 @@ describe("BoardGameSearchInput", () => {
     fireEvent.change(screen.getByPlaceholderText(/search board games/i), {
       target: { value: "zzzznotfound" },
     });
-    expect(await screen.findByText("Aucun resultat")).toBeInTheDocument();
+    expect(await screen.findByText("Aucun résultat")).toBeInTheDocument();
   });
 
   it("clears results when the API call rejects", async () => {

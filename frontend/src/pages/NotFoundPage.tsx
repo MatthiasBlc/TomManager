@@ -6,9 +6,9 @@ export default function NotFoundPage() {
       <div className="text-center space-y-4">
         <h1 className="text-5xl font-bold opacity-20">404</h1>
         <h2 className="text-2xl font-semibold">Page introuvable</h2>
-        <p className="opacity-60">Cette page n'existe pas ou a ete deplacee.</p>
+        <p className="opacity-60">Cette page n'existe pas ou a été déplacée.</p>
         <Link to="/" className="btn btn-primary">
-          Retour a l'accueil
+          Retour à l'accueil
         </Link>
       </div>
     </div>

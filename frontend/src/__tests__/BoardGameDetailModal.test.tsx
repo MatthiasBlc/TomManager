@@ -75,7 +75,7 @@ describe("BoardGameDetailModal", () => {
         broughtBy={[]}
       />
     );
-    expect(screen.getByText("Tables associees (2)")).toBeInTheDocument();
+    expect(screen.getByText("Tables associées (2)")).toBeInTheDocument();
     expect(screen.getByText("Partie Wingspan")).toBeInTheDocument();
     expect(screen.getByText("Deuxieme table")).toBeInTheDocument();
   });
@@ -90,7 +90,7 @@ describe("BoardGameDetailModal", () => {
         broughtBy={[]}
       />
     );
-    expect(screen.getByText("Aucune table associee")).toBeInTheDocument();
+    expect(screen.getByText("Aucune table associée")).toBeInTheDocument();
   });
 
   it("calls onClose when close button is clicked", () => {

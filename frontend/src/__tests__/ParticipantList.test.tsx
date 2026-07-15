@@ -98,7 +98,7 @@ describe("ParticipantList", () => {
       />
     );
     expect(screen.queryByRole("button", { name: "Retirer" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /quitter l'evenement/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /quitter l'événement/i })).toBeInTheDocument();
   });
 
   it("does not show Leave button for the creator", () => {
@@ -111,7 +111,7 @@ describe("ParticipantList", () => {
         onChanged={vi.fn()}
       />
     );
-    expect(screen.queryByRole("button", { name: /quitter l'evenement/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /quitter l'événement/i })).not.toBeInTheDocument();
   });
 
   it("calls api.delete and onChanged when Remove is clicked", async () => {
@@ -146,7 +146,7 @@ describe("ParticipantList", () => {
         onChanged={onChanged}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /quitter l'evenement/i }));
+    fireEvent.click(screen.getByRole("button", { name: /quitter l'événement/i }));
     await waitFor(() => {
       expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/participants/me");
       expect(onChanged).toHaveBeenCalled();

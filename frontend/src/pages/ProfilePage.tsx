@@ -18,11 +18,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (searchParams.get("success") === "discord_linked") {
-      toast.success("Compte Discord lie !");
+      toast.success("Compte Discord lié !");
       navigate("/profile", { replace: true });
     }
     if (searchParams.get("error") === "discord_already_linked") {
-      toast.error("Ce compte Discord est deja lie a un autre utilisateur");
+      toast.error("Ce compte Discord est déjà lié à un autre utilisateur");
       navigate("/profile", { replace: true });
     }
   }, [searchParams, navigate]);
@@ -34,11 +34,11 @@ export default function ProfilePage() {
     try {
       const completed = await initiateDiscordLogin("/profile");
       // En mode popup : afficher le toast de succes ici (le redirect le gere via searchParams)
-      if (completed) toast.success("Compte Discord lie !");
+      if (completed) toast.success("Compte Discord lié !");
     } catch (err) {
       const errorKey = (err as Error).message;
       if (errorKey === "discord_already_linked") {
-        toast.error("Ce compte Discord est deja lie a un autre utilisateur");
+        toast.error("Ce compte Discord est déjà lié à un autre utilisateur");
       } else {
         toast.error("Connexion Discord indisponible");
       }
@@ -50,18 +50,18 @@ export default function ProfilePage() {
   const handleUnlink = async () => {
     if (
       !confirm(
-        "Delier votre compte Discord ? Vous ne pourrez plus vous connecter avec Discord tant qu'il n'est pas relie."
+        "Délier votre compte Discord ? Vous ne pourrez plus vous connecter avec Discord tant qu'il n'est pas relié."
       )
     )
       return;
     setUnlinking(true);
     try {
       await unlinkDiscord();
-      toast.success("Compte Discord delie");
+      toast.success("Compte Discord délié");
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec du deliage du compte Discord";
+          ?.message || "Échec du déliage du compte Discord";
       toast.error(message);
     } finally {
       setUnlinking(false);
@@ -137,7 +137,7 @@ export default function ProfilePage() {
               className="toggle toggle-sm"
               checked={theme === "light"}
               onChange={toggleTheme}
-              aria-label="Changer de theme"
+              aria-label="Changer de thème"
             />
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function ProfilePage() {
         <>
           <div className="card bg-base-100 shadow">
             <div className="card-body space-y-3">
-              <h2 className="card-title text-base">Options admin avancees</h2>
+              <h2 className="card-title text-base">Options admin avancées</h2>
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm">Activer export PDF</span>
@@ -201,15 +201,15 @@ export default function ProfilePage() {
                 className="btn btn-sm btn-outline btn-error"
                 onClick={handleUnlink}
                 disabled={!user.email || unlinking}
-                title={!user.email ? "Impossible de delier : aucun compte local" : undefined}
+                title={!user.email ? "Impossible de délier : aucun compte local" : undefined}
               >
                 {unlinking && <span className="loading loading-spinner loading-xs" />}
-                Delier
+                Délier
               </button>
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-sm opacity-60">Aucun compte Discord lie</p>
+              <p className="text-sm opacity-60">Aucun compte Discord lié</p>
               <button
                 className="btn btn-sm btn-outline gap-2"
                 onClick={handleLink}
@@ -229,7 +229,7 @@ export default function ProfilePage() {
           className="btn btn-outline btn-error w-full"
           onClick={() => logout().then(() => navigate("/"))}
         >
-          Se deconnecter
+          Se déconnecter
         </button>
       </div>
     </div>

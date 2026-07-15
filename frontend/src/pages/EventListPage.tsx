@@ -32,7 +32,7 @@ export default function EventListPage() {
       setError(false);
     } catch {
       setError(true);
-      toast.error("Echec du chargement des evenements");
+      toast.error("Échec du chargement des événements");
     } finally {
       setLoading(false);
     }
@@ -55,13 +55,13 @@ export default function EventListPage() {
   return (
     <div className="container mx-auto px-4 py-4 md:py-8">
       <div className="flex items-center justify-between mb-4 md:mb-6">
-        <h1 className="text-xl font-bold md:text-2xl">Evenements</h1>
+        <h1 className="text-xl font-bold md:text-2xl">Événements</h1>
         {user?.role === "ADMIN" && !isMobile && (
           <button
             className="btn btn-primary active:scale-95 transition-transform"
             onClick={() => setShowCreate(true)}
           >
-            Creer un evenement
+            Créer un événement
           </button>
         )}
       </div>
@@ -71,20 +71,20 @@ export default function EventListPage() {
       ) : error ? (
         <EmptyState
           icon={<span>⚠️</span>}
-          title="Echec du chargement des evenements"
-          description="Verifiez votre connexion et reessayez."
+          title="Échec du chargement des événements"
+          description="Vérifiez votre connexion et réessayez."
           action={
             <button className="btn btn-sm" onClick={fetchEvents}>
-              Reessayer
+              Réessayer
             </button>
           }
         />
       ) : events.length === 0 ? (
         <EmptyState
           icon={<span>📅</span>}
-          title="Aucun evenement pour l'instant"
+          title="Aucun événement pour l'instant"
           description={
-            user?.role === "ADMIN" ? "Creez votre premier evenement pour commencer." : undefined
+            user?.role === "ADMIN" ? "Créez votre premier événement pour commencer." : undefined
           }
         />
       ) : (
@@ -111,7 +111,7 @@ export default function EventListPage() {
       )}
 
       {user?.role === "ADMIN" && isMobile && (
-        <FAB onClick={() => setShowCreate(true)} label="Creer un evenement" />
+        <FAB onClick={() => setShowCreate(true)} label="Créer un événement" />
       )}
 
       <CreateEventModal

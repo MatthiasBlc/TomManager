@@ -35,20 +35,20 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
         endDateTime: new Date(data.endDateTime).toISOString(),
         discordRoleId: data.discordRoleId?.trim() || null,
       });
-      toast.success("Evenement cree !");
+      toast.success("Événement créé !");
       reset();
       onCreated();
       onClose();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Echec de la creation de l'evenement";
+          ?.message || "Échec de la création de l'événement";
       toast.error(message);
     }
   };
 
   return (
-    <ResponsiveModal open={open} onClose={onClose} title="Creer un evenement">
+    <ResponsiveModal open={open} onClose={onClose} title="Créer un événement">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ce-name">
@@ -60,7 +60,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
             className="input input-bordered w-full"
             {...register("name", {
               required: "Le nom est obligatoire",
-              maxLength: { value: 100, message: "100 caracteres maximum" },
+              maxLength: { value: 100, message: "100 caractères maximum" },
             })}
           />
           {errors.name && (
@@ -71,14 +71,14 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
         </div>
         <div className="form-control">
           <label className="label" htmlFor="ce-start">
-            <span className="label-text">Debut</span>
+            <span className="label-text">Début</span>
           </label>
           <input
             id="ce-start"
             type="datetime-local"
             className="input input-bordered w-full"
             {...register("startDateTime", {
-              required: "La date de debut est obligatoire",
+              required: "La date de début est obligatoire",
             })}
           />
           {errors.startDateTime && (
@@ -99,7 +99,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
               required: "La date de fin est obligatoire",
               validate: (value) =>
                 new Date(value) > new Date(getValues("startDateTime")) ||
-                "La fin doit etre apres le debut",
+                "La fin doit être après le début",
             })}
           />
           {errors.endDateTime && (
@@ -122,7 +122,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
               {...register("discordRoleId", {
                 pattern: {
                   value: /^(\d{17,20})?$/,
-                  message: "Doit etre un Discord Snowflake (17-20 chiffres) ou vide",
+                  message: "Doit être un Discord Snowflake (17-20 chiffres) ou vide",
                 },
               })}
             />
@@ -139,7 +139,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
           </button>
           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
             {isSubmitting && <span className="loading loading-spinner loading-xs" />}
-            Creer
+            Créer
           </button>
         </div>
       </form>

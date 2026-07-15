@@ -75,7 +75,7 @@ describe("EditEventModal", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /^Enregistrer$/i }));
 
-    expect(await screen.findByText("La fin doit etre apres le debut")).toBeInTheDocument();
+    expect(await screen.findByText("La fin doit être après le début")).toBeInTheDocument();
     expect(apiPatchMock).not.toHaveBeenCalled();
   });
 });

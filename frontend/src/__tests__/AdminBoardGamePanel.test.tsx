@@ -74,8 +74,8 @@ describe("AdminBoardGamePanel", () => {
     fireEvent.change(screen.getByPlaceholderText("Rechercher un jeu..."), {
       target: { value: "zzznotfound" },
     });
-    expect(await screen.findByText("Aucun resultat")).toBeInTheDocument();
-    expect(screen.getByText('Aucun jeu ne correspond a "zzznotfound".')).toBeInTheDocument();
+    expect(await screen.findByText("Aucun résultat")).toBeInTheDocument();
+    expect(screen.getByText('Aucun jeu ne correspond à "zzznotfound".')).toBeInTheDocument();
   });
 
   it("shows total count", async () => {
@@ -83,10 +83,10 @@ describe("AdminBoardGamePanel", () => {
     await waitFor(() => expect(screen.getByText("2 jeux au total")).toBeInTheDocument());
   });
 
-  it("opens edit modal on Editer click", async () => {
+  it("opens edit modal on Éditer click", async () => {
     render(<AdminBoardGamePanel />);
     await waitFor(() => screen.getByText("Wingspan"));
-    const editBtns = screen.getAllByText("Editer");
+    const editBtns = screen.getAllByText("Éditer");
     fireEvent.click(editBtns[0]);
     expect(screen.getByText("Modifier le jeu")).toBeInTheDocument();
   });
@@ -113,7 +113,7 @@ describe("AdminBoardGamePanel", () => {
     render(<AdminBoardGamePanel />);
     await waitFor(() => screen.getByText("Wingspan"));
     fireEvent.click(screen.getByText("Sup."));
-    await waitFor(() => expect(screen.getByText(/3 entree/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/3 entrée/)).toBeInTheDocument());
   });
 
   it("calls delete API and refreshes on confirm", async () => {
