@@ -82,7 +82,7 @@ recenser les erreurs atteignables via l'UI avant de coder.
 ## Suivi
 
 - [x] Lot A - quick wins (merge 2026-07-16)
-- [ ] Lot B - ConfirmModal + garde
+- [x] Lot B - ConfirmModal + garde (merge 2026-07-16)
 - [ ] Lot C - navigation & deep-links
 - [ ] Lot D - erreurs backend
 - [ ] Lot E - optionnel (13, 14, 15)
