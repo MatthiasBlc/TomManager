@@ -6,6 +6,9 @@ interface TabItem {
   icon: React.ReactNode;
   label: string;
   show?: boolean;
+  // NavLink ignore les search params dans son calcul d'actif : les onglets
+  // avec ?tab= fournissent leur propre etat actif
+  active?: boolean;
 }
 
 function TabIcon({ d }: { d: string }) {
@@ -47,10 +50,13 @@ export default function BottomTabBar() {
       show: !!eventId,
     },
     {
-      to: `/events/${eventId}`,
+      to: `/events/${eventId}?tab=games`,
       icon: <TabIcon d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />,
       label: "Jeux de société",
       show: !!eventId,
+      active:
+        location.pathname === `/events/${eventId}` &&
+        new URLSearchParams(location.search).get("tab") === "games",
     },
   ];
 
@@ -66,7 +72,7 @@ export default function BottomTabBar() {
             end
             className={({ isActive }) =>
               `flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[44px] text-xs transition-colors ${
-                isActive ? "text-primary" : "text-base-content/60"
+                (tab.active ?? isActive) ? "text-primary" : "text-base-content/60"
               }`
             }
           >

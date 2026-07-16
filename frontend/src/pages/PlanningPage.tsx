@@ -1,8 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useIsMobile } from "../hooks/useIsMobile";
 import PlanningTab from "../components/planning/PlanningTab";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function PlanningPage() {
+  usePageTitle("Planning");
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();

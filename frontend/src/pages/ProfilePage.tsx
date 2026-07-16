@@ -6,6 +6,7 @@ import { useConfirm } from "../contexts/ConfirmContext";
 import type { PreferenceKey } from "../types/preferences";
 import { useTheme } from "../contexts/ThemeContext";
 import InfoTooltip from "../components/common/InfoTooltip";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const ADMIN_RIGHT_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
   {
@@ -39,6 +40,7 @@ const BETA_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
 ];
 
 export default function ProfilePage() {
+  usePageTitle("Profil");
   const { user, preferences, updatePreferences, logout, initiateDiscordLogin, unlinkDiscord } =
     useAuth();
   const { theme, toggleTheme } = useTheme();
