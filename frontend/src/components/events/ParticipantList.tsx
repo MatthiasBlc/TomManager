@@ -34,7 +34,6 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
   const [sort, setSort] = useState<SortKey>("joined");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
-  const [leaving, setLeaving] = useState(false);
 
   const handleRemove = async (userId: string) => {
     if (!confirm("Retirer ce participant ?")) return;
@@ -50,23 +49,6 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       toast.error(message);
     } finally {
       setRemovingUserId(null);
-    }
-  };
-
-  const handleLeave = async () => {
-    if (!confirm("Quitter cet événement ?")) return;
-    setLeaving(true);
-    try {
-      await api.delete(`/api/events/${eventId}/participants/me`);
-      toast.success("Vous avez quitté l'événement");
-      onChanged();
-    } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec en quittant l'événement";
-      toast.error(message);
-    } finally {
-      setLeaving(false);
     }
   };
 
@@ -207,18 +189,6 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
         <p className="text-sm opacity-60 text-center py-4">
           Aucun participant dans cette catégorie.
         </p>
-      )}
-
-      {!isCreator && user && (
-        <div className="mt-4">
-          <button
-            className="btn btn-outline btn-error btn-sm"
-            onClick={handleLeave}
-            disabled={leaving}
-          >
-            Quitter l'événement
-          </button>
-        </div>
       )}
     </div>
   );
