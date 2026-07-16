@@ -21,14 +21,14 @@ Note : plus de signup ni d'invitations — la creation de compte passe par Disco
 
 ## Events (`/api/events`)
 
-| Method | Path              | Auth                                  | Description                                                            |
-| ------ | ----------------- | ------------------------------------- | ---------------------------------------------------------------------- |
-| POST   | `/`               | requireAuth + requireAdmin            | Create event                                                           |
+| Method | Path              | Auth                                  | Description                                                                          |
+| ------ | ----------------- | ------------------------------------- | ------------------------------------------------------------------------------------ |
+| POST   | `/`               | requireAuth + requireAdmin            | Create event                                                                         |
 | GET    | `/`               | requireAuth                           | List events (USER/ADMIN, `?mine=true` force le filtre participation meme pour ADMIN) |
-| GET    | `/:eventId`       | requireAuth + requireEventParticipant | Event detail                                                           |
-| PATCH  | `/:eventId`       | requireAuth + requireEventCreator     | Update event                                                           |
-| POST   | `/:eventId/purge` | requireAuth + requireAdmin            | Purge silencieuse : supprime tables/participations/jeux, garde l'event |
-| DELETE | `/:eventId`       | requireAuth + requireEventCreator     | Delete event + cascade                                                 |
+| GET    | `/:eventId`       | requireAuth + requireEventParticipant | Event detail                                                                         |
+| PATCH  | `/:eventId`       | requireAuth + requireEventCreator     | Update event                                                                         |
+| POST   | `/:eventId/purge` | requireAuth + requireAdmin            | Purge silencieuse : supprime tables/participations/jeux, garde l'event               |
+| DELETE | `/:eventId`       | requireAuth + requireEventCreator     | Delete event + cascade                                                               |
 
 ## Participants (`/api/events/:eventId/participants`)
 
