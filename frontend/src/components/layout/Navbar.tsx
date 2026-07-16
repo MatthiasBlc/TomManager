@@ -1,6 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useDiscordLogin } from "../../hooks/useDiscordLogin";
 import toast from "react-hot-toast";
+import DiscordIcon from "../common/DiscordIcon";
 import ConnectionStatus from "../common/ConnectionStatus";
 import NotificationBell from "../notifications/NotificationBell";
 import { useIsMobile } from "../../hooks/useIsMobile";
@@ -10,6 +12,7 @@ import BottomTabBar from "./BottomTabBar";
 
 function DesktopNavbar({ isOnline }: { isOnline: boolean }) {
   const { user, logout } = useAuth();
+  const { login, connecting, discordAvailable } = useDiscordLogin("/");
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -48,10 +51,20 @@ function DesktopNavbar({ isOnline }: { isOnline: boolean }) {
             </button>
           </>
         )}
-        {!user && (
-          <Link to="/login" className="btn btn-primary btn-sm">
-            Connexion
-          </Link>
+        {!user && discordAvailable && (
+          <button
+            type="button"
+            className="btn btn-primary btn-sm gap-2"
+            onClick={login}
+            disabled={connecting}
+          >
+            {connecting ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <DiscordIcon size={16} />
+            )}
+            Connexion avec Discord
+          </button>
         )}
       </div>
     </div>

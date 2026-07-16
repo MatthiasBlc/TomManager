@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
 import { renderWithRouter } from "../test/renderWithRouter";
 import HomePage from "../pages/HomePage";
 
@@ -37,12 +37,25 @@ describe("HomePage", () => {
     apiGetMock.mockReset();
   });
 
-  it("renders the welcome message and login button", () => {
+  it("renders the welcome message and the direct Discord login button", () => {
     mockAuth({ user: null, loading: false });
     renderWithRouter(<HomePage />);
     expect(screen.getByText("TomManager")).toBeInTheDocument();
     expect(screen.getByText(/Organisez vos soirées jeux/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Se connecter/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Se connecter avec Discord/i })).toBeInTheDocument();
+  });
+
+  it("launches the Discord OAuth directly when clicking the login button", () => {
+    const initiateDiscordLogin = vi.fn().mockResolvedValue(true);
+    useAuthMock.mockReturnValue({
+      user: null,
+      loading: false,
+      preferences: {},
+      initiateDiscordLogin,
+    });
+    renderWithRouter(<HomePage />);
+    fireEvent.click(screen.getByRole("button", { name: /Se connecter avec Discord/i }));
+    expect(initiateDiscordLogin).toHaveBeenCalledWith("/");
   });
 
   it("does not navigate when still loading auth", () => {

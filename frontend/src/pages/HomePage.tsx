@@ -1,13 +1,18 @@
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useAdminRights } from "../hooks/useAdminRights";
+import { useDiscordLogin } from "../hooks/useDiscordLogin";
 import api from "../config/api";
+import DiscordIcon from "../components/common/DiscordIcon";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
   const { canManageEvents } = useAdminRights();
   const navigate = useNavigate();
+  // Login en un clic : OAuth Discord lance directement depuis la home.
+  // /login reste la cible des redirections d'erreur du callback OAuth.
+  const { login, connecting, discordAvailable } = useDiscordLogin("/");
 
   useEffect(() => {
     if (loading || !user) return;
@@ -45,9 +50,25 @@ export default function HomePage() {
             Organisez vos soirées jeux : événements, tables de jeu de rôle et de société,
             inscriptions et listes d'attente.
           </p>
-          <Link to="/login" className="btn btn-primary btn-block sm:btn-wide">
-            Se connecter
-          </Link>
+          {discordAvailable ? (
+            <button
+              type="button"
+              className="btn btn-primary btn-block sm:btn-wide gap-2"
+              onClick={login}
+              disabled={connecting}
+            >
+              {connecting ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : (
+                <DiscordIcon />
+              )}
+              Se connecter avec Discord
+            </button>
+          ) : (
+            <p className="text-sm opacity-70">
+              La connexion est momentanément indisponible. Contactez un administrateur.
+            </p>
+          )}
         </div>
       </div>
     </div>
