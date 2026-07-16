@@ -29,7 +29,7 @@ export async function addToEvent(eventId: string, boardGameId: string, userId: s
     data: { eventId, boardGameId, broughtByUserId: userId },
     include: {
       boardGame: true,
-      broughtBy: { select: { id: true, username: true } },
+      broughtBy: { select: { id: true, username: true, displayName: true } },
     },
   });
 
@@ -43,7 +43,7 @@ export async function listByEvent(eventId: string, limit?: number) {
     where: { eventId },
     include: {
       boardGame: true,
-      broughtBy: { select: { id: true, username: true } },
+      broughtBy: { select: { id: true, username: true, displayName: true } },
     },
     take: limit,
     orderBy: { createdAt: "asc" },

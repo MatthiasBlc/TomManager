@@ -7,9 +7,14 @@ export interface TableSummary {
   reservedSeats: number;
   startDateTime: string;
   endDateTime: string;
-  creator: { id: string; username: string };
+  creator: { id: string; username: string; displayName?: string | null };
   tags: { id: string; name: string }[];
-  players: { id: string; username: string; isOnReservedSeat: boolean }[];
+  players: {
+    id: string;
+    username: string;
+    displayName?: string | null;
+    isOnReservedSeat: boolean;
+  }[];
   confirmedCount: number;
   waitlistCount: number;
   confirmedOnReserved: number;

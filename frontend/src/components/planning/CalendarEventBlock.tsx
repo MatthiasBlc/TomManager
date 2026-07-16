@@ -12,7 +12,7 @@ interface TableExtendedProps {
   type: "JDR" | "JDS";
   currentUserConflict: boolean;
   conflictingPlayerCount: number;
-  players: { id: string; username: string }[];
+  players: { id: string; username: string; displayName?: string | null }[];
   gmUsername: string;
   tags: { id: string; name: string }[];
 }
@@ -82,7 +82,9 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
         </p>
       )}
       {players.length > 0 && (
-        <p className="text-xs opacity-70 truncate">{players.map((p) => p.username).join(", ")}</p>
+        <p className="text-xs opacity-70 truncate">
+          {players.map((p) => p.displayName ?? p.username).join(", ")}
+        </p>
       )}
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-0.5 mt-0.5">

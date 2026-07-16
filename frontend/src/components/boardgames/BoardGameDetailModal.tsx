@@ -19,7 +19,7 @@ interface Props {
   onClose: () => void;
   game: BoardGame | null;
   linkedTables: { id: string; title: string }[];
-  broughtBy: { id: string; username: string }[];
+  broughtBy: { id: string; username: string; displayName?: string | null }[];
 }
 
 export default function BoardGameDetailModal({
@@ -87,7 +87,7 @@ export default function BoardGameDetailModal({
           <div className="flex flex-wrap gap-1">
             {broughtBy.map((u) => (
               <span key={u.id} className="badge badge-outline badge-sm">
-                {u.username}
+                {u.displayName ?? u.username}
               </span>
             ))}
           </div>
