@@ -107,14 +107,17 @@ export async function mergeBoardGames(
   targetId: string,
   fieldPicks?: MergeFieldPicks
 ) {
-  if (sourceId === targetId) throw createError(400, "Cannot merge a game into itself", { code: "CANNOT_MERGE_SELF" });
+  if (sourceId === targetId)
+    throw createError(400, "Cannot merge a game into itself", { code: "CANNOT_MERGE_SELF" });
 
   const [source, target] = await Promise.all([
     prisma.boardGame.findUnique({ where: { id: sourceId } }),
     prisma.boardGame.findUnique({ where: { id: targetId } }),
   ]);
-  if (!source) throw createError(404, "Source board game not found", { code: "BOARD_GAME_NOT_FOUND" });
-  if (!target) throw createError(404, "Target board game not found", { code: "BOARD_GAME_NOT_FOUND" });
+  if (!source)
+    throw createError(404, "Source board game not found", { code: "BOARD_GAME_NOT_FOUND" });
+  if (!target)
+    throw createError(404, "Target board game not found", { code: "BOARD_GAME_NOT_FOUND" });
 
   // Apply field picks — update target with values from source where requested
   if (fieldPicks) {

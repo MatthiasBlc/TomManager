@@ -27,7 +27,10 @@ export async function createEvent(
 
   if (discordRoleId) {
     const conflict = await prisma.event.findFirst({ where: { discordRoleId } });
-    if (conflict) throw createError(409, "Discord role already linked to another event", { code: "DISCORD_ROLE_ALREADY_LINKED" });
+    if (conflict)
+      throw createError(409, "Discord role already linked to another event", {
+        code: "DISCORD_ROLE_ALREADY_LINKED",
+      });
   }
 
   const event = await prisma.event.create({
@@ -141,7 +144,9 @@ export async function updateEvent(
       where: { discordRoleId: data.discordRoleId, id: { not: eventId } },
     });
     if (conflict) {
-      throw createError(409, "Discord role already linked to another event", { code: "DISCORD_ROLE_ALREADY_LINKED" });
+      throw createError(409, "Discord role already linked to another event", {
+        code: "DISCORD_ROLE_ALREADY_LINKED",
+      });
     }
   }
 

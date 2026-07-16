@@ -63,14 +63,20 @@ export async function createTable(eventId: string, userId: string, data: CreateT
     throw createError(400, "Pitch must not exceed 2000 characters", { code: "PITCH_TOO_LONG" });
   }
   if (data.triggers && data.triggers.length > 1000) {
-    throw createError(400, "Triggers must not exceed 1000 characters", { code: "TRIGGERS_TOO_LONG" });
+    throw createError(400, "Triggers must not exceed 1000 characters", {
+      code: "TRIGGERS_TOO_LONG",
+    });
   }
   if (data.comments && data.comments.length > 1000) {
-    throw createError(400, "Comments must not exceed 1000 characters", { code: "COMMENTS_TOO_LONG" });
+    throw createError(400, "Comments must not exceed 1000 characters", {
+      code: "COMMENTS_TOO_LONG",
+    });
   }
 
   if (!Number.isInteger(data.maxPlayers) || data.maxPlayers < 1 || data.maxPlayers > 20) {
-    throw createError(400, "maxPlayers must be an integer between 1 and 20", { code: "MAX_PLAYERS_INVALID" });
+    throw createError(400, "maxPlayers must be an integer between 1 and 20", {
+      code: "MAX_PLAYERS_INVALID",
+    });
   }
 
   const tableType = data.type ?? "JDR";
@@ -81,8 +87,8 @@ export async function createTable(eventId: string, userId: string, data: CreateT
   const maxReserved = gmTakesASeat ? data.maxPlayers - 1 : data.maxPlayers;
   if (!Number.isInteger(reservedSeats) || reservedSeats < 0 || reservedSeats > maxReserved) {
     throw createError(400, `reservedSeats must be between 0 and ${maxReserved}`, {
-        code: "RESERVED_SEATS_INVALID",
-      });
+      code: "RESERVED_SEATS_INVALID",
+    });
   }
 
   const start = new Date(data.startDateTime);
@@ -102,10 +108,14 @@ export async function createTable(eventId: string, userId: string, data: CreateT
     throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
   if (start < event.startDateTime) {
-    throw createError(400, "Table startDateTime must be within event bounds", { code: "TABLE_START_OUT_OF_BOUNDS" });
+    throw createError(400, "Table startDateTime must be within event bounds", {
+      code: "TABLE_START_OUT_OF_BOUNDS",
+    });
   }
   if (end > event.endDateTime) {
-    throw createError(400, "Table endDateTime must be within event bounds", { code: "TABLE_END_OUT_OF_BOUNDS" });
+    throw createError(400, "Table endDateTime must be within event bounds", {
+      code: "TABLE_END_OUT_OF_BOUNDS",
+    });
   }
 
   if (data.boardGameId) {
@@ -354,13 +364,19 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     throw createError(400, "Pitch must not exceed 2000 characters", { code: "PITCH_TOO_LONG" });
   }
   if (triggers && triggers.length > 1000) {
-    throw createError(400, "Triggers must not exceed 1000 characters", { code: "TRIGGERS_TOO_LONG" });
+    throw createError(400, "Triggers must not exceed 1000 characters", {
+      code: "TRIGGERS_TOO_LONG",
+    });
   }
   if (comments && comments.length > 1000) {
-    throw createError(400, "Comments must not exceed 1000 characters", { code: "COMMENTS_TOO_LONG" });
+    throw createError(400, "Comments must not exceed 1000 characters", {
+      code: "COMMENTS_TOO_LONG",
+    });
   }
   if (!Number.isInteger(newMaxPlayers) || newMaxPlayers < 1 || newMaxPlayers > 20) {
-    throw createError(400, "maxPlayers must be an integer between 1 and 20", { code: "MAX_PLAYERS_INVALID" });
+    throw createError(400, "maxPlayers must be an integer between 1 and 20", {
+      code: "MAX_PLAYERS_INVALID",
+    });
   }
   if (data.startDateTime && isNaN(start.getTime())) {
     throw createError(400, "Invalid startDateTime", { code: "INVALID_START_DATETIME" });
@@ -372,10 +388,14 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     throw createError(400, "endDateTime must be after startDateTime", { code: "END_BEFORE_START" });
   }
   if (start < event!.startDateTime) {
-    throw createError(400, "Table startDateTime must be within event bounds", { code: "TABLE_START_OUT_OF_BOUNDS" });
+    throw createError(400, "Table startDateTime must be within event bounds", {
+      code: "TABLE_START_OUT_OF_BOUNDS",
+    });
   }
   if (end > event!.endDateTime) {
-    throw createError(400, "Table endDateTime must be within event bounds", { code: "TABLE_END_OUT_OF_BOUNDS" });
+    throw createError(400, "Table endDateTime must be within event bounds", {
+      code: "TABLE_END_OUT_OF_BOUNDS",
+    });
   }
 
   const gmIsPlayerChanged =
@@ -391,10 +411,14 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
   // occupation bougent ensemble, seul le total de joueurs change.
   const adjustedMaxPlayers = newMaxPlayers + (gmSeatAdded ? 1 : gmSeatRemoved ? -1 : 0);
   if (adjustedMaxPlayers > 20) {
-    throw createError(400, "Enabling gmIsPlayer would exceed the maximum of 20 players", { code: "GM_PLAYER_EXCEEDS_MAX" });
+    throw createError(400, "Enabling gmIsPlayer would exceed the maximum of 20 players", {
+      code: "GM_PLAYER_EXCEEDS_MAX",
+    });
   }
   if (adjustedMaxPlayers < 1) {
-    throw createError(400, "Disabling gmIsPlayer would leave the table without any seat", { code: "GM_PLAYER_NO_SEAT" });
+    throw createError(400, "Disabling gmIsPlayer would leave the table without any seat", {
+      code: "GM_PLAYER_NO_SEAT",
+    });
   }
 
   const newGmIsPlayer =
@@ -645,7 +669,9 @@ export async function joinTable(tableId: string, userId: string) {
 
     const existing = table.participants.find((p) => p.userId === userId);
     if (existing) {
-      throw createError(409, "Already a participant of this table", { code: "ALREADY_TABLE_PARTICIPANT" });
+      throw createError(409, "Already a participant of this table", {
+        code: "ALREADY_TABLE_PARTICIPANT",
+      });
     }
 
     const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
@@ -780,22 +806,30 @@ export async function setParticipantStatus(
     // et n'occupe jamais une place reservee : son depart se gere par la suppression
     // de la table ou le toggle gmIsPlayer
     if (newStatus === "WAITLIST" && targetUserId === table.createdBy) {
-      throw createError(400, "The GM cannot be moved to the waitlist of their own table", { code: "GM_CANNOT_WAITLIST" });
+      throw createError(400, "The GM cannot be moved to the waitlist of their own table", {
+        code: "GM_CANNOT_WAITLIST",
+      });
     }
     if (seat === "RESERVED" && targetUserId === table.createdBy) {
-      throw createError(400, "The GM's seat can never be a reserved seat", { code: "GM_SEAT_NOT_RESERVABLE" });
+      throw createError(400, "The GM's seat can never be a reserved seat", {
+        code: "GM_SEAT_NOT_RESERVABLE",
+      });
     }
 
     // Retrograder un joueur deja en liste d'attente n'a pas de sens (et
     // reinitialiserait sa position dans la file par effet de bord)
     if (newStatus === "WAITLIST" && participant.status === "WAITLIST") {
-      throw createError(409, "Participant is already on the waitlist", { code: "ALREADY_ON_WAITLIST" });
+      throw createError(409, "Participant is already on the waitlist", {
+        code: "ALREADY_ON_WAITLIST",
+      });
     }
 
     // Le choix de place est toujours explicite : plus de priorite par defaut
     // (le front envoie systematiquement seat, un client API doit faire de meme)
     if (newStatus === "CONFIRMED" && !seat) {
-      throw createError(400, "seat is required when confirming a participant", { code: "SEAT_REQUIRED" });
+      throw createError(400, "seat is required when confirming a participant", {
+        code: "SEAT_REQUIRED",
+      });
     }
 
     // reservedSeats est un total fixe configure par le MJ (cf. updateTable).
@@ -955,7 +989,9 @@ export async function kickPlayer(tableId: string, userId: string) {
   // Meme logique que setParticipantStatus : le siege du MJ ne se libere pas par
   // un kick, mais par la suppression de la table ou le toggle gmIsPlayer
   if (table.createdBy === userId) {
-    throw createError(400, "The GM cannot be removed from their own table", { code: "GM_CANNOT_BE_KICKED" });
+    throw createError(400, "The GM cannot be removed from their own table", {
+      code: "GM_CANNOT_BE_KICKED",
+    });
   }
 
   let promotedUserId: string | null = null;

@@ -22,7 +22,9 @@ export async function addToEvent(eventId: string, boardGameId: string, userId: s
     },
   });
   if (existing) {
-    throw createError(409, "You already added this board game to this event", { code: "BOARD_GAME_DUPLICATE" });
+    throw createError(409, "You already added this board game to this event", {
+      code: "BOARD_GAME_DUPLICATE",
+    });
   }
 
   const entry = await prisma.eventBoardGame.create({
@@ -76,7 +78,9 @@ export async function removeFromEvent(id: string, userId: string, userRole: stri
   }
 
   if (entry.broughtByUserId !== userId && userRole !== "ADMIN") {
-    throw createError(403, "Only the owner or an admin can remove this board game", { code: "BOARD_GAME_REMOVE_FORBIDDEN" });
+    throw createError(403, "Only the owner or an admin can remove this board game", {
+      code: "BOARD_GAME_REMOVE_FORBIDDEN",
+    });
   }
 
   await prisma.eventBoardGame.delete({ where: { id } });

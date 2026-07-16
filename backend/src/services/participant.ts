@@ -99,7 +99,9 @@ export async function removeParticipant(eventId: string, userId: string) {
   }
 
   if (event.createdBy === userId) {
-    throw createError(400, "Cannot remove the event creator", { code: "CANNOT_REMOVE_EVENT_CREATOR" });
+    throw createError(400, "Cannot remove the event creator", {
+      code: "CANNOT_REMOVE_EVENT_CREATOR",
+    });
   }
 
   const participation = await prisma.eventParticipation.findUnique({
@@ -133,7 +135,9 @@ export async function leaveEvent(eventId: string, userId: string) {
   }
 
   if (event.createdBy === userId) {
-    throw createError(400, "The event creator cannot leave the event", { code: "EVENT_CREATOR_CANNOT_LEAVE" });
+    throw createError(400, "The event creator cannot leave the event", {
+      code: "EVENT_CREATOR_CANNOT_LEAVE",
+    });
   }
 
   const participation = await prisma.eventParticipation.findUnique({
