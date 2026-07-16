@@ -4,6 +4,7 @@ import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useConfirm } from "../../contexts/ConfirmContext";
+import { getErrorMessage } from "../../config/apiErrors";
 
 interface CreateEventForm {
   name: string;
@@ -58,10 +59,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
       onCreated();
       onClose();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de la création de l'événement";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de la création de l'événement"));
     }
   };
 

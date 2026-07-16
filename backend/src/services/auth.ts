@@ -12,16 +12,16 @@ export async function login(identifier: string, password: string) {
   });
 
   if (!user) {
-    throw createError(401, "Invalid credentials");
+    throw createError(401, "Invalid credentials", { code: "INVALID_CREDENTIALS" });
   }
 
   if (!user.passwordHash) {
-    throw createError(401, "Invalid credentials");
+    throw createError(401, "Invalid credentials", { code: "INVALID_CREDENTIALS" });
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
-    throw createError(401, "Invalid credentials");
+    throw createError(401, "Invalid credentials", { code: "INVALID_CREDENTIALS" });
   }
 
   return {
@@ -40,7 +40,7 @@ export async function getMe(userId: string) {
   });
 
   if (!user) {
-    throw createError(404, "User not found");
+    throw createError(404, "User not found", { code: "USER_NOT_FOUND" });
   }
 
   return {

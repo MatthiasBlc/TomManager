@@ -6,6 +6,7 @@ import { useConfirm } from "../../contexts/ConfirmContext";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import EmptyState from "../common/EmptyState";
+import { getErrorMessage } from "../../config/apiErrors";
 
 interface Participant {
   userId: string;
@@ -51,10 +52,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       toast.success("Participant retiré");
       onChanged();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec du retrait du participant";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec du retrait du participant"));
     } finally {
       setRemovingUserId(null);
     }

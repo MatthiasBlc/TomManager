@@ -5,6 +5,7 @@ import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useConfirm } from "../../contexts/ConfirmContext";
+import { getErrorMessage } from "../../config/apiErrors";
 
 interface EditEventForm {
   name: string;
@@ -88,10 +89,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
       onUpdated();
       onClose();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de la purge";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de la purge"));
     } finally {
       setPurging(false);
     }
@@ -110,10 +108,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
       onUpdated();
       onClose();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de la mise à jour de l'événement";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de la mise à jour de l'événement"));
     }
   };
 

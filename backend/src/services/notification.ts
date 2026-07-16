@@ -94,10 +94,10 @@ export async function markAsRead(id: string, userId: string) {
   const notification = await prisma.notification.findUnique({ where: { id } });
 
   if (!notification) {
-    throw createError(404, "Notification not found");
+    throw createError(404, "Notification not found", { code: "NOTIFICATION_NOT_FOUND" });
   }
   if (notification.userId !== userId) {
-    throw createError(403, "Forbidden");
+    throw createError(403, "Forbidden", { code: "FORBIDDEN" });
   }
 
   return prisma.notification.update({
@@ -118,10 +118,10 @@ export async function deleteNotification(id: string, userId: string) {
   const notification = await prisma.notification.findUnique({ where: { id } });
 
   if (!notification) {
-    throw createError(404, "Notification not found");
+    throw createError(404, "Notification not found", { code: "NOTIFICATION_NOT_FOUND" });
   }
   if (notification.userId !== userId) {
-    throw createError(403, "Forbidden");
+    throw createError(403, "Forbidden", { code: "FORBIDDEN" });
   }
 
   await prisma.notification.delete({ where: { id } });

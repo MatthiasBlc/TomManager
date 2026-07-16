@@ -30,7 +30,7 @@ export async function updatePreferences(
     where: { id: userId, deletedAt: null },
   });
   if (!user) {
-    throw createError(404, "User not found");
+    throw createError(404, "User not found", { code: "USER_NOT_FOUND" });
   }
 
   const keys = Object.keys(updates) as PreferenceKey[];
@@ -38,7 +38,7 @@ export async function updatePreferences(
     RESTRICTED_PREFIXES.some((prefix) => key.startsWith(prefix))
   );
   if (touchesRestricted && user.role !== "ADMIN") {
-    throw createError(403, "Admin access required");
+    throw createError(403, "Admin access required", { code: "ADMIN_REQUIRED" });
   }
 
   await prisma.$transaction(

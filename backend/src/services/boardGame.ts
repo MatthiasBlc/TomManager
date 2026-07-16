@@ -62,7 +62,7 @@ export async function getBoardGame(boardGameId: string) {
   });
 
   if (!boardGame) {
-    throw createError(404, "Board game not found");
+    throw createError(404, "Board game not found", { code: "BOARD_GAME_NOT_FOUND" });
   }
 
   // Lazy fetch : si c'est un stub BGG (description NULL), enrichir
@@ -94,7 +94,7 @@ export async function getBoardGame(boardGameId: string) {
 export async function createBoardGame(data: CreateBoardGameData) {
   const name = data.name?.trim();
   if (!name) {
-    throw createError(400, "Name is required");
+    throw createError(400, "Name is required", { code: "NAME_REQUIRED" });
   }
 
   return prisma.boardGame.create({

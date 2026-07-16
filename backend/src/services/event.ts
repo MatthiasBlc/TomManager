@@ -9,25 +9,25 @@ export async function createEvent(
   discordRoleId?: string | null
 ) {
   if (!name || name.trim().length === 0 || name.trim().length > 100) {
-    throw createError(400, "Name must be between 1 and 100 characters");
+    throw createError(400, "Name must be between 1 and 100 characters", { code: "NAME_LENGTH" });
   }
 
   const start = new Date(startDateTime);
   const end = new Date(endDateTime);
 
   if (isNaN(start.getTime())) {
-    throw createError(400, "Invalid startDateTime");
+    throw createError(400, "Invalid startDateTime", { code: "INVALID_START_DATETIME" });
   }
   if (isNaN(end.getTime())) {
-    throw createError(400, "Invalid endDateTime");
+    throw createError(400, "Invalid endDateTime", { code: "INVALID_END_DATETIME" });
   }
   if (end <= start) {
-    throw createError(400, "endDateTime must be after startDateTime");
+    throw createError(400, "endDateTime must be after startDateTime", { code: "END_BEFORE_START" });
   }
 
   if (discordRoleId) {
     const conflict = await prisma.event.findFirst({ where: { discordRoleId } });
-    if (conflict) throw createError(409, "Discord role already linked to another event");
+    if (conflict) throw createError(409, "Discord role already linked to another event", { code: "DISCORD_ROLE_ALREADY_LINKED" });
   }
 
   const event = await prisma.event.create({
@@ -106,7 +106,7 @@ export async function getEvent(eventId: string) {
   });
 
   if (!event) {
-    throw createError(404, "Event not found");
+    throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
 
   return {
@@ -141,13 +141,13 @@ export async function updateEvent(
       where: { discordRoleId: data.discordRoleId, id: { not: eventId } },
     });
     if (conflict) {
-      throw createError(409, "Discord role already linked to another event");
+      throw createError(409, "Discord role already linked to another event", { code: "DISCORD_ROLE_ALREADY_LINKED" });
     }
   }
 
   const existing = await prisma.event.findUnique({ where: { id: eventId } });
   if (!existing) {
-    throw createError(404, "Event not found");
+    throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
 
   const name = data.name !== undefined ? data.name.trim() : existing.name;
@@ -155,16 +155,16 @@ export async function updateEvent(
   const end = data.endDateTime ? new Date(data.endDateTime) : existing.endDateTime;
 
   if (!name || name.length === 0 || name.length > 100) {
-    throw createError(400, "Name must be between 1 and 100 characters");
+    throw createError(400, "Name must be between 1 and 100 characters", { code: "NAME_LENGTH" });
   }
   if (data.startDateTime && isNaN(start.getTime())) {
-    throw createError(400, "Invalid startDateTime");
+    throw createError(400, "Invalid startDateTime", { code: "INVALID_START_DATETIME" });
   }
   if (data.endDateTime && isNaN(end.getTime())) {
-    throw createError(400, "Invalid endDateTime");
+    throw createError(400, "Invalid endDateTime", { code: "INVALID_END_DATETIME" });
   }
   if (end <= start) {
-    throw createError(400, "endDateTime must be after startDateTime");
+    throw createError(400, "endDateTime must be after startDateTime", { code: "END_BEFORE_START" });
   }
 
   const datesChanged =
@@ -216,7 +216,7 @@ export async function updateEvent(
 export async function purgeEvent(eventId: string) {
   const existing = await prisma.event.findUnique({ where: { id: eventId } });
   if (!existing) {
-    throw createError(404, "Event not found");
+    throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
 
   await prisma.$transaction(async (tx) => {
@@ -229,7 +229,7 @@ export async function purgeEvent(eventId: string) {
 export async function deleteEvent(eventId: string) {
   const existing = await prisma.event.findUnique({ where: { id: eventId } });
   if (!existing) {
-    throw createError(404, "Event not found");
+    throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
 
   await prisma.$transaction(async (tx) => {
