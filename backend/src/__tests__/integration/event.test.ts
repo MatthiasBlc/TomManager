@@ -301,4 +301,53 @@ describe("Event API", () => {
       expect(res.status).toBe(204);
     });
   });
+
+  describe("discordRoleId persistence", () => {
+    it("GET detail returns discordRoleId and PATCH without the field keeps it", async () => {
+      const { cookie } = await setupAdmin();
+      const createRes = await request.post("/api/events").set("Cookie", cookie).send({
+        name: "Event avec role",
+        startDateTime: "2026-06-01T10:00:00Z",
+        endDateTime: "2026-06-01T18:00:00Z",
+        discordRoleId: "123456789012345678",
+      });
+      const eventId = createRes.body.data.id;
+
+      const detail = await request.get(`/api/events/${eventId}`).set("Cookie", cookie);
+      expect(detail.body.data.discordRoleId).toBe("123456789012345678");
+
+      // Un PATCH sans le champ (ex. edition par un createur non admin) ne doit pas l'effacer
+      await request.patch(`/api/events/${eventId}`).set("Cookie", cookie).send({
+        name: "Event renomme",
+      });
+      const after = await prisma.event.findUnique({ where: { id: eventId } });
+      expect(after?.discordRoleId).toBe("123456789012345678");
+    });
+  });
+
+  describe("POST /api/events/:eventId/purge", () => {
+    it("should wipe tables and participations but keep the event", async () => {
+      const { cookie } = await setupAdmin();
+      const event = await createTestEvent(cookie);
+
+      await request.post(`/api/events/${event.id}/tables`).set("Cookie", cookie).send({
+        title: "Table a purger",
+        type: "JDR",
+        maxPlayers: 4,
+        startDateTime: "2026-06-01T11:00:00Z",
+        endDateTime: "2026-06-01T13:00:00Z",
+      });
+
+      const res = await request.post(`/api/events/${event.id}/purge`).set("Cookie", cookie);
+
+      expect(res.status).toBe(200);
+      // Pas de role Discord lie : aucun re-import de participants
+      expect(res.body.data.resyncedParticipants).toBeNull();
+
+      const found = await prisma.event.findUnique({ where: { id: event.id } });
+      expect(found).not.toBeNull();
+      expect(await prisma.gameTable.count({ where: { eventId: event.id } })).toBe(0);
+      expect(await prisma.eventParticipation.count({ where: { eventId: event.id } })).toBe(0);
+    });
+  });
 });

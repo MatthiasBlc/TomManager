@@ -21,6 +21,7 @@ interface EventDetail {
   startDateTime: string;
   endDateTime: string;
   createdBy: string;
+  discordRoleId?: string | null;
   participants: {
     userId: string;
     username: string;
