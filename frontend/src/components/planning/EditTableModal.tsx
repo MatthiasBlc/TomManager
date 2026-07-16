@@ -7,6 +7,7 @@ import ResponsiveModal from "../common/ResponsiveModal";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import NumberStepper from "../common/NumberStepper";
 import BoardGameSelector, { SelectedGame } from "./BoardGameSelector";
+import { getErrorMessage } from "../../config/apiErrors";
 
 const DURATION_OPTIONS = [
   { label: "30 min", value: 30 },
@@ -236,10 +237,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
       onUpdated();
       onClose();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de la mise à jour";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de la mise à jour"));
     }
   };
 

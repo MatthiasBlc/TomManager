@@ -12,6 +12,7 @@ import EmptyState from "../common/EmptyState";
 import { SkeletonTableDetail } from "../common/Skeleton";
 import BoardGameDetailModal from "../boardgames/BoardGameDetailModal";
 import { formatSeatSummary } from "./computeLayout";
+import { getErrorMessage } from "../../config/apiErrors";
 
 interface BoardGameSummary {
   id: string;
@@ -150,10 +151,7 @@ export default function TableDetailModal({
       fetchTable();
       onTableUpdated();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de l'inscription";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de l'inscription"));
     } finally {
       setPendingAction(null);
     }
@@ -199,10 +197,7 @@ export default function TableDetailModal({
       fetchTable();
       onTableUpdated();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec lors de l'ajout à la table";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec lors de l'ajout à la table"));
     } finally {
       setPendingAction(null);
     }

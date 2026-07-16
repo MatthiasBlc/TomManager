@@ -6,6 +6,9 @@ import { Sentry } from "../util/sentry";
 export function errorHandler(err: HttpError, req: Request, res: Response, _next: NextFunction) {
   const status = err.status || 500;
   const message = err.message || "Internal Server Error";
+  // Code stable optionnel (createError(status, msg, { code })) : le front mappe
+  // ce code vers un message francais ; `message` reste en anglais pour logs/tests
+  const code = typeof err.code === "string" ? err.code : undefined;
 
   if (status >= 500) {
     logger.error({ err }, "Server error");
@@ -22,6 +25,7 @@ export function errorHandler(err: HttpError, req: Request, res: Response, _next:
     error: {
       message,
       status,
+      ...(code ? { code } : {}),
     },
   });
 }

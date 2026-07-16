@@ -7,6 +7,7 @@ import type { PreferenceKey } from "../types/preferences";
 import { useTheme } from "../contexts/ThemeContext";
 import InfoTooltip from "../components/common/InfoTooltip";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { getErrorMessage } from "../config/apiErrors";
 
 const ADMIN_RIGHT_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
   {
@@ -128,10 +129,7 @@ export default function ProfilePage() {
       await unlinkDiscord();
       toast.success("Compte Discord délié");
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec du déliage du compte Discord";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec du déliage du compte Discord"));
     } finally {
       setUnlinking(false);
     }
