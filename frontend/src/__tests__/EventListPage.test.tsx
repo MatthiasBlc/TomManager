@@ -69,13 +69,26 @@ describe("EventListPage", () => {
     expect(await screen.findByText("Aucun événement pour l'instant")).toBeInTheDocument();
   });
 
-  it("shows Create Event button only for ADMIN on desktop", async () => {
+  it("shows Create Event button for an ADMIN with event management enabled on desktop", async () => {
+    apiGetMock.mockResolvedValue({ data: { data: [] } });
+    useAuthMock.mockReturnValue({
+      user: { id: "u1", role: "ADMIN" },
+      preferences: { "admin.events": true },
+    });
+    useIsMobileMock.mockReturnValue(false);
+    renderWithRouter(<EventListPage />);
+
+    expect(await screen.findByRole("button", { name: "Créer un événement" })).toBeInTheDocument();
+  });
+
+  it("does not show Create Event button for an ADMIN without event management enabled", async () => {
     apiGetMock.mockResolvedValue({ data: { data: [] } });
     useAuthMock.mockReturnValue({ user: { id: "u1", role: "ADMIN" } });
     useIsMobileMock.mockReturnValue(false);
     renderWithRouter(<EventListPage />);
 
-    expect(await screen.findByRole("button", { name: "Créer un événement" })).toBeInTheDocument();
+    await screen.findByText("Aucun événement pour l'instant");
+    expect(screen.queryByRole("button", { name: "Créer un événement" })).not.toBeInTheDocument();
   });
 
   it("does not show Create Event button for regular users", async () => {
@@ -89,7 +102,10 @@ describe("EventListPage", () => {
 
   it("uses FAB button for create on mobile instead of top button", async () => {
     apiGetMock.mockResolvedValue({ data: { data: [] } });
-    useAuthMock.mockReturnValue({ user: { id: "u1", role: "ADMIN" } });
+    useAuthMock.mockReturnValue({
+      user: { id: "u1", role: "ADMIN" },
+      preferences: { "admin.events": true },
+    });
     useIsMobileMock.mockReturnValue(true);
     renderWithRouter(<EventListPage />);
 

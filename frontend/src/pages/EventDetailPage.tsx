@@ -10,7 +10,7 @@ import BoardGameTab from "../components/boardgames/BoardGameTab";
 import PlanningTab from "../components/planning/PlanningTab";
 import ResponsiveModal from "../components/common/ResponsiveModal";
 import AdminBoardGamePanel from "../components/admin/AdminBoardGamePanel";
-import { useGameDbManagement } from "../hooks/useGameDbManagement";
+import { useAdminRights } from "../hooks/useAdminRights";
 import { SkeletonEventDetail } from "../components/common/Skeleton";
 
 interface EventDetail {
@@ -41,9 +41,8 @@ export default function EventDetailPage() {
 
   const isMobile = useIsMobile();
   const isCreator = user?.id === event?.createdBy;
-  const isAdmin = user?.role === "ADMIN";
-  const { gameDbEnabled } = useGameDbManagement();
-  const canManageEvent = isCreator || isAdmin;
+  const { canManageEvents, gameDbEnabled } = useAdminRights();
+  const canManageEvent = isCreator || canManageEvents;
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -112,7 +111,7 @@ export default function EventDetailPage() {
             <button className="btn btn-outline btn-error btn-sm" onClick={handleDelete}>
               Supprimer
             </button>
-            {isAdmin && gameDbEnabled && (
+            {gameDbEnabled && (
               <button className="btn btn-outline btn-sm" onClick={() => setShowGameDb(true)}>
                 Gérer la base de jeux
               </button>
