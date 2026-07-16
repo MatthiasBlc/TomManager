@@ -5,6 +5,16 @@ Historique utilisateur : `docs/changelogs/`.
 
 ---
 
+## Polish audit (juillet 2026) - priorite haute
+
+Audit complet du 2026-07-16 : 15 points de polish restants (confirm() natifs,
+erreurs backend en anglais, accents notifications, anti double-submit, deep-links...).
+
+- Spec detaillee : `docs/features/polish-audit/SPEC_POLISH_AUDIT.md`
+- Decoupage en lots : `docs/features/polish-audit/ROADMAP.md`
+
+---
+
 ## Phase 16 : Features avancees (Priorite basse, a discuter)
 
 - [ ] **Export** : export PDF du planning d'un event
