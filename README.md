@@ -18,7 +18,8 @@ Application web de gestion d'evenements JDR (jeux de role et jeux de societe) av
 - **Evenements** : creation et gestion par les admins, inscription des membres
 - **Planning collaboratif** : tables de jeu avec creneaux, tags, GM, participants
 - **Inventaire de jeux** : recherche et import depuis BoardGameGeek, fiches completes (image, description, stats), jeux apportes par evenement
-- **Auth Discord** : connexion via Discord, surnom serveur affiche, acces automatique par role de serveur
+- **Auth Discord** : connexion via Discord (mode de connexion unique dans l'interface), surnom serveur affiche, acces automatique par role de serveur
+- **Droits d'administration a la carte** : chaque admin active/desactive individuellement ses droits (evenements, tables, jeux) depuis son profil
 - **Notifications temps reel** : via Socket.io
 - **Bot Discord** : sync automatique des participations lors des changements de role
 - **Participants** : liste avec tri (nom, date, role) et filtre (admins / membres)
@@ -84,7 +85,7 @@ L'application est disponible sur `http://localhost:3000`.
 | `SENTRY_DSN`            | DSN Sentry pour le tracking d'erreurs backend                  | Non    |
 | `VITE_SENTRY_DSN`       | DSN Sentry pour le tracking d'erreurs frontend                 | Non    |
 
-> Les variables Discord sont optionnelles. Sans elles, le bouton "Login avec Discord" est masque et l'auth locale seule est disponible.
+> Discord est le seul mode de connexion disponible dans l'interface. Si les variables Discord ne sont pas configurees, la connexion est indisponible pour les utilisateurs (l'endpoint API `/api/auth/login` existe encore mais n'est plus accessible depuis l'UI).
 
 ## Commandes
 
