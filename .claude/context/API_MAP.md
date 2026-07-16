@@ -24,7 +24,7 @@ Note : plus de signup ni d'invitations — la creation de compte passe par Disco
 | Method | Path              | Auth                                  | Description                                                            |
 | ------ | ----------------- | ------------------------------------- | ---------------------------------------------------------------------- |
 | POST   | `/`               | requireAuth + requireAdmin            | Create event                                                           |
-| GET    | `/`               | requireAuth                           | List events (USER/ADMIN)                                               |
+| GET    | `/`               | requireAuth                           | List events (USER/ADMIN, `?mine=true` force le filtre participation meme pour ADMIN) |
 | GET    | `/:eventId`       | requireAuth + requireEventParticipant | Event detail                                                           |
 | PATCH  | `/:eventId`       | requireAuth + requireEventCreator     | Update event                                                           |
 | POST   | `/:eventId/purge` | requireAuth + requireAdmin            | Purge silencieuse : supprime tables/participations/jeux, garde l'event |
