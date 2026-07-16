@@ -1,5 +1,13 @@
 # API Map - Endpoints
 
+## Format d'erreur
+
+`{ error: { message, status, code? } }` — `message` reste en anglais (logs/tests) ;
+`code` est un identifiant stable optionnel (ex. `TABLE_NOT_FOUND`, `NO_OPEN_SEAT`)
+pose via `createError(status, msg, { code })` et mappe en francais cote front dans
+`frontend/src/config/apiErrors.ts` (`getErrorMessage(err, fallback)`). Ne jamais
+afficher le message anglais brut dans l'UI.
+
 ## Health
 
 | Method | Path      | Description  |

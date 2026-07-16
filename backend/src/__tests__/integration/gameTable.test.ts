@@ -487,6 +487,8 @@ describe("GameTable API", () => {
         .set("Cookie", playerCookie);
 
       expect(res.status).toBe(409);
+      // Code stable expose pour le mapping francais cote front
+      expect(res.body.error.code).toBe("ALREADY_TABLE_PARTICIPANT");
     });
 
     it("should reject 400 if GM tries to join own table", async () => {
@@ -679,6 +681,7 @@ describe("GameTable API", () => {
         .send({ status: "CONFIRMED", seat: "FREE" });
 
       expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("NO_OPEN_SEAT");
     });
 
     it("should demote a CONFIRMED player to WAITLIST", async () => {

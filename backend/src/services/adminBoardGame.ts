@@ -65,7 +65,7 @@ export async function updateBoardGame(
   }
 ) {
   const game = await prisma.boardGame.findUnique({ where: { id } });
-  if (!game) throw createError(404, "Board game not found");
+  if (!game) throw createError(404, "Board game not found", { code: "BOARD_GAME_NOT_FOUND" });
 
   return prisma.boardGame.update({
     where: { id },
@@ -81,7 +81,7 @@ export async function deleteBoardGame(id: string) {
       _count: { select: { eventBoardGames: true, gameTables: true } },
     },
   });
-  if (!game) throw createError(404, "Board game not found");
+  if (!game) throw createError(404, "Board game not found", { code: "BOARD_GAME_NOT_FOUND" });
 
   // EventBoardGame has no onDelete cascade — delete manually first
   await prisma.eventBoardGame.deleteMany({ where: { boardGameId: id } });
@@ -107,14 +107,17 @@ export async function mergeBoardGames(
   targetId: string,
   fieldPicks?: MergeFieldPicks
 ) {
-  if (sourceId === targetId) throw createError(400, "Cannot merge a game into itself");
+  if (sourceId === targetId)
+    throw createError(400, "Cannot merge a game into itself", { code: "CANNOT_MERGE_SELF" });
 
   const [source, target] = await Promise.all([
     prisma.boardGame.findUnique({ where: { id: sourceId } }),
     prisma.boardGame.findUnique({ where: { id: targetId } }),
   ]);
-  if (!source) throw createError(404, "Source board game not found");
-  if (!target) throw createError(404, "Target board game not found");
+  if (!source)
+    throw createError(404, "Source board game not found", { code: "BOARD_GAME_NOT_FOUND" });
+  if (!target)
+    throw createError(404, "Target board game not found", { code: "BOARD_GAME_NOT_FOUND" });
 
   // Apply field picks — update target with values from source where requested
   if (fieldPicks) {

@@ -4,7 +4,11 @@ import EditTableModal from "../components/planning/EditTableModal";
 const apiPatchMock = vi.fn();
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
+const confirmDialogMock = vi.fn();
 
+vi.mock("../contexts/ConfirmContext", () => ({
+  useConfirm: () => confirmDialogMock,
+}));
 vi.mock("../config/api", () => ({
   default: { patch: (...args: unknown[]) => apiPatchMock(...args), get: vi.fn() },
 }));
@@ -62,7 +66,7 @@ describe("EditTableModal", () => {
     apiPatchMock.mockReset().mockResolvedValue({});
     toastSuccess.mockReset();
     toastError.mockReset();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+    confirmDialogMock.mockReset().mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -123,14 +127,14 @@ describe("EditTableModal", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Enregistrer$/i }));
 
     await waitFor(() => {
-      expect(window.confirm).toHaveBeenCalled();
+      expect(confirmDialogMock).toHaveBeenCalled();
       expect(apiPatchMock).toHaveBeenCalled();
       expect(onUpdated).toHaveBeenCalled();
     });
   });
 
   it("blocks submission when the demotion warning is declined", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
+    confirmDialogMock.mockResolvedValue(false);
     render(
       <EditTableModal
         open={true}
@@ -155,7 +159,7 @@ describe("EditTableModal", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Enregistrer$/i }));
 
     await waitFor(() => {
-      expect(window.confirm).toHaveBeenCalled();
+      expect(confirmDialogMock).toHaveBeenCalled();
     });
     expect(apiPatchMock).not.toHaveBeenCalled();
   });
@@ -194,7 +198,7 @@ describe("EditTableModal", () => {
       expect(apiPatchMock).toHaveBeenCalled();
       expect(onUpdated).toHaveBeenCalled();
     });
-    expect(window.confirm).not.toHaveBeenCalled();
+    expect(confirmDialogMock).not.toHaveBeenCalled();
   });
 
   it("shows a hint that a seat will be created/deleted when the gmIsPlayer checkbox changes", async () => {
@@ -252,6 +256,6 @@ describe("EditTableModal", () => {
       expect(apiPatchMock).toHaveBeenCalled();
       expect(onUpdated).toHaveBeenCalled();
     });
-    expect(window.confirm).not.toHaveBeenCalled();
+    expect(confirmDialogMock).not.toHaveBeenCalled();
   });
 });

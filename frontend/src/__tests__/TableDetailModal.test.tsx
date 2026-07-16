@@ -9,7 +9,11 @@ const useAuthMock = vi.fn();
 const useIsMobileMock = vi.fn();
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
+const confirmDialogMock = vi.fn();
 
+vi.mock("../contexts/ConfirmContext", () => ({
+  useConfirm: () => confirmDialogMock,
+}));
 vi.mock("../config/api", () => ({
   default: {
     get: (...args: unknown[]) => apiGetMock(...args),
@@ -110,7 +114,7 @@ describe("TableDetailModal", () => {
     toastError.mockReset();
     useIsMobileMock.mockReset().mockReturnValue(false);
     useAuthMock.mockReset();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+    confirmDialogMock.mockReset().mockResolvedValue(true);
   });
 
   afterEach(() => {

@@ -2,9 +2,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
+import { useConfirm } from "../contexts/ConfirmContext";
 import type { PreferenceKey } from "../types/preferences";
 import { useTheme } from "../contexts/ThemeContext";
 import InfoTooltip from "../components/common/InfoTooltip";
+import { usePageTitle } from "../hooks/usePageTitle";
+import { getErrorMessage } from "../config/apiErrors";
 
 const ADMIN_RIGHT_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
   {
@@ -38,9 +41,11 @@ const BETA_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
 ];
 
 export default function ProfilePage() {
+  usePageTitle("Profil");
   const { user, preferences, updatePreferences, logout, initiateDiscordLogin, unlinkDiscord } =
     useAuth();
   const { theme, toggleTheme } = useTheme();
+  const confirmDialog = useConfirm();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [linking, setLinking] = useState(false);
@@ -71,13 +76,16 @@ export default function ProfilePage() {
 
   const handleMasterToggle = async () => {
     const enabling = !allRightsEnabled;
-    if (
-      enabling &&
-      !confirm(
-        "Activer tous les droits d'administration ?\n\nLes options Beta ne sont pas concernées."
-      )
-    )
-      return;
+    if (enabling) {
+      const ok = await confirmDialog({
+        title: "Droits d'administration",
+        message:
+          "Activer tous les droits d'administration ?\n\nLes options Beta ne sont pas concernées.",
+        confirmLabel: "Tout activer",
+        variant: "warning",
+      });
+      if (!ok) return;
+    }
     try {
       await updatePreferences({
         "admin.events": enabling,
@@ -108,21 +116,20 @@ export default function ProfilePage() {
   };
 
   const handleUnlink = async () => {
-    if (
-      !confirm(
-        "Délier votre compte Discord ? Vous ne pourrez plus vous connecter avec Discord tant qu'il n'est pas relié."
-      )
-    )
-      return;
+    const ok = await confirmDialog({
+      title: "Délier Discord",
+      message:
+        "Délier votre compte Discord ? Vous ne pourrez plus vous connecter avec Discord tant qu'il n'est pas relié.",
+      confirmLabel: "Délier",
+      variant: "warning",
+    });
+    if (!ok) return;
     setUnlinking(true);
     try {
       await unlinkDiscord();
       toast.success("Compte Discord délié");
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec du déliage du compte Discord";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec du déliage du compte Discord"));
     } finally {
       setUnlinking(false);
     }

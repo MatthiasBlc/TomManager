@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
 import { useAdminRights } from "../../hooks/useAdminRights";
+import { useConfirm } from "../../contexts/ConfirmContext";
+import { getErrorMessage } from "../../config/apiErrors";
 
 interface EditEventForm {
   name: string;
@@ -33,15 +35,31 @@ function toLocalDatetime(iso: string) {
 
 export default function EditEventModal({ open, onClose, onUpdated, event }: Props) {
   const { canManageEvents } = useAdminRights();
+  const confirmDialog = useConfirm();
   const {
     register,
     handleSubmit,
     reset,
     getValues,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<EditEventForm>();
   const [purging, setPurging] = useState(false);
   const busy = isSubmitting || purging;
+
+  // Garde "modifications non enregistrees" (backdrop, Echap, swipe-down, Annuler)
+  const handleClose = async () => {
+    if (isDirty) {
+      const ok = await confirmDialog({
+        title: "Abandonner les modifications ?",
+        message: "Les modifications non enregistrées seront perdues.",
+        confirmLabel: "Abandonner",
+        cancelLabel: "Continuer la saisie",
+        variant: "warning",
+      });
+      if (!ok) return;
+    }
+    onClose();
+  };
 
   useEffect(() => {
     if (event && open) {
@@ -56,12 +74,14 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
 
   const handlePurge = async () => {
     if (!event) return;
-    if (
-      !confirm(
-        "Purger cet event ?\n\nCela supprimera définitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-même sera conservé."
-      )
-    )
-      return;
+    const ok = await confirmDialog({
+      title: "Purger l'événement",
+      message:
+        "Purger cet event ?\n\nCela supprimera définitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-même sera conservé.",
+      confirmLabel: "Purger",
+      variant: "danger",
+    });
+    if (!ok) return;
     setPurging(true);
     try {
       await api.post(`/api/events/${event.id}/purge`);
@@ -69,10 +89,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
       onUpdated();
       onClose();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de la purge";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de la purge"));
     } finally {
       setPurging(false);
     }
@@ -91,17 +108,14 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
       onUpdated();
       onClose();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de la mise à jour de l'événement";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de la mise à jour de l'événement"));
     }
   };
 
   if (!event) return null;
 
   return (
-    <ResponsiveModal open={open} onClose={onClose} title="Modifier l'événement">
+    <ResponsiveModal open={open} onClose={handleClose} title="Modifier l'événement">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ee-name">
@@ -194,7 +208,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
             </button>
           )}
           <div className="flex gap-2 ml-auto">
-            <button type="button" className="btn" onClick={onClose} disabled={busy}>
+            <button type="button" className="btn" onClick={handleClose} disabled={busy}>
               Annuler
             </button>
             <button type="submit" className="btn btn-primary" disabled={busy}>

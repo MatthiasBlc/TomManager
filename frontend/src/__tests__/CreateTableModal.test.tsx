@@ -5,6 +5,9 @@ const apiPostMock = vi.fn();
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
 
+vi.mock("../contexts/ConfirmContext", () => ({
+  useConfirm: () => vi.fn().mockResolvedValue(true),
+}));
 vi.mock("../config/api", () => ({
   default: { post: (...args: unknown[]) => apiPostMock(...args), get: vi.fn() },
 }));

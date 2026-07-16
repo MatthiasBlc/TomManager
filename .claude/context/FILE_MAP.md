@@ -85,7 +85,8 @@ src/
 ├── App.tsx                # Router + AuthProvider + Toaster + offline banner
 ├── vite-env.d.ts          # Vite types
 ├── config/
-│   └── api.ts             # Axios instance
+│   ├── api.ts             # Axios instance
+│   └── apiErrors.ts       # Mapping code erreur backend -> message francais + getErrorMessage
 ├── components/
 │   ├── admin/
 │   │   └── AdminBoardGamePanel.tsx    # Gestion base de jeux (recherche, edit, delete, merge) — admin + toggle gameDb
@@ -99,6 +100,8 @@ src/
 │   │   ├── FAB.tsx                # Floating Action Button (fixed bottom-right, safe-area aware)
 │   │   ├── Skeleton.tsx           # Reusable skeleton loaders
 │   │   ├── EmptyState.tsx         # Reusable empty state (icon + title + description + CTA)
+│   │   ├── ScrollToTop.tsx        # window.scrollTo(0,0) au changement de pathname
+│   │   ├── ConfirmModal.tsx       # Dialogue de confirmation themable (variant danger/warning/neutral)
 │   │   └── NumberStepper.tsx      # +/- numeric input (min/max/step)
 │   ├── notifications/
 │   │   ├── NotificationBell.tsx   # Bell icon + badge + dropdown
@@ -140,9 +143,12 @@ src/
 │   ├── useIsMobile.ts           # matchMedia hook for mobile breakpoint detection
 │   ├── useOnlineStatus.ts       # Browser online/offline detection hook
 │   ├── useTheme.ts              # Dark/light mode, localStorage, data-theme sur <html>
+│   ├── useModalA11y.ts          # A11y modales : Echap, focus trap, auto-focus, restore focus (pile de modales)
+│   ├── usePageTitle.ts          # document.title par page ("<titre> - TomManager")
 │   └── useAdminRights.ts        # Droits admin opt-in derives des preferences (canManageEvents, canModerateTables, canModerateGames, pdfExportEnabled, gameDbEnabled)
 ├── contexts/
 │   ├── AuthContext.tsx     # AuthProvider, useAuth hook (login, logout, Discord link/unlink, preferences + updatePreferences optimiste)
+│   ├── ConfirmContext.tsx  # ConfirmProvider + useConfirm : confirmDialog(options) -> Promise<boolean>
 │   └── ThemeContext.tsx    # ThemeProvider, useTheme hook
 ├── types/
 │   └── preferences.ts      # PreferenceKey, Preferences, DEFAULT_PREFERENCES

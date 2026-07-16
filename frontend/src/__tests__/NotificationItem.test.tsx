@@ -17,7 +17,12 @@ const baseNotification: Notification = {
 
 function LocationProbe() {
   const loc = useLocation();
-  return <div data-testid="location">{loc.pathname}</div>;
+  return (
+    <div data-testid="location">
+      {loc.pathname}
+      {loc.search}
+    </div>
+  );
 }
 
 function renderItem(
@@ -82,6 +87,12 @@ describe("NotificationItem", () => {
     renderItem({ ...baseNotification, metadata: { eventId: "ev42" } });
     fireEvent.click(screen.getByText("Table mise a jour"));
     expect(screen.getByTestId("location")).toHaveTextContent("/events/ev42/planning");
+  });
+
+  it("deep-links to the table modal when metadata.tableId is set", () => {
+    renderItem({ ...baseNotification, metadata: { eventId: "ev42", tableId: "t7" } });
+    fireEvent.click(screen.getByText("Table mise a jour"));
+    expect(screen.getByTestId("location")).toHaveTextContent("/events/ev42/planning?table=t7");
   });
 
   it("calls onDelete and stops propagation when the delete button is clicked", () => {

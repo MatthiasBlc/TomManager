@@ -56,21 +56,27 @@ interface CreateTableData {
 export async function createTable(eventId: string, userId: string, data: CreateTableData) {
   const title = data.title?.trim();
   if (!title || title.length === 0 || title.length > 150) {
-    throw createError(400, "Title must be between 1 and 150 characters");
+    throw createError(400, "Title must be between 1 and 150 characters", { code: "TITLE_LENGTH" });
   }
 
   if (data.pitch && data.pitch.length > 2000) {
-    throw createError(400, "Pitch must not exceed 2000 characters");
+    throw createError(400, "Pitch must not exceed 2000 characters", { code: "PITCH_TOO_LONG" });
   }
   if (data.triggers && data.triggers.length > 1000) {
-    throw createError(400, "Triggers must not exceed 1000 characters");
+    throw createError(400, "Triggers must not exceed 1000 characters", {
+      code: "TRIGGERS_TOO_LONG",
+    });
   }
   if (data.comments && data.comments.length > 1000) {
-    throw createError(400, "Comments must not exceed 1000 characters");
+    throw createError(400, "Comments must not exceed 1000 characters", {
+      code: "COMMENTS_TOO_LONG",
+    });
   }
 
   if (!Number.isInteger(data.maxPlayers) || data.maxPlayers < 1 || data.maxPlayers > 20) {
-    throw createError(400, "maxPlayers must be an integer between 1 and 20");
+    throw createError(400, "maxPlayers must be an integer between 1 and 20", {
+      code: "MAX_PLAYERS_INVALID",
+    });
   }
 
   const tableType = data.type ?? "JDR";
@@ -80,37 +86,43 @@ export async function createTable(eventId: string, userId: string, data: CreateT
   const reservedSeats = data.reservedSeats ?? 0;
   const maxReserved = gmTakesASeat ? data.maxPlayers - 1 : data.maxPlayers;
   if (!Number.isInteger(reservedSeats) || reservedSeats < 0 || reservedSeats > maxReserved) {
-    throw createError(400, `reservedSeats must be between 0 and ${maxReserved}`);
+    throw createError(400, `reservedSeats must be between 0 and ${maxReserved}`, {
+      code: "RESERVED_SEATS_INVALID",
+    });
   }
 
   const start = new Date(data.startDateTime);
   const end = new Date(data.endDateTime);
   if (isNaN(start.getTime())) {
-    throw createError(400, "Invalid startDateTime");
+    throw createError(400, "Invalid startDateTime", { code: "INVALID_START_DATETIME" });
   }
   if (isNaN(end.getTime())) {
-    throw createError(400, "Invalid endDateTime");
+    throw createError(400, "Invalid endDateTime", { code: "INVALID_END_DATETIME" });
   }
   if (end <= start) {
-    throw createError(400, "endDateTime must be after startDateTime");
+    throw createError(400, "endDateTime must be after startDateTime", { code: "END_BEFORE_START" });
   }
 
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
-    throw createError(404, "Event not found");
+    throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
   if (start < event.startDateTime) {
-    throw createError(400, "Table startDateTime must be within event bounds");
+    throw createError(400, "Table startDateTime must be within event bounds", {
+      code: "TABLE_START_OUT_OF_BOUNDS",
+    });
   }
   if (end > event.endDateTime) {
-    throw createError(400, "Table endDateTime must be within event bounds");
+    throw createError(400, "Table endDateTime must be within event bounds", {
+      code: "TABLE_END_OUT_OF_BOUNDS",
+    });
   }
 
   if (data.boardGameId) {
     const game = await prisma.boardGame.findUnique({
       where: { id: data.boardGameId },
     });
-    if (!game) throw createError(400, "Board game not found");
+    if (!game) throw createError(400, "Board game not found", { code: "BOARD_GAME_NOT_FOUND" });
   }
 
   const table = await prisma.$transaction(async (tx) => {
@@ -283,7 +295,7 @@ export async function getTable(tableId: string) {
   });
 
   if (!table) {
-    throw createError(404, "Table not found");
+    throw createError(404, "Table not found", { code: "TABLE_NOT_FOUND" });
   }
 
   return {
@@ -322,7 +334,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     include: { participants: true },
   });
   if (!existing) {
-    throw createError(404, "Table not found");
+    throw createError(404, "Table not found", { code: "TABLE_NOT_FOUND" });
   }
 
   const event = await prisma.event.findUnique({
@@ -333,7 +345,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     const game = await prisma.boardGame.findUnique({
       where: { id: data.boardGameId },
     });
-    if (!game) throw createError(400, "Board game not found");
+    if (!game) throw createError(400, "Board game not found", { code: "BOARD_GAME_NOT_FOUND" });
   }
 
   const title = data.title !== undefined ? data.title.trim() : existing.title;
@@ -346,34 +358,44 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
   const boardGameId = data.boardGameId !== undefined ? data.boardGameId : existing.boardGameId;
 
   if (!title || title.length === 0 || title.length > 150) {
-    throw createError(400, "Title must be between 1 and 150 characters");
+    throw createError(400, "Title must be between 1 and 150 characters", { code: "TITLE_LENGTH" });
   }
   if (pitch && pitch.length > 2000) {
-    throw createError(400, "Pitch must not exceed 2000 characters");
+    throw createError(400, "Pitch must not exceed 2000 characters", { code: "PITCH_TOO_LONG" });
   }
   if (triggers && triggers.length > 1000) {
-    throw createError(400, "Triggers must not exceed 1000 characters");
+    throw createError(400, "Triggers must not exceed 1000 characters", {
+      code: "TRIGGERS_TOO_LONG",
+    });
   }
   if (comments && comments.length > 1000) {
-    throw createError(400, "Comments must not exceed 1000 characters");
+    throw createError(400, "Comments must not exceed 1000 characters", {
+      code: "COMMENTS_TOO_LONG",
+    });
   }
   if (!Number.isInteger(newMaxPlayers) || newMaxPlayers < 1 || newMaxPlayers > 20) {
-    throw createError(400, "maxPlayers must be an integer between 1 and 20");
+    throw createError(400, "maxPlayers must be an integer between 1 and 20", {
+      code: "MAX_PLAYERS_INVALID",
+    });
   }
   if (data.startDateTime && isNaN(start.getTime())) {
-    throw createError(400, "Invalid startDateTime");
+    throw createError(400, "Invalid startDateTime", { code: "INVALID_START_DATETIME" });
   }
   if (data.endDateTime && isNaN(end.getTime())) {
-    throw createError(400, "Invalid endDateTime");
+    throw createError(400, "Invalid endDateTime", { code: "INVALID_END_DATETIME" });
   }
   if (end <= start) {
-    throw createError(400, "endDateTime must be after startDateTime");
+    throw createError(400, "endDateTime must be after startDateTime", { code: "END_BEFORE_START" });
   }
   if (start < event!.startDateTime) {
-    throw createError(400, "Table startDateTime must be within event bounds");
+    throw createError(400, "Table startDateTime must be within event bounds", {
+      code: "TABLE_START_OUT_OF_BOUNDS",
+    });
   }
   if (end > event!.endDateTime) {
-    throw createError(400, "Table endDateTime must be within event bounds");
+    throw createError(400, "Table endDateTime must be within event bounds", {
+      code: "TABLE_END_OUT_OF_BOUNDS",
+    });
   }
 
   const gmIsPlayerChanged =
@@ -389,10 +411,14 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
   // occupation bougent ensemble, seul le total de joueurs change.
   const adjustedMaxPlayers = newMaxPlayers + (gmSeatAdded ? 1 : gmSeatRemoved ? -1 : 0);
   if (adjustedMaxPlayers > 20) {
-    throw createError(400, "Enabling gmIsPlayer would exceed the maximum of 20 players");
+    throw createError(400, "Enabling gmIsPlayer would exceed the maximum of 20 players", {
+      code: "GM_PLAYER_EXCEEDS_MAX",
+    });
   }
   if (adjustedMaxPlayers < 1) {
-    throw createError(400, "Disabling gmIsPlayer would leave the table without any seat");
+    throw createError(400, "Disabling gmIsPlayer would leave the table without any seat", {
+      code: "GM_PLAYER_NO_SEAT",
+    });
   }
 
   const newGmIsPlayer =
@@ -413,7 +439,9 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
       data.reservedSeats < 0 ||
       data.reservedSeats > maxReserved
     ) {
-      throw createError(400, `reservedSeats must be between 0 and ${maxReserved}`);
+      throw createError(400, `reservedSeats must be between 0 and ${maxReserved}`, {
+        code: "RESERVED_SEATS_INVALID",
+      });
     }
     newReservedSeats = data.reservedSeats;
   }
@@ -570,8 +598,8 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
       participantUserIds.map((userId) => ({
         userId,
         type: "TABLE_UPDATED" as const,
-        title: "Table modifiee",
-        message: `La table "${existing.title}" a ete modifiee`,
+        title: "Table modifiée",
+        message: `La table "${existing.title}" a été modifiée`,
         metadata: { eventId: existing.eventId, tableId },
       }))
     );
@@ -598,7 +626,7 @@ export async function deleteTable(tableId: string, deletedByUserId: string) {
     include: { participants: true },
   });
   if (!existing) {
-    throw createError(404, "Table not found");
+    throw createError(404, "Table not found", { code: "TABLE_NOT_FOUND" });
   }
 
   const participantUserIds = existing.participants
@@ -614,8 +642,8 @@ export async function deleteTable(tableId: string, deletedByUserId: string) {
       participantUserIds.map((userId) => ({
         userId,
         type: "TABLE_DELETED" as const,
-        title: "Table supprimee",
-        message: `La table "${existing.title}" a ete supprimee`,
+        title: "Table supprimée",
+        message: `La table "${existing.title}" a été supprimée`,
         metadata: { eventId: existing.eventId, tableId },
       }))
     );
@@ -631,17 +659,19 @@ export async function joinTable(tableId: string, userId: string) {
     });
 
     if (!table) {
-      throw createError(404, "Table not found");
+      throw createError(404, "Table not found", { code: "TABLE_NOT_FOUND" });
     }
 
     const gmTakesASeat = table.type === "JDS" || table.gmIsPlayer;
     if (table.createdBy === userId && !gmTakesASeat) {
-      throw createError(400, "The GM cannot join their own table");
+      throw createError(400, "The GM cannot join their own table", { code: "GM_CANNOT_JOIN" });
     }
 
     const existing = table.participants.find((p) => p.userId === userId);
     if (existing) {
-      throw createError(409, "Already a participant of this table");
+      throw createError(409, "Already a participant of this table", {
+        code: "ALREADY_TABLE_PARTICIPANT",
+      });
     }
 
     const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
@@ -675,7 +705,7 @@ export async function leaveTable(tableId: string, userId: string) {
   });
 
   if (!table) {
-    throw createError(404, "Table not found");
+    throw createError(404, "Table not found", { code: "TABLE_NOT_FOUND" });
   }
 
   // Le MJ qui quitte supprime la table
@@ -692,8 +722,8 @@ export async function leaveTable(tableId: string, userId: string) {
         participantUserIds.map((pid) => ({
           userId: pid,
           type: "TABLE_DELETED" as const,
-          title: "Table supprimee",
-          message: `La table "${table.title}" a ete supprimee (le MJ a quitte)`,
+          title: "Table supprimée",
+          message: `La table "${table.title}" a été supprimée (le MJ a quitté)`,
           metadata: { eventId: table.eventId, tableId },
         }))
       );
@@ -709,7 +739,7 @@ export async function leaveTable(tableId: string, userId: string) {
     });
 
     if (!participant) {
-      throw createError(404, "Not a participant of this table");
+      throw createError(404, "Not a participant of this table", { code: "NOT_TABLE_PARTICIPANT" });
     }
 
     await tx.gameTableParticipant.delete({ where: { id: participant.id } });
@@ -743,8 +773,8 @@ export async function leaveTable(tableId: string, userId: string) {
     await createNotification({
       userId: promotedUserId,
       type: "WAITLIST_PROMOTED",
-      title: "Place confirmee",
-      message: `Tu es confirme pour la table "${table.title}"`,
+      title: "Place confirmée",
+      message: `Tu es confirmé pour la table "${table.title}"`,
       metadata: { eventId: table.eventId, tableId },
     });
   }
@@ -764,34 +794,42 @@ export async function setParticipantStatus(
     });
 
     if (!table) {
-      throw createError(404, "Table not found");
+      throw createError(404, "Table not found", { code: "TABLE_NOT_FOUND" });
     }
 
     const participant = table.participants.find((p) => p.userId === targetUserId);
     if (!participant) {
-      throw createError(404, "Participant not found");
+      throw createError(404, "Participant not found", { code: "PARTICIPANT_NOT_FOUND" });
     }
 
     // Le MJ assis a sa propre table (JDS ou MJ joueur) ne passe pas par la waitlist
     // et n'occupe jamais une place reservee : son depart se gere par la suppression
     // de la table ou le toggle gmIsPlayer
     if (newStatus === "WAITLIST" && targetUserId === table.createdBy) {
-      throw createError(400, "The GM cannot be moved to the waitlist of their own table");
+      throw createError(400, "The GM cannot be moved to the waitlist of their own table", {
+        code: "GM_CANNOT_WAITLIST",
+      });
     }
     if (seat === "RESERVED" && targetUserId === table.createdBy) {
-      throw createError(400, "The GM's seat can never be a reserved seat");
+      throw createError(400, "The GM's seat can never be a reserved seat", {
+        code: "GM_SEAT_NOT_RESERVABLE",
+      });
     }
 
     // Retrograder un joueur deja en liste d'attente n'a pas de sens (et
     // reinitialiserait sa position dans la file par effet de bord)
     if (newStatus === "WAITLIST" && participant.status === "WAITLIST") {
-      throw createError(409, "Participant is already on the waitlist");
+      throw createError(409, "Participant is already on the waitlist", {
+        code: "ALREADY_ON_WAITLIST",
+      });
     }
 
     // Le choix de place est toujours explicite : plus de priorite par defaut
     // (le front envoie systematiquement seat, un client API doit faire de meme)
     if (newStatus === "CONFIRMED" && !seat) {
-      throw createError(400, "seat is required when confirming a participant");
+      throw createError(400, "seat is required when confirming a participant", {
+        code: "SEAT_REQUIRED",
+      });
     }
 
     // reservedSeats est un total fixe configure par le MJ (cf. updateTable).
@@ -816,7 +854,7 @@ export async function setParticipantStatus(
       } else if (desiredReserved) {
         const availableReserved = table.reservedSeats - confirmedOnReserved;
         if (availableReserved <= 0) {
-          throw createError(409, "No reserved seat available");
+          throw createError(409, "No reserved seat available", { code: "NO_RESERVED_SEAT" });
         }
         await tx.gameTableParticipant.update({
           where: { id: participant.id },
@@ -831,7 +869,7 @@ export async function setParticipantStatus(
         // conversion automatique d'updateTable (availableNormalRoom).
         const availableNormal = normalCapacity - confirmedNormal;
         if (availableNormal <= 0) {
-          throw createError(409, "No open seat available");
+          throw createError(409, "No open seat available", { code: "NO_OPEN_SEAT" });
         }
         await tx.gameTableParticipant.update({
           where: { id: participant.id },
@@ -844,7 +882,7 @@ export async function setParticipantStatus(
 
       if (seat === "RESERVED") {
         if (availableReserved <= 0) {
-          throw createError(409, "No reserved seat available");
+          throw createError(409, "No reserved seat available", { code: "NO_RESERVED_SEAT" });
         }
         await tx.gameTableParticipant.update({
           where: { id: participant.id },
@@ -853,7 +891,7 @@ export async function setParticipantStatus(
         usedReservedSeat = true;
       } else {
         if (availableNormal <= 0) {
-          throw createError(409, "No open seat available");
+          throw createError(409, "No open seat available", { code: "NO_OPEN_SEAT" });
         }
         await tx.gameTableParticipant.update({
           where: { id: participant.id },
@@ -890,8 +928,8 @@ export async function setParticipantStatus(
       await createNotification({
         userId: targetUserId,
         type: "RESERVED_SEAT_ASSIGNED",
-        title: "Place reservee attribuee",
-        message: `Le MJ t'a attribue une place reservee pour la table "${table.title}"`,
+        title: "Place réservée attribuée",
+        message: `Le MJ t'a attribué une place réservée pour la table "${table.title}"`,
         metadata: { eventId: table.eventId, tableId },
       });
     }
@@ -908,16 +946,16 @@ export async function setParticipantStatus(
       await createNotification({
         userId: targetUserId,
         type: "RESERVED_SEAT_ASSIGNED",
-        title: "Place reservee attribuee",
-        message: `Le MJ t'a attribue une place reservee pour la table "${table.title}"`,
+        title: "Place réservée attribuée",
+        message: `Le MJ t'a attribué une place réservée pour la table "${table.title}"`,
         metadata: { eventId: table.eventId, tableId },
       });
     } else {
       await createNotification({
         userId: targetUserId,
         type: "WAITLIST_PROMOTED",
-        title: "Place confirmee",
-        message: `Tu es confirme pour la table "${table.title}"`,
+        title: "Place confirmée",
+        message: `Tu es confirmé pour la table "${table.title}"`,
         metadata: { eventId: table.eventId, tableId },
       });
     }
@@ -930,7 +968,7 @@ export async function setParticipantStatus(
       userId: targetUserId,
       type: "WAITLIST_DEMOTED",
       title: "Place en liste d'attente",
-      message: `Tu as ete place en liste d'attente pour la table "${table.title}"`,
+      message: `Tu as été placé en liste d'attente pour la table "${table.title}"`,
       metadata: { eventId: table.eventId, tableId },
     });
   }
@@ -945,13 +983,15 @@ export async function kickPlayer(tableId: string, userId: string) {
   });
 
   if (!table) {
-    throw createError(404, "Table not found");
+    throw createError(404, "Table not found", { code: "TABLE_NOT_FOUND" });
   }
 
   // Meme logique que setParticipantStatus : le siege du MJ ne se libere pas par
   // un kick, mais par la suppression de la table ou le toggle gmIsPlayer
   if (table.createdBy === userId) {
-    throw createError(400, "The GM cannot be removed from their own table");
+    throw createError(400, "The GM cannot be removed from their own table", {
+      code: "GM_CANNOT_BE_KICKED",
+    });
   }
 
   let promotedUserId: string | null = null;
@@ -962,7 +1002,7 @@ export async function kickPlayer(tableId: string, userId: string) {
     });
 
     if (!participant) {
-      throw createError(404, "Not a participant of this table");
+      throw createError(404, "Not a participant of this table", { code: "NOT_TABLE_PARTICIPANT" });
     }
 
     await tx.gameTableParticipant.delete({ where: { id: participant.id } });
@@ -991,8 +1031,8 @@ export async function kickPlayer(tableId: string, userId: string) {
   await createNotification({
     userId,
     type: "PLAYER_KICKED",
-    title: "Expulse d'une table",
-    message: `Tu as ete expulse de la table "${table.title}"`,
+    title: "Expulsé d'une table",
+    message: `Tu as été expulsé de la table "${table.title}"`,
     metadata: { eventId: table.eventId, tableId },
   });
   if (promotedUserId) {
@@ -1003,8 +1043,8 @@ export async function kickPlayer(tableId: string, userId: string) {
     await createNotification({
       userId: promotedUserId,
       type: "WAITLIST_PROMOTED",
-      title: "Place confirmee",
-      message: `Tu es confirme pour la table "${table.title}"`,
+      title: "Place confirmée",
+      message: `Tu es confirmé pour la table "${table.title}"`,
       metadata: { eventId: table.eventId, tableId },
     });
   }

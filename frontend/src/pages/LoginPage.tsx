@@ -5,8 +5,10 @@ import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
 import { DISCORD_ERROR_MESSAGES } from "../config/discordErrors";
 import DiscordIcon from "../components/common/DiscordIcon";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function LoginPage() {
+  usePageTitle("Connexion");
   const { user, loading, initiateDiscordLogin } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();

@@ -8,6 +8,11 @@ const toastError = vi.fn();
 const unlinkDiscordMock = vi.fn();
 const initiateDiscordLoginMock = vi.fn();
 const updatePreferencesMock = vi.fn();
+const confirmDialogMock = vi.fn();
+
+vi.mock("../contexts/ConfirmContext", () => ({
+  useConfirm: () => confirmDialogMock,
+}));
 
 const defaultPreferences = {
   "admin.events": false,
@@ -49,7 +54,7 @@ describe("ProfilePage", () => {
     unlinkDiscordMock.mockReset();
     initiateDiscordLoginMock.mockReset();
     updatePreferencesMock.mockReset();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+    confirmDialogMock.mockReset().mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -223,12 +228,12 @@ describe("ProfilePage", () => {
     });
     renderWithRouter(<ProfilePage />);
     fireEvent.click(screen.getByRole("button", { name: /Délier/i }));
-    expect(window.confirm).toHaveBeenCalled();
+    expect(confirmDialogMock).toHaveBeenCalled();
     await waitFor(() => expect(unlinkDiscordMock).toHaveBeenCalled());
   });
 
-  it("does not unlink Discord when confirmation is declined", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
+  it("does not unlink Discord when confirmation is declined", async () => {
+    confirmDialogMock.mockResolvedValue(false);
     useAuthMock.mockReturnValue({
       user: {
         ...baseUser,
@@ -241,6 +246,7 @@ describe("ProfilePage", () => {
     });
     renderWithRouter(<ProfilePage />);
     fireEvent.click(screen.getByRole("button", { name: /Délier/i }));
+    await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
     expect(unlinkDiscordMock).not.toHaveBeenCalled();
   });
 
@@ -297,23 +303,26 @@ describe("ProfilePage", () => {
       expect(updatePreferencesMock).toHaveBeenCalledWith({ "admin.events": true });
     });
 
-    it("enabling the master toggle asks for confirmation and enables all rights but not beta", () => {
+    it("enabling the master toggle asks for confirmation and enables all rights but not beta", async () => {
       useAuthMock.mockReturnValue(adminAuth());
       renderWithRouter(<ProfilePage />);
       fireEvent.click(screen.getByLabelText("Activer tous les droits"));
-      expect(window.confirm).toHaveBeenCalled();
-      expect(updatePreferencesMock).toHaveBeenCalledWith({
-        "admin.events": true,
-        "admin.tables": true,
-        "admin.games": true,
-      });
+      expect(confirmDialogMock).toHaveBeenCalled();
+      await waitFor(() =>
+        expect(updatePreferencesMock).toHaveBeenCalledWith({
+          "admin.events": true,
+          "admin.tables": true,
+          "admin.games": true,
+        })
+      );
     });
 
-    it("does nothing when the master toggle confirmation is declined", () => {
-      vi.spyOn(window, "confirm").mockReturnValue(false);
+    it("does nothing when the master toggle confirmation is declined", async () => {
+      confirmDialogMock.mockResolvedValue(false);
       useAuthMock.mockReturnValue(adminAuth());
       renderWithRouter(<ProfilePage />);
       fireEvent.click(screen.getByLabelText("Activer tous les droits"));
+      await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
       expect(updatePreferencesMock).not.toHaveBeenCalled();
     });
 
@@ -323,7 +332,7 @@ describe("ProfilePage", () => {
       );
       renderWithRouter(<ProfilePage />);
       fireEvent.click(screen.getByLabelText("Activer tous les droits"));
-      expect(window.confirm).not.toHaveBeenCalled();
+      expect(confirmDialogMock).not.toHaveBeenCalled();
       expect(updatePreferencesMock).toHaveBeenCalledWith({
         "admin.events": false,
         "admin.tables": false,

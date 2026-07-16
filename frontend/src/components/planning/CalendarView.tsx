@@ -14,6 +14,7 @@ import CalendarEventBlock from "./CalendarEventBlock";
 const FC_PLUGINS = [timeGridPlugin, interactionPlugin];
 
 import { type TableSummary } from "./computeLayout";
+import { getErrorMessage } from "../../config/apiErrors";
 
 interface EventBounds {
   startDateTime: string;
@@ -129,10 +130,7 @@ export default function CalendarView({
         onTableUpdated();
       } catch (err: unknown) {
         revertFunc();
-        const message =
-          (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-            ?.message || "Échec du déplacement";
-        toast.error(message);
+        toast.error(getErrorMessage(err, "Échec du déplacement"));
       }
     },
     [eventId, onTableUpdated]

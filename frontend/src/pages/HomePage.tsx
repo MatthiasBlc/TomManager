@@ -5,8 +5,10 @@ import { useAdminRights } from "../hooks/useAdminRights";
 import { useDiscordLogin } from "../hooks/useDiscordLogin";
 import api from "../config/api";
 import DiscordIcon from "../components/common/DiscordIcon";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function HomePage() {
+  usePageTitle();
   const { user, loading } = useAuth();
   const { canManageEvents } = useAdminRights();
   const navigate = useNavigate();

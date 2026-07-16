@@ -4,6 +4,7 @@ import api from "../../config/api";
 import BoardGameSearchInput from "./BoardGameSearchInput";
 import ManualBoardGameForm from "./ManualBoardGameForm";
 import ResponsiveModal from "../common/ResponsiveModal";
+import { getErrorMessage } from "../../config/apiErrors";
 
 interface BoardGameResult {
   id: string | null;
@@ -41,10 +42,7 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
       onAdded();
       handleClose();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de l'ajout du jeu";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de l'ajout du jeu"));
     }
   };
 
@@ -67,10 +65,7 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
           });
           await addToEvent(res.data.data.id);
         } catch (err: unknown) {
-          const message =
-            (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
-              ?.error?.message || "Échec de l'import depuis BGG";
-          toast.error(message);
+          toast.error(getErrorMessage(err, "Échec de l'import depuis BGG"));
         }
       }
     } finally {
@@ -90,10 +85,7 @@ export default function AddBoardGameModal({ open, onClose, onAdded, eventId }: P
       await addToEvent(res.data.data.id);
       setMode("search");
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de la création du jeu";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de la création du jeu"));
     }
   };
 

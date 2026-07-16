@@ -8,6 +8,7 @@ import CreateEventModal from "../components/events/CreateEventModal";
 import FAB from "../components/common/FAB";
 import { SkeletonCardGrid } from "../components/common/Skeleton";
 import EmptyState from "../components/common/EmptyState";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 interface EventSummary {
   id: string;
@@ -18,6 +19,7 @@ interface EventSummary {
 }
 
 export default function EventListPage() {
+  usePageTitle("Événements");
   const { canManageEvents } = useAdminRights();
   const isMobile = useIsMobile();
   const [events, setEvents] = useState<EventSummary[]>([]);

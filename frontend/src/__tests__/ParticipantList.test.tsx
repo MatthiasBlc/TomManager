@@ -6,9 +6,13 @@ const useIsMobileMock = vi.fn();
 const apiDeleteMock = vi.fn();
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
+const confirmDialogMock = vi.fn();
 
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => useAuthMock(),
+}));
+vi.mock("../contexts/ConfirmContext", () => ({
+  useConfirm: () => confirmDialogMock,
 }));
 vi.mock("../hooks/useIsMobile", () => ({
   useIsMobile: () => useIsMobileMock(),
@@ -45,7 +49,7 @@ describe("ParticipantList", () => {
     apiDeleteMock.mockReset();
     toastSuccess.mockReset();
     toastError.mockReset();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+    confirmDialogMock.mockReset().mockResolvedValue(true);
   });
 
   afterEach(() => {

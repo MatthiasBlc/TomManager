@@ -10,7 +10,7 @@ export async function listParticipants(
 ) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
-    throw createError(404, "Event not found");
+    throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
 
   const take = Math.min(options.limit ?? 50, 100);
@@ -95,11 +95,13 @@ async function cascadeRemoveFromTables(
 export async function removeParticipant(eventId: string, userId: string) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
-    throw createError(404, "Event not found");
+    throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
 
   if (event.createdBy === userId) {
-    throw createError(400, "Cannot remove the event creator");
+    throw createError(400, "Cannot remove the event creator", {
+      code: "CANNOT_REMOVE_EVENT_CREATOR",
+    });
   }
 
   const participation = await prisma.eventParticipation.findUnique({
@@ -107,7 +109,7 @@ export async function removeParticipant(eventId: string, userId: string) {
   });
 
   if (!participation) {
-    throw createError(404, "Participant not found");
+    throw createError(404, "Participant not found", { code: "PARTICIPANT_NOT_FOUND" });
   }
 
   await prisma.$transaction(async (tx) => {
@@ -120,8 +122,8 @@ export async function removeParticipant(eventId: string, userId: string) {
   await createNotification({
     userId,
     type: "PARTICIPANT_REMOVED",
-    title: "Retire d'un event",
-    message: `Tu as ete retire de l'event "${event.name}"`,
+    title: "Retiré d'un événement",
+    message: `Tu as été retiré de l'événement "${event.name}"`,
     metadata: { eventId },
   });
 }
@@ -129,11 +131,13 @@ export async function removeParticipant(eventId: string, userId: string) {
 export async function leaveEvent(eventId: string, userId: string) {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
-    throw createError(404, "Event not found");
+    throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
 
   if (event.createdBy === userId) {
-    throw createError(400, "The event creator cannot leave the event");
+    throw createError(400, "The event creator cannot leave the event", {
+      code: "EVENT_CREATOR_CANNOT_LEAVE",
+    });
   }
 
   const participation = await prisma.eventParticipation.findUnique({
@@ -141,7 +145,7 @@ export async function leaveEvent(eventId: string, userId: string) {
   });
 
   if (!participation) {
-    throw createError(404, "Not a participant of this event");
+    throw createError(404, "Not a participant of this event", { code: "NOT_EVENT_PARTICIPANT" });
   }
 
   await prisma.$transaction(async (tx) => {

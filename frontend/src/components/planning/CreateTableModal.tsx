@@ -4,8 +4,10 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import TagInput from "./TagInput";
 import ResponsiveModal from "../common/ResponsiveModal";
+import { useConfirm } from "../../contexts/ConfirmContext";
 import NumberStepper from "../common/NumberStepper";
 import BoardGameSelector, { SelectedGame } from "./BoardGameSelector";
+import { getErrorMessage } from "../../config/apiErrors";
 
 const DURATION_OPTIONS = [
   { label: "30 min", value: 30 },
@@ -52,6 +54,7 @@ export default function CreateTableModal({
   eventStartDate,
   eventEndDate,
 }: Props) {
+  const confirmDialog = useConfirm();
   const [tags, setTags] = useState<string[]>([]);
   const [selectedGame, setSelectedGame] = useState<SelectedGame | null>(null);
   const {
@@ -60,7 +63,7 @@ export default function CreateTableModal({
     reset,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<CreateTableForm>({
     defaultValues: {
       durationMinutes: 120,
@@ -121,6 +124,26 @@ export default function CreateTableModal({
     }
   }, [open, prefilledSlot, setValue]);
 
+  // Garde "modifications non enregistrees" : tags et jeu vivent hors react-hook-form
+  const hasUnsavedChanges = isDirty || tags.length > 0 || selectedGame !== null;
+
+  const handleClose = async () => {
+    if (hasUnsavedChanges) {
+      const ok = await confirmDialog({
+        title: "Abandonner les modifications ?",
+        message: "Les informations saisies seront perdues.",
+        confirmLabel: "Abandonner",
+        cancelLabel: "Continuer la saisie",
+        variant: "warning",
+      });
+      if (!ok) return;
+    }
+    reset();
+    setTags([]);
+    setSelectedGame(null);
+    onClose();
+  };
+
   const onSubmit = async (data: CreateTableForm) => {
     try {
       const startDateTime = new Date(`${data.date}T${data.startTime}`);
@@ -147,15 +170,12 @@ export default function CreateTableModal({
       onCreated();
       onClose();
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec de la création";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "Échec de la création"));
     }
   };
 
   return (
-    <ResponsiveModal open={open} onClose={onClose} title="Créer une table">
+    <ResponsiveModal open={open} onClose={handleClose} title="Créer une table">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ct-title">
@@ -279,7 +299,9 @@ export default function CreateTableModal({
             <NumberStepper
               id="ct-maxPlayers"
               value={maxPlayers}
-              onChange={(v) => setValue("maxPlayers", v, { shouldValidate: true })}
+              onChange={(v) =>
+                setValue("maxPlayers", v, { shouldValidate: true, shouldDirty: true })
+              }
               min={1}
               max={20}
             />
@@ -291,7 +313,9 @@ export default function CreateTableModal({
             <NumberStepper
               id="ct-reservedSeats"
               value={reservedSeats}
-              onChange={(v) => setValue("reservedSeats", v, { shouldValidate: true })}
+              onChange={(v) =>
+                setValue("reservedSeats", v, { shouldValidate: true, shouldDirty: true })
+              }
               min={0}
               max={reservedSeatsMax}
             />
@@ -366,10 +390,11 @@ export default function CreateTableModal({
         </div>
 
         <div className="flex gap-2 justify-end pt-2">
-          <button type="button" className="btn" onClick={onClose}>
+          <button type="button" className="btn" onClick={handleClose}>
             Annuler
           </button>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting && <span className="loading loading-spinner loading-xs" />}
             Créer
           </button>
         </div>

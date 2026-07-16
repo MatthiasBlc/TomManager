@@ -53,9 +53,12 @@ export default function NotificationItem({ notification, onMarkAsRead, onDelete 
     if (!notification.read) {
       onMarkAsRead(notification.id);
     }
-    // Navigate to relevant page based on metadata
+    // Navigate to relevant page based on metadata ; si la notification porte
+    // sur une table precise, deep-link vers sa modale (?table=)
     if (notification.metadata?.eventId) {
-      navigate(`/events/${notification.metadata.eventId}/planning`);
+      const base = `/events/${notification.metadata.eventId}/planning`;
+      const tableId = notification.metadata.tableId;
+      navigate(tableId ? `${base}?table=${tableId}` : base);
     }
   };
 

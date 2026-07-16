@@ -8,7 +8,7 @@ export async function addToEvent(eventId: string, boardGameId: string, userId: s
     where: { id: boardGameId },
   });
   if (!boardGame) {
-    throw createError(404, "Board game not found");
+    throw createError(404, "Board game not found", { code: "BOARD_GAME_NOT_FOUND" });
   }
 
   // Check for duplicate
@@ -22,7 +22,9 @@ export async function addToEvent(eventId: string, boardGameId: string, userId: s
     },
   });
   if (existing) {
-    throw createError(409, "You already added this board game to this event");
+    throw createError(409, "You already added this board game to this event", {
+      code: "BOARD_GAME_DUPLICATE",
+    });
   }
 
   const entry = await prisma.eventBoardGame.create({
@@ -72,11 +74,13 @@ export async function listByEvent(eventId: string, limit?: number) {
 export async function removeFromEvent(id: string, userId: string, userRole: string) {
   const entry = await prisma.eventBoardGame.findUnique({ where: { id } });
   if (!entry) {
-    throw createError(404, "Board game entry not found");
+    throw createError(404, "Board game entry not found", { code: "BOARD_GAME_NOT_FOUND" });
   }
 
   if (entry.broughtByUserId !== userId && userRole !== "ADMIN") {
-    throw createError(403, "Only the owner or an admin can remove this board game");
+    throw createError(403, "Only the owner or an admin can remove this board game", {
+      code: "BOARD_GAME_REMOVE_FORBIDDEN",
+    });
   }
 
   await prisma.eventBoardGame.delete({ where: { id } });

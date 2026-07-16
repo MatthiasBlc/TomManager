@@ -1,5 +1,6 @@
-import { type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { useModalA11y } from "../../hooks/useModalA11y";
 import MobileSheet from "./MobileSheet";
 
 interface Props {
@@ -18,6 +19,11 @@ const SIZE_CLASSES = {
 
 export default function ResponsiveModal({ open, onClose, title, children, size = "md" }: Props) {
   const isMobile = useIsMobile();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Echap, focus trap, auto-focus, restauration du focus — uniquement pour la
+  // branche desktop : sur mobile, MobileSheet applique deja le meme hook
+  useModalA11y(containerRef, open && !isMobile, onClose);
 
   if (isMobile) {
     return (
@@ -31,7 +37,7 @@ export default function ResponsiveModal({ open, onClose, title, children, size =
 
   return (
     <dialog className="modal modal-open" role="dialog" aria-modal="true" aria-label={title}>
-      <div className={`modal-box overflow-x-hidden ${SIZE_CLASSES[size]}`}>
+      <div ref={containerRef} className={`modal-box overflow-x-hidden ${SIZE_CLASSES[size]}`}>
         <button
           className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
           onClick={onClose}

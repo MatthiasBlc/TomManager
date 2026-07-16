@@ -70,9 +70,12 @@ test.describe("Planning — tables", () => {
     await page.getByRole("button", { name: /rejoindre/i }).click();
     await expect(page.getByText("Inscrit", { exact: true })).toBeVisible();
 
-    // Quitter (accepter le dialog confirm)
-    page.once("dialog", (dialog) => dialog.accept());
+    // Quitter (confirmer via le ConfirmModal in-app qui remplace window.confirm)
     await page.getByRole("button", { name: /quitter/i }).click();
+    await page
+      .getByRole("dialog", { name: "Quitter la table" })
+      .getByRole("button", { name: "Quitter", exact: true })
+      .click();
     await expect(page.getByRole("button", { name: /rejoindre/i })).toBeVisible();
   });
 });
