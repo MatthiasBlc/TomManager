@@ -449,38 +449,36 @@ export default function TableDetailModal({
                 {confirmedCount === 0 ? (
                   <EmptyState icon={<span>👥</span>} title="Aucun participant pour l'instant" />
                 ) : isMobile ? (
-                  <div className="space-y-1">
+                  <div className="divide-y divide-base-300">
+                    {/* Nom sur sa ligne, actions wrappables en dessous : 3 actions
+                        textuelles ne tiennent pas cote a cote sur 390px */}
                     {table.participants
                       .filter((p) => p.status === "CONFIRMED")
                       .map((p) => (
-                        <div key={p.userId} className="flex items-center justify-between py-1">
+                        <div key={p.userId} className="py-1.5">
                           <span className="text-sm flex items-center gap-1.5">
                             {displayedName(p)}
                             {p.isOnReservedSeat && (
                               <span className="badge badge-warning badge-xs">réservée</span>
                             )}
                           </span>
-                          {canEdit && (
-                            <div className="flex items-center gap-1">
-                              {/* Aucune action sur la ligne du MJ : jamais de place reservee,
-                                  jamais de waitlist, il quitte via la suppression de table */}
-                              {p.userId !== table.createdBy && (
-                                <>
-                                  {renderConvertSeatAction(p, "btn btn-ghost btn-xs min-h-[44px]")}
-                                  <button
-                                    className="btn btn-ghost btn-xs text-warning min-h-[44px]"
-                                    onClick={() => handleDemote(p.userId)}
-                                  >
-                                    Mettre sur liste d'attente
-                                  </button>
-                                  <button
-                                    className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                                    onClick={() => handleKick(p.userId, displayedName(p))}
-                                  >
-                                    Retirer
-                                  </button>
-                                </>
-                              )}
+                          {/* Aucune action sur la ligne du MJ : jamais de place reservee,
+                              jamais de waitlist, il quitte via la suppression de table */}
+                          {canEdit && p.userId !== table.createdBy && (
+                            <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                              {renderConvertSeatAction(p, "btn btn-ghost btn-xs min-h-[44px]")}
+                              <button
+                                className="btn btn-ghost btn-xs text-warning min-h-[44px]"
+                                onClick={() => handleDemote(p.userId)}
+                              >
+                                Mettre sur liste d'attente
+                              </button>
+                              <button
+                                className="btn btn-ghost btn-xs text-error min-h-[44px]"
+                                onClick={() => handleKick(p.userId, displayedName(p))}
+                              >
+                                Retirer
+                              </button>
                             </div>
                           )}
                         </div>
@@ -546,14 +544,14 @@ export default function TableDetailModal({
                 <div className="card-body p-3">
                   <h4 className="font-semibold text-sm mb-2">Liste d'attente ({waitlistCount})</h4>
                   {isMobile ? (
-                    <div className="space-y-1">
+                    <div className="divide-y divide-base-300">
                       {table.participants
                         .filter((p) => p.status === "WAITLIST")
                         .map((p) => (
-                          <div key={p.userId} className="flex items-center justify-between py-1">
+                          <div key={p.userId} className="py-1.5">
                             <span className="text-sm">{displayedName(p)}</span>
                             {canEdit && (
-                              <div className="flex items-center gap-1">
+                              <div className="flex flex-wrap items-center gap-1 mt-0.5">
                                 {renderPromoteActions(
                                   p.userId,
                                   "btn btn-ghost btn-xs text-success min-h-[44px]"

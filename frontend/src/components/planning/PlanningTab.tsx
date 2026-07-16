@@ -193,7 +193,8 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         </div>
       </div>
 
-      <div className={!isMobile ? "flex-1 min-h-0 overflow-y-auto pb-4" : ""}>
+      {/* pb-24 mobile : laisser la place au FAB pour ne pas masquer la derniere carte */}
+      <div className={!isMobile ? "flex-1 min-h-0 overflow-y-auto pb-4" : "pb-24"}>
         {loading ? (
           <SkeletonCardGrid count={4} />
         ) : viewMode === "list" ? (

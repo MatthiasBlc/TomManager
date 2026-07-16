@@ -233,7 +233,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                className="checkbox checkbox-primary"
+                className="checkbox checkbox-primary rounded-md"
                 {...register("gmIsPlayer")}
               />
               <span className="label-text">Le MJ est aussi joueur (se compte dans les places)</span>

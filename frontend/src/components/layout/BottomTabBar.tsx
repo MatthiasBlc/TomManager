@@ -80,7 +80,7 @@ export default function BottomTabBar() {
           className="flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[44px] text-xs text-base-content/60"
         >
           <TabIcon d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          <span>{user.displayName ?? user.username}</span>
+          <span>Profil</span>
         </button>
       </div>
     </nav>

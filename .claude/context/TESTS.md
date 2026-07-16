@@ -87,13 +87,13 @@ npx playwright test --grep "nom"         # Un test specifique
 - `ConnectionStatus.test.tsx` - Pas de rendu sans socket, badge selon etat initial, mise a jour sur connect/disconnect, toast disconnect/reconnect (jamais au premier connect)
 - `BoardGameSearchInput.test.tsx` - Pas de query <2 char, debounce + resultats, badge BGG, selection clear input, gestion erreur API, message "Aucun resultat"
 - `Navbar.test.tsx` - Desktop/mobile, login/logout, avatar, evenements visibles selon auth, decalage sticky si hors-ligne
-- `BottomTabBar.test.tsx` - Pas de rendu sans user, tabs Events/Planning/Games selon route, logout
+- `BottomTabBar.test.tsx` - Pas de rendu sans user, tabs Events/Planning/Games selon route, bouton Profil (label fixe), logout
 - `MobileHeader.test.tsx` - Logo TM, bell + status visibles si auth, decalage top-10 si hors-ligne
 - `AppLayout.test.tsx` - Padding mobile/desktop selon auth, padding supplementaire mobile si hors-ligne
 - `MobileSheet.test.tsx` - Verrou/deverrou du scroll body, compte-reference avec sheets imbriquees
 - `BoardGameList.test.tsx` - Empty state, liste, regroupement par jeu
 - `ParticipantList.test.tsx` - Empty state, table desktop / cards mobile, remove/leave selon role, troncature nom long, disabled pendant l'appel
-- `TimelineView.test.tsx` - Empty state, cartes, regroupement par date, click handler
+- `TimelineView.test.tsx` - Empty state, cartes, regroupement par date, click handler, mono-colonne chronologique sur mobile
 - `NotificationBell.test.tsx` - Bell badge, cap 99+, dropdown desktop, sheet mobile, mark all read, cible tactile 44px mobile
 - `NumberStepper.test.tsx` - Increment/decrement, disable aux bornes min/max, prop step
 - `ManualBoardGameForm.test.tsx` - Champs requis, validation Name, soumission valeurs numeriques (stepper), cancel

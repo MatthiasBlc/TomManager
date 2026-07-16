@@ -67,7 +67,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-base-200 px-4">
+    <div className="flex min-h-[calc(100dvh-3rem)] md:min-h-screen items-center justify-center bg-base-200 px-4">
       <div className="card w-full bg-base-100 shadow-xl sm:max-w-sm">
         <div className="card-body">
           <h2 className="card-title justify-center">Connexion</h2>
