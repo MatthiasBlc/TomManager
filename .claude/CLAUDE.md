@@ -139,13 +139,13 @@ Regles :
 
 **Lorsqu'un plan est prepare**, inclure une recommandation **modele + effort** pour chaque feature/tâche selon cette grille :
 
-| Complexité   | Modele     | Effort   | Exemples                                                                    |
-| ------------ | ---------- | -------- | --------------------------------------------------------------------------- |
-| Trivial      | Haiku 4.5  | 15-30min | Fixes typos, ajouter 1 champ, simple component                              |
-| Simple       | Haiku 4.5  | 30min-1h | Tests unitaires, composants presentationnels, CSS adjustments               |
-| Moderate     | Sonnet 5   | 1-3h     | Features avec logique, tests modales, API endpoints simples                 |
-| Complex      | Opus 4.8   | 3-8h     | Arch majeure, refacto, features multi-domaines, debugging problemes subtils |
-| Very complex | Opus 4.8   | 8h+      | Rework entier du systeme, optimisations perf, migrations donnees            |
+| Complexité   | Modele    | Effort   | Exemples                                                                    |
+| ------------ | --------- | -------- | --------------------------------------------------------------------------- |
+| Trivial      | Haiku 4.5 | 15-30min | Fixes typos, ajouter 1 champ, simple component                              |
+| Simple       | Haiku 4.5 | 30min-1h | Tests unitaires, composants presentationnels, CSS adjustments               |
+| Moderate     | Sonnet 5  | 1-3h     | Features avec logique, tests modales, API endpoints simples                 |
+| Complex      | Opus 4.8  | 3-8h     | Arch majeure, refacto, features multi-domaines, debugging problemes subtils |
+| Very complex | Opus 4.8  | 8h+      | Rework entier du systeme, optimisations perf, migrations donnees            |
 
 **Objectif** : optimiser cout (Haiku est ~3x moins cher qu'Opus) tout en restant efficace.
 Tu peux toujours escalader a Opus mid-course si la tache devient plus complexe que prevue.
