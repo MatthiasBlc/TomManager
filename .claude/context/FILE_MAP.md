@@ -85,7 +85,8 @@ src/
 ├── App.tsx                # Router + AuthProvider + Toaster + offline banner
 ├── vite-env.d.ts          # Vite types
 ├── config/
-│   └── api.ts             # Axios instance
+│   ├── api.ts             # Axios instance
+│   └── apiErrors.ts       # Mapping code erreur backend -> message francais + getErrorMessage
 ├── components/
 │   ├── admin/
 │   │   └── AdminBoardGamePanel.tsx    # Gestion base de jeux (recherche, edit, delete, merge) — admin + toggle gameDb
