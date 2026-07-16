@@ -30,6 +30,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - Playwright s'installe localement (`~/.cache/ms-playwright/`), pas dans Docker
 - Aucune variable d'environnement requise : baseURL = `http://localhost:3000` (defaut playwright.config.ts)
 - Les tests seedent leurs propres donnees via l'API (`e2e/fixtures/seed.ts`)
+- Le login se fait par injection du cookie de session obtenu via l'API (`e2e/fixtures/session.ts` — `loginAs(page, cookie)`), pas par le formulaire (masque de l'UI, Discord uniquement)
 - En CI : le backend/frontend sont lances directement sur le runner (pas via Docker), Chromium installe via `--with-deps`
 
 ## Configuration
@@ -96,7 +97,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `NumberStepper.test.tsx` - Increment/decrement, disable aux bornes min/max, prop step
 - `ManualBoardGameForm.test.tsx` - Champs requis, validation Name, soumission valeurs numeriques (stepper), cancel
 - `TagInput.test.tsx` - Badges, ajout (Enter/comma), suppression, dedupe, backspace, suggestions API, loading/erreur/aucun-resultat pendant la recherche
-- `LoginPage.test.tsx` - Render, submit success/fail, redirect si connecte, Discord 503, OAuth click, error param
+- `LoginPage.test.tsx` - Redirect si connecte, fallback message si Discord 503 (formulaire password masque), OAuth click, error param
 - `AddBoardGameModal.test.tsx` - Modes search/manual, ajout local, import BGG, close
 - `AdminBoardGamePanel.test.tsx` - Liste, total, edit/delete/merge modals, empty state recherche sans resultat
 - `EventListPage.test.tsx` - Fetch/affichage, empty state, etat d'erreur distinct + retry, FAB/bouton creation selon role

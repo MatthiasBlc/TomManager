@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { seedAdmin, seedEvent } from "./fixtures/seed";
+import { loginAs } from "./fixtures/session";
 
 // Ces tests simulent un viewport mobile (Pixel 5) pour valider la navigation mobile
 test.describe("Navigation mobile", () => {
@@ -8,12 +9,7 @@ test.describe("Navigation mobile", () => {
     const admin = await seedAdmin();
     const event = await seedEvent(admin.cookie);
 
-    await page.goto("/login");
-    await page.getByLabel(/email|identifiant/i).fill(admin.email);
-    await page.getByLabel(/mot de passe|password/i).fill(admin.password);
-    await page.getByRole("button", { name: /^se connecter$/i }).click();
-    await expect(page).toHaveURL(/\/events/);
-
+    await loginAs(page, admin.cookie);
     await page.goto(`/events/${event.id}`);
 
     // La bottom tab bar doit etre visible en mobile

@@ -7,7 +7,6 @@ const navigateMock = vi.fn();
 const apiGetMock = vi.fn();
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
-const loginMock = vi.fn();
 const initiateDiscordLoginMock = vi.fn();
 
 vi.mock("../contexts/AuthContext", () => ({
@@ -31,7 +30,6 @@ function setUpAuth(overrides: Partial<{ user: unknown; loading: boolean }> = {})
   useAuthMock.mockReturnValue({
     user: null,
     loading: false,
-    login: loginMock,
     initiateDiscordLogin: initiateDiscordLoginMock,
     ...overrides,
   });
@@ -51,52 +49,8 @@ describe("LoginPage", () => {
     apiGetMock.mockReset().mockResolvedValue({});
     toastSuccess.mockReset();
     toastError.mockReset();
-    loginMock.mockReset();
     initiateDiscordLoginMock.mockReset();
     useAuthMock.mockReset();
-  });
-
-  it("renders the form fields and login button", () => {
-    setUpAuth();
-    renderLogin();
-    expect(screen.getByLabelText(/email ou nom d'utilisateur/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/mot de passe/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^se connecter$/i })).toBeInTheDocument();
-  });
-
-  it("calls login with the form values and navigates on success", async () => {
-    setUpAuth();
-    loginMock.mockResolvedValue(undefined);
-    renderLogin();
-    fireEvent.input(screen.getByLabelText(/email ou nom d'utilisateur/i), {
-      target: { value: "alice@example.com" },
-    });
-    fireEvent.input(screen.getByLabelText(/mot de passe/i), {
-      target: { value: "secret" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /^se connecter$/i }));
-    await waitFor(() => {
-      expect(loginMock).toHaveBeenCalledWith("alice@example.com", "secret");
-      expect(navigateMock).toHaveBeenCalledWith("/events", { replace: true });
-      expect(toastSuccess).toHaveBeenCalled();
-    });
-  });
-
-  it("shows an error toast when login fails", async () => {
-    setUpAuth();
-    loginMock.mockRejectedValue(new Error("nope"));
-    renderLogin();
-    fireEvent.input(screen.getByLabelText(/email ou nom d'utilisateur/i), {
-      target: { value: "alice" },
-    });
-    fireEvent.input(screen.getByLabelText(/mot de passe/i), {
-      target: { value: "bad" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /^se connecter$/i }));
-    await waitFor(() => {
-      expect(toastError).toHaveBeenCalledWith("Identifiants invalides");
-      expect(navigateMock).not.toHaveBeenCalled();
-    });
   });
 
   it("redirects to /events when a user is already authenticated", async () => {
@@ -107,7 +61,7 @@ describe("LoginPage", () => {
     });
   });
 
-  it("hides Discord button when api returns 503", async () => {
+  it("shows a fallback message and no Discord button when api returns 503", async () => {
     setUpAuth();
     apiGetMock.mockRejectedValueOnce({ response: { status: 503 } });
     renderLogin();
@@ -115,6 +69,7 @@ describe("LoginPage", () => {
       expect(
         screen.queryByRole("button", { name: /se connecter avec discord/i })
       ).not.toBeInTheDocument();
+      expect(screen.getByText(/connexion est momentanément indisponible/i)).toBeInTheDocument();
     });
   });
 

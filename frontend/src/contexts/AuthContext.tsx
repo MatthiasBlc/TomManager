@@ -20,7 +20,6 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   // Retourne true si l'auth a abouti, false si l'utilisateur a ferme la popup sans completer.
   // En mode redirect (mobile ou popup bloquee), la page navigue et la promesse ne resout pas.
@@ -49,11 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-
-  const login = async (identifier: string, password: string) => {
-    const res = await api.post("/api/auth/login", { identifier, password });
-    setUser(res.data.user);
-  };
 
   const logout = async () => {
     await api.post("/api/auth/logout");
@@ -166,7 +160,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
-        login,
         logout,
         initiateDiscordLogin,
         unlinkDiscord,

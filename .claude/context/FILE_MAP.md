@@ -128,7 +128,7 @@ src/
 │   └── AuthContext.tsx     # AuthProvider, useAuth hook
 ├── pages/
 │   ├── HomePage.tsx              # Landing page
-│   ├── LoginPage.tsx             # Login form (identifier, optional token)
+│   ├── LoginPage.tsx             # Login Discord uniquement (formulaire password masque, endpoint /api/auth/login garde comme secours admin)
 │   ├── SignupPage.tsx            # Signup form (invitation required)
 │   ├── InvitationLandingPage.tsx # /invite/:token — validates and redirects
 │   ├── EventListPage.tsx         # /events — event cards grid

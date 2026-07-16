@@ -1,15 +1,8 @@
-import { test, expect, Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { seedAdmin, seedEvent, seedParticipant } from "./fixtures/seed";
+import { loginAs } from "./fixtures/session";
 
 const API = process.env.E2E_API_URL || "http://localhost:3001";
-
-async function loginAs(page: Page, email: string, password: string) {
-  await page.goto("/login");
-  await page.getByLabel(/email|identifiant/i).fill(email);
-  await page.getByLabel(/mot de passe|password/i).fill(password);
-  await page.getByRole("button", { name: /^se connecter$/i }).click();
-  await expect(page).toHaveURL(/\/events/);
-}
 
 /** Cree une table via API et fait rejoindre deux joueurs (1 confirme, 1 waitlist). */
 async function setupTableWithWaitlist(adminCookie: string, eventId: string) {
@@ -63,7 +56,7 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     const { tableTitle, player1 } = await setupTableWithWaitlist(admin.cookie, event.id);
 
     // GM ouvre la table
-    await loginAs(page, admin.email, admin.password);
+    await loginAs(page, admin.cookie);
     await page.goto(`/events/${event.id}`);
     await page.getByRole("button", { name: "Planning", exact: true }).click();
     await page.getByText(tableTitle).click();
@@ -85,7 +78,7 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     // Joueur lambda ouvre la meme table — ne doit PAS voir ces boutons
     const playerCtx = await browser.newContext();
     const playerPage = await playerCtx.newPage();
-    await loginAs(playerPage, player1.email, player1.password);
+    await loginAs(playerPage, player1.cookie);
     await playerPage.goto(`/events/${event.id}`);
     await playerPage.getByRole("button", { name: "Planning", exact: true }).click();
     await playerPage.getByText(tableTitle).click();
@@ -119,7 +112,7 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
       }
     );
 
-    await loginAs(page, admin.email, admin.password);
+    await loginAs(page, admin.cookie);
     await page.goto(`/events/${event.id}`);
     await page.getByRole("button", { name: "Planning", exact: true }).click();
     await page.getByText(tableTitle).click();
@@ -142,7 +135,7 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
     const event = await seedEvent(admin.cookie);
     const { tableTitle, player2 } = await setupTableWithWaitlist(admin.cookie, event.id);
 
-    await loginAs(page, admin.email, admin.password);
+    await loginAs(page, admin.cookie);
     await page.goto(`/events/${event.id}`);
     await page.getByRole("button", { name: "Planning", exact: true }).click();
     await page.getByText(tableTitle).click();
@@ -163,7 +156,7 @@ test.describe("Waitlist — gestion manuelle par le GM", () => {
       event.id
     );
 
-    await loginAs(page, admin.email, admin.password);
+    await loginAs(page, admin.cookie);
     await page.goto(`/events/${event.id}`);
     await page.getByRole("button", { name: "Planning", exact: true }).click();
     await page.getByText(tableTitle).click();
