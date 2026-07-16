@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { useConfirm } from "../../contexts/ConfirmContext";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import EmptyState from "../common/EmptyState";
@@ -26,6 +27,7 @@ type FilterKey = "all" | "ADMIN" | "USER";
 
 export default function ParticipantList({ eventId, createdBy, participants, onChanged }: Props) {
   const { user } = useAuth();
+  const confirmDialog = useConfirm();
   const { canManageEvents } = useAdminRights();
   const isMobile = useIsMobile();
   const isCreator = user?.id === createdBy;
@@ -36,7 +38,13 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
   const handleRemove = async (userId: string) => {
-    if (!confirm("Retirer ce participant ?")) return;
+    const ok = await confirmDialog({
+      title: "Retirer le participant",
+      message: "Retirer ce participant ?",
+      confirmLabel: "Retirer",
+      variant: "danger",
+    });
+    if (!ok) return;
     setRemovingUserId(userId);
     try {
       await api.delete(`/api/events/${eventId}/participants/${userId}`);

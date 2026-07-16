@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
 import { useAdminRights } from "../../hooks/useAdminRights";
+import { useConfirm } from "../../contexts/ConfirmContext";
 
 interface CreateEventForm {
   name: string;
@@ -19,13 +20,30 @@ interface Props {
 
 export default function CreateEventModal({ open, onClose, onCreated }: Props) {
   const { canManageEvents } = useAdminRights();
+  const confirmDialog = useConfirm();
   const {
     register,
     handleSubmit,
     reset,
     getValues,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<CreateEventForm>();
+
+  // Garde "modifications non enregistrees" (backdrop, Echap, swipe-down, Annuler)
+  const handleClose = async () => {
+    if (isDirty) {
+      const ok = await confirmDialog({
+        title: "Abandonner les modifications ?",
+        message: "Les informations saisies seront perdues.",
+        confirmLabel: "Abandonner",
+        cancelLabel: "Continuer la saisie",
+        variant: "warning",
+      });
+      if (!ok) return;
+    }
+    reset();
+    onClose();
+  };
 
   const onSubmit = async (data: CreateEventForm) => {
     try {
@@ -48,7 +66,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
   };
 
   return (
-    <ResponsiveModal open={open} onClose={onClose} title="Créer un événement">
+    <ResponsiveModal open={open} onClose={handleClose} title="Créer un événement">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="ce-name">
@@ -134,7 +152,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
           </div>
         )}
         <div className="flex gap-2 justify-end pt-2">
-          <button type="button" className="btn" onClick={onClose}>
+          <button type="button" className="btn" onClick={handleClose}>
             Annuler
           </button>
           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>

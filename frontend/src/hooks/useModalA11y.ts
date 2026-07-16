@@ -1,7 +1,12 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+// Pile des modales ouvertes : quand plusieurs modales sont empilees (ex. un
+// ConfirmModal au-dessus d'un formulaire), Echap et le focus trap ne doivent
+// agir que sur la modale du dessus.
+const modalStack: symbol[] = [];
 
 // Accessibilite commune aux modales (MobileSheet et ResponsiveModal desktop) :
 // fermeture Echap, focus trap Tab/Shift+Tab, auto-focus du premier element
@@ -11,11 +16,26 @@ export function useModalA11y(
   open: boolean,
   onClose: () => void
 ) {
-  // Close on Escape
+  // Jeton d'identite de cette modale dans la pile
+  const tokenRef = useRef<symbol>(Symbol("modal"));
+
+  useEffect(() => {
+    if (!open) return;
+    const token = tokenRef.current;
+    modalStack.push(token);
+    return () => {
+      const idx = modalStack.indexOf(token);
+      if (idx !== -1) modalStack.splice(idx, 1);
+    };
+  }, [open]);
+
+  // Close on Escape (uniquement si cette modale est au sommet de la pile)
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      if (modalStack[modalStack.length - 1] !== tokenRef.current) return;
+      onClose();
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -37,6 +57,7 @@ export function useModalA11y(
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Tab") return;
+      if (modalStack[modalStack.length - 1] !== tokenRef.current) return;
       const container = containerRef.current;
       if (!container) return;
 

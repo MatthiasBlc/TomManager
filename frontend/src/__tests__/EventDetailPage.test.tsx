@@ -10,6 +10,9 @@ const toastError = vi.fn();
 vi.mock("../config/api", () => ({
   default: { get: (...args: unknown[]) => apiGetMock(...args) },
 }));
+vi.mock("../contexts/ConfirmContext", () => ({
+  useConfirm: () => vi.fn().mockResolvedValue(true),
+}));
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => useAuthMock(),
 }));
