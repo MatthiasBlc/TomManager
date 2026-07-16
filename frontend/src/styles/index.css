@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-@plugin "daisyui";
+/* Themes compiles : "light" stock (mode clair) + "ToM" custom ci-dessous (mode sombre, defaut) */
+@plugin "daisyui" {
+  themes: light --default;
+}
 
 @plugin "daisyui/theme" {
   name: "ToM";
