@@ -13,7 +13,7 @@ React 18 + TS + Vite + TailwindCSS + DaisyUI | Node.js + Express + TS | PostgreS
 - **Soft delete**: `deletedAt` sur entites principales (User)
 - **IDs**: UUID v4 partout
 - **Roles**: USER | ADMIN (dans le meme systeme User)
-- **Sessions**: express-session avec Prisma session store (`connect.sid` 1h)
+- **Sessions**: express-session avec Prisma session store (`connect.sid` 10 jours, rolling: renouvele a chaque requete)
 
 ## Commandes essentielles
 
