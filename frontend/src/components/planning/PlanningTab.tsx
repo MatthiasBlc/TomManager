@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useIsMobile } from "../../hooks/useIsMobile";
-import { useAuth } from "../../contexts/AuthContext";
-import { usePdfExport } from "../../hooks/usePdfExport";
+import { useAdminRights } from "../../hooks/useAdminRights";
 import TimelineView from "./TimelineView";
 import CalendarView from "./CalendarView";
 import CreateTableModal from "./CreateTableModal";
@@ -32,8 +31,7 @@ function getStoredView(): ViewMode {
 
 export default function PlanningTab({ eventId }: { eventId: string }) {
   const isMobile = useIsMobile();
-  const { user } = useAuth();
-  const { pdfExportEnabled } = usePdfExport();
+  const { pdfExportEnabled } = useAdminRights();
   const [tables, setTables] = useState<TableSummary[]>([]);
   const [eventBounds, setEventBounds] = useState<EventBounds | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,7 +150,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
       <div className="flex items-center justify-between mb-4 print-hide flex-none">
         {ViewToggle}
         <div className="flex items-center gap-2">
-          {user?.role === "ADMIN" && pdfExportEnabled && !isMobile && (
+          {pdfExportEnabled && !isMobile && (
             <button
               className="btn btn-ghost btn-sm gap-1"
               onClick={() => {

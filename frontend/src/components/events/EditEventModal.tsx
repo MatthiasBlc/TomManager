@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAdminRights } from "../../hooks/useAdminRights";
 
 interface EditEventForm {
   name: string;
@@ -32,7 +32,7 @@ function toLocalDatetime(iso: string) {
 }
 
 export default function EditEventModal({ open, onClose, onUpdated, event }: Props) {
-  const { user } = useAuth();
+  const { canManageEvents } = useAdminRights();
   const {
     register,
     handleSubmit,
@@ -156,7 +156,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
             </label>
           )}
         </div>
-        {user?.role === "ADMIN" && (
+        {canManageEvents && (
           <div className="form-control">
             <label className="label" htmlFor="ee-discord-role">
               <span className="label-text">Discord Role ID</span>
@@ -182,7 +182,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
           </div>
         )}
         <div className="flex items-center justify-between pt-2">
-          {user?.role === "ADMIN" && (
+          {canManageEvents && (
             <button
               type="button"
               className="btn btn-error btn-outline btn-sm"

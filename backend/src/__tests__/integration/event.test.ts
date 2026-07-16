@@ -144,6 +144,21 @@ describe("Event API", () => {
       expect(res.body.data[0]).toHaveProperty("participantCount");
     });
 
+    it("should restrict ADMIN to their own events when mine=true", async () => {
+      const { cookie: admin1Cookie } = await setupAdmin();
+      const { cookie: admin2Cookie } = await setupAdmin({
+        email: "admin2@example.com",
+        username: "adminuser2",
+      });
+      await createTestEvent(admin1Cookie);
+
+      const resAdmin1 = await request.get("/api/events?mine=true").set("Cookie", admin1Cookie);
+      const resAdmin2 = await request.get("/api/events?mine=true").set("Cookie", admin2Cookie);
+
+      expect(resAdmin1.body.data).toHaveLength(1);
+      expect(resAdmin2.body.data).toHaveLength(0);
+    });
+
     it("should filter upcoming events", async () => {
       const { cookie: adminCookie } = await setupAdmin();
       // Future event

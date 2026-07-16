@@ -1,22 +1,15 @@
-import { test, expect, Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { seedAdmin, seedEvent, seedParticipant } from "./fixtures/seed";
+import { loginAs } from "./fixtures/session";
 
 const API = process.env.E2E_API_URL || "http://localhost:3001";
-
-async function loginAs(page: Page, email: string, password: string) {
-  await page.goto("/login");
-  await page.getByLabel(/email|identifiant/i).fill(email);
-  await page.getByLabel(/mot de passe|password/i).fill(password);
-  await page.getByRole("button", { name: /^se connecter$/i }).click();
-  await expect(page).toHaveURL(/\/events/);
-}
 
 test.describe("Planning — tables", () => {
   test("creer une table", async ({ page }) => {
     const admin = await seedAdmin();
     const event = await seedEvent(admin.cookie);
 
-    await loginAs(page, admin.email, admin.password);
+    await loginAs(page, admin.cookie);
     await page.goto(`/events/${event.id}`);
 
     // Aller sur l'onglet planning
@@ -69,7 +62,7 @@ test.describe("Planning — tables", () => {
     const tableId = tableData.data.id;
 
     // Player se connecte et rejoint la table
-    await loginAs(page, player.email, player.password);
+    await loginAs(page, player.cookie);
     await page.goto(`/events/${event.id}`);
     await page.getByRole("button", { name: "Planning", exact: true }).click();
 
@@ -89,7 +82,7 @@ test.describe("Planning — creation via clic calendrier", () => {
     const admin = await seedAdmin();
     const event = await seedEvent(admin.cookie);
 
-    await loginAs(page, admin.email, admin.password);
+    await loginAs(page, admin.cookie);
     await page.goto(`/events/${event.id}`);
 
     // Passer en vue calendrier

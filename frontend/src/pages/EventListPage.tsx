@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../config/api";
-import { useAuth } from "../contexts/AuthContext";
+import { useAdminRights } from "../hooks/useAdminRights";
 import { useIsMobile } from "../hooks/useIsMobile";
 import CreateEventModal from "../components/events/CreateEventModal";
 import FAB from "../components/common/FAB";
@@ -18,7 +18,7 @@ interface EventSummary {
 }
 
 export default function EventListPage() {
-  const { user } = useAuth();
+  const { canManageEvents } = useAdminRights();
   const isMobile = useIsMobile();
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ export default function EventListPage() {
     <div className="container mx-auto px-4 py-4 md:py-8">
       <div className="flex items-center justify-between mb-4 md:mb-6">
         <h1 className="text-xl font-bold md:text-2xl">Événements</h1>
-        {user?.role === "ADMIN" && !isMobile && (
+        {canManageEvents && !isMobile && (
           <button
             className="btn btn-primary active:scale-95 transition-transform"
             onClick={() => setShowCreate(true)}
@@ -84,7 +84,7 @@ export default function EventListPage() {
           icon={<span>📅</span>}
           title="Aucun événement pour l'instant"
           description={
-            user?.role === "ADMIN" ? "Créez votre premier événement pour commencer." : undefined
+            canManageEvents ? "Créez votre premier événement pour commencer." : undefined
           }
         />
       ) : (
@@ -110,7 +110,7 @@ export default function EventListPage() {
         </div>
       )}
 
-      {user?.role === "ADMIN" && isMobile && (
+      {canManageEvents && isMobile && (
         <FAB onClick={() => setShowCreate(true)} label="Créer un événement" />
       )}
 

@@ -51,12 +51,18 @@ export async function createEvent(
   return event;
 }
 
-export async function listEvents(userId: string, role: string, upcoming?: boolean, limit?: number) {
+export async function listEvents(
+  userId: string,
+  role: string,
+  upcoming?: boolean,
+  limit?: number,
+  mineOnly?: boolean
+) {
   const now = new Date();
 
   const where: Record<string, unknown> = {};
 
-  if (role !== "ADMIN") {
+  if (role !== "ADMIN" || mineOnly) {
     where.participations = { some: { userId } };
   }
 

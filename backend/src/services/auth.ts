@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../util/db";
 import createError from "http-errors";
+import { getPreferences } from "./preference";
 
 export async function login(identifier: string, password: string) {
   const user = await prisma.user.findFirst({
@@ -50,5 +51,6 @@ export async function getMe(userId: string) {
     discordId: user.discordId,
     discordUsername: user.discordUsername,
     avatarUrl: user.avatarUrl,
+    preferences: await getPreferences(userId),
   };
 }

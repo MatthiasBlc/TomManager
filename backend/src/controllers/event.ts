@@ -28,12 +28,13 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 
     const upcoming = req.query.upcoming === "true";
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+    const mineOnly = req.query.mine === "true";
 
     if (limit !== undefined && (isNaN(limit) || limit < 1)) {
       return res.status(400).json({ error: { message: "limit must be a positive integer" } });
     }
 
-    const events = await eventService.listEvents(userId, user!.role, upcoming, limit);
+    const events = await eventService.listEvents(userId, user!.role, upcoming, limit, mineOnly);
 
     res.json({ data: events });
   } catch (err) {

@@ -98,11 +98,10 @@ describe("ParticipantList", () => {
       />
     );
     expect(screen.queryByRole("button", { name: "Retirer" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /quitter l'événement/i })).toBeInTheDocument();
   });
 
-  it("does not show Leave button for the creator", () => {
-    useAuthMock.mockReturnValue({ user: { id: "u1" } });
+  it("does not show a Leave button (membership is managed by the Discord bot)", () => {
+    useAuthMock.mockReturnValue({ user: { id: "u2" } });
     render(
       <ParticipantList
         eventId="ev1"
@@ -131,25 +130,6 @@ describe("ParticipantList", () => {
       expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/participants/u2");
       expect(onChanged).toHaveBeenCalled();
       expect(toastSuccess).toHaveBeenCalled();
-    });
-  });
-
-  it("calls api.delete and onChanged when Leave is clicked", async () => {
-    apiDeleteMock.mockResolvedValue({});
-    const onChanged = vi.fn();
-    useAuthMock.mockReturnValue({ user: { id: "u2" } });
-    render(
-      <ParticipantList
-        eventId="ev1"
-        createdBy="u1"
-        participants={baseParticipants}
-        onChanged={onChanged}
-      />
-    );
-    fireEvent.click(screen.getByRole("button", { name: /quitter l'événement/i }));
-    await waitFor(() => {
-      expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/participants/me");
-      expect(onChanged).toHaveBeenCalled();
     });
   });
 

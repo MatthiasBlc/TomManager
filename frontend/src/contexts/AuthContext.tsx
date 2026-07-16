@@ -7,6 +7,10 @@ function isMobileDevice(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
 }
 
+import { Preferences, DEFAULT_PREFERENCES } from "../types/preferences";
+
+export type { Preferences, PreferenceKey } from "../types/preferences";
+
 interface User {
   id: string;
   email: string | null;
@@ -15,12 +19,14 @@ interface User {
   discordId: string | null;
   discordUsername: string | null;
   avatarUrl: string | null;
+  preferences?: Preferences;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (identifier: string, password: string) => Promise<void>;
+  preferences: Preferences;
+  updatePreferences: (updates: Partial<Preferences>) => Promise<void>;
   logout: () => Promise<void>;
   // Retourne true si l'auth a abouti, false si l'utilisateur a ferme la popup sans completer.
   // En mode redirect (mobile ou popup bloquee), la page navigue et la promesse ne resout pas.
@@ -50,15 +56,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
-  const login = async (identifier: string, password: string) => {
-    const res = await api.post("/api/auth/login", { identifier, password });
-    setUser(res.data.user);
-  };
-
   const logout = async () => {
     await api.post("/api/auth/logout");
     setUser(null);
   };
+
+  const preferences = user?.preferences ?? DEFAULT_PREFERENCES;
+
+  // Mise a jour optimiste : l'UI reagit immediatement, rollback si le PATCH echoue
+  const updatePreferences = useCallback(
+    async (updates: Partial<Preferences>) => {
+      const previous = user?.preferences ?? DEFAULT_PREFERENCES;
+      setUser((u) => (u ? { ...u, preferences: { ...previous, ...updates } } : u));
+      try {
+        const res = await api.patch("/api/me/preferences", updates);
+        setUser((u) => (u ? { ...u, preferences: res.data.preferences } : u));
+      } catch (err) {
+        setUser((u) => (u ? { ...u, preferences: previous } : u));
+        throw err;
+      }
+    },
+    [user]
+  );
 
   const initiateDiscordLogin = useCallback(
     async (returnTo?: string): Promise<boolean> => {
@@ -166,7 +185,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
-        login,
+        preferences,
+        updatePreferences,
         logout,
         initiateDiscordLogin,
         unlinkDiscord,

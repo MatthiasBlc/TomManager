@@ -41,6 +41,16 @@ router.post("/seed-admin", async (req, res, next) => {
       data: { email, username, passwordHash, role: "ADMIN" },
     });
 
+    // Les droits admin sont opt-in (toggles) : on les active pour que les
+    // parcours E2E admin (creation d'event, moderation) restent possibles.
+    await prisma.userPreference.createMany({
+      data: ["admin.events", "admin.tables", "admin.games"].map((key) => ({
+        userId: user.id,
+        key,
+        value: true,
+      })),
+    });
+
     res.status(201).json({ userId: user.id });
   } catch (err) {
     next(err);

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { useEventSocket } from "../../hooks/useEventSocket";
 import ResponsiveModal from "../common/ResponsiveModal";
@@ -66,6 +67,7 @@ export default function TableDetailModal({
   onTableUpdated,
 }: Props) {
   const { user } = useAuth();
+  const { canModerateTables } = useAdminRights();
   const isMobile = useIsMobile();
   const [table, setTable] = useState<TableDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,8 +79,7 @@ export default function TableDetailModal({
   } | null>(null);
 
   const isGM = user?.id === table?.createdBy;
-  const isAdmin = user?.role === "ADMIN";
-  const canEdit = isGM || isAdmin;
+  const canEdit = isGM || canModerateTables;
   const currentParticipant = table?.participants.find((p) => p.userId === user?.id);
   const confirmedCount = table?.participants.filter((p) => p.status === "CONFIRMED").length ?? 0;
   const waitlistCount = table?.participants.filter((p) => p.status === "WAITLIST").length ?? 0;

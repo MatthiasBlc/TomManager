@@ -8,6 +8,7 @@ import tagRouter from "./tag";
 import boardGameRouter from "./boardGame";
 import eventBoardGameRouter from "./eventBoardGame";
 import notificationRouter from "./notification";
+import preferenceRouter from "./preference";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/events", eventBoardGameRouter);
 router.use("/tags", tagRouter);
 router.use("/boardgames", boardGameRouter);
 router.use("/notifications", notificationRouter);
+router.use("/me", preferenceRouter);
 
 export default router;

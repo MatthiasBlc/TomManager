@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import EmptyState from "../common/EmptyState";
 
@@ -25,13 +26,14 @@ type FilterKey = "all" | "ADMIN" | "USER";
 
 export default function ParticipantList({ eventId, createdBy, participants, onChanged }: Props) {
   const { user } = useAuth();
+  const { canManageEvents } = useAdminRights();
   const isMobile = useIsMobile();
   const isCreator = user?.id === createdBy;
+  const canManage = isCreator || canManageEvents;
 
   const [sort, setSort] = useState<SortKey>("joined");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
-  const [leaving, setLeaving] = useState(false);
 
   const handleRemove = async (userId: string) => {
     if (!confirm("Retirer ce participant ?")) return;
@@ -47,23 +49,6 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
       toast.error(message);
     } finally {
       setRemovingUserId(null);
-    }
-  };
-
-  const handleLeave = async () => {
-    if (!confirm("Quitter cet événement ?")) return;
-    setLeaving(true);
-    try {
-      await api.delete(`/api/events/${eventId}/participants/me`);
-      toast.success("Vous avez quitté l'événement");
-      onChanged();
-    } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message || "Échec en quittant l'événement";
-      toast.error(message);
-    } finally {
-      setLeaving(false);
     }
   };
 
@@ -144,7 +129,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                     </span>
                   </div>
                 </div>
-                {isCreator && p.userId !== createdBy && (
+                {canManage && p.userId !== createdBy && (
                   <button
                     className="btn btn-ghost btn-sm text-error min-h-[44px] flex-shrink-0"
                     onClick={() => handleRemove(p.userId)}
@@ -165,7 +150,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                 <th>Nom</th>
                 <th>Rôle</th>
                 <th>Inscrit le</th>
-                {isCreator && <th>Actions</th>}
+                {canManage && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -180,7 +165,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                     </span>
                   </td>
                   <td>{new Date(p.joinedAt).toLocaleDateString("fr-FR")}</td>
-                  {isCreator && (
+                  {canManage && (
                     <td>
                       {p.userId !== createdBy && (
                         <button
@@ -204,18 +189,6 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
         <p className="text-sm opacity-60 text-center py-4">
           Aucun participant dans cette catégorie.
         </p>
-      )}
-
-      {!isCreator && user && (
-        <div className="mt-4">
-          <button
-            className="btn btn-outline btn-error btn-sm"
-            onClick={handleLeave}
-            disabled={leaving}
-          >
-            Quitter l'événement
-          </button>
-        </div>
       )}
     </div>
   );

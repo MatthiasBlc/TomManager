@@ -6,7 +6,7 @@ import { DatesSetArg, EventDropArg, EventContentArg, DateSelectArg } from "@full
 import { EventResizeDoneArg, DateClickArg } from "@fullcalendar/interaction";
 import toast from "react-hot-toast";
 import api from "../../config/api";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import CalendarEventBlock from "./CalendarEventBlock";
 
@@ -78,7 +78,7 @@ export default function CalendarView({
   onTableUpdated,
   onSlotSelect,
 }: Props) {
-  const { user } = useAuth();
+  const { canModerateTables } = useAdminRights();
   const isMobile = useIsMobile();
   const calendarRef = useRef<FullCalendar>(null);
   // Ref pour avoir les tables a jour dans les callbacks sans les declarer comme dependances
@@ -160,8 +160,6 @@ export default function CalendarView({
     [patchTableDates]
   );
 
-  const isAdmin = user?.role === "ADMIN";
-
   const handleSelect = useCallback(
     (info: DateSelectArg) => {
       if (!onSlotSelect) return;
@@ -194,7 +192,7 @@ export default function CalendarView({
         title: t.title,
         start: t.startDateTime,
         end: t.endDateTime,
-        editable: t.isGM || isAdmin,
+        editable: t.isGM || canModerateTables,
         extendedProps: {
           isGM: t.isGM,
           currentUserStatus: t.currentUserStatus,
@@ -211,7 +209,7 @@ export default function CalendarView({
           tags: t.tags,
         },
       })),
-    [tables, isAdmin]
+    [tables, canModerateTables]
   );
 
   const validRange = useMemo(
