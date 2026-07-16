@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useIsMobile } from "../../hooks/useIsMobile";
@@ -41,6 +42,15 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
   >(undefined);
   const [viewMode, setViewMode] = useState<ViewMode>(getStoredView);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Deep-link ?table=<id> (notifications) : ouvre la modale de la table visee.
+  // Si la table a ete supprimee entre-temps, fetchTable echoue avec un toast et
+  // referme la modale (comportement existant de TableDetailModal).
+  useEffect(() => {
+    const tableId = searchParams.get("table");
+    if (tableId) setSelectedTableId(tableId);
+  }, [searchParams]);
 
   const switchView = (mode: ViewMode) => {
     setViewMode(mode);
@@ -242,7 +252,15 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
 
       <TableDetailModal
         open={selectedTableId !== null}
-        onClose={() => setSelectedTableId(null)}
+        onClose={() => {
+          setSelectedTableId(null);
+          // Nettoie le param de deep-link pour que le refresh ne rouvre pas la modale
+          if (searchParams.get("table")) {
+            const next = new URLSearchParams(searchParams);
+            next.delete("table");
+            setSearchParams(next, { replace: true });
+          }
+        }}
         tableId={selectedTableId}
         eventId={eventId}
         onTableDeleted={fetchTables}

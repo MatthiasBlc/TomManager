@@ -47,7 +47,27 @@ describe("BottomTabBar", () => {
     const planning = screen.getByRole("link", { name: /Planning/ });
     expect(planning).toHaveAttribute("href", "/events/ev42/planning");
     const games = screen.getByRole("link", { name: /Jeux de société/ });
-    expect(games).toHaveAttribute("href", "/events/ev42");
+    expect(games).toHaveAttribute("href", "/events/ev42?tab=games");
+  });
+
+  it("marks the Games tab active only when the games tab is open", () => {
+    useAuthMock.mockReturnValue({
+      user: { id: "u1", username: "Alice" },
+    });
+    renderAt("/events/ev42?tab=games");
+    expect(screen.getByRole("link", { name: /Jeux de société/ }).className).toContain(
+      "text-primary"
+    );
+  });
+
+  it("does not mark the Games tab active on another tab of the event page", () => {
+    useAuthMock.mockReturnValue({
+      user: { id: "u1", username: "Alice" },
+    });
+    renderAt("/events/ev42?tab=info");
+    expect(screen.getByRole("link", { name: /Jeux de société/ }).className).not.toContain(
+      "text-primary"
+    );
   });
 
   it("links the profile tab to /profile and marks it active on that route", () => {

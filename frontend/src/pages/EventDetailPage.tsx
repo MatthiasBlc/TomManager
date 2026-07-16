@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../config/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -12,6 +12,7 @@ import PlanningTab from "../components/planning/PlanningTab";
 import ResponsiveModal from "../components/common/ResponsiveModal";
 import AdminBoardGamePanel from "../components/admin/AdminBoardGamePanel";
 import { useAdminRights } from "../hooks/useAdminRights";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { SkeletonEventDetail } from "../components/common/Skeleton";
 
 interface EventDetail {
@@ -30,6 +31,8 @@ interface EventDetail {
 
 type Tab = "info" | "participants" | "planning" | "games";
 
+const VALID_TABS: Tab[] = ["info", "participants", "planning", "games"];
+
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
@@ -37,9 +40,16 @@ export default function EventDetailPage() {
   const confirmDialog = useConfirm();
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("info");
+  // Onglet actif dans l'URL (?tab=) : survit au refresh et partageable.
+  // `replace` : le bouton retour ramene a la liste des events, pas a chaque onglet visite
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get("tab") as Tab | null;
+  const tab: Tab = rawTab && VALID_TABS.includes(rawTab) ? rawTab : "info";
+  const setTab = (next: Tab) => setSearchParams({ tab: next }, { replace: true });
   const [showEdit, setShowEdit] = useState(false);
   const [showGameDb, setShowGameDb] = useState(false);
+
+  usePageTitle(event?.name);
 
   const isMobile = useIsMobile();
   const isCreator = user?.id === event?.createdBy;
