@@ -12,14 +12,14 @@ independants sauf indication ; l'ordre proposee maximise la valeur visible tot.
 
 Branche suggeree : `feature/polish-quick-wins`
 
-| #   | Point                                          | Effort   |
-| --- | ---------------------------------------------- | -------- |
-| 4   | Anti double-soumission (formulaires + actions) | 30min-1h |
+| #   | Point                                              | Effort   |
+| --- | -------------------------------------------------- | -------- |
+| 4   | Anti double-soumission (formulaires + actions)     | 30min-1h |
 | 3   | Accents notifications (+ maj convention CLAUDE.md) | 30min-1h |
-| 7   | Hook useModalA11y (Echap + focus trap desktop) | 30min    |
-| 9   | Scroll to top a la navigation                  | 15min    |
-| 10  | `lang="fr"`                                    | 5min     |
-| 11  | Onglet Profil actif (NavLink)                  | 10min    |
+| 7   | Hook useModalA11y (Echap + focus trap desktop)     | 30min    |
+| 9   | Scroll to top a la navigation                      | 15min    |
+| 10  | `lang="fr"`                                        | 5min     |
+| 11  | Onglet Profil actif (NavLink)                      | 10min    |
 
 Aucune dependance. Livrable : une passe de polish immediate, zero decision produit.
 
@@ -68,11 +68,11 @@ recenser les erreurs atteignables via l'UI avant de coder.
 
 ## Lot E - Optionnel / infra (a discuter)
 
-| #   | Point                             | Effort         | Blocage eventuel            |
-| --- | --------------------------------- | -------------- | --------------------------- |
-| 13  | 401 avec page de retour           | 30min          | -                           |
-| 14  | Redirection post-login unifiee    | 15min          | -                           |
-| 15  | Sentry frontend                   | 30min-1h + infra | Creer projet Sentry + DSN |
+| #   | Point                          | Effort           | Blocage eventuel          |
+| --- | ------------------------------ | ---------------- | ------------------------- |
+| 13  | 401 avec page de retour        | 30min            | -                         |
+| 14  | Redirection post-login unifiee | 15min            | -                         |
+| 15  | Sentry frontend                | 30min-1h + infra | Creer projet Sentry + DSN |
 
 13 et 14 peuvent s'ajouter au lot A si on veut tout solder d'un coup.
 15 demande une decision (quota Sentry, DSN en CI/prod).
