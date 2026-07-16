@@ -15,6 +15,9 @@ vi.mock("react-hot-toast", () => ({
     error: (...a: unknown[]) => toastError(...a),
   },
 }));
+vi.mock("../contexts/ConfirmContext", () => ({
+  useConfirm: () => vi.fn().mockResolvedValue(true),
+}));
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => useAuthMock(),
 }));

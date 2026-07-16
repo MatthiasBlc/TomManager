@@ -2,6 +2,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { ConfirmProvider } from "./contexts/ConfirmContext";
 import Navbar from "./components/layout/Navbar";
 import AppLayout from "./components/layout/AppLayout";
 import AppRoutes from "./routes/AppRoutes";
@@ -44,9 +45,11 @@ export default function App() {
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ThemeProvider>
         <AuthProvider>
-          <ErrorBoundary>
-            <AppContent />
-          </ErrorBoundary>
+          <ConfirmProvider>
+            <ErrorBoundary>
+              <AppContent />
+            </ErrorBoundary>
+          </ConfirmProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

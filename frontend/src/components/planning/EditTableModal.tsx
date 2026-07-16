@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import TagInput from "./TagInput";
 import ResponsiveModal from "../common/ResponsiveModal";
+import { useConfirm } from "../../contexts/ConfirmContext";
 import NumberStepper from "../common/NumberStepper";
 import BoardGameSelector, { SelectedGame } from "./BoardGameSelector";
 
@@ -85,6 +86,7 @@ interface Props {
 }
 
 export default function EditTableModal({ open, onClose, onUpdated, eventId, table }: Props) {
+  const confirmDialog = useConfirm();
   const [tags, setTags] = useState<string[]>([]);
   const [selectedGame, setSelectedGame] = useState<SelectedGame | null>(null);
   const {
@@ -93,7 +95,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
     reset,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<EditTableForm>();
 
   const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
@@ -181,14 +183,37 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
     }
   };
 
+  // Garde "modifications non enregistrees" : tags et jeu vivent hors
+  // react-hook-form, on les compare a l'etat initial de la table
+  const initialTags = table.tags.map((t) => t.name);
+  const hasUnsavedChanges =
+    isDirty ||
+    JSON.stringify(tags) !== JSON.stringify(initialTags) ||
+    (selectedGame?.id ?? null) !== (table.boardGame?.id ?? null);
+
+  const handleClose = async () => {
+    if (hasUnsavedChanges) {
+      const ok = await confirmDialog({
+        title: "Abandonner les modifications ?",
+        message: "Les modifications non enregistrées seront perdues.",
+        confirmLabel: "Abandonner",
+        cancelLabel: "Continuer la saisie",
+        variant: "warning",
+      });
+      if (!ok) return;
+    }
+    onClose();
+  };
+
   const onSubmit = async (data: EditTableForm) => {
-    if (
-      toDemoteCount > 0 &&
-      !confirm(
-        `${toDemoteCount} joueur${toDemoteCount > 1 ? "s" : ""} confirmé${toDemoteCount > 1 ? "s" : ""} ${toDemoteCount > 1 ? "seront" : "sera"} mis en liste d'attente si vous enregistrez ces valeurs. Continuer ?`
-      )
-    ) {
-      return;
+    if (toDemoteCount > 0) {
+      const ok = await confirmDialog({
+        title: "Joueurs mis en liste d'attente",
+        message: `${toDemoteCount} joueur${toDemoteCount > 1 ? "s" : ""} confirmé${toDemoteCount > 1 ? "s" : ""} ${toDemoteCount > 1 ? "seront" : "sera"} mis en liste d'attente si vous enregistrez ces valeurs. Continuer ?`,
+        confirmLabel: "Continuer",
+        variant: "warning",
+      });
+      if (!ok) return;
     }
     try {
       const startDateTime = new Date(`${data.date}T${data.startTime}`);
@@ -219,7 +244,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
   };
 
   return (
-    <ResponsiveModal open={open} onClose={onClose} title="Modifier la table">
+    <ResponsiveModal open={open} onClose={handleClose} title="Modifier la table">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
         {/* Type — lecture seule */}
         <div className="flex items-center gap-2">
@@ -342,7 +367,9 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             <NumberStepper
               id="et-maxPlayers"
               value={watchedMaxPlayers}
-              onChange={(v) => setValue("maxPlayers", v, { shouldValidate: true })}
+              onChange={(v) =>
+                setValue("maxPlayers", v, { shouldValidate: true, shouldDirty: true })
+              }
               min={1}
               max={20}
             />
@@ -354,7 +381,9 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
             <NumberStepper
               id="et-reservedSeats"
               value={watchedReservedSeats}
-              onChange={(v) => setValue("reservedSeats", v, { shouldValidate: true })}
+              onChange={(v) =>
+                setValue("reservedSeats", v, { shouldValidate: true, shouldDirty: true })
+              }
               min={0}
               max={reservedSeatsMax}
             />
@@ -427,7 +456,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
         </div>
 
         <div className="flex gap-2 justify-end pt-2">
-          <button type="button" className="btn" onClick={onClose}>
+          <button type="button" className="btn" onClick={handleClose}>
             Annuler
           </button>
           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>

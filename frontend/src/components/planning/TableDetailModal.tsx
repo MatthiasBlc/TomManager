@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { useConfirm } from "../../contexts/ConfirmContext";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { useEventSocket } from "../../hooks/useEventSocket";
@@ -68,6 +69,7 @@ export default function TableDetailModal({
   onTableUpdated,
 }: Props) {
   const { user } = useAuth();
+  const confirmDialog = useConfirm();
   const { canModerateTables } = useAdminRights();
   const isMobile = useIsMobile();
   const [table, setTable] = useState<TableDetail | null>(null);
@@ -159,7 +161,15 @@ export default function TableDetailModal({
 
   const handleLeave = async () => {
     if (!table || pendingAction) return;
-    if (!confirm("Quitter cette table ?")) return;
+    const ok = await confirmDialog({
+      title: isGM ? "Supprimer la table" : "Quitter la table",
+      message: isGM
+        ? "Quitter votre propre table la supprime. Cette action est irréversible."
+        : "Quitter cette table ?",
+      confirmLabel: isGM ? "Supprimer" : "Quitter",
+      variant: isGM ? "danger" : "warning",
+    });
+    if (!ok) return;
     setPendingAction("leave");
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}/leave`);
@@ -310,7 +320,13 @@ export default function TableDetailModal({
 
   const handleKick = async (userId: string, displayedName: string) => {
     if (!table || pendingAction) return;
-    if (!confirm(`Retirer ${displayedName} de cette table ?`)) return;
+    const ok = await confirmDialog({
+      title: "Retirer le joueur",
+      message: `Retirer ${displayedName} de cette table ?`,
+      confirmLabel: "Retirer",
+      variant: "danger",
+    });
+    if (!ok) return;
     setPendingAction(`kick:${userId}`);
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}/participants/${userId}`);
@@ -326,7 +342,13 @@ export default function TableDetailModal({
 
   const handleDelete = async () => {
     if (!table || pendingAction) return;
-    if (!confirm("Supprimer cette table ? Cette action est irréversible.")) return;
+    const ok = await confirmDialog({
+      title: "Supprimer la table",
+      message: "Supprimer cette table ? Cette action est irréversible.",
+      confirmLabel: "Supprimer",
+      variant: "danger",
+    });
+    if (!ok) return;
     setPendingAction("delete");
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}`);
