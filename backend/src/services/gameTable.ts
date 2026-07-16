@@ -153,7 +153,7 @@ export async function createTable(eventId: string, userId: string, data: CreateT
       where: { id: created.id },
       include: {
         tags: { include: { tag: true } },
-        creator: { select: { id: true, username: true } },
+        creator: { select: { id: true, username: true, displayName: true } },
         boardGame: { select: BOARD_GAME_SELECT },
       },
     });
@@ -173,14 +173,14 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
   const tables = await prisma.gameTable.findMany({
     where: { eventId },
     include: {
-      creator: { select: { id: true, username: true } },
+      creator: { select: { id: true, username: true, displayName: true } },
       tags: { include: { tag: true } },
       participants: {
         select: {
           userId: true,
           status: true,
           isOnReservedSeat: true,
-          user: { select: { id: true, username: true } },
+          user: { select: { id: true, username: true, displayName: true } },
         },
         orderBy: { joinedAt: "asc" },
       },
@@ -251,6 +251,7 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
         .map((p) => ({
           id: p.user.id,
           username: p.user.username,
+          displayName: p.user.displayName,
           isOnReservedSeat: p.isOnReservedSeat,
         })),
       confirmedCount,
@@ -269,11 +270,11 @@ export async function getTable(tableId: string) {
   const table = await prisma.gameTable.findUnique({
     where: { id: tableId },
     include: {
-      creator: { select: { id: true, username: true } },
+      creator: { select: { id: true, username: true, displayName: true } },
       tags: { include: { tag: true } },
       participants: {
         include: {
-          user: { select: { id: true, username: true } },
+          user: { select: { id: true, username: true, displayName: true } },
         },
         orderBy: { joinedAt: "asc" },
       },
@@ -306,6 +307,7 @@ export async function getTable(tableId: string) {
     participants: table.participants.map((p) => ({
       userId: p.user.id,
       username: p.user.username,
+      displayName: p.user.displayName,
       status: p.status,
       isOnReservedSeat: p.isOnReservedSeat,
       joinedAt: p.joinedAt,
@@ -537,7 +539,7 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
       },
       include: {
         tags: { include: { tag: true } },
-        creator: { select: { id: true, username: true } },
+        creator: { select: { id: true, username: true, displayName: true } },
         boardGame: { select: BOARD_GAME_SELECT },
       },
     });

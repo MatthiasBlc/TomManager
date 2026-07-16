@@ -12,6 +12,7 @@ interface DiscordMember {
     global_name: string | null;
     avatar: string | null;
   };
+  nick: string | null;
   roles: string[];
 }
 
@@ -57,7 +58,7 @@ export async function syncAll(): Promise<{ synced: number; errors: string[] }> {
       });
 
       if (!user && hasRelevantRole) {
-        const displayName = member.user.global_name || member.user.username;
+        const displayName = member.nick || member.user.global_name || member.user.username;
         const username = await generateUniqueUsername(displayName, member.user.id);
         const avatarUrl = buildAvatarUrl(member.user.id, member.user.avatar);
         user = await prisma.user.create({
@@ -66,6 +67,7 @@ export async function syncAll(): Promise<{ synced: number; errors: string[] }> {
             discordUsername: member.user.username,
             avatarUrl,
             username,
+            displayName,
           },
         });
       }

@@ -37,11 +37,12 @@ interface TableDetail {
   reservedSeats: number;
   startDateTime: string;
   endDateTime: string;
-  creator: { id: string; username: string };
+  creator: { id: string; username: string; displayName?: string | null };
   tags: { id: string; name: string }[];
   participants: {
     userId: string;
     username: string;
+    displayName?: string | null;
     status: string;
     isOnReservedSeat: boolean;
     joinedAt: string;
@@ -263,12 +264,12 @@ export default function TableDetailModal({
     return null;
   };
 
-  const handleKick = async (userId: string, username: string) => {
+  const handleKick = async (userId: string, displayedName: string) => {
     if (!table) return;
-    if (!confirm(`Retirer ${username} de cette table ?`)) return;
+    if (!confirm(`Retirer ${displayedName} de cette table ?`)) return;
     try {
       await api.delete(`/api/events/${eventId}/tables/${table.id}/participants/${userId}`);
-      toast.success(`${username} retiré de la table`);
+      toast.success(`${displayedName} retiré de la table`);
       fetchTable();
       onTableUpdated();
     } catch {
@@ -288,6 +289,9 @@ export default function TableDetailModal({
       toast.error("Échec de la suppression de la table");
     }
   };
+
+  const displayedName = (p: { username: string; displayName?: string | null }) =>
+    p.displayName ?? p.username;
 
   const formatDateTime = (iso: string) =>
     new Date(iso).toLocaleString("fr-FR", {
@@ -318,7 +322,7 @@ export default function TableDetailModal({
             </div>
             <div className="text-sm opacity-70 space-y-0.5">
               <p>
-                {table.type === "JDR" ? "MJ" : "Créateur"} : {table.creator.username}
+                {table.type === "JDR" ? "MJ" : "Créateur"} : {displayedName(table.creator)}
               </p>
               <p>
                 {formatDateTime(table.startDateTime)} → {formatDateTime(table.endDateTime)}
@@ -352,7 +356,7 @@ export default function TableDetailModal({
                     const res = await api.get(`/api/events/${eventId}/boardgames`);
                     const entries: {
                       boardGame: { id: string };
-                      broughtBy: { id: string; username: string };
+                      broughtBy: { id: string; username: string; displayName?: string | null };
                       linkedTables: { id: string; title: string }[];
                     }[] = res.data.data;
                     const matching = entries.filter((e) => e.boardGame.id === table.boardGame!.id);
@@ -451,7 +455,7 @@ export default function TableDetailModal({
                       .map((p) => (
                         <div key={p.userId} className="flex items-center justify-between py-1">
                           <span className="text-sm flex items-center gap-1.5">
-                            {p.username}
+                            {displayedName(p)}
                             {p.isOnReservedSeat && (
                               <span className="badge badge-warning badge-xs">réservée</span>
                             )}
@@ -471,7 +475,7 @@ export default function TableDetailModal({
                                   </button>
                                   <button
                                     className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                                    onClick={() => handleKick(p.userId, p.username)}
+                                    onClick={() => handleKick(p.userId, displayedName(p))}
                                   >
                                     Retirer
                                   </button>
@@ -498,7 +502,7 @@ export default function TableDetailModal({
                             <tr key={p.userId}>
                               <td>
                                 <span className="flex items-center gap-1.5">
-                                  {p.username}
+                                  {displayedName(p)}
                                   {p.isOnReservedSeat && (
                                     <span className="badge badge-warning badge-xs">réservée</span>
                                   )}
@@ -519,7 +523,7 @@ export default function TableDetailModal({
                                       </button>
                                       <button
                                         className="btn btn-ghost btn-xs text-error"
-                                        onClick={() => handleKick(p.userId, p.username)}
+                                        onClick={() => handleKick(p.userId, displayedName(p))}
                                       >
                                         Retirer
                                       </button>
@@ -547,7 +551,7 @@ export default function TableDetailModal({
                         .filter((p) => p.status === "WAITLIST")
                         .map((p) => (
                           <div key={p.userId} className="flex items-center justify-between py-1">
-                            <span className="text-sm">{p.username}</span>
+                            <span className="text-sm">{displayedName(p)}</span>
                             {canEdit && (
                               <div className="flex items-center gap-1">
                                 {renderPromoteActions(
@@ -557,7 +561,7 @@ export default function TableDetailModal({
                                 {p.userId !== table.createdBy && (
                                   <button
                                     className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                                    onClick={() => handleKick(p.userId, p.username)}
+                                    onClick={() => handleKick(p.userId, displayedName(p))}
                                   >
                                     Retirer
                                   </button>
@@ -581,7 +585,7 @@ export default function TableDetailModal({
                             .filter((p) => p.status === "WAITLIST")
                             .map((p) => (
                               <tr key={p.userId}>
-                                <td>{p.username}</td>
+                                <td>{displayedName(p)}</td>
                                 {canEdit && (
                                   <td className="flex gap-1">
                                     {renderPromoteActions(
@@ -591,7 +595,7 @@ export default function TableDetailModal({
                                     {p.userId !== table.createdBy && (
                                       <button
                                         className="btn btn-ghost btn-xs text-error"
-                                        onClick={() => handleKick(p.userId, p.username)}
+                                        onClick={() => handleKick(p.userId, displayedName(p))}
                                       >
                                         Retirer
                                       </button>

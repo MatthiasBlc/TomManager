@@ -141,12 +141,14 @@ export default function ProfilePage() {
             ) : (
               <div className="avatar placeholder">
                 <div className="bg-neutral text-neutral-content rounded-full w-10">
-                  <span className="text-sm">{user.username.slice(0, 2).toUpperCase()}</span>
+                  <span className="text-sm">
+                    {(user.displayName ?? user.username).slice(0, 2).toUpperCase()}
+                  </span>
                 </div>
               </div>
             )}
             <div>
-              <p className="font-medium">{user.username}</p>
+              <p className="font-medium">{user.displayName ?? user.username}</p>
               {user.email && <p className="text-sm opacity-60">{user.email}</p>}
               <span className="badge badge-sm">{user.role}</span>
             </div>

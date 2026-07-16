@@ -134,6 +134,7 @@ export async function handleCallback(req: Request, res: Response, next: NextFunc
         discordUsername: discordUser.username,
         avatarUrl,
         username,
+        displayName,
         role: "USER",
       },
     });

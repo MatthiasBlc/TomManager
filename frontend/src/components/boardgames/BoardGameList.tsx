@@ -12,7 +12,7 @@ interface EventBoardGameEntry {
     playingTime?: number | null;
     imageUrl?: string | null;
   };
-  broughtBy: { id: string; username: string };
+  broughtBy: { id: string; username: string; displayName?: string | null };
   linkedTables?: { id: string; title: string }[];
 }
 
@@ -27,7 +27,7 @@ interface Props {
 
 interface GroupedGame {
   game: EventBoardGameEntry["boardGame"];
-  broughtBy: { id: string; username: string }[];
+  broughtBy: { id: string; username: string; displayName?: string | null }[];
   removableEntries: { entryId: string; broughtByUserId: string }[];
   linkedTables: { id: string; title: string }[];
 }
