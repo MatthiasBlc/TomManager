@@ -77,15 +77,20 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     const ok = await confirmDialog({
       title: "Purger l'événement",
       message:
-        "Purger cet event ?\n\nCela supprimera définitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-même sera conservé.",
+        "Purger cet event ?\n\nCela supprimera définitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-même sera conservé. Si un rôle Discord est lié, la liste des participants sera réimportée automatiquement depuis Discord.",
       confirmLabel: "Purger",
       variant: "danger",
     });
     if (!ok) return;
     setPurging(true);
     try {
-      await api.post(`/api/events/${event.id}/purge`);
-      toast.success("Event purgé !");
+      const res = await api.post(`/api/events/${event.id}/purge`);
+      const resynced: number | null = res.data?.data?.resyncedParticipants ?? null;
+      toast.success(
+        resynced !== null
+          ? `Event purgé ! ${resynced} participant${resynced > 1 ? "s" : ""} réimporté${resynced > 1 ? "s" : ""} depuis Discord`
+          : "Event purgé !"
+      );
       onUpdated();
       onClose();
     } catch (err: unknown) {
@@ -102,7 +107,9 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
         name: data.name,
         startDateTime: new Date(data.startDateTime).toISOString(),
         endDateTime: new Date(data.endDateTime).toISOString(),
-        discordRoleId: data.discordRoleId.trim() || null,
+        // Champ visible uniquement avec le droit gestion des events : ne pas
+        // l'envoyer sinon, pour ne pas effacer le role lie a l'event
+        ...(canManageEvents ? { discordRoleId: data.discordRoleId.trim() || null } : {}),
       });
       toast.success("Événement mis à jour !");
       onUpdated();

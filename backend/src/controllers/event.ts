@@ -69,8 +69,8 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 
 export async function purge(req: Request, res: Response, next: NextFunction) {
   try {
-    await eventService.purgeEvent(req.params.eventId);
-    res.status(204).send();
+    const result = await eventService.purgeEvent(req.params.eventId);
+    res.json({ data: result });
   } catch (err) {
     next(err);
   }

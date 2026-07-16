@@ -39,6 +39,53 @@ async function fetchAllGuildMembers(): Promise<DiscordMember[]> {
   return members;
 }
 
+// Reconstruit les participations d'un event depuis le role Discord qui lui est
+// lie. Utilise apres une purge : l'event conserve son discordRoleId, on
+// re-importe immediatement la liste des participants au lieu d'attendre la
+// prochaine synchro globale. Cree les comptes manquants comme syncAll.
+export async function syncEventParticipantsFromDiscord(eventId: string): Promise<number> {
+  if (!env.DISCORD_BOT_TOKEN) throw createError(503, "DISCORD_BOT_TOKEN non configure");
+  if (!env.DISCORD_GUILD_ID) throw createError(503, "DISCORD_GUILD_ID non configure");
+
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event) throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
+  if (!event.discordRoleId) return 0;
+
+  const members = await fetchAllGuildMembers();
+  const holders = members.filter((m) => m.roles.includes(event.discordRoleId!));
+
+  let synced = 0;
+  for (const member of holders) {
+    let user = await prisma.user.findFirst({
+      where: { discordId: member.user.id, deletedAt: null },
+    });
+
+    if (!user) {
+      const displayName = member.nick || member.user.global_name || member.user.username;
+      const username = await generateUniqueUsername(displayName, member.user.id);
+      const avatarUrl = buildAvatarUrl(member.user.id, member.user.avatar);
+      user = await prisma.user.create({
+        data: {
+          discordId: member.user.id,
+          discordUsername: member.user.username,
+          avatarUrl,
+          username,
+          displayName,
+        },
+      });
+    }
+
+    await prisma.eventParticipation.upsert({
+      where: { eventId_userId: { eventId, userId: user.id } },
+      create: { eventId, userId: user.id, status: "CONFIRMED" },
+      update: {},
+    });
+    synced++;
+  }
+
+  return synced;
+}
+
 export async function syncAll(): Promise<{ synced: number; errors: string[] }> {
   if (!env.DISCORD_BOT_TOKEN) throw createError(503, "DISCORD_BOT_TOKEN non configure");
   if (!env.DISCORD_GUILD_ID) throw createError(503, "DISCORD_GUILD_ID non configure");
