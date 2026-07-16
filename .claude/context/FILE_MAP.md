@@ -142,7 +142,8 @@ src/
 │   ├── useIsMobile.ts           # matchMedia hook for mobile breakpoint detection
 │   ├── useOnlineStatus.ts       # Browser online/offline detection hook
 │   ├── useTheme.ts              # Dark/light mode, localStorage, data-theme sur <html>
-│   ├── useModalA11y.ts          # A11y modales : Echap, focus trap, auto-focus, restore focus
+│   ├── useModalA11y.ts          # A11y modales : Echap, focus trap, auto-focus, restore focus (pile de modales)
+│   ├── usePageTitle.ts          # document.title par page ("<titre> - TomManager")
 │   └── useAdminRights.ts        # Droits admin opt-in derives des preferences (canManageEvents, canModerateTables, canModerateGames, pdfExportEnabled, gameDbEnabled)
 ├── contexts/
 │   ├── AuthContext.tsx     # AuthProvider, useAuth hook (login, logout, Discord link/unlink, preferences + updatePreferences optimiste)
