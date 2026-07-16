@@ -10,6 +10,8 @@ Phase 5 (Real-Time) : complete. Detail : `docs/features/real-time/ROADMAP.md`
 Phase 6 (Notifications) : complete. Detail : `docs/features/notifications/ROADMAP.md`
 Phase 7 (UI Mobile-First) : complete. Detail : `docs/features/ui-mobile-first/ROADMAP.md`
 
+Feature droits admin opt-in (toggles + preferences en DB) : complete (branche `feature/admin-opt-in-rights`).
+
 Prochaines etapes : `docs/NEXT_STEPS.md`
 Test manuel complet : `docs/MANUAL_TESTING.md`
 

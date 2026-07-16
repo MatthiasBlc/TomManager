@@ -2,15 +2,45 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
+import type { PreferenceKey } from "../types/preferences";
 import { useTheme } from "../contexts/ThemeContext";
-import { usePdfExport } from "../hooks/usePdfExport";
-import { useGameDbManagement } from "../hooks/useGameDbManagement";
+import InfoTooltip from "../components/common/InfoTooltip";
+
+const ADMIN_RIGHT_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
+  {
+    key: "admin.events",
+    label: "Gestion des événements",
+    tip: "Créer, modifier, supprimer et purger les événements, gérer les participants et le rôle Discord.",
+  },
+  {
+    key: "admin.tables",
+    label: "Modération des tables",
+    tip: "Modifier ou supprimer les tables des autres MJ, gérer leurs joueurs et déplacer leurs tables dans le calendrier.",
+  },
+  {
+    key: "admin.games",
+    label: "Modération des jeux",
+    tip: "Retirer d'un événement des jeux apportés par d'autres participants.",
+  },
+];
+
+const BETA_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
+  {
+    key: "beta.pdfExport",
+    label: "Export PDF",
+    tip: "Affiche le bouton d'export PDF du planning (sur ordinateur uniquement).",
+  },
+  {
+    key: "beta.gameDb",
+    label: "Gestion de la base de jeux",
+    tip: "Affiche le panneau de gestion de la base de jeux : édition, fusion et suppression des jeux.",
+  },
+];
 
 export default function ProfilePage() {
-  const { user, logout, initiateDiscordLogin, unlinkDiscord } = useAuth();
+  const { user, preferences, updatePreferences, logout, initiateDiscordLogin, unlinkDiscord } =
+    useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { pdfExportEnabled, togglePdfExport } = usePdfExport();
-  const { gameDbEnabled, toggleGameDb } = useGameDbManagement();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [linking, setLinking] = useState(false);
@@ -28,6 +58,36 @@ export default function ProfilePage() {
   }, [searchParams, navigate]);
 
   if (!user) return null;
+
+  const handlePreferenceToggle = async (key: PreferenceKey, value: boolean) => {
+    try {
+      await updatePreferences({ [key]: value });
+    } catch {
+      toast.error("Échec de la mise à jour des options");
+    }
+  };
+
+  const allRightsEnabled = ADMIN_RIGHT_ROWS.every((row) => preferences[row.key]);
+
+  const handleMasterToggle = async () => {
+    const enabling = !allRightsEnabled;
+    if (
+      enabling &&
+      !confirm(
+        "Activer tous les droits d'administration ?\n\nLes options Beta ne sont pas concernées."
+      )
+    )
+      return;
+    try {
+      await updatePreferences({
+        "admin.events": enabling,
+        "admin.tables": enabling,
+        "admin.games": enabling,
+      });
+    } catch {
+      toast.error("Échec de la mise à jour des options");
+    }
+  };
 
   const handleLink = async () => {
     setLinking(true);
@@ -144,39 +204,57 @@ export default function ProfilePage() {
       </div>
 
       {user.role === "ADMIN" && (
-        <>
-          <div className="card bg-base-100 shadow">
-            <div className="card-body space-y-3">
-              <h2 className="card-title text-base">Options admin avancées</h2>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm">Activer export PDF</span>
-                  <span className="badge badge-warning badge-xs ml-2">Beta</span>
-                </div>
-                <input
-                  type="checkbox"
-                  className="toggle toggle-sm"
-                  checked={pdfExportEnabled}
-                  onChange={togglePdfExport}
-                  aria-label="Activer export PDF"
-                />
+        <div className="card bg-base-100 shadow">
+          <div className="card-body space-y-3">
+            <h2 className="card-title text-base">Droits d'administration</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-medium">Activer tous les droits</span>
+                <InfoTooltip text="Active ou désactive d'un coup tous les droits d'administration ci-dessous. Les options Beta ne sont pas concernées." />
               </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm">Activer la gestion des jeux</span>
-                  <span className="badge badge-warning badge-xs ml-2">Beta</span>
-                </div>
-                <input
-                  type="checkbox"
-                  className="toggle toggle-sm"
-                  checked={gameDbEnabled}
-                  onChange={toggleGameDb}
-                  aria-label="Activer la gestion des jeux"
-                />
-              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-sm toggle-primary"
+                checked={allRightsEnabled}
+                onChange={handleMasterToggle}
+                aria-label="Activer tous les droits"
+              />
             </div>
+            <div className="divider my-0" />
+            {ADMIN_RIGHT_ROWS.map((row) => (
+              <div key={row.key} className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">{row.label}</span>
+                  <InfoTooltip text={row.tip} />
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-sm"
+                  checked={preferences[row.key]}
+                  onChange={(e) => handlePreferenceToggle(row.key, e.target.checked)}
+                  aria-label={row.label}
+                />
+              </div>
+            ))}
+            <div className="divider my-0">Beta</div>
+            {BETA_ROWS.map((row) => (
+              <div key={row.key} className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">{row.label}</span>
+                  <span className="badge badge-warning badge-xs">Beta</span>
+                  <InfoTooltip text={row.tip} />
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-sm"
+                  checked={preferences[row.key]}
+                  onChange={(e) => handlePreferenceToggle(row.key, e.target.checked)}
+                  aria-label={row.label}
+                />
+              </div>
+            ))}
           </div>
-        </>
+        </div>
       )}
 
       <div className="card bg-base-100 shadow">

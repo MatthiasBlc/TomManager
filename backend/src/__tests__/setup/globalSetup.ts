@@ -13,6 +13,7 @@ async function cleanupDb() {
     await prisma.tag.deleteMany();
     await prisma.eventParticipation.deleteMany();
     await prisma.event.deleteMany();
+    await prisma.userPreference.deleteMany();
     await prisma.user.deleteMany();
     await prisma.session.deleteMany();
   } catch (e) {

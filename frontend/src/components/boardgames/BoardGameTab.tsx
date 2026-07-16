@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAdminRights } from "../../hooks/useAdminRights";
 import BoardGameList from "./BoardGameList";
 import BoardGameDetailModal from "./BoardGameDetailModal";
 import AddBoardGameModal from "./AddBoardGameModal";
@@ -53,6 +54,7 @@ function groupEntries(entries: EventBoardGameEntry[]): GroupedGame[] {
 
 export default function BoardGameTab({ eventId }: Props) {
   const { user } = useAuth();
+  const { canModerateGames } = useAdminRights();
   const [entries, setEntries] = useState<EventBoardGameEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -202,7 +204,7 @@ export default function BoardGameTab({ eventId }: Props) {
           onRemove={tab === "mine" ? handleRemove : undefined}
           onClickGame={handleClickGame}
           currentUserId={user?.id}
-          isAdmin={user?.role === "ADMIN"}
+          isAdmin={canModerateGames}
           emptyDescription={tab === "mine" ? "Vous n'avez pas encore ajouté de jeux." : undefined}
         />
       )}

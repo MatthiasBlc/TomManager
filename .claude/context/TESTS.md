@@ -56,7 +56,7 @@ npx playwright test --grep "nom"         # Un test specifique
 
 ## Inventaire des tests
 
-### Backend (253 tests)
+### Backend (272 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me, error format consistency)
@@ -68,6 +68,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/eventBoardGame.test.ts` - EventBoardGame API (add, list, remove, duplicate, non-participant, cascade)
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
+- `integration/preference.test.ts` - Preferences API (defaults false dans /me, PATCH bulk + upsert, 403 cles admin/beta pour non-admin, 400 cle inconnue/valeur non bool/body vide)
 
 ### Frontend (ROADMAP COMPLETE)
 
@@ -100,14 +101,14 @@ npx playwright test --grep "nom"         # Un test specifique
 - `LoginPage.test.tsx` - Redirect si connecte, fallback message si Discord 503 (formulaire password masque), OAuth click, error param
 - `AddBoardGameModal.test.tsx` - Modes search/manual, ajout local, import BGG, close
 - `AdminBoardGamePanel.test.tsx` - Liste, total, edit/delete/merge modals, empty state recherche sans resultat
-- `EventListPage.test.tsx` - Fetch/affichage, empty state, etat d'erreur distinct + retry, FAB/bouton creation selon role
+- `EventListPage.test.tsx` - Fetch/affichage, empty state, etat d'erreur distinct + retry, FAB/bouton creation selon droit admin.events (admin sans droit = pas de bouton)
 - `EventDetailPage.test.tsx` - Skeleton pendant le chargement puis contenu, params non definis
 - `CreateEventModal.test.tsx` - Submit succes, validation croisee endDateTime > startDateTime
 - `EditEventModal.test.tsx` - Submit succes, validation croisee endDateTime > startDateTime
-- `ProfilePage.test.tsx` - Link/unlink Discord, confirmation avant unlink, disabled selon email
+- `ProfilePage.test.tsx` - Link/unlink Discord, confirmation avant unlink, disabled selon email, section droits admin (toggles, master toggle + confirmation, appels updatePreferences)
 - `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel, stepper reservedSeats plafonne a maxPlayers
 - `EditTableModal.test.tsx` - Encart occupation actuelle, avertissement + confirm avant demotion (maxPlayers/reservedSeats), submit sans confirm si pas d'impact
-- `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, boutons de promotion waitlist (simple ou double libre+reservee selon disponibilite, payload `seat`), bouton disabled si table pleine, conversion en place d'un joueur confirme (libre<->reservee)
+- `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, boutons de promotion waitlist (simple ou double libre+reservee selon disponibilite, payload `seat`), bouton disabled si table pleine, conversion en place d'un joueur confirme (libre<->reservee), Modifier/Supprimer admin conditionnes au droit admin.tables
 
 Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phase 8 - pages)
 

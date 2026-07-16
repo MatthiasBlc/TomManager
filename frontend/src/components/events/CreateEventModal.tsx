@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAdminRights } from "../../hooks/useAdminRights";
 
 interface CreateEventForm {
   name: string;
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export default function CreateEventModal({ open, onClose, onCreated }: Props) {
-  const { user } = useAuth();
+  const { canManageEvents } = useAdminRights();
   const {
     register,
     handleSubmit,
@@ -108,7 +108,7 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
             </label>
           )}
         </div>
-        {user?.role === "ADMIN" && (
+        {canManageEvents && (
           <div className="form-control">
             <label className="label" htmlFor="ce-discord-role">
               <span className="label-text">Discord Role ID</span>

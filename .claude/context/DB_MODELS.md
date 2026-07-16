@@ -27,7 +27,22 @@
 
 Invariant : un User a soit (email + passwordHash) soit discordId, soit les deux (compte hybride).
 
-Relations: createdEvents, sentInvitations, eventParticipations, createdGameTables, gameTableParticipations, notifications
+Relations: createdEvents, eventParticipations, createdGameTables, gameTableParticipations, eventBoardGames, notifications, preferences
+
+## UserPreference
+
+| Field     | Type     | Notes                                |
+| --------- | -------- | ------------------------------------ |
+| id        | String   | UUID PK                              |
+| userId    | String   | FK -> User.id, onDelete Cascade      |
+| key       | String   | Ex: "admin.events", "beta.pdfExport" |
+| value     | Boolean  | required                             |
+| updatedAt | DateTime | Auto                                 |
+
+Contrainte unique: (userId, key)
+Liste blanche des cles (backend `schemas/preference.ts`) : admin.events, admin.tables, admin.games, beta.pdfExport, beta.gameDb.
+Les cles `admin.*` et `beta.*` ne sont modifiables que par un ADMIN. Cle absente = false.
+Droits admin opt-in : le front ne montre les actions admin que si le toggle correspondant est actif (le backend reste protege par requireAdmin & co independamment).
 
 ## Event
 
@@ -42,23 +57,7 @@ Relations: createdEvents, sentInvitations, eventParticipations, createdGameTable
 | createdAt     | DateTime | Auto                                    |
 | updatedAt     | DateTime | Auto                                    |
 
-Relations: creator (User), invitations, participations, gameTables
-
-## EventInvitation
-
-| Field     | Type             | Notes               |
-| --------- | ---------------- | ------------------- |
-| id        | String           | UUID PK             |
-| eventId   | String           | FK -> Event.id      |
-| email     | String           | required            |
-| invitedBy | String           | FK -> User.id       |
-| token     | String           | Unique, UUID v4     |
-| expiresAt | DateTime         | = event.endDateTime |
-| status    | InvitationStatus | PENDING (default)   |
-| createdAt | DateTime         | Auto                |
-
-Contrainte unique: (email, eventId)
-Relations: event (Event), inviter (User)
+Relations: creator (User), participations, gameTables, eventBoardGames
 
 ## EventParticipation
 
@@ -170,10 +169,6 @@ Relations: event (Event), boardGame (BoardGame), broughtBy (User)
 ## Enum Role
 
 USER | ADMIN
-
-## Enum InvitationStatus
-
-PENDING | ACCEPTED | EXPIRED
 
 ## Enum TableType
 

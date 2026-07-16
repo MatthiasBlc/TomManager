@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import EmptyState from "../common/EmptyState";
 
@@ -25,8 +26,10 @@ type FilterKey = "all" | "ADMIN" | "USER";
 
 export default function ParticipantList({ eventId, createdBy, participants, onChanged }: Props) {
   const { user } = useAuth();
+  const { canManageEvents } = useAdminRights();
   const isMobile = useIsMobile();
   const isCreator = user?.id === createdBy;
+  const canManage = isCreator || canManageEvents;
 
   const [sort, setSort] = useState<SortKey>("joined");
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -144,7 +147,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                     </span>
                   </div>
                 </div>
-                {isCreator && p.userId !== createdBy && (
+                {canManage && p.userId !== createdBy && (
                   <button
                     className="btn btn-ghost btn-sm text-error min-h-[44px] flex-shrink-0"
                     onClick={() => handleRemove(p.userId)}
@@ -165,7 +168,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                 <th>Nom</th>
                 <th>Rôle</th>
                 <th>Inscrit le</th>
-                {isCreator && <th>Actions</th>}
+                {canManage && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -180,7 +183,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                     </span>
                   </td>
                   <td>{new Date(p.joinedAt).toLocaleDateString("fr-FR")}</td>
-                  {isCreator && (
+                  {canManage && (
                     <td>
                       {p.userId !== createdBy && (
                         <button

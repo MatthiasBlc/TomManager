@@ -7,9 +7,22 @@ const toastSuccess = vi.fn();
 const toastError = vi.fn();
 const unlinkDiscordMock = vi.fn();
 const initiateDiscordLoginMock = vi.fn();
+const updatePreferencesMock = vi.fn();
+
+const defaultPreferences = {
+  "admin.events": false,
+  "admin.tables": false,
+  "admin.games": false,
+  "beta.pdfExport": false,
+  "beta.gameDb": false,
+};
 
 vi.mock("../contexts/AuthContext", () => ({
-  useAuth: () => useAuthMock(),
+  useAuth: () => ({
+    preferences: defaultPreferences,
+    updatePreferences: updatePreferencesMock,
+    ...useAuthMock(),
+  }),
 }));
 vi.mock("react-hot-toast", () => ({
   default: {
@@ -35,6 +48,7 @@ describe("ProfilePage", () => {
     toastError.mockReset();
     unlinkDiscordMock.mockReset();
     initiateDiscordLoginMock.mockReset();
+    updatePreferencesMock.mockReset();
     vi.spyOn(window, "confirm").mockReturnValue(true);
   });
 
@@ -244,5 +258,77 @@ describe("ProfilePage", () => {
     renderWithRouter(<ProfilePage />);
     const unlinkBtn = screen.getByRole("button", { name: /Délier/i });
     expect(unlinkBtn).toBeDisabled();
+  });
+
+  describe("admin rights section", () => {
+    const adminAuth = (prefs: Partial<typeof defaultPreferences> = {}) => ({
+      user: { ...baseUser, role: "ADMIN" as const },
+      preferences: { ...defaultPreferences, ...prefs },
+      initiateDiscordLogin: initiateDiscordLoginMock,
+      unlinkDiscord: unlinkDiscordMock,
+    });
+
+    it("does not show the admin rights section for a regular user", () => {
+      useAuthMock.mockReturnValue({
+        user: baseUser,
+        initiateDiscordLogin: initiateDiscordLoginMock,
+        unlinkDiscord: unlinkDiscordMock,
+      });
+      renderWithRouter(<ProfilePage />);
+      expect(screen.queryByText("Droits d'administration")).not.toBeInTheDocument();
+    });
+
+    it("shows all right and beta toggles for an admin", () => {
+      useAuthMock.mockReturnValue(adminAuth());
+      renderWithRouter(<ProfilePage />);
+      expect(screen.getByText("Droits d'administration")).toBeInTheDocument();
+      expect(screen.getByLabelText("Activer tous les droits")).toBeInTheDocument();
+      expect(screen.getByLabelText("Gestion des événements")).toBeInTheDocument();
+      expect(screen.getByLabelText("Modération des tables")).toBeInTheDocument();
+      expect(screen.getByLabelText("Modération des jeux")).toBeInTheDocument();
+      expect(screen.getByLabelText("Export PDF")).toBeInTheDocument();
+      expect(screen.getByLabelText("Gestion de la base de jeux")).toBeInTheDocument();
+    });
+
+    it("toggling a right calls updatePreferences with that key", () => {
+      useAuthMock.mockReturnValue(adminAuth());
+      renderWithRouter(<ProfilePage />);
+      fireEvent.click(screen.getByLabelText("Gestion des événements"));
+      expect(updatePreferencesMock).toHaveBeenCalledWith({ "admin.events": true });
+    });
+
+    it("enabling the master toggle asks for confirmation and enables all rights but not beta", () => {
+      useAuthMock.mockReturnValue(adminAuth());
+      renderWithRouter(<ProfilePage />);
+      fireEvent.click(screen.getByLabelText("Activer tous les droits"));
+      expect(window.confirm).toHaveBeenCalled();
+      expect(updatePreferencesMock).toHaveBeenCalledWith({
+        "admin.events": true,
+        "admin.tables": true,
+        "admin.games": true,
+      });
+    });
+
+    it("does nothing when the master toggle confirmation is declined", () => {
+      vi.spyOn(window, "confirm").mockReturnValue(false);
+      useAuthMock.mockReturnValue(adminAuth());
+      renderWithRouter(<ProfilePage />);
+      fireEvent.click(screen.getByLabelText("Activer tous les droits"));
+      expect(updatePreferencesMock).not.toHaveBeenCalled();
+    });
+
+    it("disabling the master toggle does not ask for confirmation", () => {
+      useAuthMock.mockReturnValue(
+        adminAuth({ "admin.events": true, "admin.tables": true, "admin.games": true })
+      );
+      renderWithRouter(<ProfilePage />);
+      fireEvent.click(screen.getByLabelText("Activer tous les droits"));
+      expect(window.confirm).not.toHaveBeenCalled();
+      expect(updatePreferencesMock).toHaveBeenCalledWith({
+        "admin.events": false,
+        "admin.tables": false,
+        "admin.games": false,
+      });
+    });
   });
 });

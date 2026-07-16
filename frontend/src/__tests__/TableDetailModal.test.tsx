@@ -78,9 +78,15 @@ const baseTable = {
   ],
 };
 
-function renderModal(extra: Partial<{ user: { id: string; role: string } | null }> = {}) {
+function renderModal(
+  extra: Partial<{
+    user: { id: string; role: string } | null;
+    preferences: Record<string, boolean>;
+  }> = {}
+) {
   useAuthMock.mockReturnValue({
     user: extra.user ?? { id: "u2", role: "USER" },
+    preferences: extra.preferences,
   });
   return render(
     <TableDetailModal
@@ -140,10 +146,20 @@ describe("TableDetailModal", () => {
     expect(screen.getByRole("button", { name: /Supprimer/i })).toBeInTheDocument();
   });
 
-  it("shows Modifier and Supprimer buttons for an admin user", async () => {
-    renderModal({ user: { id: "u3", role: "ADMIN" } });
+  it("shows Modifier and Supprimer buttons for an admin with table moderation enabled", async () => {
+    renderModal({
+      user: { id: "u3", role: "ADMIN" },
+      preferences: { "admin.tables": true },
+    });
     expect(await screen.findByRole("button", { name: /Modifier/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Supprimer/i })).toBeInTheDocument();
+  });
+
+  it("does not show Modifier/Supprimer for an admin without table moderation enabled", async () => {
+    renderModal({ user: { id: "u3", role: "ADMIN" } });
+    expect(await screen.findByRole("button", { name: /Rejoindre/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Modifier/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Supprimer/i })).not.toBeInTheDocument();
   });
 
   it("does not show Modifier/Supprimer for a regular non-GM participant", async () => {
