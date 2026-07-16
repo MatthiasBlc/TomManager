@@ -1,46 +1,17 @@
 # Prochaines etapes - TomManager
 
-Phases terminees : 1-13, 15a, 15b, 15c. Phase 9 (Emails) ignoree — remplacee par Discord.
-Feature `waitlist-manual-control` : complete (UI mise a jour : bloc waitlist separe du bloc participants). Spec : `docs/features/waitlist-manual-control/SPEC_WAITLIST_MANUAL_CONTROL.md`
-Feature `upgrade-tailwind-daisyui` : complete. Spec : `docs/features/upgrade-tailwind-daisyui/SPEC_UPGRADE_TAILWIND_DAISYUI.md`
-Historique des phases : `CHANGELOG.md`
+**Version 1.0 lancee.** Toutes les phases et features prevues sont terminees et integrees.
+Historique utilisateur : `docs/changelogs/`.
 
 ---
 
-## Phase 14 : Migration API BoardGameGeek (Priorite haute)
+## Polish audit (juillet 2026) - priorite haute
 
-**Contexte** : Depuis juillet 2025, BGG exige un Bearer Token sur toutes les requetes `boardgamegeek.com/xmlapi2/*`.
-La structure XML v2 est inchangee — seule l'auth est nouvelle. La recherche BGG est actuellement silencieusement cassee (retourne `[]`).
+Audit complet du 2026-07-16 : 15 points de polish restants (confirm() natifs,
+erreurs backend en anglais, accents notifications, anti double-submit, deep-links...).
 
-Spec complete : `docs/features/bgg-migration/SPEC_BGG_MIGRATION.md`
-Roadmap detaillee : `docs/features/bgg-migration/ROADMAP.md`
-
-**Prerequis bloquant** : Enregistrer TomManager sur `https://boardgamegeek.com/applications/create` et obtenir le Bearer Token.
-
-- [ ] Enregistrer l'app BGG et obtenir le Bearer Token
-- [ ] Ajouter `BGG_API_TOKEN` en variable d'environnement (env.ts, .env, docker-compose.yml x3, GitHub Secrets)
-- [ ] Refactorer `bgg.ts` : Bearer header, retry sur 202, backoff sur 429, log sur 401
-- [ ] Installer `he` et sanitiser les descriptions HTML de BGG avant stockage
-- [ ] Normaliser les imageUrl `//cdn...` → `https://cdn...`
-- [ ] Warning au demarrage si `BGG_API_TOKEN` absent (degraded mode)
-- [ ] Tests unitaires `bgg.test.ts` (14 scenarios avec vi.stubGlobal fetch)
-- [ ] Test live manuel avec vrai token
-- [ ] E2E `boardgames.spec.ts` : search + ajout via BGG
-
-**En attendant** : utiliser "Create manually" pour ajouter des jeux.
-
----
-
-## Feature : Refonte JDS — banque de jeux, BGG et liaisons tables
-
-**Statut** : partiellement complete. Spec : `docs/features/jds-rework/SPEC_JDS_REWORK.md`
-Roadmap detaillee : `docs/features/jds-rework/ROADMAP.md`
-
-- [x] **C — Admin banque** : CRUD admin `/api/admin/boardgames` + panel dans ProfilePage
-- [x] **A — Liaison table ↔ jeu** : migration DB `boardGameId` sur `GameTable`, selecteur dans formulaires tables JDS
-- [x] **B — Games enrichi** : `BoardGameDetailModal`, badge tables, tri/filtres dans `BoardGameTab`
-- [ ] **D — BGG fix** : bearer token, retry 202/429, flag `bggAvailable`, fetch complet a l'import — **bloque sur obtention du Bearer Token BGG**
-- [ ] **Logo "Powered by BGG"** : affichage obligatoire dans BoardGameTab, BoardGameDetailModal, BoardGameSearchInput (condition contractuelle BGG)
+- Spec detaillee : `docs/features/polish-audit/SPEC_POLISH_AUDIT.md`
+- Decoupage en lots : `docs/features/polish-audit/ROADMAP.md`
 
 ---
 
@@ -54,7 +25,7 @@ Roadmap detaillee : `docs/features/jds-rework/ROADMAP.md`
 
 ## Optionnel (futur) : etudier le remplacement de @fullcalendar par une solution custom
 
-**Modele reco : Opus 4.6 | Effort : 4-6h**
+**Modele reco : Opus 4.8 | Effort : 4-6h**
 
 **Context** : FullCalendar est une dependance lourde utilisee dans CalendarView/PlanningTab.
 Le projet ne l'exploite qu'a 10% : affichage d'une timeline simple d'evenements.
@@ -90,4 +61,4 @@ la vue calendrier (FullCalendar) imprime mal ses evenements, et l'orientation es
 - Ou generer une vue "print-only" dediee (composant React simplifie, optimise pour l'impression)
 - Regler proprement le cas FullCalendar (evenements absents en vue calendrier)
 
-**Modele reco : Sonnet 4.6 | Effort : 2-4h**
+**Modele reco : Sonnet 5 | Effort : 2-4h**

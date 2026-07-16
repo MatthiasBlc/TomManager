@@ -4,8 +4,8 @@
   "description": "Gestionnaire d'evenements et de tables de jeu",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1d232a",
-  "theme_color": "#570df8",
+  "background_color": "#232323",
+  "theme_color": "#232323",
   "icons": [
     {
       "src": "/icons/icon-192.png",

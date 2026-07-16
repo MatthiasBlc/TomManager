@@ -33,7 +33,7 @@ describe("BottomTabBar", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders only Events tab and username when not on an event route", () => {
+  it("renders only Events tab and profile button when not on an event route", () => {
     useAuthMock.mockReturnValue({
       user: { id: "u1", username: "Alice" },
     });
@@ -41,7 +41,7 @@ describe("BottomTabBar", () => {
     expect(screen.getByRole("link", { name: /Événements/ })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Planning/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Jeux de société/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Alice/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Profil/ })).toBeInTheDocument();
   });
 
   it("shows Planning and Games tabs when on an event route", () => {
@@ -56,12 +56,12 @@ describe("BottomTabBar", () => {
     expect(games).toHaveAttribute("href", "/events/ev42");
   });
 
-  it("navigates to /profile when the username button is clicked", () => {
+  it("navigates to /profile when the profile button is clicked", () => {
     useAuthMock.mockReturnValue({
       user: { id: "u1", username: "Alice" },
     });
     renderAt("/");
-    fireEvent.click(screen.getByRole("button", { name: /Alice/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Profil/ }));
     expect(navigateMock).toHaveBeenCalledWith("/profile");
   });
 });

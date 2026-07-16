@@ -96,15 +96,16 @@ export default function EventDetailPage() {
           : "py-4 md:py-8"
       }`}
     >
-      <div className="flex items-start justify-between mb-4 md:mb-6 flex-none">
-        <div className="min-w-0 flex-1">
+      {/* Mobile : titre+date puis actions en dessous ; desktop : cote a cote */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between mb-4 md:mb-6 flex-none">
+        <div className="min-w-0 md:flex-1">
           <h1 className="text-lg font-bold truncate md:text-2xl">{event.name}</h1>
           <p className="text-xs opacity-70 mt-1 md:text-sm">
             {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
           </p>
         </div>
         {canManageEvent && (
-          <div className="flex flex-wrap gap-2 ml-2 shrink-0">
+          <div className="flex flex-wrap gap-2 md:ml-2 md:shrink-0 md:justify-end">
             <button className="btn btn-outline btn-sm" onClick={() => setShowEdit(true)}>
               Modifier
             </button>
@@ -120,33 +121,37 @@ export default function EventDetailPage() {
         )}
       </div>
 
-      <div className="overflow-x-auto -mx-4 px-4 mb-4 md:mb-6 md:mx-0 md:px-0 flex-none">
-        <div className="tabs tabs-boxed inline-flex min-w-max">
-          <button
-            className={`tab ${tab === "info" ? "tab-active" : ""}`}
-            onClick={() => setTab("info")}
-          >
-            Infos
-          </button>
-          <button
-            className={`tab ${tab === "planning" ? "tab-active" : ""}`}
-            onClick={() => setTab("planning")}
-          >
-            Planning
-          </button>
-          <button
-            className={`tab ${tab === "games" ? "tab-active" : ""}`}
-            onClick={() => setTab("games")}
-          >
-            Jeux de société
-          </button>
-          <button
-            className={`tab ${tab === "participants" ? "tab-active" : ""}`}
-            onClick={() => setTab("participants")}
-          >
-            Participants ({event.participants.length})
-          </button>
+      <div className="relative mb-4 md:mb-6 flex-none">
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="tabs tabs-boxed inline-flex min-w-max">
+            <button
+              className={`tab ${tab === "info" ? "tab-active" : ""}`}
+              onClick={() => setTab("info")}
+            >
+              Infos
+            </button>
+            <button
+              className={`tab ${tab === "planning" ? "tab-active" : ""}`}
+              onClick={() => setTab("planning")}
+            >
+              Planning
+            </button>
+            <button
+              className={`tab ${tab === "games" ? "tab-active" : ""}`}
+              onClick={() => setTab("games")}
+            >
+              Jeux de société
+            </button>
+            <button
+              className={`tab ${tab === "participants" ? "tab-active" : ""}`}
+              onClick={() => setTab("participants")}
+            >
+              Participants ({event.participants.length})
+            </button>
+          </div>
         </div>
+        {/* Affordance de scroll : degrade sur le bord droit, mobile uniquement */}
+        <div className="pointer-events-none absolute inset-y-0 -right-4 w-10 bg-gradient-to-l from-base-200 to-transparent md:hidden" />
       </div>
 
       <div className={tab === "planning" && !isMobile ? "flex-1 min-h-0" : ""}>
@@ -198,7 +203,8 @@ export default function EventDetailPage() {
         title="Banque de jeux"
         size="xl"
       >
-        <div className="mt-4 overflow-y-auto max-h-[70vh]">
+        {/* px-4 sur mobile : le MobileSheet ne padde pas son contenu */}
+        <div className="mt-4 overflow-y-auto max-h-[70vh] px-4 md:px-0">
           <AdminBoardGamePanel />
         </div>
       </ResponsiveModal>

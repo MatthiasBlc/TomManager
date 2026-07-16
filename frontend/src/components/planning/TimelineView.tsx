@@ -1,5 +1,6 @@
 import TableCard from "./TableCard";
 import EmptyState from "../common/EmptyState";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import { computeLayout, type TableSummary } from "./computeLayout";
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function TimelineView({ tables, onTableClick }: Props) {
+  const isMobile = useIsMobile();
   if (tables.length === 0) {
     return (
       <EmptyState
@@ -42,26 +44,45 @@ export default function TimelineView({ tables, onTableClick }: Props) {
             <h3 className="text-base font-semibold mb-3 capitalize sticky top-0 bg-base-200 py-2 z-10 md:text-lg md:static md:bg-transparent md:py-0">
               {date}
             </h3>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
-                gap: "0.75rem",
-              }}
-            >
-              {items.map(({ table, col, colSpan, cssRow, rowSpan }) => (
-                <div
-                  key={table.id}
-                  className="min-w-0"
-                  style={{
-                    gridColumn: colSpan > 1 ? "1 / -1" : col + 1,
-                    gridRow: `${cssRow} / span ${rowSpan}`,
-                  }}
-                >
-                  <TableCard table={table} onClick={() => onTableClick(table.id)} />
-                </div>
-              ))}
-            </div>
+            {isMobile ? (
+              /* Mobile : une seule colonne chronologique — les colonnes paralleles
+                 rendraient les cartes illisibles sur 390px (conflit signale par badge) */
+              <div className="space-y-3">
+                {[...dateTables]
+                  .sort(
+                    (a, b) =>
+                      new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime()
+                  )
+                  .map((table) => (
+                    <TableCard
+                      key={table.id}
+                      table={table}
+                      onClick={() => onTableClick(table.id)}
+                    />
+                  ))}
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+                  gap: "0.75rem",
+                }}
+              >
+                {items.map(({ table, col, colSpan, cssRow, rowSpan }) => (
+                  <div
+                    key={table.id}
+                    className="min-w-0"
+                    style={{
+                      gridColumn: colSpan > 1 ? "1 / -1" : col + 1,
+                      gridRow: `${cssRow} / span ${rowSpan}`,
+                    }}
+                  >
+                    <TableCard table={table} onClick={() => onTableClick(table.id)} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })}

@@ -3,7 +3,14 @@ import { createContext, useContext, useState, useLayoutEffect, type ReactNode } 
 
 const THEME_KEY = "app_theme";
 const DARK_THEME = "ToM";
-const LIGHT_THEME = "winter";
+// Theme clair : "light" stock de DaisyUI (seul theme clair compile, voir styles/index.css)
+const LIGHT_THEME = "light";
+
+// base-100 de chaque theme — pour la barre systeme (meta theme-color)
+const THEME_COLORS: Record<ThemeMode, string> = {
+  dark: "#232323",
+  light: "#ffffff",
+};
 
 type ThemeMode = "dark" | "light";
 
@@ -30,6 +37,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       "data-theme",
       theme === "dark" ? DARK_THEME : LIGHT_THEME
     );
+    // Synchroniser la barre systeme (PWA / mobile) avec le fond du theme
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", THEME_COLORS[theme]);
   }, [theme]);
 
   const toggleTheme = () => {
