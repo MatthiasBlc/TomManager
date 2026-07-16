@@ -1,5 +1,7 @@
 import prisma from "../util/db";
 import createError from "http-errors";
+import logger from "../util/logger";
+import { syncEventParticipantsFromDiscord } from "./adminSync";
 
 export async function createEvent(
   name: string,
@@ -118,6 +120,9 @@ export async function getEvent(eventId: string) {
     startDateTime: event.startDateTime,
     endDateTime: event.endDateTime,
     createdBy: event.createdBy,
+    // Sans ce champ, la modale d'edition initialisait "Discord Role ID" a vide
+    // et chaque enregistrement effacait le role lie a l'event
+    discordRoleId: event.discordRoleId,
     createdAt: event.createdAt,
     updatedAt: event.updatedAt,
     participants: event.participations.map((p) => ({
@@ -229,6 +234,21 @@ export async function purgeEvent(eventId: string) {
     await tx.eventParticipation.deleteMany({ where: { eventId } });
     await tx.eventBoardGame.deleteMany({ where: { eventId } });
   });
+
+  // L'event conserve son discordRoleId : re-importer immediatement les
+  // participants depuis le role Discord pour ne pas laisser la liste vide.
+  // Best-effort : un bot indisponible ne doit pas faire echouer la purge
+  // (resyncedParticipants: null signale que le re-import n'a pas eu lieu).
+  let resyncedParticipants: number | null = null;
+  if (existing.discordRoleId) {
+    try {
+      resyncedParticipants = await syncEventParticipantsFromDiscord(eventId);
+    } catch (err) {
+      logger.warn({ err, eventId }, "Purge: re-import Discord des participants impossible");
+    }
+  }
+
+  return { resyncedParticipants };
 }
 
 export async function deleteEvent(eventId: string) {
