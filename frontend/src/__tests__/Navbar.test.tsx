@@ -58,10 +58,10 @@ describe("Navbar (desktop)", () => {
     expect(container.querySelector(".navbar")).toHaveClass("top-10");
   });
 
-  it("shows the Login link when no user is authenticated", () => {
+  it("shows the direct Discord login button when no user is authenticated", () => {
     setAuth(null);
     renderNavbar();
-    expect(screen.getByRole("link", { name: "Connexion" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Connexion avec Discord/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Se déconnecter" })).not.toBeInTheDocument();
   });
 
