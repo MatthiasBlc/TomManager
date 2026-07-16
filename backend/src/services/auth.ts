@@ -47,6 +47,7 @@ export async function getMe(userId: string) {
     id: user.id,
     email: user.email,
     username: user.username,
+    displayName: user.displayName,
     role: user.role,
     discordId: user.discordId,
     discordUsername: user.discordUsername,

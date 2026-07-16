@@ -62,7 +62,9 @@ export default function TableCard({ table, onClick }: Props) {
           {formatTime(table.startDateTime)} - {formatTime(table.endDateTime)}
         </p>
 
-        <p className="text-sm opacity-60 truncate">MJ : {table.creator.username}</p>
+        <p className="text-sm opacity-60 truncate">
+          MJ : {table.creator.displayName ?? table.creator.username}
+        </p>
 
         {table.pitch && <p className="text-sm line-clamp-2">{table.pitch}</p>}
 
@@ -97,7 +99,7 @@ export default function TableCard({ table, onClick }: Props) {
                   p.isOnReservedSeat ? "badge-warning" : "badge-outline opacity-70"
                 }`}
               >
-                {p.username}
+                {p.displayName ?? p.username}
               </span>
             ))}
           </div>

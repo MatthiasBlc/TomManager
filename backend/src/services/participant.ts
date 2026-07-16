@@ -21,7 +21,7 @@ export async function listParticipants(
       ...(options.cursor ? { createdAt: { lt: new Date(options.cursor) } } : {}),
     },
     include: {
-      user: { select: { id: true, username: true, role: true } },
+      user: { select: { id: true, username: true, displayName: true, role: true } },
     },
     take: take + 1,
     orderBy: { createdAt: "asc" },
@@ -35,6 +35,7 @@ export async function listParticipants(
     data: items.map((p) => ({
       userId: p.user.id,
       username: p.user.username,
+      displayName: p.user.displayName,
       role: p.user.role,
       joinedAt: p.createdAt,
     })),

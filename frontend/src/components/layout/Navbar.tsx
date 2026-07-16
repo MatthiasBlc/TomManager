@@ -41,7 +41,7 @@ function DesktopNavbar({ isOnline }: { isOnline: boolean }) {
               {user.avatarUrl ? (
                 <img src={user.avatarUrl} alt="avatar" className="w-7 h-7 rounded-full" />
               ) : null}
-              <span className="text-sm opacity-70">{user.username}</span>
+              <span className="text-sm opacity-70">{user.displayName ?? user.username}</span>
             </Link>
             <button onClick={handleLogout} className="btn btn-ghost btn-sm">
               Se déconnecter

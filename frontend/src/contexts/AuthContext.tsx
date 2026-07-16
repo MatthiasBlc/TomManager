@@ -15,6 +15,7 @@ interface User {
   id: string;
   email: string | null;
   username: string;
+  displayName: string | null;
   role: "USER" | "ADMIN";
   discordId: string | null;
   discordUsername: string | null;

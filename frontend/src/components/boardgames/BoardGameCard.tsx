@@ -11,7 +11,7 @@ interface BoardGame {
 
 interface Props {
   game: BoardGame;
-  broughtBy: { id: string; username: string }[];
+  broughtBy: { id: string; username: string; displayName?: string | null }[];
   linkedTables?: { id: string; title: string }[];
   onRemove?: (entryId: string) => void;
   removableEntries?: { entryId: string; broughtByUserId: string }[];
@@ -74,7 +74,7 @@ export default function BoardGameCard({
                 <div className="mt-1 flex flex-wrap gap-1">
                   {broughtBy.map((user) => (
                     <span key={user.id} className="badge badge-outline badge-sm">
-                      {user.username}
+                      {user.displayName ?? user.username}
                     </span>
                   ))}
                 </div>
