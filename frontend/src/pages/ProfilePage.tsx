@@ -140,7 +140,7 @@ export default function ProfilePage() {
               <img src={user.avatarUrl} alt="avatar" className="w-10 h-10 rounded-full" />
             ) : (
               <div className="avatar placeholder">
-                <div className="bg-neutral text-neutral-content rounded-full w-10">
+                <div className="bg-neutral text-neutral-content rounded-full w-10 h-10 flex items-center justify-center">
                   <span className="text-sm">
                     {(user.displayName ?? user.username).slice(0, 2).toUpperCase()}
                   </span>
@@ -197,9 +197,9 @@ export default function ProfilePage() {
             <input
               type="checkbox"
               className="toggle toggle-sm"
-              checked={theme === "light"}
+              checked={theme === "dark"}
               onChange={toggleTheme}
-              aria-label="Changer de thème"
+              aria-label="Activer le mode sombre"
             />
           </div>
         </div>

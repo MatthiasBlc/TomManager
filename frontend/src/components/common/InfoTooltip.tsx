@@ -6,7 +6,7 @@ export default function InfoTooltip({ text }: { text: string }) {
 
   return (
     <span
-      className={`tooltip tooltip-left before:max-w-[16rem] before:whitespace-normal before:text-left ${
+      className={`tooltip tooltip-bottom before:max-w-[16rem] before:whitespace-normal before:text-left ${
         open ? "tooltip-open" : ""
       }`}
       data-tip={text}

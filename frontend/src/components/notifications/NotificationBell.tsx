@@ -19,14 +19,24 @@ function NotificationList({
   const touchTarget = isMobile ? "min-h-[44px]" : "";
   return (
     <>
-      <div className="flex items-center justify-between px-3 py-2 border-b border-base-300">
-        <span className="text-sm font-semibold">Notifications</span>
-        {unreadCount > 0 && (
-          <button className={`btn btn-ghost btn-xs text-xs ${touchTarget}`} onClick={markAllAsRead}>
-            Tout marquer lu
-          </button>
-        )}
-      </div>
+      {/* Sur mobile le titre est deja porte par le MobileSheet : on ne garde que l'action */}
+      {(!isMobile || unreadCount > 0) && (
+        <div
+          className={`flex items-center px-3 py-2 border-b border-base-300 ${
+            isMobile ? "justify-end" : "justify-between"
+          }`}
+        >
+          {!isMobile && <span className="text-sm font-semibold">Notifications</span>}
+          {unreadCount > 0 && (
+            <button
+              className={`btn btn-ghost btn-xs text-xs ${touchTarget}`}
+              onClick={markAllAsRead}
+            >
+              Tout marquer lu
+            </button>
+          )}
+        </div>
+      )}
       <div className="overflow-y-auto flex-1 divide-y divide-base-200">
         {isLoading && notifications.length === 0 && <SkeletonNotificationList count={4} />}
         {notifications.length === 0 && !isLoading && (

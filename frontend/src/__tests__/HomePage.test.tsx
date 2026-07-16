@@ -37,12 +37,12 @@ describe("HomePage", () => {
     apiGetMock.mockReset();
   });
 
-  it("renders the welcome message and get started button", () => {
+  it("renders the welcome message and login button", () => {
     mockAuth({ user: null, loading: false });
     renderWithRouter(<HomePage />);
     expect(screen.getByText("TomManager")).toBeInTheDocument();
-    expect(screen.getByText(/Welcome to TomManager/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Get Started/i })).toBeInTheDocument();
+    expect(screen.getByText(/Organisez vos soirées jeux/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Se connecter/i })).toBeInTheDocument();
   });
 
   it("does not navigate when still loading auth", () => {

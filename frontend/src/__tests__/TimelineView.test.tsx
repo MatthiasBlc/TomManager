@@ -2,6 +2,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import TimelineView from "../components/planning/TimelineView";
 import { computeLayout } from "../components/planning/computeLayout";
 
+const useIsMobileMock = vi.fn().mockReturnValue(false);
+vi.mock("../hooks/useIsMobile", () => ({
+  useIsMobile: () => useIsMobileMock(),
+}));
+
 const makeTable = (
   overrides: Partial<{ id: string; startDateTime: string; title: string }> = {}
 ) => ({
@@ -123,6 +128,26 @@ describe("TimelineView", () => {
     );
     expect(screen.getByText("Donjon")).toBeInTheDocument();
     expect(screen.getByText("Cthulhu")).toBeInTheDocument();
+  });
+
+  it("stacks overlapping tables in one chronological column on mobile", () => {
+    useIsMobileMock.mockReturnValue(true);
+    render(
+      <TimelineView
+        tables={[
+          makeTable({
+            id: "t2",
+            title: "Cthulhu",
+            startDateTime: "2026-04-10T19:00:00.000Z",
+          }),
+          makeTable({ id: "t1", title: "Donjon", startDateTime: "2026-04-10T18:00:00.000Z" }),
+        ]}
+        onTableClick={vi.fn()}
+      />
+    );
+    useIsMobileMock.mockReturnValue(false);
+    const titles = screen.getAllByText(/Donjon|Cthulhu/).map((el) => el.textContent);
+    expect(titles).toEqual(["Donjon", "Cthulhu"]);
   });
 
   it("groups tables by date and shows a heading per date", () => {

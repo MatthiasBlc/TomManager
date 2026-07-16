@@ -156,8 +156,8 @@ export default function MobileSheet({ open, onClose, title, children }: Props) {
             <h3 className="font-semibold text-lg">{title}</h3>
           </div>
         )}
-        {/* Content */}
-        <div className="overflow-y-auto overflow-x-hidden flex-1 overscroll-contain">
+        {/* Content — padding bas pour la safe-area (barre home iOS) */}
+        <div className="overflow-y-auto overflow-x-hidden flex-1 overscroll-contain pb-[env(safe-area-inset-bottom)]">
           {children}
         </div>
       </div>
