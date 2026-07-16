@@ -6,6 +6,7 @@ import Navbar from "./components/layout/Navbar";
 import AppLayout from "./components/layout/AppLayout";
 import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import ScrollToTop from "./components/common/ScrollToTop";
 import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { useIsMobile } from "./hooks/useIsMobile";
 
@@ -27,6 +28,7 @@ function AppContent() {
         </div>
       )}
       <div className={wrapperPadding}>
+        <ScrollToTop />
         <Navbar />
         <AppLayout>
           <AppRoutes />

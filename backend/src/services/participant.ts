@@ -120,8 +120,8 @@ export async function removeParticipant(eventId: string, userId: string) {
   await createNotification({
     userId,
     type: "PARTICIPANT_REMOVED",
-    title: "Retire d'un event",
-    message: `Tu as ete retire de l'event "${event.name}"`,
+    title: "Retiré d'un événement",
+    message: `Tu as été retiré de l'événement "${event.name}"`,
     metadata: { eventId },
   });
 }

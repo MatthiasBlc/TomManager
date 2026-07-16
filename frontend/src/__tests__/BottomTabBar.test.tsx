@@ -1,17 +1,12 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import BottomTabBar from "../components/layout/BottomTabBar";
 
 const useAuthMock = vi.fn();
-const navigateMock = vi.fn();
 
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => useAuthMock(),
 }));
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
-  return { ...actual, useNavigate: () => navigateMock };
-});
 
 function renderAt(route: string) {
   return render(
@@ -23,7 +18,6 @@ function renderAt(route: string) {
 
 describe("BottomTabBar", () => {
   beforeEach(() => {
-    navigateMock.mockReset();
     useAuthMock.mockReset();
   });
 
@@ -33,7 +27,7 @@ describe("BottomTabBar", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders only Events tab and profile button when not on an event route", () => {
+  it("renders only Events tab and profile tab when not on an event route", () => {
     useAuthMock.mockReturnValue({
       user: { id: "u1", username: "Alice" },
     });
@@ -41,7 +35,7 @@ describe("BottomTabBar", () => {
     expect(screen.getByRole("link", { name: /Événements/ })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Planning/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Jeux de société/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Profil/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Profil/ })).toBeInTheDocument();
   });
 
   it("shows Planning and Games tabs when on an event route", () => {
@@ -56,12 +50,13 @@ describe("BottomTabBar", () => {
     expect(games).toHaveAttribute("href", "/events/ev42");
   });
 
-  it("navigates to /profile when the profile button is clicked", () => {
+  it("links the profile tab to /profile and marks it active on that route", () => {
     useAuthMock.mockReturnValue({
       user: { id: "u1", username: "Alice" },
     });
-    renderAt("/");
-    fireEvent.click(screen.getByRole("button", { name: /Profil/ }));
-    expect(navigateMock).toHaveBeenCalledWith("/profile");
+    renderAt("/profile");
+    const profile = screen.getByRole("link", { name: /Profil/ });
+    expect(profile).toHaveAttribute("href", "/profile");
+    expect(profile.className).toContain("text-primary");
   });
 });

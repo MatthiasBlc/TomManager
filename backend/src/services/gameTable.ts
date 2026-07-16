@@ -570,8 +570,8 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
       participantUserIds.map((userId) => ({
         userId,
         type: "TABLE_UPDATED" as const,
-        title: "Table modifiee",
-        message: `La table "${existing.title}" a ete modifiee`,
+        title: "Table modifiée",
+        message: `La table "${existing.title}" a été modifiée`,
         metadata: { eventId: existing.eventId, tableId },
       }))
     );
@@ -614,8 +614,8 @@ export async function deleteTable(tableId: string, deletedByUserId: string) {
       participantUserIds.map((userId) => ({
         userId,
         type: "TABLE_DELETED" as const,
-        title: "Table supprimee",
-        message: `La table "${existing.title}" a ete supprimee`,
+        title: "Table supprimée",
+        message: `La table "${existing.title}" a été supprimée`,
         metadata: { eventId: existing.eventId, tableId },
       }))
     );
@@ -692,8 +692,8 @@ export async function leaveTable(tableId: string, userId: string) {
         participantUserIds.map((pid) => ({
           userId: pid,
           type: "TABLE_DELETED" as const,
-          title: "Table supprimee",
-          message: `La table "${table.title}" a ete supprimee (le MJ a quitte)`,
+          title: "Table supprimée",
+          message: `La table "${table.title}" a été supprimée (le MJ a quitté)`,
           metadata: { eventId: table.eventId, tableId },
         }))
       );
@@ -743,8 +743,8 @@ export async function leaveTable(tableId: string, userId: string) {
     await createNotification({
       userId: promotedUserId,
       type: "WAITLIST_PROMOTED",
-      title: "Place confirmee",
-      message: `Tu es confirme pour la table "${table.title}"`,
+      title: "Place confirmée",
+      message: `Tu es confirmé pour la table "${table.title}"`,
       metadata: { eventId: table.eventId, tableId },
     });
   }
@@ -890,8 +890,8 @@ export async function setParticipantStatus(
       await createNotification({
         userId: targetUserId,
         type: "RESERVED_SEAT_ASSIGNED",
-        title: "Place reservee attribuee",
-        message: `Le MJ t'a attribue une place reservee pour la table "${table.title}"`,
+        title: "Place réservée attribuée",
+        message: `Le MJ t'a attribué une place réservée pour la table "${table.title}"`,
         metadata: { eventId: table.eventId, tableId },
       });
     }
@@ -908,16 +908,16 @@ export async function setParticipantStatus(
       await createNotification({
         userId: targetUserId,
         type: "RESERVED_SEAT_ASSIGNED",
-        title: "Place reservee attribuee",
-        message: `Le MJ t'a attribue une place reservee pour la table "${table.title}"`,
+        title: "Place réservée attribuée",
+        message: `Le MJ t'a attribué une place réservée pour la table "${table.title}"`,
         metadata: { eventId: table.eventId, tableId },
       });
     } else {
       await createNotification({
         userId: targetUserId,
         type: "WAITLIST_PROMOTED",
-        title: "Place confirmee",
-        message: `Tu es confirme pour la table "${table.title}"`,
+        title: "Place confirmée",
+        message: `Tu es confirmé pour la table "${table.title}"`,
         metadata: { eventId: table.eventId, tableId },
       });
     }
@@ -930,7 +930,7 @@ export async function setParticipantStatus(
       userId: targetUserId,
       type: "WAITLIST_DEMOTED",
       title: "Place en liste d'attente",
-      message: `Tu as ete place en liste d'attente pour la table "${table.title}"`,
+      message: `Tu as été placé en liste d'attente pour la table "${table.title}"`,
       metadata: { eventId: table.eventId, tableId },
     });
   }
@@ -991,8 +991,8 @@ export async function kickPlayer(tableId: string, userId: string) {
   await createNotification({
     userId,
     type: "PLAYER_KICKED",
-    title: "Expulse d'une table",
-    message: `Tu as ete expulse de la table "${table.title}"`,
+    title: "Expulsé d'une table",
+    message: `Tu as été expulsé de la table "${table.title}"`,
     metadata: { eventId: table.eventId, tableId },
   });
   if (promotedUserId) {
@@ -1003,8 +1003,8 @@ export async function kickPlayer(tableId: string, userId: string) {
     await createNotification({
       userId: promotedUserId,
       type: "WAITLIST_PROMOTED",
-      title: "Place confirmee",
-      message: `Tu es confirme pour la table "${table.title}"`,
+      title: "Place confirmée",
+      message: `Tu es confirmé pour la table "${table.title}"`,
       metadata: { eventId: table.eventId, tableId },
     });
   }

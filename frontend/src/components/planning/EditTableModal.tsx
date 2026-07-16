@@ -93,7 +93,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
     reset,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<EditTableForm>();
 
   const confirmedCount = table.participants.filter((p) => p.status === "CONFIRMED").length;
@@ -430,7 +430,8 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
           <button type="button" className="btn" onClick={onClose}>
             Annuler
           </button>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting && <span className="loading loading-spinner loading-xs" />}
             Enregistrer
           </button>
         </div>

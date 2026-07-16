@@ -60,7 +60,7 @@ export default function CreateTableModal({
     reset,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<CreateTableForm>({
     defaultValues: {
       durationMinutes: 120,
@@ -369,7 +369,8 @@ export default function CreateTableModal({
           <button type="button" className="btn" onClick={onClose}>
             Annuler
           </button>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting && <span className="loading loading-spinner loading-xs" />}
             Créer
           </button>
         </div>
