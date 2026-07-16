@@ -1,7 +1,7 @@
 # Prochaines etapes - TomManager
 
 **Version 1.0 lancee.** Toutes les phases et features prevues sont terminees et integrees.
-Historique des phases : `CHANGELOG.md`. Historique utilisateur : `docs/changelogs/`.
+Historique utilisateur : `docs/changelogs/`.
 
 ---
 
