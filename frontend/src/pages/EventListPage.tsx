@@ -83,7 +83,9 @@ export default function EventListPage() {
         <EmptyState
           icon={<span>📅</span>}
           title="Aucun événement pour l'instant"
-          description={canManageEvents ? "Créez votre premier événement pour commencer." : undefined}
+          description={
+            canManageEvents ? "Créez votre premier événement pour commencer." : undefined
+          }
         />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 animate-fade-in">
