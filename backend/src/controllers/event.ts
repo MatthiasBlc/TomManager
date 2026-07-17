@@ -54,12 +54,16 @@ export async function detail(req: Request, res: Response, next: NextFunction) {
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const { name, startDateTime, endDateTime, discordRoleId } = req.body;
-    const event = await eventService.updateEvent(req.params.eventId, {
-      name,
-      startDateTime,
-      endDateTime,
-      discordRoleId,
-    });
+    const event = await eventService.updateEvent(
+      req.params.eventId,
+      {
+        name,
+        startDateTime,
+        endDateTime,
+        discordRoleId,
+      },
+      req.session.userId!
+    );
 
     res.json({ data: event });
   } catch (err) {
@@ -78,7 +82,7 @@ export async function purge(req: Request, res: Response, next: NextFunction) {
 
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
-    await eventService.deleteEvent(req.params.eventId);
+    await eventService.deleteEvent(req.params.eventId, req.session.userId!);
     res.status(204).send();
   } catch (err) {
     next(err);
