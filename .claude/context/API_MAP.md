@@ -85,6 +85,12 @@ Note : plus de signup ni d'invitations — la creation de compte passe par Disco
 | PATCH  | `/read-all`     | requireAuth | Mark all as read            |
 | DELETE | `/:id`          | requireAuth | Delete notification         |
 
+Evenements socket emis vers la room `user:<userId>` (sync multi-appareils/onglets) :
+`notification:new { notification }` (creation), `notification:read { id }`,
+`notification:read-all {}`, `notification:deleted { id }`. La creation de
+notification est non-bloquante (echec logge, retourne null/[], l'action metier
+n'echoue jamais a cause d'une notification).
+
 ## Preferences (`/api/me`)
 
 | Method | Path           | Auth        | Description                                                                                      |

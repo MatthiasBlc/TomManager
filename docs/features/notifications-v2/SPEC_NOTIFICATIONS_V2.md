@@ -34,15 +34,15 @@ Toutes les modifications doivent etre additives et deployables sans regression
 
 ### Notifications existantes (7 types actifs)
 
-| Type                     | Declencheur                                        | Destinataire            |
-| ------------------------ | -------------------------------------------------- | ----------------------- |
-| `TABLE_UPDATED`          | Table modifiee par MJ/admin                        | Participants (sauf auteur/demotes) |
-| `TABLE_DELETED`          | Suppression table (delete ou MJ quitte)            | Participants            |
-| `WAITLIST_PROMOTED`      | Promotion (auto apres depart/kick, ou manuelle)    | Joueur promu            |
-| `WAITLIST_DEMOTED`       | Retrogradation (manuelle ou reduction de places)   | Joueur retrograde       |
-| `RESERVED_SEAT_ASSIGNED` | MJ attribue une place reservee                     | Joueur                  |
-| `PLAYER_KICKED`          | Expulsion d'une table                              | Joueur expulse          |
-| `PARTICIPANT_REMOVED`    | Retrait d'un event                                 | Participant retire      |
+| Type                     | Declencheur                                      | Destinataire                       |
+| ------------------------ | ------------------------------------------------ | ---------------------------------- |
+| `TABLE_UPDATED`          | Table modifiee par MJ/admin                      | Participants (sauf auteur/demotes) |
+| `TABLE_DELETED`          | Suppression table (delete ou MJ quitte)          | Participants                       |
+| `WAITLIST_PROMOTED`      | Promotion (auto apres depart/kick, ou manuelle)  | Joueur promu                       |
+| `WAITLIST_DEMOTED`       | Retrogradation (manuelle ou reduction de places) | Joueur retrograde                  |
+| `RESERVED_SEAT_ASSIGNED` | MJ attribue une place reservee                   | Joueur                             |
+| `PLAYER_KICKED`          | Expulsion d'une table                            | Joueur expulse                     |
+| `PARTICIPANT_REMOVED`    | Retrait d'un event                               | Participant retire                 |
 
 `EVENT_UPDATED` et `EVENT_DELETED` existent dans l'enum + icones front mais ne sont
 **jamais crees** (code mort — voir bug B5).
@@ -129,12 +129,12 @@ les actions purement consultatives.
 
 Nouveaux types enum + call-sites dans `services/gameTable.ts` :
 
-| Type                  | Declencheur (call-site)                                | Destinataire | Titre / message (UI, accents corrects)                                  |
-| --------------------- | ------------------------------------------------------ | ------------ | ----------------------------------------------------------------------- |
-| `GM_PLAYER_JOINED`    | `joinTable` -> status CONFIRMED                        | MJ (createdBy) | "Nouveau joueur" / "<displayName> a rejoint ta table \"<titre>\""       |
-| `GM_PLAYER_WAITLISTED`| `joinTable` -> status WAITLIST                         | MJ           | "Joueur en liste d'attente" / "<displayName> est en liste d'attente sur \"<titre>\"" |
-| `GM_PLAYER_LEFT`      | `leaveTable` (joueur non-MJ)                           | MJ           | "Un joueur a quitté ta table" / "<displayName> a quitté \"<titre>\""    |
-| `GM_TABLE_FULL`       | `joinTable` quand le join remplit la derniere place normale | MJ       | "Table complète" / "Ta table \"<titre>\" est complète"                  |
+| Type                   | Declencheur (call-site)                                     | Destinataire   | Titre / message (UI, accents corrects)                                               |
+| ---------------------- | ----------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------ |
+| `GM_PLAYER_JOINED`     | `joinTable` -> status CONFIRMED                             | MJ (createdBy) | "Nouveau joueur" / "<displayName> a rejoint ta table \"<titre>\""                    |
+| `GM_PLAYER_WAITLISTED` | `joinTable` -> status WAITLIST                              | MJ             | "Joueur en liste d'attente" / "<displayName> est en liste d'attente sur \"<titre>\"" |
+| `GM_PLAYER_LEFT`       | `leaveTable` (joueur non-MJ)                                | MJ             | "Un joueur a quitté ta table" / "<displayName> a quitté \"<titre>\""                 |
+| `GM_TABLE_FULL`        | `joinTable` quand le join remplit la derniere place normale | MJ             | "Table complète" / "Ta table \"<titre>\" est complète"                               |
 
 Details :
 
@@ -161,10 +161,10 @@ par un admin sur la table d'un MJ reste non notifie au MJ en v2 (rare, voir Lot 
 
 Call-sites dans `services/event.ts` :
 
-| Type            | Declencheur                                       | Destinataires                          | Message                                                        |
-| --------------- | ------------------------------------------------- | -------------------------------------- | -------------------------------------------------------------- |
-| `EVENT_UPDATED` | `updateEvent` si champ significatif change        | Participants (sauf auteur)             | "Événement modifié" / "L'événement \"<nom>\" a été modifié"    |
-| `EVENT_DELETED` | `deleteEvent`                                     | Participants (sauf auteur)             | "Événement supprimé" / "L'événement \"<nom>\" a été supprimé"  |
+| Type            | Declencheur                                | Destinataires              | Message                                                       |
+| --------------- | ------------------------------------------ | -------------------------- | ------------------------------------------------------------- |
+| `EVENT_UPDATED` | `updateEvent` si champ significatif change | Participants (sauf auteur) | "Événement modifié" / "L'événement \"<nom>\" a été modifié"   |
+| `EVENT_DELETED` | `deleteEvent`                              | Participants (sauf auteur) | "Événement supprimé" / "L'événement \"<nom>\" a été supprimé" |
 
 Details :
 
@@ -194,13 +194,13 @@ Details :
 
 Centraliser dans `NotificationItem` (remplace l'heuristique actuelle basee metadata) :
 
-| Type                                                      | Destination                                   |
-| --------------------------------------------------------- | --------------------------------------------- |
-| `TABLE_UPDATED`, `WAITLIST_*`, `RESERVED_SEAT_ASSIGNED`, `GM_*` | `/events/:eventId/planning?table=<tableId>`   |
-| `TABLE_DELETED`, `PLAYER_KICKED`                          | `/events/:eventId/planning` (sans `?table` : la table/participation n'existe plus) |
-| `EVENT_UPDATED`                                           | `/events/:eventId/planning`                   |
-| `EVENT_DELETED`, `PARTICIPANT_REMOVED`                    | `/events` (l'acces a l'event n'existe plus)   |
-| Type inconnu (forward-compat)                             | metadata.eventId si present, sinon rien       |
+| Type                                                            | Destination                                                                        |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `TABLE_UPDATED`, `WAITLIST_*`, `RESERVED_SEAT_ASSIGNED`, `GM_*` | `/events/:eventId/planning?table=<tableId>`                                        |
+| `TABLE_DELETED`, `PLAYER_KICKED`                                | `/events/:eventId/planning` (sans `?table` : la table/participation n'existe plus) |
+| `EVENT_UPDATED`                                                 | `/events/:eventId/planning`                                                        |
+| `EVENT_DELETED`, `PARTICIPANT_REMOVED`                          | `/events` (l'acces a l'event n'existe plus)                                        |
+| Type inconnu (forward-compat)                                   | metadata.eventId si present, sinon rien                                            |
 
 Dans tous les cas : mark-as-read + fermeture du panneau (fix B2).
 
@@ -226,8 +226,8 @@ Aucune purge aujourd'hui : la table grossit indefiniment.
 Le systeme de preferences existe deja (`/api/me/preferences`, liste blanche de cles).
 Si le volume devient genant apres la v2, ajouter des cles d'opt-out par categorie :
 
-- `notif.gmActivity` (GM_* — active par defaut)
-- `notif.eventChanges` (EVENT_* — active par defaut)
+- `notif.gmActivity` (GM\_\* — active par defaut)
+- `notif.eventChanges` (EVENT\_\* — active par defaut)
 
 Le filtre s'applique a la **creation** (backend, avant insert) — pas a l'affichage.
 A ne construire que si le besoin est confirme a l'usage.
@@ -258,7 +258,7 @@ Ordre impose et garanties :
 ## 8. Tests a ajouter
 
 - **Backend integration** : emissions socket sur read/read-all/delete (spy emitter) ;
-  GM_* sur join/waitlist/leave/table-full (y compris cas MJ-joueur = pas d'auto-notif) ;
+  GM\_\* sur join/waitlist/leave/table-full (y compris cas MJ-joueur = pas d'auto-notif) ;
   EVENT_UPDATED (champ significatif vs cosmetique), EVENT_DELETED (participants
   notifies, createur exclu) ; createNotification en echec ne fait pas echouer l'action.
 - **Front (vitest)** : handlers socket read/read-all/deleted (mise a jour liste +

@@ -1,5 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import prisma from "../../util/db";
+
+// Spy sur l'emitter socket : verifie les emissions de sync multi-appareils
+// (notification:new / read / read-all / deleted) sans stack Socket.io
+vi.mock("../../socket/emitter", () => ({
+  emitToUser: vi.fn(),
+  emitToEvent: vi.fn(),
+}));
+import { emitToUser } from "../../socket/emitter";
 import {
   request,
   createTestUserDirectly,
@@ -17,12 +25,20 @@ async function createUser(overrides?: { email?: string; username?: string }) {
   return user;
 }
 
+// createNotification est non-bloquant (retourne null en cas d'echec) ; dans les
+// tests on attend toujours une creation reussie
+async function mustCreate(input: Parameters<typeof notificationService.createNotification>[0]) {
+  const notification = await notificationService.createNotification(input);
+  if (!notification) throw new Error("createNotification failed unexpectedly in test");
+  return notification;
+}
+
 describe("Notification Service", () => {
   describe("createNotification", () => {
     it("should create a notification", async () => {
       const user = await createUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "Table supprimee",
@@ -42,7 +58,7 @@ describe("Notification Service", () => {
     it("should create a notification without metadata", async () => {
       const user = await createUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "Promu",
@@ -95,13 +111,13 @@ describe("Notification Service", () => {
       const user = await createUser();
 
       // Create with slight delay to ensure ordering
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "First",
         message: "First notification",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "Second",
@@ -119,7 +135,7 @@ describe("Notification Service", () => {
       const user = await createUser();
 
       for (let i = 0; i < 5; i++) {
-        await notificationService.createNotification({
+        await mustCreate({
           userId: user.id,
           type: "TABLE_UPDATED",
           title: `Notif ${i}`,
@@ -151,13 +167,13 @@ describe("Notification Service", () => {
     it("should filter unread only", async () => {
       const user = await createUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "Read",
         message: "Will be read",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "Unread",
@@ -191,7 +207,7 @@ describe("Notification Service", () => {
         username: "user2",
       });
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user1.id,
         type: "TABLE_DELETED",
         title: "User1 only",
@@ -207,13 +223,13 @@ describe("Notification Service", () => {
     it("should return count of unread notifications", async () => {
       const user = await createUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      const n2 = await notificationService.createNotification({
+      const n2 = await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "N2",
@@ -230,7 +246,7 @@ describe("Notification Service", () => {
   describe("markAsRead", () => {
     it("should mark a notification as read", async () => {
       const user = await createUser();
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "PLAYER_KICKED",
         title: "Kicked",
@@ -260,7 +276,7 @@ describe("Notification Service", () => {
         username: "user2",
       });
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user1.id,
         type: "TABLE_DELETED",
         title: "Private",
@@ -275,13 +291,13 @@ describe("Notification Service", () => {
     it("should mark all unread notifications as read", async () => {
       const user = await createUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "N2",
@@ -310,13 +326,13 @@ describe("Notification Service", () => {
         username: "user2",
       });
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user1.id,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user2.id,
         type: "TABLE_DELETED",
         title: "N2",
@@ -332,7 +348,7 @@ describe("Notification Service", () => {
   describe("deleteNotification", () => {
     it("should delete a notification", async () => {
       const user = await createUser();
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "ToDelete",
@@ -364,7 +380,7 @@ describe("Notification Service", () => {
         username: "user2",
       });
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user1.id,
         type: "TABLE_DELETED",
         title: "Private",
@@ -375,6 +391,106 @@ describe("Notification Service", () => {
         "Forbidden"
       );
     });
+  });
+});
+
+describe("Notification socket sync", () => {
+  beforeEach(() => {
+    vi.mocked(emitToUser).mockClear();
+  });
+
+  it("emits notification:new on creation", async () => {
+    const user = await createUser();
+
+    const notif = await mustCreate({
+      userId: user.id,
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+
+    expect(emitToUser).toHaveBeenCalledWith(user.id, "notification:new", {
+      notification: expect.objectContaining({ id: notif.id }),
+    });
+  });
+
+  it("emits notification:read on markAsRead", async () => {
+    const user = await createUser();
+    const notif = await mustCreate({
+      userId: user.id,
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+
+    await notificationService.markAsRead(notif.id, user.id);
+
+    expect(emitToUser).toHaveBeenCalledWith(user.id, "notification:read", { id: notif.id });
+  });
+
+  it("emits notification:read-all on markAllAsRead", async () => {
+    const user = await createUser();
+
+    await notificationService.markAllAsRead(user.id);
+
+    expect(emitToUser).toHaveBeenCalledWith(user.id, "notification:read-all", {});
+  });
+
+  it("emits notification:deleted on delete", async () => {
+    const user = await createUser();
+    const notif = await mustCreate({
+      userId: user.id,
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+
+    await notificationService.deleteNotification(notif.id, user.id);
+
+    expect(emitToUser).toHaveBeenCalledWith(user.id, "notification:deleted", { id: notif.id });
+  });
+
+  it("does not emit read/deleted when ownership check fails", async () => {
+    const user1 = await createUser({ email: "own1@test.com", username: "own1" });
+    const user2 = await createUser({ email: "own2@test.com", username: "own2" });
+    const notif = await mustCreate({
+      userId: user1.id,
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+    vi.mocked(emitToUser).mockClear();
+
+    await expect(notificationService.markAsRead(notif.id, user2.id)).rejects.toThrow();
+    await expect(notificationService.deleteNotification(notif.id, user2.id)).rejects.toThrow();
+
+    expect(emitToUser).not.toHaveBeenCalled();
+  });
+});
+
+describe("Notification non-blocking creation", () => {
+  it("returns null instead of throwing when the insert fails", async () => {
+    const result = await notificationService.createNotification({
+      userId: "00000000-0000-0000-0000-000000000000", // utilisateur inexistant -> violation FK
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("returns an empty array instead of throwing when a bulk insert fails", async () => {
+    const result = await notificationService.createBulkNotifications([
+      {
+        userId: "00000000-0000-0000-0000-000000000000",
+        type: "TABLE_DELETED",
+        title: "T",
+        message: "M",
+      },
+    ]);
+
+    expect(result).toEqual([]);
   });
 });
 
@@ -394,7 +510,7 @@ describe("Notification API", () => {
     it("should return notifications for authenticated user", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "Test",
@@ -418,7 +534,7 @@ describe("Notification API", () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
       for (let i = 0; i < 5; i++) {
-        await notificationService.createNotification({
+        await mustCreate({
           userId,
           type: "TABLE_UPDATED",
           title: `Notif ${i}`,
@@ -449,13 +565,13 @@ describe("Notification API", () => {
     it("should filter unread only", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      const n1 = await notificationService.createNotification({
+      const n1 = await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "Read one",
         message: "Read",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "WAITLIST_PROMOTED",
         title: "Unread one",
@@ -483,13 +599,13 @@ describe("Notification API", () => {
     it("should return unread count", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "WAITLIST_PROMOTED",
         title: "N2",
@@ -515,7 +631,7 @@ describe("Notification API", () => {
     it("should mark notification as read", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId,
         type: "PLAYER_KICKED",
         title: "Kicked",
@@ -549,7 +665,7 @@ describe("Notification API", () => {
         username: "apiuser2",
       });
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: userId1,
         type: "TABLE_DELETED",
         title: "Private",
@@ -566,13 +682,13 @@ describe("Notification API", () => {
     it("should mark all as read", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "WAITLIST_PROMOTED",
         title: "N2",
@@ -594,7 +710,7 @@ describe("Notification API", () => {
     it("should delete a notification", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "ToDelete",
@@ -628,7 +744,7 @@ describe("Notification API", () => {
         username: "apiuser2",
       });
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: userId1,
         type: "TABLE_DELETED",
         title: "Private",

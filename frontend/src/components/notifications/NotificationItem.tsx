@@ -5,6 +5,7 @@ interface Props {
   notification: Notification;
   onMarkAsRead: (id: string) => void;
   onDelete: (id: string) => void;
+  onNavigate?: () => void;
 }
 
 function getIcon(type: string): string {
@@ -46,19 +47,46 @@ function formatTimeAgo(dateStr: string): string {
   return `${days}j`;
 }
 
-export default function NotificationItem({ notification, onMarkAsRead, onDelete }: Props) {
+// Destination au clic selon le type : les notifications qui retirent un acces
+// (event supprime, retrait d'event) ne doivent pas deep-linker vers une page
+// desormais interdite (403), et une table supprimee n'a plus de modale a ouvrir
+function getDestination(notification: Notification): string | null {
+  const eventId = notification.metadata?.eventId;
+  switch (notification.type) {
+    case "EVENT_DELETED":
+    case "PARTICIPANT_REMOVED":
+      return "/events";
+    case "TABLE_DELETED":
+    case "PLAYER_KICKED":
+    case "EVENT_UPDATED":
+      return eventId ? `/events/${eventId}/planning` : null;
+    default: {
+      // TABLE_UPDATED, WAITLIST_*, RESERVED_SEAT_ASSIGNED et tout type futur :
+      // deep-link vers la modale de la table si connue
+      if (!eventId) return null;
+      const base = `/events/${eventId}/planning`;
+      const tableId = notification.metadata?.tableId;
+      return tableId ? `${base}?table=${tableId}` : base;
+    }
+  }
+}
+
+export default function NotificationItem({
+  notification,
+  onMarkAsRead,
+  onDelete,
+  onNavigate,
+}: Props) {
   const navigate = useNavigate();
 
   const handleClick = () => {
     if (!notification.read) {
       onMarkAsRead(notification.id);
     }
-    // Navigate to relevant page based on metadata ; si la notification porte
-    // sur une table precise, deep-link vers sa modale (?table=)
-    if (notification.metadata?.eventId) {
-      const base = `/events/${notification.metadata.eventId}/planning`;
-      const tableId = notification.metadata.tableId;
-      navigate(tableId ? `${base}?table=${tableId}` : base);
+    onNavigate?.();
+    const destination = getDestination(notification);
+    if (destination) {
+      navigate(destination);
     }
   };
 
