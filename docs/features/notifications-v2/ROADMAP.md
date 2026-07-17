@@ -67,7 +67,7 @@ valeurs deja dans l'enum).
 
 ## Suivi
 
-- [ ] Lot A
+- [x] Lot A (2026-07-17 — sync multi-appareils verifiee en runtime sur le stack Docker, 282 tests backend + 300 front OK)
 - [ ] Lot B
 - [ ] Lot C
 - [ ] Lot D
