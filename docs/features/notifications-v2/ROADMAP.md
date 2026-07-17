@@ -68,8 +68,8 @@ valeurs deja dans l'enum).
 ## Suivi
 
 - [x] Lot A (2026-07-17 — sync multi-appareils verifiee en runtime sur le stack Docker, 282 tests backend + 300 front OK)
-- [ ] Lot B
-- [ ] Lot C
-- [ ] Lot D
-- [ ] Lot E
-- [ ] Lot F (a discuter)
+- [x] Lot B (2026-07-17 — migration enum GM_*, notifs MJ join/waitlist/left/full, MJ prevenu des updates/deletes admin)
+- [x] Lot C (2026-07-17 — EVENT_UPDATED nom/dates + EVENT_DELETED, auteur exclu, emissions socket event:updated/deleted)
+- [x] Lot D (2026-07-17 — job quotidien de retention, lues >30j / non lues >90j)
+- [x] Lot E (2026-07-17 — e2e temps reel : notif MJ live, clic -> modale + fermeture panneau, sync badge entre onglets ; 13/13 e2e, 294 backend, 300 front)
+- [ ] Lot F (a discuter — preferences opt-out, TABLE_CREATED opt-in, notif MJ des kicks admin, rappels, web push)
