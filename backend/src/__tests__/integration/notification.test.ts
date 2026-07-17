@@ -1097,6 +1097,62 @@ describe("Notification Triggers", () => {
     });
   });
 
+  describe("Event update", () => {
+    it("should notify participants when the event name changes (author excluded)", async () => {
+      const { admin, event, playerId } = await setupEventWithPlayer();
+
+      await request
+        .patch(`/api/events/${event.id}`)
+        .set("Cookie", admin.cookie)
+        .send({ name: "Renamed Event" });
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: playerId, type: "EVENT_UPDATED" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain("Renamed Event");
+
+      const adminNotifs = await prisma.notification.findMany({
+        where: { userId: admin.user.id, type: "EVENT_UPDATED" },
+      });
+      expect(adminNotifs).toHaveLength(0);
+    });
+
+    it("should not notify when nothing significant changes", async () => {
+      const { admin, event, playerId } = await setupEventWithPlayer();
+
+      // Meme nom, memes dates : aucun champ visible ne change
+      await request
+        .patch(`/api/events/${event.id}`)
+        .set("Cookie", admin.cookie)
+        .send({ name: event.name });
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: playerId, type: "EVENT_UPDATED" },
+      });
+      expect(notifs).toHaveLength(0);
+    });
+  });
+
+  describe("Event deletion", () => {
+    it("should notify participants when the event is deleted (author excluded)", async () => {
+      const { admin, event, playerId } = await setupEventWithPlayer();
+
+      await request.delete(`/api/events/${event.id}`).set("Cookie", admin.cookie);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: playerId, type: "EVENT_DELETED" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain(event.name);
+
+      const adminNotifs = await prisma.notification.findMany({
+        where: { userId: admin.user.id, type: "EVENT_DELETED" },
+      });
+      expect(adminNotifs).toHaveLength(0);
+    });
+  });
+
   describe("Remove participant", () => {
     it("should notify removed participant", async () => {
       const { admin, event, playerCookie: _playerCookie, playerId } = await setupEventWithPlayer();
