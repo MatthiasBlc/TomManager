@@ -943,6 +943,160 @@ describe("Notification Triggers", () => {
     });
   });
 
+  describe("GM notifications", () => {
+    async function setupTable(maxPlayers: number, extra: Record<string, unknown> = {}) {
+      const { admin, event, playerCookie, playerId } = await setupEventWithPlayer();
+      const tableRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send({
+          title: "GM Table",
+          maxPlayers,
+          startDateTime: "2026-06-01T10:00:00Z",
+          endDateTime: "2026-06-01T12:00:00Z",
+          ...extra,
+        });
+      return { admin, event, playerCookie, gmId: playerId, tableId: tableRes.body.data.id };
+    }
+
+    it("should notify the GM when a player joins (confirmed)", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(5);
+
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_PLAYER_JOINED" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain("notifplayer2");
+      expect(notifs[0].message).toContain("GM Table");
+
+      // Table non complete (5 places) : pas de GM_TABLE_FULL
+      const fullNotifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_TABLE_FULL" },
+      });
+      expect(fullNotifs).toHaveLength(0);
+    });
+
+    it("should notify the GM when a player lands on the waitlist", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(1);
+
+      // Player2 prend la derniere place, player3 part en waitlist
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      const { cookie: player3Cookie } = await addTestParticipant(event.id, {
+        email: "player3@notif.com",
+        username: "notifplayer3",
+      });
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player3Cookie);
+
+      const waitlistNotifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_PLAYER_WAITLISTED" },
+      });
+      expect(waitlistNotifs).toHaveLength(1);
+      expect(waitlistNotifs[0].message).toContain("notifplayer3");
+    });
+
+    it("should notify the GM with GM_TABLE_FULL when the last seat is taken", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(1);
+
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      const joined = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_PLAYER_JOINED" },
+      });
+      expect(joined).toHaveLength(1);
+      const full = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_TABLE_FULL" },
+      });
+      expect(full).toHaveLength(1);
+      expect(full[0].message).toContain("GM Table");
+    });
+
+    it("should not notify the GM for their own auto-seat on a JDS table", async () => {
+      // Sur une table JDS le MJ est assis automatiquement a la creation :
+      // sa propre place ne doit generer aucune notification MJ
+      const { gmId } = await setupTable(2, { type: "JDS" });
+
+      const notifs = await prisma.notification.findMany({
+        where: {
+          userId: gmId,
+          type: { in: ["GM_PLAYER_JOINED", "GM_PLAYER_WAITLISTED", "GM_TABLE_FULL"] },
+        },
+      });
+      expect(notifs).toHaveLength(0);
+    });
+
+    it("should notify the GM when a player leaves the table", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(5);
+
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+      await request
+        .delete(`/api/events/${event.id}/tables/${tableId}/leave`)
+        .set("Cookie", player2.cookie);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_PLAYER_LEFT" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain("notifplayer2");
+      expect(notifs[0].message).toContain("GM Table");
+    });
+
+    it("should notify the GM when an admin updates their table", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(5);
+
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie)
+        .send({ title: "Renamed by admin" });
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "TABLE_UPDATED" },
+      });
+      expect(notifs).toHaveLength(1);
+    });
+
+    it("should notify the GM when an admin deletes their table", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(5);
+
+      await request.delete(`/api/events/${event.id}/tables/${tableId}`).set("Cookie", admin.cookie);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "TABLE_DELETED" },
+      });
+      expect(notifs).toHaveLength(1);
+    });
+
+    it("should not notify the GM when they update their own table", async () => {
+      const { event, playerCookie, gmId, tableId } = await setupTable(5);
+
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", playerCookie)
+        .send({ title: "Renamed by GM" });
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "TABLE_UPDATED" },
+      });
+      expect(notifs).toHaveLength(0);
+    });
+  });
+
   describe("Remove participant", () => {
     it("should notify removed participant", async () => {
       const { admin, event, playerCookie: _playerCookie, playerId } = await setupEventWithPlayer();

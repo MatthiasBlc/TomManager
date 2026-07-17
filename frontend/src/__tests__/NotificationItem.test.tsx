@@ -162,6 +162,9 @@ describe("NotificationItem", () => {
       ["PLAYER_KICKED", "🚫"],
       ["PARTICIPANT_REMOVED", "👋"],
       ["EVENT_UPDATED", "📅"],
+      ["GM_PLAYER_JOINED", "🙋"],
+      ["GM_PLAYER_WAITLISTED", "⏳"],
+      ["GM_TABLE_FULL", "🎉"],
       ["UNKNOWN_TYPE", "🔔"],
     ];
     for (const [type, icon] of types) {
