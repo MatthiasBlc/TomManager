@@ -1170,3 +1170,36 @@ describe("Notification Triggers", () => {
     });
   });
 });
+
+describe("Notification retention", () => {
+  it("purges read notifications older than 30 days and unread older than 90 days", async () => {
+    const user = await createUser();
+    const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+    const make = (overrides: { read: boolean; createdAt: Date; title: string }) =>
+      prisma.notification.create({
+        data: {
+          userId: user.id,
+          type: "TABLE_UPDATED",
+          message: "retention test",
+          readAt: overrides.read ? overrides.createdAt : null,
+          ...overrides,
+        },
+      });
+
+    await make({ read: true, createdAt: daysAgo(31), title: "read-old" });
+    await make({ read: true, createdAt: daysAgo(10), title: "read-recent" });
+    await make({ read: false, createdAt: daysAgo(91), title: "unread-old" });
+    await make({ read: false, createdAt: daysAgo(40), title: "unread-recent" });
+
+    const result = await notificationService.purgeOldNotifications();
+
+    expect(result.deletedRead).toBe(1);
+    expect(result.deletedUnread).toBe(1);
+
+    const remaining = await prisma.notification.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "asc" },
+    });
+    expect(remaining.map((n) => n.title).sort()).toEqual(["read-recent", "unread-recent"]);
+  });
+});
