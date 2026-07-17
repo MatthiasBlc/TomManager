@@ -149,3 +149,44 @@ export async function deleteNotification(id: string, userId: string) {
 
   emitToUser(userId, "notification:deleted", { id });
 }
+
+// Retention : les notifications lues de plus de 30 jours et non lues de plus de
+// 90 jours sont purgees (pas d'emission socket : personne ne les affiche encore,
+// les listes se resynchronisent au prochain fetch)
+const READ_RETENTION_DAYS = 30;
+const UNREAD_RETENTION_DAYS = 90;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export async function purgeOldNotifications(now = new Date()) {
+  const readCutoff = new Date(now.getTime() - READ_RETENTION_DAYS * DAY_MS);
+  const unreadCutoff = new Date(now.getTime() - UNREAD_RETENTION_DAYS * DAY_MS);
+
+  const [readResult, unreadResult] = await Promise.all([
+    prisma.notification.deleteMany({
+      where: { read: true, createdAt: { lt: readCutoff } },
+    }),
+    prisma.notification.deleteMany({
+      where: { read: false, createdAt: { lt: unreadCutoff } },
+    }),
+  ]);
+
+  return { deletedRead: readResult.count, deletedUnread: unreadResult.count };
+}
+
+// Job quotidien lance au boot du serveur (pas dans les tests : server.ts uniquement)
+export function startNotificationRetentionJob() {
+  const run = async () => {
+    try {
+      const { deletedRead, deletedUnread } = await purgeOldNotifications();
+      logger.info({ deletedRead, deletedUnread }, "Notification retention job completed");
+    } catch (err) {
+      logger.error({ err }, "Notification retention job failed");
+    }
+  };
+
+  void run();
+  const timer = setInterval(run, DAY_MS);
+  // Ne pas empecher l'arret du process
+  timer.unref();
+  return timer;
+}
