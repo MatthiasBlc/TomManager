@@ -587,9 +587,9 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     .map((p) => p.userId)
     .filter((id) => id !== updatedByUserId && !demotedUserIds.includes(id));
 
-  // Le MJ ajoute comme joueur par un admin n'etait pas encore participant :
-  // il doit aussi etre prevenu de la modification
-  if (gmSeatAdded && gmId !== updatedByUserId && !participantUserIds.includes(gmId)) {
+  // Le MJ n'est pas forcement participant (JDR sans gmIsPlayer) : quand la
+  // modification vient de quelqu'un d'autre (admin), il doit etre prevenu
+  if (gmId !== updatedByUserId && !participantUserIds.includes(gmId)) {
     participantUserIds.push(gmId);
   }
 
@@ -632,6 +632,11 @@ export async function deleteTable(tableId: string, deletedByUserId: string) {
   const participantUserIds = existing.participants
     .map((p) => p.userId)
     .filter((id) => id !== deletedByUserId);
+
+  // Suppression par un admin : le MJ (pas forcement participant) doit le savoir
+  if (existing.createdBy !== deletedByUserId && !participantUserIds.includes(existing.createdBy)) {
+    participantUserIds.push(existing.createdBy);
+  }
 
   await prisma.gameTable.delete({ where: { id: tableId } });
 
@@ -687,13 +692,58 @@ export async function joinTable(tableId: string, userId: string) {
       data: { gameTableId: tableId, userId, status },
     });
 
-    return { participant, status, eventId: table.eventId };
+    return {
+      participant,
+      status,
+      eventId: table.eventId,
+      createdBy: table.createdBy,
+      title: table.title,
+      // Ce join occupe la derniere place normale : la table devient complete
+      becameFull: status === "CONFIRMED" && openSeats === 1,
+    };
   });
 
   emitToEvent(result.eventId, "table:player:joined", {
     tableId,
     participant: result.participant,
   });
+
+  // Notifications MJ — jamais pour ses propres actions (MJ-joueur qui s'assoit)
+  if (userId !== result.createdBy) {
+    const joiner = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, displayName: true },
+    });
+    const joinerName = joiner?.displayName ?? joiner?.username ?? "Un joueur";
+
+    if (result.status === "CONFIRMED") {
+      await createNotification({
+        userId: result.createdBy,
+        type: "GM_PLAYER_JOINED",
+        title: "Nouveau joueur",
+        message: `${joinerName} a rejoint ta table "${result.title}"`,
+        metadata: { eventId: result.eventId, tableId },
+      });
+    } else {
+      await createNotification({
+        userId: result.createdBy,
+        type: "GM_PLAYER_WAITLISTED",
+        title: "Joueur en liste d'attente",
+        message: `${joinerName} est en liste d'attente sur "${result.title}"`,
+        metadata: { eventId: result.eventId, tableId },
+      });
+    }
+
+    if (result.becameFull) {
+      await createNotification({
+        userId: result.createdBy,
+        type: "GM_TABLE_FULL",
+        title: "Table complète",
+        message: `Ta table "${result.title}" est complète`,
+        metadata: { eventId: result.eventId, tableId },
+      });
+    }
+  }
 
   return result;
 }
@@ -765,6 +815,21 @@ export async function leaveTable(tableId: string, userId: string) {
   });
 
   emitToEvent(table.eventId, "table:player:left", { tableId, userId });
+
+  // Le MJ est prevenu du depart (cette branche exclut le MJ qui quitte)
+  const leaver = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { username: true, displayName: true },
+  });
+  const leaverName = leaver?.displayName ?? leaver?.username ?? "Un joueur";
+  await createNotification({
+    userId: table.createdBy,
+    type: "GM_PLAYER_LEFT",
+    title: "Un joueur a quitté ta table",
+    message: `${leaverName} a quitté "${table.title}"`,
+    metadata: { eventId: table.eventId, tableId },
+  });
+
   if (promotedUserId) {
     emitToEvent(table.eventId, "table:player:promoted", {
       tableId,

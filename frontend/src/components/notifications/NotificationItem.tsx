@@ -28,6 +28,14 @@ function getIcon(type: string): string {
       return "📅";
     case "EVENT_DELETED":
       return "📅";
+    case "GM_PLAYER_JOINED":
+      return "🙋";
+    case "GM_PLAYER_WAITLISTED":
+      return "⏳";
+    case "GM_PLAYER_LEFT":
+      return "👋";
+    case "GM_TABLE_FULL":
+      return "🎉";
     default:
       return "🔔";
   }

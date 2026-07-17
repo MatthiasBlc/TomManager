@@ -67,7 +67,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/boardGame.test.ts` - BoardGame API (CRUD, search local + BGG fallback, lazy fetch, from-bgg, error format) + BGG XML parsing
 - `integration/eventBoardGame.test.ts` - EventBoardGame API (add, list, remove, duplicate, non-participant, cascade)
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
-- `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions) + emissions socket de sync multi-appareils (notification:new/read/read-all/deleted, pas d'emission si ownership KO) + creation non-bloquante (null/[] si insert KO)
+- `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions) + emissions socket de sync multi-appareils (notification:new/read/read-all/deleted, pas d'emission si ownership KO) + creation non-bloquante (null/[] si insert KO) + notifications MJ (GM_PLAYER_JOINED/WAITLISTED/LEFT, GM_TABLE_FULL, pas d'auto-notif JDS, MJ prevenu d'un update/delete admin, pas de notif sur ses propres updates)
 - `integration/preference.test.ts` - Preferences API (defaults false dans /me, PATCH bulk + upsert, 403 cles admin/beta pour non-admin, 400 cle inconnue/valeur non bool/body vide)
 
 ### Frontend (ROADMAP COMPLETE)
