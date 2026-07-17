@@ -32,6 +32,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - Les tests seedent leurs propres donnees via l'API (`e2e/fixtures/seed.ts`)
 - Le login se fait par injection du cookie de session obtenu via l'API (`e2e/fixtures/session.ts` — `loginAs(page, cookie)`), pas par le formulaire (masque de l'UI, Discord uniquement)
 - En CI : le backend/frontend sont lances directement sur le runner (pas via Docker), Chromium installe via `--with-deps`
+- Specs : `auth`, `planning`, `waitlist`, `mobile`, `notifications` (temps reel : notif MJ live via socket, clic -> modale table + fermeture panneau + badge lu, sync du badge entre deux onglets via read-all)
 
 ## Configuration
 
