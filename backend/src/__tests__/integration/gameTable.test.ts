@@ -1491,7 +1491,8 @@ describe("GameTable API", () => {
       // p5 et p6 (les plus recents du lot en trop) partent en liste d'attente
       expect(byId(players[4].id).status).toBe("WAITLIST");
       expect(byId(players[5].id).status).toBe("WAITLIST");
-    });
+      // 6 joueurs a creer + 6 promotions : depasse regulierement les 5s par defaut
+    }, 15000);
 
     it("updateTable reducing maxPlayers caps reservedSeats and demotes confirmed", async () => {
       // maxPlayers=6, reservedSeats=2 → openSeats=4

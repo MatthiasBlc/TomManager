@@ -15,7 +15,8 @@ function NotificationList({
   deleteNotification,
   unreadCount,
   isMobile,
-}: ReturnType<typeof useNotifications> & { isMobile: boolean }) {
+  onNavigate,
+}: ReturnType<typeof useNotifications> & { isMobile: boolean; onNavigate: () => void }) {
   const touchTarget = isMobile ? "min-h-[44px]" : "";
   return (
     <>
@@ -51,6 +52,7 @@ function NotificationList({
             notification={notif}
             onMarkAsRead={markAsRead}
             onDelete={deleteNotification}
+            onNavigate={onNavigate}
           />
         ))}
         {hasMore && (
@@ -118,7 +120,7 @@ export default function NotificationBell() {
         {/* Desktop dropdown */}
         {open && !isMobile && (
           <div className="absolute right-0 mt-2 w-80 bg-base-100 rounded-lg shadow-lg border border-base-300 z-50 max-h-96 flex flex-col">
-            <NotificationList {...notifData} isMobile={false} />
+            <NotificationList {...notifData} isMobile={false} onNavigate={() => setOpen(false)} />
           </div>
         )}
       </div>
@@ -126,7 +128,7 @@ export default function NotificationBell() {
       {/* Mobile bottom sheet */}
       {isMobile && (
         <MobileSheet open={open} onClose={() => setOpen(false)} title="Notifications">
-          <NotificationList {...notifData} isMobile={true} />
+          <NotificationList {...notifData} isMobile={true} onNavigate={() => setOpen(false)} />
         </MobileSheet>
       )}
     </>

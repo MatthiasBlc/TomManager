@@ -109,6 +109,127 @@ describe("useNotifications", () => {
     expect(toastError).toHaveBeenCalledWith("Echec de la suppression de la notification");
   });
 
+  it("adds a notification received via socket and ignores duplicates", async () => {
+    const socket = makeFakeSocket(true);
+    useSocketMock.mockReturnValue(socket);
+    apiGetMock.mockImplementation((url: string) =>
+      url.includes("unread-count")
+        ? Promise.resolve({ data: { data: { count: 0 } } })
+        : Promise.resolve({ data: { data: [], nextCursor: null } })
+    );
+    const { result } = renderHook(() => useNotifications());
+    await waitFor(() => expect(apiGetMock).toHaveBeenCalled());
+
+    await act(() => {
+      socket.trigger("notification:new", { notification: baseNotification });
+    });
+    expect(result.current.notifications).toHaveLength(1);
+    expect(result.current.unreadCount).toBe(1);
+
+    // Doublon (course refetch/socket) : ignore, pas de double increment
+    await act(() => {
+      socket.trigger("notification:new", { notification: baseNotification });
+    });
+    expect(result.current.notifications).toHaveLength(1);
+    expect(result.current.unreadCount).toBe(1);
+  });
+
+  it("syncs a read from another device and stays idempotent on the echo", async () => {
+    const socket = makeFakeSocket(true);
+    useSocketMock.mockReturnValue(socket);
+    apiGetMock.mockImplementation((url: string) =>
+      url.includes("unread-count")
+        ? Promise.resolve({ data: { data: { count: 2 } } })
+        : Promise.resolve({ data: { data: [baseNotification], nextCursor: null } })
+    );
+    const { result } = renderHook(() => useNotifications());
+    await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+
+    // Lecture faite sur un autre appareil : l'item local passe lu, compteur -1
+    await act(() => {
+      socket.trigger("notification:read", { id: "n1" });
+    });
+    expect(result.current.notifications[0].read).toBe(true);
+    expect(result.current.unreadCount).toBe(1);
+
+    // Echo du meme evenement (ou action locale redondante) : no-op
+    await act(() => {
+      socket.trigger("notification:read", { id: "n1" });
+    });
+    expect(result.current.unreadCount).toBe(1);
+  });
+
+  it("does not double-decrement when the socket echo follows a local markAsRead", async () => {
+    const socket = makeFakeSocket(true);
+    useSocketMock.mockReturnValue(socket);
+    apiGetMock.mockImplementation((url: string) =>
+      url.includes("unread-count")
+        ? Promise.resolve({ data: { data: { count: 1 } } })
+        : Promise.resolve({ data: { data: [baseNotification], nextCursor: null } })
+    );
+    apiPatchMock.mockResolvedValue({});
+    const { result } = renderHook(() => useNotifications());
+    await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+
+    await act(() => result.current.markAsRead("n1"));
+    expect(result.current.unreadCount).toBe(0);
+
+    // L'appareil emetteur recoit aussi l'echo de sa propre action
+    await act(() => {
+      socket.trigger("notification:read", { id: "n1" });
+    });
+    expect(result.current.unreadCount).toBe(0);
+  });
+
+  it("decrements the counter for a read notification beyond the loaded page", async () => {
+    const socket = makeFakeSocket(true);
+    useSocketMock.mockReturnValue(socket);
+    apiGetMock.mockImplementation((url: string) =>
+      url.includes("unread-count")
+        ? Promise.resolve({ data: { data: { count: 3 } } })
+        : Promise.resolve({ data: { data: [baseNotification], nextCursor: null } })
+    );
+    const { result } = renderHook(() => useNotifications());
+    await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+
+    // Notification non chargee localement, lue ailleurs : le compteur bouge quand meme
+    await act(() => {
+      socket.trigger("notification:read", { id: "n-far-away" });
+    });
+    expect(result.current.unreadCount).toBe(2);
+  });
+
+  it("syncs read-all and delete from another device", async () => {
+    const socket = makeFakeSocket(true);
+    useSocketMock.mockReturnValue(socket);
+    const second = { ...baseNotification, id: "n2" };
+    apiGetMock.mockImplementation((url: string) =>
+      url.includes("unread-count")
+        ? Promise.resolve({ data: { data: { count: 2 } } })
+        : Promise.resolve({ data: { data: [baseNotification, second], nextCursor: null } })
+    );
+    const { result } = renderHook(() => useNotifications());
+    await waitFor(() => expect(result.current.notifications).toHaveLength(2));
+
+    await act(() => {
+      socket.trigger("notification:deleted", { id: "n2" });
+    });
+    expect(result.current.notifications).toHaveLength(1);
+    expect(result.current.unreadCount).toBe(1);
+
+    // Suppression d'un id absent : no-op
+    await act(() => {
+      socket.trigger("notification:deleted", { id: "n2" });
+    });
+    expect(result.current.unreadCount).toBe(1);
+
+    await act(() => {
+      socket.trigger("notification:read-all");
+    });
+    expect(result.current.unreadCount).toBe(0);
+    expect(result.current.notifications.every((n) => n.read)).toBe(true);
+  });
+
   it("refetches notifications after a socket reconnect (not on the first connect)", async () => {
     const socket = makeFakeSocket(true);
     useSocketMock.mockReturnValue(socket);

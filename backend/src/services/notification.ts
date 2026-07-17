@@ -2,6 +2,7 @@ import { NotificationType, Prisma } from "@prisma/client";
 import prisma from "../util/db";
 import createError from "http-errors";
 import { emitToUser } from "../socket/emitter";
+import logger from "../util/logger";
 
 interface CreateNotificationInput {
   userId: string;
@@ -11,44 +12,56 @@ interface CreateNotificationInput {
   metadata?: Prisma.InputJsonValue;
 }
 
+// La creation de notification est un effet secondaire : un echec ne doit jamais
+// faire echouer l'action metier deja commitee (kick, promotion, etc.)
 export async function createNotification(input: CreateNotificationInput) {
-  const notification = await prisma.notification.create({
-    data: {
-      userId: input.userId,
-      type: input.type,
-      title: input.title,
-      message: input.message,
-      metadata: input.metadata ?? undefined,
-    },
-  });
+  try {
+    const notification = await prisma.notification.create({
+      data: {
+        userId: input.userId,
+        type: input.type,
+        title: input.title,
+        message: input.message,
+        metadata: input.metadata ?? undefined,
+      },
+    });
 
-  emitToUser(input.userId, "notification:new", { notification });
+    emitToUser(input.userId, "notification:new", { notification });
 
-  return notification;
+    return notification;
+  } catch (err) {
+    logger.error({ err, userId: input.userId, type: input.type }, "Failed to create notification");
+    return null;
+  }
 }
 
 export async function createBulkNotifications(inputs: CreateNotificationInput[]) {
   if (inputs.length === 0) return [];
 
-  const notifications = await prisma.$transaction(
-    inputs.map((input) =>
-      prisma.notification.create({
-        data: {
-          userId: input.userId,
-          type: input.type,
-          title: input.title,
-          message: input.message,
-          metadata: input.metadata ?? undefined,
-        },
-      })
-    )
-  );
+  try {
+    const notifications = await prisma.$transaction(
+      inputs.map((input) =>
+        prisma.notification.create({
+          data: {
+            userId: input.userId,
+            type: input.type,
+            title: input.title,
+            message: input.message,
+            metadata: input.metadata ?? undefined,
+          },
+        })
+      )
+    );
 
-  for (const notification of notifications) {
-    emitToUser(notification.userId, "notification:new", { notification });
+    for (const notification of notifications) {
+      emitToUser(notification.userId, "notification:new", { notification });
+    }
+
+    return notifications;
+  } catch (err) {
+    logger.error({ err, count: inputs.length }, "Failed to create bulk notifications");
+    return [];
   }
-
-  return notifications;
 }
 
 export async function getNotifications(
@@ -100,10 +113,15 @@ export async function markAsRead(id: string, userId: string) {
     throw createError(403, "Forbidden", { code: "FORBIDDEN" });
   }
 
-  return prisma.notification.update({
+  const updated = await prisma.notification.update({
     where: { id },
     data: { read: true, readAt: new Date() },
   });
+
+  // Synchronise les autres appareils/onglets du meme utilisateur
+  emitToUser(userId, "notification:read", { id });
+
+  return updated;
 }
 
 export async function markAllAsRead(userId: string) {
@@ -111,6 +129,9 @@ export async function markAllAsRead(userId: string) {
     where: { userId, read: false },
     data: { read: true, readAt: new Date() },
   });
+
+  emitToUser(userId, "notification:read-all", {});
+
   return result.count;
 }
 
@@ -125,4 +146,6 @@ export async function deleteNotification(id: string, userId: string) {
   }
 
   await prisma.notification.delete({ where: { id } });
+
+  emitToUser(userId, "notification:deleted", { id });
 }
