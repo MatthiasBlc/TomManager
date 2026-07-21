@@ -138,7 +138,11 @@ export default function MealFormModal({
   };
 
   return (
-    <ResponsiveModal open={open} onClose={handleClose} title={isEdit ? "Modifier le repas" : "Créer mon repas"}>
+    <ResponsiveModal
+      open={open}
+      onClose={handleClose}
+      title={isEdit ? "Modifier le repas" : "Créer mon repas"}
+    >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 p-4 md:p-0 md:mt-4">
         <div className="form-control">
           <label className="label" htmlFor="mf-name">

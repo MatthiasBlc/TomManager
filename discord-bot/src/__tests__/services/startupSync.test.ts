@@ -163,9 +163,7 @@ describe("startupSync", () => {
   it("reconcilie le roster chef ROLE meme sans event avec discordRoleId", async () => {
     const KITCHEN_ROLE_ID = "role-chef-1";
     db.event.findMany.mockResolvedValue([]);
-    db.eventKitchen.findMany.mockResolvedValue([
-      { id: "kitchen-1", chefRoleId: KITCHEN_ROLE_ID },
-    ]);
+    db.eventKitchen.findMany.mockResolvedValue([{ id: "kitchen-1", chefRoleId: KITCHEN_ROLE_ID }]);
     const member = makeMember([KITCHEN_ROLE_ID]);
     const guild = makeGuild([member]);
 
@@ -179,9 +177,7 @@ describe("startupSync", () => {
   it("appelle handleChefRoleRemoved pour un membre qui n a pas le role chef", async () => {
     const KITCHEN_ROLE_ID = "role-chef-1";
     db.event.findMany.mockResolvedValue([]);
-    db.eventKitchen.findMany.mockResolvedValue([
-      { id: "kitchen-1", chefRoleId: KITCHEN_ROLE_ID },
-    ]);
+    db.eventKitchen.findMany.mockResolvedValue([{ id: "kitchen-1", chefRoleId: KITCHEN_ROLE_ID }]);
     const member = makeMember(["other-role"]);
     const guild = makeGuild([member]);
 

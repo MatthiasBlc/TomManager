@@ -7,7 +7,11 @@ export const updateKitchenConfigSchema = z
       .regex(/^\d{17,20}$/, "Invalid Discord Snowflake")
       .nullable()
       .optional(),
-    allergiesNotes: z.string().max(5000, "Allergies notes must be at most 5000 characters").nullable().optional(),
+    allergiesNotes: z
+      .string()
+      .max(5000, "Allergies notes must be at most 5000 characters")
+      .nullable()
+      .optional(),
     equipierPlanningEnabled: z.boolean().optional(),
   })
   .refine((obj) => Object.keys(obj).length > 0, {

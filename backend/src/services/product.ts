@@ -19,7 +19,9 @@ export async function findOrCreateProducts(names: string[], tx?: Prisma.Transact
   const existingNames = new Set(existing.map((p) => p.name));
   const toCreate = normalized.filter((n) => !existingNames.has(n));
 
-  const created = await Promise.all(toCreate.map((name) => client.product.create({ data: { name } })));
+  const created = await Promise.all(
+    toCreate.map((name) => client.product.create({ data: { name } }))
+  );
 
   return [...existing, ...created];
 }

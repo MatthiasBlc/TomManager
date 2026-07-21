@@ -17,7 +17,12 @@ interface KitchenView {
   currentUserKitchenRole: "manager" | "chef" | "equipier" | "none";
   meals: MealFiche[];
   allergiesNotes?: string | null;
-  chefs?: { id: string; username: string; displayName?: string | null; source: "ROLE" | "MANUAL" }[];
+  chefs?: {
+    id: string;
+    username: string;
+    displayName?: string | null;
+    source: "ROLE" | "MANUAL";
+  }[];
   coursesMembers?: { id: string; username: string; displayName?: string | null }[];
   unassigned?: { id: string; username: string; displayName?: string | null }[];
 }

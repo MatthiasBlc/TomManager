@@ -23,7 +23,15 @@ vi.mock("react-hot-toast", () => ({
   },
 }));
 vi.mock("../components/common/ResponsiveModal", () => ({
-  default: ({ open, children, title }: { open: boolean; children: React.ReactNode; title: string }) =>
+  default: ({
+    open,
+    children,
+    title,
+  }: {
+    open: boolean;
+    children: React.ReactNode;
+    title: string;
+  }) =>
     open ? (
       <div role="dialog" aria-label={title}>
         {children}

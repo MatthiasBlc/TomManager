@@ -58,7 +58,9 @@ describe("Kitchen API", () => {
       await createTestUserDirectly({ email: "outsider@example.com", username: "outsider" });
       const { cookie: outsiderCookie } = await loginTestUser("outsider@example.com");
 
-      const res = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", outsiderCookie);
+      const res = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", outsiderCookie);
       expect(res.status).toBe(403);
     });
 
@@ -102,7 +104,9 @@ describe("Kitchen API", () => {
         username: "equipier1",
       });
 
-      const res = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", equipierCookie);
+      const res = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", equipierCookie);
 
       expect(res.status).toBe(200);
       expect(res.body.data.currentUserKitchenRole).toBe("equipier");
@@ -116,7 +120,9 @@ describe("Kitchen API", () => {
       expect(res.body.data.meals[0].name).toBe("Couscous");
       expect(res.body.data.meals[0].remainingSeats).toBe(2);
 
-      const chefRes = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", chefCookie);
+      const chefRes = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", chefCookie);
       expect(chefRes.body.data.currentUserKitchenRole).toBe("chef");
       expect(chefRes.body.data.allergiesNotes).toBe("Allergie noix");
       expect(chefRes.body.data.meals[0].ingredients).toHaveLength(1);
@@ -140,7 +146,9 @@ describe("Kitchen API", () => {
         username: "e2",
       });
 
-      const res = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", equipierCookie);
+      const res = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", equipierCookie);
       expect(res.status).toBe(200);
       expect(res.body.data.currentUserKitchenRole).toBe("equipier");
       expect(res.body.data.meals).toEqual([]);

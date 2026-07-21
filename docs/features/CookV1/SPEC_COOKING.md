@@ -9,12 +9,12 @@ Statut : specification gelee (V1). Notes brutes d'origine : `ideaList.md`.
 
 ## 1. Roles et pouvoirs
 
-| Role                | Definition                                                                | Pouvoirs cuisine                                                    |
-| ------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Responsable cuisine | ADMIN ayant active la preference `admin.kitchen` (opt-in profil)          | Lecture + ecriture sur TOUTES les parties cuisine de tout event    |
-| Admin (autre)       | ADMIN sans `admin.kitchen`                                                 | Lecture seule des parties cuisine                                  |
-| Chef                | Membre du roster chef de l'event (voir 2)                                  | Ecriture de SON repas ; lecture des autres fiches                  |
-| Equipier            | Participant de l'event, ni chef ni membre courses                          | Lecture du planning (si active) ; s'inscrire / se deplacer         |
+| Role                | Definition                                                       | Pouvoirs cuisine                                                |
+| ------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
+| Responsable cuisine | ADMIN ayant active la preference `admin.kitchen` (opt-in profil) | Lecture + ecriture sur TOUTES les parties cuisine de tout event |
+| Admin (autre)       | ADMIN sans `admin.kitchen`                                       | Lecture seule des parties cuisine                               |
+| Chef                | Membre du roster chef de l'event (voir 2)                        | Ecriture de SON repas ; lecture des autres fiches               |
+| Equipier            | Participant de l'event, ni chef ni membre courses                | Lecture du planning (si active) ; s'inscrire / se deplacer      |
 
 Regles transverses :
 
@@ -109,11 +109,11 @@ Deux modes de peuplement du roster, mais **le roster est TOUJOURS materialise** 
 ### KitchenChef (roster chef materialise)
 
 | Champ          | Type       | Notes                                   |
-| -------------- | ---------- | --------------------------------------- |
+| -------------- | ---------- | --------------------------------------- | ------ |
 | id             | String     | UUID PK                                 |
 | eventKitchenId | String     | FK -> EventKitchen.id, onDelete Cascade |
 | userId         | String     | FK -> User.id                           |
-| source         | ChefSource | ROLE | MANUAL                           |
+| source         | ChefSource | ROLE                                    | MANUAL |
 
 Unique : (eventKitchenId, userId)
 
@@ -132,17 +132,17 @@ Validation a l'ajout : la cible est un **participant de l'event**, et n'est ni c
 
 ### Meal (fiche repas ; 1 chef = 1 repas)
 
-| Champ                 | Type        | Notes                                                     |
-| --------------------- | ----------- | --------------------------------------------------------- |
-| id                    | String      | UUID PK                                                   |
-| eventKitchenId        | String      | FK -> EventKitchen.id, onDelete Cascade                   |
-| chefUserId            | String?     | FK -> User.id (proprietaire) ; null = repas orphelin       |
-| name                  | String      | Intitule du repas / recette (1-150, texte visible)        |
-| service               | MealService | LUNCH | DINNER (midi / soir), label                       |
-| startDateTime         | DateTime    | >= event.startDateTime, < endDateTime                     |
-| endDateTime           | DateTime    | <= event.endDateTime                                      |
-| maxAssistants         | Int         | default 0 (0 tant que le planning n'est pas genere)       |
-| createdAt / updatedAt | DateTime    |                                                           |
+| Champ                 | Type        | Notes                                                |
+| --------------------- | ----------- | ---------------------------------------------------- | --------------------------- |
+| id                    | String      | UUID PK                                              |
+| eventKitchenId        | String      | FK -> EventKitchen.id, onDelete Cascade              |
+| chefUserId            | String?     | FK -> User.id (proprietaire) ; null = repas orphelin |
+| name                  | String      | Intitule du repas / recette (1-150, texte visible)   |
+| service               | MealService | LUNCH                                                | DINNER (midi / soir), label |
+| startDateTime         | DateTime    | >= event.startDateTime, < endDateTime                |
+| endDateTime           | DateTime    | <= event.endDateTime                                 |
+| maxAssistants         | Int         | default 0 (0 tant que le planning n'est pas genere)  |
+| createdAt / updatedAt | DateTime    |                                                      |
 
 Unique : (eventKitchenId, chefUserId) -> 1 chef = 1 repas ; les NULL (orphelins) etant
 distincts sous PostgreSQL, plusieurs repas orphelins peuvent coexister.
@@ -150,14 +150,14 @@ Index : (eventKitchenId, startDateTime)
 
 ### MealIngredient
 
-| Champ     | Type    | Notes                                              |
-| --------- | ------- | -------------------------------------------------- |
-| id        | String  | UUID PK                                            |
-| mealId    | String  | FK -> Meal.id, onDelete Cascade                    |
+| Champ     | Type    | Notes                                                                                              |
+| --------- | ------- | -------------------------------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | ----- |
+| id        | String  | UUID PK                                                                                            |
+| mealId    | String  | FK -> Meal.id, onDelete Cascade                                                                    |
 | productId | String? | FK -> Product.id (find-or-create a l'ajout : effectivement toujours renseigne ; nullable defensif) |
-| name      | String  | Nom denormalise (cache d'affichage du produit)     |
-| quantity  | Decimal | Quantite (Decimal, pas Float : sommes exactes V2)  |
-| unit      | Unit    | G | KG | ML | CL | L | CAS | CAC | PIECE              |
+| name      | String  | Nom denormalise (cache d'affichage du produit)                                                     |
+| quantity  | Decimal | Quantite (Decimal, pas Float : sommes exactes V2)                                                  |
+| unit      | Unit    | G                                                                                                  | KG  | ML  | CL  | L   | CAS | CAC | PIECE |
 
 ### Product (catalogue, pattern identique aux Tag)
 
@@ -202,13 +202,13 @@ Regle metier : un equipier est inscrit sur AU PLUS UN repas par event ; l'unique
 
 ### Matrice de visibilite
 
-| Vue                         | Equipier          | Chef              | Admin simple | Responsable |
-| --------------------------- | ----------------- | ----------------- | ------------ | ----------- |
-| Onglet Info - board repas   | oui si active     | oui               | oui          | oui         |
-| S'inscrire / se deplacer    | oui               | non               | non          | non         |
-| Onglet Cuisine - fiches     | non               | oui (RW la sienne)| oui (R)      | oui (RW)    |
-| Onglet Cuisine - gestion    | non               | non               | oui (R)      | oui (RW)    |
-| Allergies (contenu)         | non               | oui (R)           | oui (R)      | oui (RW)    |
+| Vue                       | Equipier      | Chef               | Admin simple | Responsable |
+| ------------------------- | ------------- | ------------------ | ------------ | ----------- |
+| Onglet Info - board repas | oui si active | oui                | oui          | oui         |
+| S'inscrire / se deplacer  | oui           | non                | non          | non         |
+| Onglet Cuisine - fiches   | non           | oui (RW la sienne) | oui (R)      | oui (RW)    |
+| Onglet Cuisine - gestion  | non           | non                | oui (R)      | oui (RW)    |
+| Allergies (contenu)       | non           | oui (R)            | oui (R)      | oui (RW)    |
 
 ### Onglet Info (board repas)
 
@@ -325,20 +325,20 @@ Les changements impactant les conflits declenchent aussi le recalcul/rendu Plann
 
 ## 9. API (nouveaux endpoints, prefixe `/api/events/:eventId/kitchen`)
 
-| Method | Path                          | Auth                    | Description                                   |
-| ------ | ----------------------------- | ----------------------- | --------------------------------------------- |
-| GET    | `/`                           | lecture cuisine         | Config + roster chef + courses + repas        |
-| PATCH  | `/`                           | requireKitchenManager   | Config (chefRoleId, allergies, toggle)        |
-| POST   | `/chefs`                      | requireKitchenManager   | Ajout chef manuel (mode manuel)               |
-| DELETE | `/chefs/:userId`              | requireKitchenManager   | Retrait chef manuel (orpheline son repas)     |
-| POST   | `/courses`                    | requireKitchenManager   | Ajout membre courses                          |
-| DELETE | `/courses/:userId`            | requireKitchenManager   | Retrait membre courses                        |
-| POST   | `/generate`                   | requireKitchenManager   | Generation/regeneration du planning           |
-| POST   | `/meals`                      | chef (self) / manager   | Creer un repas                                |
-| PATCH  | `/meals/:mealId`              | requireMealChefOrManager| Editer un repas (+ maxAssistants et reassignation chefUserId pour manager) |
-| DELETE | `/meals/:mealId`              | requireMealChefOrManager| Supprimer un repas                            |
-| POST   | `/meals/:mealId/assistants`   | equipier (self)         | S'inscrire / se deplacer (transaction)        |
-| DELETE | `/meals/:mealId/assistants/me`| equipier (self)         | Se desinscrire                                |
+| Method | Path                           | Auth                     | Description                                                                |
+| ------ | ------------------------------ | ------------------------ | -------------------------------------------------------------------------- |
+| GET    | `/`                            | lecture cuisine          | Config + roster chef + courses + repas                                     |
+| PATCH  | `/`                            | requireKitchenManager    | Config (chefRoleId, allergies, toggle)                                     |
+| POST   | `/chefs`                       | requireKitchenManager    | Ajout chef manuel (mode manuel)                                            |
+| DELETE | `/chefs/:userId`               | requireKitchenManager    | Retrait chef manuel (orpheline son repas)                                  |
+| POST   | `/courses`                     | requireKitchenManager    | Ajout membre courses                                                       |
+| DELETE | `/courses/:userId`             | requireKitchenManager    | Retrait membre courses                                                     |
+| POST   | `/generate`                    | requireKitchenManager    | Generation/regeneration du planning                                        |
+| POST   | `/meals`                       | chef (self) / manager    | Creer un repas                                                             |
+| PATCH  | `/meals/:mealId`               | requireMealChefOrManager | Editer un repas (+ maxAssistants et reassignation chefUserId pour manager) |
+| DELETE | `/meals/:mealId`               | requireMealChefOrManager | Supprimer un repas                                                         |
+| POST   | `/meals/:mealId/assistants`    | equipier (self)          | S'inscrire / se deplacer (transaction)                                     |
+| DELETE | `/meals/:mealId/assistants/me` | equipier (self)          | Se desinscrire                                                             |
 
 **GET / est modele par role** (securite — les allergies sont sensibles, cf 4) :
 
@@ -453,7 +453,7 @@ dans le meme commit que le code. Seuils CI 50%/50% a maintenir.
 ### Discord-bot (Vitest, `discord-bot/src/__tests__/`)
 
 - `guildMemberUpdate` chef : gain/perte de `chefRoleId` -> add/remove `KitchenChef ROLE`
-  + exclusivite + contrainte participant. `startupSync` : reconciliation du roster ROLE.
+  - exclusivite + contrainte participant. `startupSync` : reconciliation du roster ROLE.
 
 ### Frontend (Vitest + testing-library, `frontend/src/__tests__/`)
 

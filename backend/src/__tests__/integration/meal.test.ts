@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { request, setupAdmin, createTestEvent, addTestParticipant, loginTestUser } from "../setup/testHelpers";
+import {
+  request,
+  setupAdmin,
+  createTestEvent,
+  addTestParticipant,
+  loginTestUser,
+} from "../setup/testHelpers";
 import prisma from "../../util/db";
 
 async function enableKitchenManager(userId: string) {
@@ -19,7 +25,11 @@ async function setupManager() {
   return { user, cookie };
 }
 
-async function setupChef(eventId: string, managerCookie: string[], overrides: { email: string; username: string }) {
+async function setupChef(
+  eventId: string,
+  managerCookie: string[],
+  overrides: { email: string; username: string }
+) {
   const { user, cookie } = await addTestParticipant(eventId, overrides);
   await request
     .post(`/api/events/${eventId}/kitchen/chefs`)
@@ -120,7 +130,10 @@ describe("Meal API", () => {
         username: "chefF",
       });
 
-      await request.post(`/api/events/${event.id}/kitchen/meals`).set("Cookie", chefCookie).send(MEAL_PAYLOAD);
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals`)
+        .set("Cookie", chefCookie)
+        .send(MEAL_PAYLOAD);
       const res = await request
         .post(`/api/events/${event.id}/kitchen/meals`)
         .set("Cookie", chefCookie)
@@ -283,7 +296,9 @@ describe("Meal API", () => {
       const mealId = createRes.body.data.id;
 
       // Le chef sort du roster -> le repas devient orphelin
-      await request.delete(`/api/events/${event.id}/kitchen/chefs/${chefUser.id}`).set("Cookie", managerCookie);
+      await request
+        .delete(`/api/events/${event.id}/kitchen/chefs/${chefUser.id}`)
+        .set("Cookie", managerCookie);
 
       const { user: newChef } = await setupChef(event.id, managerCookie, {
         email: "chefO@example.com",
@@ -353,7 +368,9 @@ describe("Meal API", () => {
         .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants`)
         .set("Cookie", assistantCookie);
 
-      const res = await request.delete(`/api/events/${event.id}/kitchen/meals/${mealId}`).set("Cookie", chefCookie);
+      const res = await request
+        .delete(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .set("Cookie", chefCookie);
       expect(res.status).toBe(204);
 
       const remaining = await prisma.meal.findUnique({ where: { id: mealId } });
@@ -409,7 +426,9 @@ describe("Meal API", () => {
         username: "eq3",
       });
 
-      await request.post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants`).set("Cookie", cookie1);
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants`)
+        .set("Cookie", cookie1);
       const res = await request
         .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants`)
         .set("Cookie", cookie2);
@@ -501,7 +520,9 @@ describe("Meal API", () => {
       expect(moveRes.status).toBe(409);
       expect(moveRes.body.error.code).toBe("MEAL_FULL");
 
-      const meal1Check = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", managerCookie);
+      const meal1Check = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", managerCookie);
       const meal1Data = meal1Check.body.data.meals.find(
         (m: { id: string }) => m.id === meal1Res.body.data.id
       );
@@ -516,7 +537,9 @@ describe("Meal API", () => {
         email: "eq4@example.com",
         username: "eq4",
       });
-      await request.post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants`).set("Cookie", cookie);
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants`)
+        .set("Cookie", cookie);
 
       const res = await request
         .delete(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/me`)

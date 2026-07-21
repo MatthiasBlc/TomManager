@@ -69,7 +69,9 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
       username: "genchef1",
     });
 
-    const res = await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", chefCookie);
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", chefCookie);
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe("ADMIN_REQUIRED");
   });
@@ -87,20 +89,26 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
     });
 
     // pool = 1 participant (le chef, le manager n'est pas participant) - 1 chef = 0
-    const res = await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
 
     expect(res.status).toBe(200);
     expect(res.body.data.pool).toBe(0);
     expect(res.body.data.capacities).toEqual([0]);
 
-    const kitchenRes = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", managerCookie);
+    const kitchenRes = await request
+      .get(`/api/events/${event.id}/kitchen`)
+      .set("Cookie", managerCookie);
     expect(kitchenRes.body.data.meals[0].maxAssistants).toBe(0);
   });
 
   it("is a no-op when there are no meals", async () => {
     const { event, managerCookie } = await setupManagerAndEvent("a3");
 
-    const res = await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
     expect(res.status).toBe(200);
     expect(res.body.data.mealCount).toBe(0);
     expect(res.body.data.capacities).toEqual([]);
@@ -132,15 +140,22 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
     // 3 equipiers en plus des 2 chefs -> pool = 5 participants - 2 chefs = 3 ; nbRepas = 2
     // -> base=1, reste=1 -> [2, 1] (premier repas = Dejeuner, trie par startDateTime)
     for (let i = 0; i < 3; i++) {
-      await addTestParticipant(event.id, { email: `genequipier${i}@example.com`, username: `genequipier${i}` });
+      await addTestParticipant(event.id, {
+        email: `genequipier${i}@example.com`,
+        username: `genequipier${i}`,
+      });
     }
 
-    const res = await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
     expect(res.status).toBe(200);
     expect(res.body.data.pool).toBe(3);
     expect(res.body.data.capacities).toEqual([2, 1]);
 
-    const kitchenRes = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", managerCookie);
+    const kitchenRes = await request
+      .get(`/api/events/${event.id}/kitchen`)
+      .set("Cookie", managerCookie);
     const meals = kitchenRes.body.data.meals;
     const dejeuner = meals.find((m: { id: string }) => m.id === meal1.id);
     const diner = meals.find((m: { id: string }) => m.id === meal2.id);
@@ -175,7 +190,9 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
     });
 
     // participants = chef + courses member + free = 3 ; pool = 3 - 1 chef - 1 courses = 1
-    const res = await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
     expect(res.body.data.pool).toBe(1);
     expect(res.body.data.capacities).toEqual([1]);
   });
@@ -203,13 +220,17 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
         email: `genover${i}@example.com`,
         username: `genover${i}`,
       });
-      await request.post(`/api/events/${event.id}/kitchen/meals/${meal.id}/assistants`).set("Cookie", p.cookie);
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${meal.id}/assistants`)
+        .set("Cookie", p.cookie);
       equipiers.push(p.user);
     }
 
     // Promotion directe en DB (hors API, hors exclusivite) de 2 des 3 equipiers en chefs :
     // simule un pool retreci sous l'occupation courante sans toucher aux inscriptions existantes.
-    const eventKitchen = await prisma.eventKitchen.findUniqueOrThrow({ where: { eventId: event.id } });
+    const eventKitchen = await prisma.eventKitchen.findUniqueOrThrow({
+      where: { eventId: event.id },
+    });
     await prisma.kitchenChef.createMany({
       data: equipiers
         .slice(0, 2)
@@ -217,7 +238,9 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
     });
     // participants = 4 (chef6 + 3 equipiers) ; chefs = 3 (chef6 + 2 promus) -> pool = 1 ; nbRepas = 1 -> capacite = 1
 
-    const res = await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
     expect(res.status).toBe(200);
     expect(res.body.data.pool).toBe(1);
     expect(res.body.data.capacities).toEqual([1]);
@@ -230,7 +253,9 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
     const assistants = await prisma.mealAssistant.findMany({ where: { mealId: meal.id } });
     expect(assistants).toHaveLength(3);
 
-    const kitchenRes = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", managerCookie);
+    const kitchenRes = await request
+      .get(`/api/events/${event.id}/kitchen`)
+      .set("Cookie", managerCookie);
     const mealData = kitchenRes.body.data.meals.find((m: { id: string }) => m.id === meal.id);
     expect(mealData.maxAssistants).toBe(1);
     expect(mealData.assistants).toHaveLength(3);
@@ -248,9 +273,13 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
       endDateTime: "2026-06-01T12:00:00Z",
     });
 
-    const first = await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+    const first = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
     expect(first.status).toBe(200);
-    const second = await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+    const second = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
     expect(second.status).toBe(200);
     expect(second.body.data.capacities).toEqual(first.body.data.capacities);
   });
