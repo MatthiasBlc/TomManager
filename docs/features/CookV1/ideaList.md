@@ -43,12 +43,3 @@ Cette vue a donc :
 Dans les vues planning de l'évènement, les créneaux cuisine doivent être visibles. les règles de conflits (une personen ne peut pas être sur deux tables en même temps, surbrillance conflit) s'appliquent entre crénaux cuisines et tables de jeux. Les personnes concernées doivent voir la surbrillance, ainsi que les chefs et les organisateurs de parties concernées.
 
 Dans un second temps, nous ajouterons un module de gestion des courses. Il faut prévoir que les ingrédients des repas puissent être ajoutés à la liste de course.
-
-V2 ?
--Liste de course ?
-
-- _Récupère les occurrences d'un même produits et calcules le poids pour chaque produits_
-
-Allergies V2 :
-Ajouter un champ directement à l'utilisateur pour indiquer ses allergies.
-Reporter automatiquement la liste
