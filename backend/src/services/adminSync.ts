@@ -86,6 +86,24 @@ export async function syncEventParticipantsFromDiscord(eventId: string): Promise
   return synced;
 }
 
+// Retourne les userId locaux (comptes deja existants) des membres de la guilde
+// possedant le role Discord donne. Contrairement a syncAll/syncEventParticipantsFromDiscord,
+// ne cree PAS de nouveaux comptes : un chef doit deja exister via sa participation a l'event.
+export async function getLocalUserIdsForDiscordRole(roleId: string): Promise<string[]> {
+  if (!env.DISCORD_BOT_TOKEN) throw createError(503, "DISCORD_BOT_TOKEN non configure");
+  if (!env.DISCORD_GUILD_ID) throw createError(503, "DISCORD_GUILD_ID non configure");
+
+  const members = await fetchAllGuildMembers();
+  const holderDiscordIds = members.filter((m) => m.roles.includes(roleId)).map((m) => m.user.id);
+  if (holderDiscordIds.length === 0) return [];
+
+  const users = await prisma.user.findMany({
+    where: { discordId: { in: holderDiscordIds }, deletedAt: null },
+    select: { id: true },
+  });
+  return users.map((u) => u.id);
+}
+
 export async function syncAll(): Promise<{ synced: number; errors: string[] }> {
   if (!env.DISCORD_BOT_TOKEN) throw createError(503, "DISCORD_BOT_TOKEN non configure");
   if (!env.DISCORD_GUILD_ID) throw createError(503, "DISCORD_GUILD_ID non configure");

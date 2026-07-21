@@ -97,7 +97,26 @@ n'echoue jamais a cause d'une notification).
 | ------ | -------------- | ----------- | ------------------------------------------------------------------------------------------------ |
 | PATCH  | `/preferences` | requireAuth | Update bulk `{ cle: bool }` — liste blanche, cles `admin.*`/`beta.*` reservees ADMIN (403 sinon) |
 
-Cles : admin.events, admin.tables, admin.games, beta.pdfExport, beta.gameDb. Retourne la map complete.
+Cles : admin.events, admin.tables, admin.games, admin.kitchen, beta.pdfExport, beta.gameDb. Retourne la map complete.
+
+## Kitchen (`/api/events/:eventId/kitchen`) — module cuisine (CookV1)
+
+Voir `docs/features/CookV1/SPEC_COOKING.md`. `requireKitchenManager` = ADMIN + preference
+`admin.kitchen`. GET est module par role (`currentUserKitchenRole`) : voir 9 de la spec pour
+la matrice exacte de champs exposes (anti-fuite allergies/ingredients pour un equipier).
+
+| Method | Path            | Auth                                   | Description                                                                       |
+| ------ | --------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
+| GET    | `/`             | requireAuth + requireEventParticipant   | Config + roster chef + courses + repas, module par role ; etat par defaut si pas d'EventKitchen (pas de 404) |
+| PATCH  | `/`             | requireAuth + requireKitchenManager     | Config (chefRoleId, allergiesNotes, equipierPlanningEnabled) — cree l'EventKitchen a la 1re ecriture ; set chefRoleId ecrase les chefs MANUAL et sync le roster ROLE (best-effort) |
+| POST   | `/chefs`        | requireAuth + requireKitchenManager     | Ajout chef manuel (mode manuel seulement, participants only) — 400 `CHEF_ROLE_MODE_ACTIVE` si chefRoleId actif, 409 `ALREADY_CHEF` |
+| DELETE | `/chefs/:userId`| requireAuth + requireKitchenManager     | Retrait chef manuel — orpheline son repas (chefUserId=null) ; 404 `NOT_IN_CHEF_ROSTER` |
+| POST   | `/courses`      | requireAuth + requireKitchenManager     | Ajout membre courses (participants only) — 409 `ROLE_EXCLUSIVITY` si chef/equipier deja inscrit, 409 `ALREADY_COURSES_MEMBER` |
+| DELETE | `/courses/:userId`| requireAuth + requireKitchenManager   | Retrait membre courses — 404 `NOT_COURSES_MEMBER`                                  |
+
+Codes d'erreur specifiques : `KITCHEN_MANAGER_REQUIRED`, `CHEF_ROLE_MODE_ACTIVE`, `ALREADY_CHEF`,
+`NOT_IN_CHEF_ROSTER`, `ALREADY_COURSES_MEMBER`, `NOT_COURSES_MEMBER`, `ROLE_EXCLUSIVITY`,
+`ALLERGIES_TOO_LONG` (+ `NOT_EVENT_PARTICIPANT` reutilise).
 
 ## Admin (`/api/admin`)
 

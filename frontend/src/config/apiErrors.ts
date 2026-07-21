@@ -55,6 +55,18 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   BOARD_GAME_DUPLICATE: "Vous avez déjà ajouté ce jeu à cet événement",
   CANNOT_MERGE_SELF: "Impossible de fusionner un jeu avec lui-même",
   DISCORD_ROLE_ALREADY_LINKED: "Ce rôle Discord est déjà lié à un autre événement",
+
+  // Module cuisine
+  KITCHEN_MANAGER_REQUIRED: "Droits de responsable cuisine requis",
+  CHEF_ROLE_MODE_ACTIVE: "Le roster des chefs est géré par le rôle Discord",
+  ALREADY_CHEF: "Cette personne est déjà chef",
+  NOT_IN_CHEF_ROSTER: "Cette personne n'est pas dans la liste des chefs",
+  ALREADY_COURSES_MEMBER: "Cette personne est déjà dans l'équipe courses",
+  NOT_COURSES_MEMBER: "Cette personne n'est pas dans l'équipe courses",
+  ROLE_EXCLUSIVITY: "Cette personne a déjà un rôle cuisine incompatible",
+  MEAL_ALREADY_EXISTS: "Cette personne a déjà un repas",
+  MEAL_FULL: "Ce repas est complet",
+  ALLERGIES_TOO_LONG: "Le texte des allergies ne doit pas dépasser 5000 caractères",
 };
 
 interface ApiErrorShape {

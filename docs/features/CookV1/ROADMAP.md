@@ -37,30 +37,33 @@ Modele : **Sonnet 5** | Effort : ~1-2h
 
 ## Lot B - API gestion cuisine (responsable)
 
-- [ ] `EventKitchen` get/upsert config (chefRoleId, allergiesNotes, equipierPlanningEnabled).
-- [ ] Roster chef materialise : add/remove `MANUAL` (participants only) ; retrait d'un
+- [x] `EventKitchen` get/upsert config (chefRoleId, allergiesNotes, equipierPlanningEnabled).
+- [x] Roster chef materialise : add/remove `MANUAL` (participants only) ; retrait d'un
       chef avec repas **orpheline** le repas (chefUserId=null, fiche conservee) ;
       ecrasement `MANUAL` -> `ROLE` au set du chefRoleId (orpheline les non-survivants).
-- [ ] Equipe courses : assigner/retirer (participants only) + exclusivite
+- [x] Equipe courses : assigner/retirer (participants only) + exclusivite
       (`ROLE_EXCLUSIVITY`).
-- [ ] Liste "sans affectation" + repas orphelins a reassigner.
-- [ ] GET / **modele par role** (equipier = board sans allergies/ingredients) +
+- [x] Liste "sans affectation" + repas orphelins a reassigner.
+- [x] GET / **modele par role** (equipier = board sans allergies/ingredients) +
       `currentUserKitchenRole` + etat par defaut si pas d'EventKitchen (pas de 404).
-- [ ] Middleware `requireKitchenManager` + lecture cuisine (admin/chef/equipier).
-- [ ] Tests integration (dont exclusivite, blocages, fuite allergies equipier).
+- [x] Middleware `requireKitchenManager` + lecture cuisine (admin/chef/equipier).
+- [x] Tests integration (dont exclusivite, blocages, fuite allergies equipier).
+- [x] Sync initial du roster ROLE au set du chefRoleId (backend, `fetchAllGuildMembers`,
+      best-effort) — avance depuis le Lot B-bis, cf. note ci-dessous.
 
 Modele : **Sonnet 5** | Effort : ~2-3h
 
 ## Lot B-bis - Sync bot du roster chef (source ROLE)
 
+Le sync initial backend (au set du chefRoleId) a ete implemente avec le Lot B
+(`syncChefRoleRoster` dans `services/kitchen.ts`, reutilise `getLocalUserIdsForDiscordRole`
+dans `adminSync.ts`). Reste a faire ici : la synchro **continue** cote discord-bot.
+
 - [ ] `guildMemberUpdate` : gain/perte d'un `chefRoleId` -> ajout/retrait `KitchenChef`
       `ROLE` + resolution exclusivite ; contrainte "doit etre participant".
 - [ ] `startupSync` : reconcilier les rosters `ROLE`.
-- [ ] Sync initial au set du chefRoleId : cote **backend**, reutiliser
-      `fetchAllGuildMembers()` (adminSync.ts) + filtre, comme
-      `syncEventParticipantsFromDiscord` (pas de RPC bot).
 - [ ] Tests bot : `guildMemberUpdate` chef (gain/perte + exclusivite + participant),
-      `startupSync` reconciliation, sync initial backend.
+      `startupSync` reconciliation.
 
 Modele : **Sonnet 5** | Effort : ~2-3h (calque sur syncParticipation existant)
 

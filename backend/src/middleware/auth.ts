@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import createError from "http-errors";
 import prisma from "../util/db";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -82,6 +83,33 @@ export async function requireTableGMOrAdmin(req: Request, res: Response, next: N
         },
       });
       return;
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Responsable cuisine : ADMIN ayant active la preference admin.kitchen (opt-in profil).
+export async function requireKitchenManager(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.session.userId!;
+
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+    });
+    if (!user || user.role !== "ADMIN") {
+      throw createError(403, "Admin access required", { code: "ADMIN_REQUIRED" });
+    }
+
+    const pref = await prisma.userPreference.findUnique({
+      where: { userId_key: { userId, key: "admin.kitchen" } },
+    });
+    if (!pref?.value) {
+      throw createError(403, "Kitchen manager preference required", {
+        code: "KITCHEN_MANAGER_REQUIRED",
+      });
     }
 
     next();
