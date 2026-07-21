@@ -3,6 +3,7 @@ import createError from "http-errors";
 import logger from "../util/logger";
 import { emitToEvent } from "../socket/emitter";
 import { getLocalUserIdsForDiscordRole } from "./adminSync";
+import { computeEventConflicts } from "./conflicts";
 
 export const USER_SELECT = { id: true, username: true, displayName: true } as const;
 
@@ -52,7 +53,11 @@ export async function isKitchenManagerUser(userId: string): Promise<boolean> {
 // guilde possedant le chefRoleId. Un chef ROLE non-survivant (role Discord perdu
 // ou plus participant) est retire du roster ; son repas eventuel devient orphelin.
 // Un nouveau chef ROLE preempte silencieusement ses appartenances courses/equipier.
-export async function syncChefRoleRoster(eventKitchenId: string, eventId: string, chefRoleId: string) {
+export async function syncChefRoleRoster(
+  eventKitchenId: string,
+  eventId: string,
+  chefRoleId: string
+) {
   const holderUserIds = await getLocalUserIdsForDiscordRole(chefRoleId);
 
   const participants = await prisma.eventParticipation.findMany({
@@ -212,7 +217,11 @@ export async function removeChef(eventId: string, actingUserId: string, targetUs
   return getKitchenView(eventId, actingUserId);
 }
 
-export async function addCoursesMember(eventId: string, actingUserId: string, targetUserId: string) {
+export async function addCoursesMember(
+  eventId: string,
+  actingUserId: string,
+  targetUserId: string
+) {
   await getEventOr404(eventId);
   const eventKitchen = await getOrCreateEventKitchen(eventId);
 
@@ -254,7 +263,11 @@ export async function addCoursesMember(eventId: string, actingUserId: string, ta
   return getKitchenView(eventId, actingUserId);
 }
 
-export async function removeCoursesMember(eventId: string, actingUserId: string, targetUserId: string) {
+export async function removeCoursesMember(
+  eventId: string,
+  actingUserId: string,
+  targetUserId: string
+) {
   await getEventOr404(eventId);
   const eventKitchen = await getOrCreateEventKitchen(eventId);
 
@@ -301,7 +314,8 @@ export async function getKitchenView(eventId: string, userId: string | undefined
   // Gestion (roster, courses, sans-affectation) : admin + responsable uniquement
   const isGestionReader = manager || isAdmin;
   // Board (planning repas) : chef/admin/responsable toujours, equipier si active
-  const canSeeBoard = isFullReader || (participant && (eventKitchen?.equipierPlanningEnabled ?? false));
+  const canSeeBoard =
+    isFullReader || (participant && (eventKitchen?.equipierPlanningEnabled ?? false));
 
   const base = {
     eventKitchenId: eventKitchen?.id ?? null,
@@ -326,18 +340,32 @@ export async function getKitchenView(eventId: string, userId: string | undefined
     orderBy: { startDateTime: "asc" },
   });
 
-  const mealsView = meals.map((meal) => ({
-    id: meal.id,
-    name: meal.name,
-    service: meal.service,
-    startDateTime: meal.startDateTime,
-    endDateTime: meal.endDateTime,
-    maxAssistants: meal.maxAssistants,
-    chef: meal.chef,
-    assistants: meal.assistants.map((a) => a.user),
-    remainingSeats: Math.max(0, meal.maxAssistants - meal.assistants.length),
-    ...(isFullReader ? { ingredients: meal.ingredients, utensils: meal.utensils } : {}),
-  }));
+  // Conflits calcules sur le jeu d'intervalles UNIFIE (tables + cuisine, spec 6) :
+  // une occupation cuisine qui chevauche une table (ou un autre creneau cuisine) met
+  // les personnes concernees en conflit. Rendu dans l'onglet Planning.
+  // - currentUserConflict : l'utilisateur courant est en conflit sur ce repas
+  //   (chef occupe par son repas, ou equipier inscrit) — visible par la personne.
+  // - conflictingCount : nombre de personnes en conflit sur ce repas — destine au
+  //   chef du repas (symetrie avec le MJ cote table).
+  const conflictsBySource = await computeEventConflicts(eventId);
+
+  const mealsView = meals.map((meal) => {
+    const conflictedUsers = conflictsBySource.get(meal.id) ?? new Set<string>();
+    return {
+      id: meal.id,
+      name: meal.name,
+      service: meal.service,
+      startDateTime: meal.startDateTime,
+      endDateTime: meal.endDateTime,
+      maxAssistants: meal.maxAssistants,
+      chef: meal.chef,
+      assistants: meal.assistants.map((a) => a.user),
+      remainingSeats: Math.max(0, meal.maxAssistants - meal.assistants.length),
+      currentUserConflict: userId ? conflictedUsers.has(userId) : false,
+      conflictingCount: conflictedUsers.size,
+      ...(isFullReader ? { ingredients: meal.ingredients, utensils: meal.utensils } : {}),
+    };
+  });
 
   const result: Record<string, unknown> = { ...base, meals: mealsView };
 
@@ -376,7 +404,10 @@ export async function getKitchenView(eventId: string, userId: string | undefined
     result.coursesMembers = coursesMembers.map((c) => c.user);
     result.unassigned = participations
       .filter(
-        (p) => !chefUserIds.has(p.userId) && !coursesUserIds.has(p.userId) && !assistedUserIds.has(p.userId)
+        (p) =>
+          !chefUserIds.has(p.userId) &&
+          !coursesUserIds.has(p.userId) &&
+          !assistedUserIds.has(p.userId)
       )
       .map((p) => p.user);
     result.orphanMeals = mealsView.filter((m) => m.chef === null);

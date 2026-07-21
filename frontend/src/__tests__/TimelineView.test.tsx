@@ -7,6 +7,39 @@ vi.mock("../hooks/useIsMobile", () => ({
   useIsMobile: () => useIsMobileMock(),
 }));
 
+const useAuthMock = vi.fn().mockReturnValue({ user: { id: "current-user" } });
+vi.mock("../contexts/AuthContext", () => ({
+  useAuth: () => useAuthMock(),
+}));
+
+const makeMeal = (
+  overrides: Partial<{
+    id: string;
+    name: string;
+    startDateTime: string;
+    currentUserConflict: boolean;
+    conflictingCount: number;
+    chef: { id: string; username: string; displayName?: string | null } | null;
+  }> = {}
+) => ({
+  id: "m1",
+  name: "Couscous",
+  service: "DINNER" as const,
+  startDateTime: "2026-04-10T19:00:00.000Z",
+  endDateTime: "2026-04-10T20:00:00.000Z",
+  maxAssistants: 3,
+  remainingSeats: 2,
+  chef: { id: "chef-1", username: "Chef" } as {
+    id: string;
+    username: string;
+    displayName?: string | null;
+  } | null,
+  assistants: [],
+  currentUserConflict: false,
+  conflictingCount: 0,
+  ...overrides,
+});
+
 const makeTable = (
   overrides: Partial<{ id: string; startDateTime: string; title: string }> = {}
 ) => ({
@@ -182,5 +215,62 @@ describe("TimelineView", () => {
     );
     fireEvent.click(screen.getByText("Donjon"));
     expect(onTableClick).toHaveBeenCalledWith("t-xyz");
+  });
+
+  it("renders kitchen meal slots alongside tables", () => {
+    render(
+      <TimelineView
+        tables={[makeTable({ id: "t1", title: "Donjon" })]}
+        mealSlots={[makeMeal({ id: "m1", name: "Couscous" })]}
+        onTableClick={vi.fn()}
+      />
+    );
+    expect(screen.getByText("Donjon")).toBeInTheDocument();
+    expect(screen.getByText(/Couscous/)).toBeInTheDocument();
+    expect(screen.getByText("Repas")).toBeInTheDocument();
+  });
+
+  it("shows meal slots on a day that has no tables", () => {
+    render(
+      <TimelineView tables={[]} mealSlots={[makeMeal({ name: "Brunch" })]} onTableClick={vi.fn()} />
+    );
+    // Pas d'empty state : le repas apparait meme sans table
+    expect(screen.queryByText("Aucune table pour l'instant")).not.toBeInTheDocument();
+    expect(screen.getByText(/Brunch/)).toBeInTheDocument();
+  });
+
+  it("highlights the conflict badge on a meal for the person concerned", () => {
+    render(
+      <TimelineView
+        tables={[]}
+        mealSlots={[makeMeal({ currentUserConflict: true })]}
+        onTableClick={vi.fn()}
+      />
+    );
+    expect(screen.getByText("⚠ Conflit")).toBeInTheDocument();
+  });
+
+  it("shows the conflicting count to the chef of the meal", () => {
+    useAuthMock.mockReturnValueOnce({ user: { id: "chef-1" } });
+    render(
+      <TimelineView
+        tables={[]}
+        mealSlots={[makeMeal({ chef: { id: "chef-1", username: "Chef" }, conflictingCount: 2 })]}
+        onTableClick={vi.fn()}
+      />
+    );
+    expect(screen.getByText("⚠ 2 conflits")).toBeInTheDocument();
+  });
+
+  it("does not show the conflicting count to a non-chef viewer", () => {
+    useAuthMock.mockReturnValueOnce({ user: { id: "someone-else" } });
+    render(
+      <TimelineView
+        tables={[]}
+        mealSlots={[makeMeal({ chef: { id: "chef-1", username: "Chef" }, conflictingCount: 2 })]}
+        onTableClick={vi.fn()}
+      />
+    );
+    expect(screen.queryByText(/conflits?/)).not.toBeInTheDocument();
   });
 });

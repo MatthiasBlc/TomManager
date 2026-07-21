@@ -3,6 +3,7 @@ import createError from "http-errors";
 import { findOrCreateTags } from "./tag";
 import { emitToEvent } from "../socket/emitter";
 import { createNotification, createBulkNotifications } from "./notification";
+import { computeEventConflicts } from "./conflicts";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -202,47 +203,19 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
     orderBy: { startDateTime: "asc" },
   });
 
-  const confirmedTablesByUser = new Map<string, number[]>();
-  tables.forEach((t, idx) => {
-    if (!confirmedTablesByUser.has(t.createdBy)) confirmedTablesByUser.set(t.createdBy, []);
-    confirmedTablesByUser.get(t.createdBy)!.push(idx);
+  // Conflits calcules sur le jeu d'intervalles UNIFIE (tables + cuisine, spec 6) :
+  // une occupation cuisine (chef sur son repas, equipier sur son repas) qui chevauche
+  // une table met les deux en conflit. La map est indexee par sourceId (ici tableId).
+  const conflictsBySource = await computeEventConflicts(eventId);
 
-    t.participants
-      .filter((p) => p.status === "CONFIRMED")
-      .forEach((p) => {
-        if (p.userId === t.createdBy) return;
-        if (!confirmedTablesByUser.has(p.userId)) confirmedTablesByUser.set(p.userId, []);
-        confirmedTablesByUser.get(p.userId)!.push(idx);
-      });
-  });
-
-  const conflictedUsersInTable = new Map<number, Set<string>>();
-  for (const [userId, indices] of confirmedTablesByUser) {
-    if (indices.length < 2) continue;
-    for (let i = 0; i < indices.length; i++) {
-      for (let j = i + 1; j < indices.length; j++) {
-        const a = tables[indices[i]];
-        const b = tables[indices[j]];
-        if (a.startDateTime < b.endDateTime && a.endDateTime > b.startDateTime) {
-          if (!conflictedUsersInTable.has(indices[i]))
-            conflictedUsersInTable.set(indices[i], new Set());
-          if (!conflictedUsersInTable.has(indices[j]))
-            conflictedUsersInTable.set(indices[j], new Set());
-          conflictedUsersInTable.get(indices[i])!.add(userId);
-          conflictedUsersInTable.get(indices[j])!.add(userId);
-        }
-      }
-    }
-  }
-
-  return tables.map((t, idx) => {
+  return tables.map((t) => {
     const confirmedCount = t.participants.filter((p) => p.status === "CONFIRMED").length;
     const waitlistCount = t.participants.filter((p) => p.status === "WAITLIST").length;
     const confirmedOnReserved = t.participants.filter(
       (p) => p.status === "CONFIRMED" && p.isOnReservedSeat
     ).length;
     const currentUserParticipant = t.participants.find((p) => p.userId === currentUserId);
-    const conflictedUsers = conflictedUsersInTable.get(idx) ?? new Set<string>();
+    const conflictedUsers = conflictsBySource.get(t.id) ?? new Set<string>();
 
     return {
       id: t.id,
