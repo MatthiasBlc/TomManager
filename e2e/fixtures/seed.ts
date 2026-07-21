@@ -112,6 +112,20 @@ export async function seedEvent(adminCookie: string): Promise<EventContext> {
 }
 
 /**
+ * Active la preference `admin.kitchen` (responsable cuisine, opt-in) pour un admin
+ * deja seede. Necessaire pour que les mutations cuisine (PATCH /kitchen, ajout
+ * chef/courses, generation planning) passent le middleware requireKitchenManager.
+ */
+export async function enableKitchenManager(adminCookie: string): Promise<void> {
+  const res = await fetch(`${API}/api/me/preferences`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Cookie: adminCookie },
+    body: JSON.stringify({ "admin.kitchen": true }),
+  });
+  if (!res.ok) throw new Error(`enableKitchenManager failed: ${res.status} ${await res.text()}`);
+}
+
+/**
  * Cree un participant pour un event via l'API de seed interne (reservee aux tests).
  */
 export async function seedParticipant(eventId: string): Promise<ParticipantContext> {
