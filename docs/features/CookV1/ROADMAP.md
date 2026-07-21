@@ -85,11 +85,12 @@ Modele : **Sonnet 5** | Effort : ~3-4h
 
 ## Lot D - Generation du planning
 
-- [ ] Endpoint generation : `base = floor(pool/nbRepas)`, `reste` aux premiers repas ;
+- [x] Endpoint generation : `base = floor(pool/nbRepas)`, `reste` aux premiers repas ;
       clamp pool<=0 / nbRepas=0. pool = participants - chefs - membres courses.
-- [ ] Regeneration non destructive (conserve inscriptions, applique la capacite meme si
+- [x] Regeneration non destructive (conserve inscriptions, applique la capacite meme si
       sur-occupation, avertit ; join refuse si inscrits >= maxAssistants).
-- [ ] Tests unitaires du calcul (0 repas, pool negatif, reste, sur-occupation).
+- [x] Tests unitaires du calcul (0 repas, pool negatif, reste, sur-occupation) + integration
+      endpoint (pool, tri par startDateTime, exclusion courses, non-destructif, regen x2).
 
 Modele : **Sonnet 5** | Effort : ~2-3h
 

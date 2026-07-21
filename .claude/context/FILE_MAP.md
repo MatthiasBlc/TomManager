@@ -21,7 +21,7 @@ src/
 │   ├── boardGame.ts       # search, detail, create, findOrCreateBGG
 │   ├── eventBoardGame.ts  # add, list, remove event board games
 │   ├── notification.ts    # list, unreadCount, markAsRead, markAllAsRead, delete
-│   ├── kitchen.ts         # module cuisine (CookV1) : GET config, PATCH config, chefs, courses
+│   ├── kitchen.ts         # module cuisine (CookV1) : GET config, PATCH config, chefs, courses, generate
 │   ├── meal.ts            # CRUD repas + inscriptions equipier (CookV1)
 │   └── product.ts         # autocomplete produits ingredients (CookV1)
 ├── middleware/
@@ -67,7 +67,8 @@ src/
 │   ├── notification.ts    # Notification CRUD, bulk create, cursor pagination
 │   ├── kitchen.ts         # Config + roster chef (manuel/role) + courses + vue par role (CookV1)
 │   ├── meal.ts            # Meal CRUD, ingredients/ustensiles (remplacement), join/move/leave transactionnel (CookV1)
-│   └── product.ts         # Product find-or-create + search, pattern Tag (CookV1)
+│   ├── product.ts         # Product find-or-create + search, pattern Tag (CookV1)
+│   └── kitchenPlanning.ts # Generation planning : computeMealCapacities (pur) + generatePlanning (CookV1)
 ├── socket/
 │   ├── index.ts           # Socket.io setup, session auth, room handlers (event + user rooms), getIO()
 │   └── emitter.ts         # emitToEvent, emitToUser helpers for services
@@ -84,8 +85,10 @@ src/
         ├── event.test.ts, gameTable.test.ts, participant.test.ts
         ├── boardGame.test.ts, eventBoardGame.test.ts, adminBoardGame.test.ts
         ├── socket.test.ts, notification.test.ts, validation.test.ts, preference.test.ts
-        └── kitchen.test.ts, meal.test.ts
+        └── kitchen.test.ts, meal.test.ts, kitchenPlanning.test.ts
 ```
+
+Unitaires purs (`src/__tests__/unit/`) : `kitchenPlanning.test.ts` (computeMealCapacities).
 
 ## Discord Bot (discord-bot/src/)
 

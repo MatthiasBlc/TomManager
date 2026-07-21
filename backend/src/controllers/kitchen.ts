@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as kitchenService from "../services/kitchen";
+import * as kitchenPlanningService from "../services/kitchenPlanning";
 
 export async function getKitchen(req: Request, res: Response, next: NextFunction) {
   try {
@@ -69,6 +70,15 @@ export async function removeCoursesMember(req: Request, res: Response, next: Nex
       req.session.userId!,
       req.params.userId
     );
+    res.json({ data });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function generate(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await kitchenPlanningService.generatePlanning(req.params.eventId);
     res.json({ data });
   } catch (err) {
     next(err);

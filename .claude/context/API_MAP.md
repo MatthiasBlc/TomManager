@@ -137,6 +137,12 @@ Codes supplementaires : `MEAL_NOT_FOUND`, `MEAL_NOT_ORPHAN`, `MEAL_START_OUT_OF_
 `MEAL_END_OUT_OF_BOUNDS`, `ALREADY_MEAL_ASSISTANT`, `NOT_MEAL_ASSISTANT` (+ `FORBIDDEN`,
 `END_BEFORE_START`, `INVALID_START_DATETIME`, `INVALID_END_DATETIME` reutilises).
 
+### Generation planning (meme prefixe)
+
+| Method | Path        | Auth                                  | Description                                                                 |
+| ------ | ----------- | ---------------------------------------- | ----------------------------------------------------------------------------- |
+| POST   | `/generate` | requireAuth + requireKitchenManager      | (Re)genere `maxAssistants` de tous les repas : `pool = participants - chefs - courses`, repartition `floor(pool/nbRepas)` + reste aux premiers repas (tries par startDateTime), clamp a 0 si pool<=0 ou 0 repas. Non destructif (garde les inscriptions ; sur-occupation possible, signalee dans `overCapacity`). Reponse `{ pool, mealCount, capacities, overCapacity }`. |
+
 ## Kitchen Products (`/api/kitchen/products`) — autocomplete ingredients (CookV1)
 
 | Method | Path | Auth        | Description                                        |

@@ -70,6 +70,14 @@ router.delete(
 );
 
 router.post(
+  "/:eventId/kitchen/generate",
+  requireAuth,
+  validateUUID("eventId"),
+  requireKitchenManager,
+  kitchenController.generate
+);
+
+router.post(
   "/:eventId/kitchen/meals",
   requireAuth,
   validateUUID("eventId"),
