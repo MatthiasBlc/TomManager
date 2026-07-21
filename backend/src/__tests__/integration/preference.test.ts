@@ -13,6 +13,7 @@ describe("Preferences API", () => {
         "admin.events": false,
         "admin.tables": false,
         "admin.games": false,
+        "admin.kitchen": false,
         "beta.pdfExport": false,
         "beta.gameDb": false,
       });
@@ -38,6 +39,7 @@ describe("Preferences API", () => {
         "admin.events": true,
         "admin.tables": false,
         "admin.games": false,
+        "admin.kitchen": false,
         "beta.pdfExport": true,
         "beta.gameDb": false,
       });

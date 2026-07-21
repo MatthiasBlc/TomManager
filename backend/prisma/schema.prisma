@@ -29,13 +29,17 @@ model User {
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
-  createdEvents          Event[]
-  eventParticipations    EventParticipation[]
-  createdGameTables      GameTable[]
-  gameTableParticipations GameTableParticipant[]
-  eventBoardGames        EventBoardGame[]
-  notifications          Notification[]
-  preferences            UserPreference[]
+  createdEvents             Event[]
+  eventParticipations       EventParticipation[]
+  createdGameTables         GameTable[]
+  gameTableParticipations   GameTableParticipant[]
+  eventBoardGames           EventBoardGame[]
+  notifications             Notification[]
+  preferences               UserPreference[]
+  kitchenChefRoster         KitchenChef[]
+  kitchenCoursesMemberships KitchenCoursesMember[]
+  meals                     Meal[]
+  mealAssistances           MealAssistant[]
 }
 
 // Preferences utilisateur (toggles admin/beta, extensible a d'autres options)
@@ -52,23 +56,23 @@ model UserPreference {
 }
 
 model Event {
-  id             String   @id @default(uuid())
-  name           String
-  startDateTime  DateTime
-  endDateTime    DateTime
-  createdBy      String
-  discordRoleId  String?  @unique
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(uuid())
+  name          String
+  startDateTime DateTime
+  endDateTime   DateTime
+  createdBy     String
+  discordRoleId String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  creator        User                @relation(fields: [createdBy], references: [id])
-  participations EventParticipation[]
-  gameTables     GameTable[]
+  creator         User                 @relation(fields: [createdBy], references: [id])
+  participations  EventParticipation[]
+  gameTables      GameTable[]
   eventBoardGames EventBoardGame[]
+  kitchen         EventKitchen?
 
   @@index([createdBy])
 }
-
 
 model EventParticipation {
   id        String   @id @default(uuid())
@@ -103,11 +107,11 @@ model GameTable {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  event        Event                @relation(fields: [eventId], references: [id])
-  creator      User                 @relation(fields: [createdBy], references: [id])
+  event        Event                  @relation(fields: [eventId], references: [id])
+  creator      User                   @relation(fields: [createdBy], references: [id])
   tags         GameTableTag[]
   participants GameTableParticipant[]
-  boardGame    BoardGame?           @relation(fields: [boardGameId], references: [id], onDelete: SetNull)
+  boardGame    BoardGame?             @relation(fields: [boardGameId], references: [id], onDelete: SetNull)
 
   @@index([eventId, startDateTime])
 }
@@ -130,12 +134,12 @@ model GameTableTag {
 }
 
 model GameTableParticipant {
-  id               String                @id @default(uuid())
+  id               String                 @id @default(uuid())
   gameTableId      String
   userId           String
   status           TableParticipantStatus @default(CONFIRMED)
-  isOnReservedSeat Boolean               @default(false)
-  joinedAt         DateTime              @default(now())
+  isOnReservedSeat Boolean                @default(false)
+  joinedAt         DateTime               @default(now())
 
   gameTable GameTable @relation(fields: [gameTableId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id])
@@ -174,7 +178,7 @@ model EventBoardGame {
 
   event     Event     @relation(fields: [eventId], references: [id])
   boardGame BoardGame @relation(fields: [boardGameId], references: [id])
-  broughtBy User     @relation(fields: [broughtByUserId], references: [id])
+  broughtBy User      @relation(fields: [broughtByUserId], references: [id])
 
   @@unique([eventId, boardGameId, broughtByUserId])
   @@index([eventId])
@@ -184,7 +188,6 @@ enum Role {
   USER
   ADMIN
 }
-
 
 enum TableParticipantStatus {
   CONFIRMED
@@ -226,4 +229,130 @@ model Notification {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId, read, createdAt(sort: Desc)])
+}
+
+// Module cuisine (CookV1) - voir docs/features/CookV1/SPEC_COOKING.md
+
+model EventKitchen {
+  id                      String   @id @default(uuid())
+  eventId                 String   @unique
+  chefRoleId              String?
+  allergiesNotes          String?
+  equipierPlanningEnabled Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  event          Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  chefs          KitchenChef[]
+  coursesMembers KitchenCoursesMember[]
+  meals          Meal[]
+  assistants     MealAssistant[]
+}
+
+model KitchenChef {
+  id             String     @id @default(uuid())
+  eventKitchenId String
+  userId         String
+  source         ChefSource
+
+  eventKitchen EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([eventKitchenId, userId])
+}
+
+model KitchenCoursesMember {
+  id             String @id @default(uuid())
+  eventKitchenId String
+  userId         String
+
+  eventKitchen EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([eventKitchenId, userId])
+}
+
+model Meal {
+  id             String      @id @default(uuid())
+  eventKitchenId String
+  chefUserId     String?
+  name           String
+  service        MealService
+  startDateTime  DateTime
+  endDateTime    DateTime
+  maxAssistants  Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  eventKitchen EventKitchen     @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  chef         User?            @relation(fields: [chefUserId], references: [id])
+  ingredients  MealIngredient[]
+  utensils     MealUtensil[]
+  assistants   MealAssistant[]
+
+  @@unique([eventKitchenId, chefUserId])
+  @@index([eventKitchenId, startDateTime])
+}
+
+model MealIngredient {
+  id        String  @id @default(uuid())
+  mealId    String
+  productId String?
+  name      String
+  quantity  Decimal @db.Decimal(10, 3)
+  unit      Unit
+
+  meal    Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+}
+
+model Product {
+  id   String @id @default(uuid())
+  name String @unique
+
+  mealIngredients MealIngredient[]
+}
+
+model MealUtensil {
+  id     String @id @default(uuid())
+  mealId String
+  name   String
+
+  meal Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+}
+
+model MealAssistant {
+  id             String   @id @default(uuid())
+  mealId         String
+  eventKitchenId String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  meal         Meal         @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  eventKitchen EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([mealId, userId])
+  @@unique([eventKitchenId, userId])
+}
+
+enum ChefSource {
+  ROLE
+  MANUAL
+}
+
+enum MealService {
+  LUNCH
+  DINNER
+}
+
+enum Unit {
+  G
+  KG
+  ML
+  CL
+  L
+  CAS
+  CAC
+  PIECE
 }

@@ -9,6 +9,8 @@ import EditEventModal from "../components/events/EditEventModal";
 import ParticipantList from "../components/events/ParticipantList";
 import BoardGameTab from "../components/boardgames/BoardGameTab";
 import PlanningTab from "../components/planning/PlanningTab";
+import KitchenTab from "../components/kitchen/KitchenTab";
+import KitchenBoard from "../components/kitchen/KitchenBoard";
 import ResponsiveModal from "../components/common/ResponsiveModal";
 import AdminBoardGamePanel from "../components/admin/AdminBoardGamePanel";
 import { useAdminRights } from "../hooks/useAdminRights";
@@ -30,9 +32,9 @@ interface EventDetail {
   }[];
 }
 
-type Tab = "info" | "participants" | "planning" | "games";
+type Tab = "info" | "participants" | "planning" | "games" | "kitchen";
 
-const VALID_TABS: Tab[] = ["info", "participants", "planning", "games"];
+const VALID_TABS: Tab[] = ["info", "participants", "planning", "games", "kitchen"];
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -167,6 +169,12 @@ export default function EventDetailPage() {
             >
               Participants ({event.participants.length})
             </button>
+            <button
+              className={`tab ${tab === "kitchen" ? "tab-active" : ""}`}
+              onClick={() => setTab("kitchen")}
+            >
+              Cuisine
+            </button>
           </div>
         </div>
         {/* Affordance de scroll : degrade sur le bord droit, mobile uniquement */}
@@ -175,21 +183,24 @@ export default function EventDetailPage() {
 
       <div className={tab === "planning" && !isMobile ? "flex-1 min-h-0" : ""}>
         {tab === "info" && (
-          <div className="card bg-base-100 shadow-sm">
-            <div className="card-body p-4 md:p-6">
-              <h2 className="card-title text-base md:text-lg">{event.name}</h2>
-              <div className="space-y-2 text-sm">
-                <p>
-                  <span className="font-medium">Début :</span> {formatDate(event.startDateTime)}
-                </p>
-                <p>
-                  <span className="font-medium">Fin :</span> {formatDate(event.endDateTime)}
-                </p>
-                <p>
-                  <span className="font-medium">Participants :</span> {event.participants.length}
-                </p>
+          <div className="space-y-4 md:space-y-6">
+            <div className="card bg-base-100 shadow-sm">
+              <div className="card-body p-4 md:p-6">
+                <h2 className="card-title text-base md:text-lg">{event.name}</h2>
+                <div className="space-y-2 text-sm">
+                  <p>
+                    <span className="font-medium">Début :</span> {formatDate(event.startDateTime)}
+                  </p>
+                  <p>
+                    <span className="font-medium">Fin :</span> {formatDate(event.endDateTime)}
+                  </p>
+                  <p>
+                    <span className="font-medium">Participants :</span> {event.participants.length}
+                  </p>
+                </div>
               </div>
             </div>
+            <KitchenBoard eventId={event.id} />
           </div>
         )}
 
@@ -207,6 +218,14 @@ export default function EventDetailPage() {
         {tab === "planning" && <PlanningTab eventId={event.id} />}
 
         {tab === "games" && <BoardGameTab eventId={event.id} />}
+
+        {tab === "kitchen" && (
+          <KitchenTab
+            eventId={event.id}
+            eventStartDate={event.startDateTime.slice(0, 10)}
+            eventEndDate={event.endDateTime.slice(0, 10)}
+          />
+        )}
       </div>
 
       <EditEventModal

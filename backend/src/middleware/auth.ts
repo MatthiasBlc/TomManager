@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import createError from "http-errors";
 import prisma from "../util/db";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -84,6 +85,56 @@ export async function requireTableGMOrAdmin(req: Request, res: Response, next: N
       return;
     }
 
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Verifie ADMIN + preference admin.kitchen ; leve un createError sinon (a catcher par l'appelant).
+export async function assertKitchenManager(userId: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+  });
+  if (!user || user.role !== "ADMIN") {
+    throw createError(403, "Admin access required", { code: "ADMIN_REQUIRED" });
+  }
+
+  const pref = await prisma.userPreference.findUnique({
+    where: { userId_key: { userId, key: "admin.kitchen" } },
+  });
+  if (!pref?.value) {
+    throw createError(403, "Kitchen manager preference required", {
+      code: "KITCHEN_MANAGER_REQUIRED",
+    });
+  }
+}
+
+// Responsable cuisine : ADMIN ayant active la preference admin.kitchen (opt-in profil).
+export async function requireKitchenManager(req: Request, res: Response, next: NextFunction) {
+  try {
+    await assertKitchenManager(req.session.userId!);
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Chef proprietaire du repas ou responsable cuisine.
+export async function requireMealChefOrManager(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.session.userId!;
+    const meal = await prisma.meal.findUnique({ where: { id: req.params.mealId } });
+    if (!meal) {
+      throw createError(404, "Meal not found", { code: "MEAL_NOT_FOUND" });
+    }
+
+    if (meal.chefUserId === userId) {
+      next();
+      return;
+    }
+
+    await assertKitchenManager(userId);
     next();
   } catch (err) {
     next(err);

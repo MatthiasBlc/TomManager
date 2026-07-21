@@ -77,7 +77,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     const ok = await confirmDialog({
       title: "Purger l'événement",
       message:
-        "Purger cet event ?\n\nCela supprimera définitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-même sera conservé. Si un rôle Discord est lié, la liste des participants sera réimportée automatiquement depuis Discord.",
+        "Purger cet event ?\n\nCela supprimera définitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n- Les repas, l'équipe courses et les chefs ajoutés manuellement\n\nL'event lui-même sera conservé (config cuisine et rôle chef Discord compris). Si un rôle Discord est lié, la liste des participants (et les chefs par rôle) sera réimportée automatiquement depuis Discord.",
       confirmLabel: "Purger",
       variant: "danger",
     });

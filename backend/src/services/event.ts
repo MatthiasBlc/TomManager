@@ -2,6 +2,7 @@ import prisma from "../util/db";
 import createError from "http-errors";
 import logger from "../util/logger";
 import { syncEventParticipantsFromDiscord } from "./adminSync";
+import { syncChefRoleRoster } from "./kitchen";
 import { emitToEvent } from "../socket/emitter";
 import { createBulkNotifications } from "./notification";
 
@@ -254,10 +255,24 @@ export async function purgeEvent(eventId: string) {
     throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
 
+  // Cuisine (CookV1, spec 10) : EventKitchen + chefRoleId sont CONSERVES, seul le
+  // contenu est purge. Repas (cascade ingredients/ustensiles/inscriptions), equipe
+  // courses, et chefs MANUAL uniquement (les chefs ROLE se reconstituent plus bas
+  // via syncChefRoleRoster, une fois les participants re-importes).
+  const eventKitchen = await prisma.eventKitchen.findUnique({ where: { eventId } });
+
   await prisma.$transaction(async (tx) => {
     await tx.gameTable.deleteMany({ where: { eventId } });
     await tx.eventParticipation.deleteMany({ where: { eventId } });
     await tx.eventBoardGame.deleteMany({ where: { eventId } });
+
+    if (eventKitchen) {
+      await tx.meal.deleteMany({ where: { eventKitchenId: eventKitchen.id } });
+      await tx.kitchenCoursesMember.deleteMany({ where: { eventKitchenId: eventKitchen.id } });
+      await tx.kitchenChef.deleteMany({
+        where: { eventKitchenId: eventKitchen.id, source: "MANUAL" },
+      });
+    }
   });
 
   // L'event conserve son discordRoleId : re-importer immediatement les
@@ -270,6 +285,17 @@ export async function purgeEvent(eventId: string) {
       resyncedParticipants = await syncEventParticipantsFromDiscord(eventId);
     } catch (err) {
       logger.warn({ err, eventId }, "Purge: re-import Discord des participants impossible");
+    }
+  }
+
+  // Reconstitue le roster ROLE une fois les participants re-importes (le sync
+  // filtre les detenteurs du role contre eventParticipation, cf. syncChefRoleRoster).
+  // Best-effort, meme logique que le re-import participants.
+  if (eventKitchen?.chefRoleId) {
+    try {
+      await syncChefRoleRoster(eventKitchen.id, eventId, eventKitchen.chefRoleId);
+    } catch (err) {
+      logger.warn({ err, eventId }, "Purge: re-sync du roster chef par role impossible");
     }
   }
 

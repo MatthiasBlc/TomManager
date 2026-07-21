@@ -40,7 +40,7 @@ Relations: createdEvents, eventParticipations, createdGameTables, gameTableParti
 | updatedAt | DateTime | Auto                                 |
 
 Contrainte unique: (userId, key)
-Liste blanche des cles (backend `schemas/preference.ts`) : admin.events, admin.tables, admin.games, beta.pdfExport, beta.gameDb.
+Liste blanche des cles (backend `schemas/preference.ts`) : admin.events, admin.tables, admin.games, admin.kitchen, beta.pdfExport, beta.gameDb.
 Les cles `admin.*` et `beta.*` ne sont modifiables que par un ADMIN. Cle absente = false.
 Droits admin opt-in : le front ne montre les actions admin que si le toggle correspondant est actif (le backend reste protege par requireAdmin & co independamment).
 
@@ -198,3 +198,109 @@ TABLE_DELETED | TABLE_UPDATED | WAITLIST_PROMOTED | WAITLIST_DEMOTED | RESERVED_
 
 Index: (userId, read, createdAt DESC)
 Relations: user (User)
+
+## Module cuisine (CookV1)
+
+Voir `docs/features/CookV1/SPEC_COOKING.md` pour le detail fonctionnel. Migration
+100% additive `20260721101121_kitchen_v1_foundations`.
+
+### EventKitchen (1:1 avec Event, cree paresseusement)
+
+| Field                    | Type      | Notes                                        |
+| ------------------------ | --------- | --------------------------------------------- |
+| id                       | String    | UUID PK                                      |
+| eventId                  | String    | FK -> Event.id, UNIQUE, onDelete Cascade     |
+| chefRoleId               | String?   | Snowflake role Discord chef ; null = manuel  |
+| allergiesNotes           | String?   | Texte libre global (max 5000)                |
+| equipierPlanningEnabled  | Boolean   | default false                                |
+| createdAt / updatedAt    | DateTime  |                                               |
+
+Relations: event (Event), chefs (KitchenChef[]), coursesMembers (KitchenCoursesMember[]), meals (Meal[]), assistants (MealAssistant[])
+
+### KitchenChef (roster chef materialise)
+
+| Field          | Type       | Notes                                   |
+| -------------- | ---------- | ---------------------------------------- |
+| id             | String     | UUID PK                                 |
+| eventKitchenId | String     | FK -> EventKitchen.id, onDelete Cascade |
+| userId         | String     | FK -> User.id                           |
+| source         | ChefSource | ROLE | MANUAL                           |
+
+Unique: (eventKitchenId, userId)
+
+### KitchenCoursesMember (equipe courses)
+
+| Field          | Type   | Notes                                   |
+| -------------- | ------ | ---------------------------------------- |
+| id             | String | UUID PK                                 |
+| eventKitchenId | String | FK -> EventKitchen.id, onDelete Cascade |
+| userId         | String | FK -> User.id                           |
+
+Unique: (eventKitchenId, userId)
+
+### Meal (fiche repas ; 1 chef = 1 repas)
+
+| Field          | Type        | Notes                                                  |
+| -------------- | ----------- | -------------------------------------------------------- |
+| id             | String      | UUID PK                                                 |
+| eventKitchenId | String      | FK -> EventKitchen.id, onDelete Cascade                |
+| chefUserId     | String?     | FK -> User.id ; null = orphelin (onDelete SetNull)      |
+| name           | String      | 1-150                                                   |
+| service        | MealService | LUNCH | DINNER                                        |
+| startDateTime  | DateTime    | >= event.startDateTime, < endDateTime                  |
+| endDateTime    | DateTime    | <= event.endDateTime                                    |
+| maxAssistants  | Int         | default 0                                                |
+| createdAt / updatedAt | DateTime |                                                     |
+
+Unique: (eventKitchenId, chefUserId) — NULLs distincts sous PostgreSQL
+Index: (eventKitchenId, startDateTime)
+
+### MealIngredient
+
+| Field     | Type    | Notes                                     |
+| --------- | ------- | ------------------------------------------ |
+| id        | String  | UUID PK                                   |
+| mealId    | String  | FK -> Meal.id, onDelete Cascade           |
+| productId | String? | FK -> Product.id (onDelete SetNull)       |
+| name      | String  | Denormalise (cache d'affichage)           |
+| quantity  | Decimal | @db.Decimal(10,3)                         |
+| unit      | Unit    | G | KG | ML | CL | L | CAS | CAC | PIECE |
+
+### Product (catalogue, pattern Tag)
+
+| Field | Type   | Notes                       |
+| ----- | ------ | --------------------------- |
+| id    | String | UUID PK                     |
+| name  | String | Unique, normalise lowercase |
+
+### MealUtensil
+
+| Field  | Type   | Notes                           |
+| ------ | ------ | -------------------------------- |
+| id     | String | UUID PK                         |
+| mealId | String | FK -> Meal.id, onDelete Cascade |
+| name   | String | 1-100                            |
+
+### MealAssistant (inscription equipier)
+
+| Field          | Type     | Notes                                       |
+| -------------- | -------- | --------------------------------------------- |
+| id             | String   | UUID PK                                      |
+| mealId         | String   | FK -> Meal.id, onDelete Cascade              |
+| eventKitchenId | String   | FK -> EventKitchen.id, onDelete Cascade (denormalise pour l'unique) |
+| userId         | String   | FK -> User.id                                |
+| createdAt      | DateTime |                                               |
+
+Unique: (mealId, userId) ET (eventKitchenId, userId) — au plus un repas par event
+
+### Enum ChefSource
+
+ROLE | MANUAL
+
+### Enum MealService
+
+LUNCH | DINNER
+
+### Enum Unit
+
+G | KG | ML | CL | L | CAS | CAC | PIECE

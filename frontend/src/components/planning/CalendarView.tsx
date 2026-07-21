@@ -8,12 +8,15 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { useAuth } from "../../contexts/AuthContext";
 import CalendarEventBlock from "./CalendarEventBlock";
 
 // Stable hors du composant pour eviter les re-renders FC
 const FC_PLUGINS = [timeGridPlugin, interactionPlugin];
 
 import { type TableSummary } from "./computeLayout";
+import { type MealSlot } from "./kitchenSlots";
+import { serviceLabel } from "../kitchen/units";
 import { getErrorMessage } from "../../config/apiErrors";
 
 interface EventBounds {
@@ -29,6 +32,7 @@ interface SlotSelection {
 
 interface Props {
   tables: TableSummary[];
+  mealSlots?: MealSlot[];
   eventBounds: EventBounds;
   eventId: string;
   onTableClick: (tableId: string) => void;
@@ -73,6 +77,7 @@ function findGmOverlap(
 
 export default function CalendarView({
   tables,
+  mealSlots = [],
   eventBounds,
   eventId,
   onTableClick,
@@ -80,6 +85,7 @@ export default function CalendarView({
   onSlotSelect,
 }: Props) {
   const { canModerateTables } = useAdminRights();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const calendarRef = useRef<FullCalendar>(null);
   // Ref pour avoir les tables a jour dans les callbacks sans les declarer comme dependances
@@ -183,32 +189,59 @@ export default function CalendarView({
     [onSlotSelect]
   );
 
-  const calEvents = useMemo(
-    () =>
-      tables.map((t) => ({
-        id: t.id,
-        title: t.title,
-        start: t.startDateTime,
-        end: t.endDateTime,
-        editable: t.isGM || canModerateTables,
+  const calEvents = useMemo(() => {
+    const tableEvents = tables.map((t) => ({
+      id: t.id,
+      title: t.title,
+      start: t.startDateTime,
+      end: t.endDateTime,
+      editable: t.isGM || canModerateTables,
+      extendedProps: {
+        kind: "table" as const,
+        isGM: t.isGM,
+        currentUserStatus: t.currentUserStatus,
+        confirmedCount: t.confirmedCount,
+        maxPlayers: t.maxPlayers,
+        reservedSeats: t.reservedSeats,
+        waitlistCount: t.waitlistCount,
+        confirmedOnReserved: t.confirmedOnReserved,
+        type: t.type,
+        currentUserConflict: t.currentUserConflict,
+        conflictingPlayerCount: t.conflictingPlayerCount,
+        players: t.players,
+        gmUsername: t.creator.displayName ?? t.creator.username,
+        tags: t.tags,
+      },
+    }));
+
+    // Creneaux cuisine : lecture seule (pas de drag/resize), rendus a cote des tables.
+    // Prefixe d'id pour ne pas collisionner avec un tableId et permettre d'ignorer le
+    // clic (l'inscription se fait dans l'onglet Info).
+    const mealEvents = mealSlots.map((m) => {
+      const isChef = !!user && m.chef?.id === user.id;
+      return {
+        id: `meal:${m.id}`,
+        title: m.name,
+        start: m.startDateTime,
+        end: m.endDateTime,
+        editable: false,
         extendedProps: {
-          isGM: t.isGM,
-          currentUserStatus: t.currentUserStatus,
-          confirmedCount: t.confirmedCount,
-          maxPlayers: t.maxPlayers,
-          reservedSeats: t.reservedSeats,
-          waitlistCount: t.waitlistCount,
-          confirmedOnReserved: t.confirmedOnReserved,
-          type: t.type,
-          currentUserConflict: t.currentUserConflict,
-          conflictingPlayerCount: t.conflictingPlayerCount,
-          players: t.players,
-          gmUsername: t.creator.displayName ?? t.creator.username,
-          tags: t.tags,
+          kind: "meal" as const,
+          service: serviceLabel(m.service),
+          chefName: m.chef ? (m.chef.displayName ?? m.chef.username) : null,
+          assistantCount: m.assistants.length,
+          maxAssistants: m.maxAssistants,
+          currentUserConflict: m.currentUserConflict,
+          // Le conflit "chef" (compte) n'est montre qu'au chef du repas, et seulement
+          // s'il n'est pas lui-meme la personne en conflit
+          showChefConflict: isChef && !m.currentUserConflict && m.conflictingCount > 0,
+          conflictingCount: m.conflictingCount,
         },
-      })),
-    [tables, canModerateTables]
-  );
+      };
+    });
+
+    return [...tableEvents, ...mealEvents];
+  }, [tables, mealSlots, canModerateTables, user]);
 
   const validRange = useMemo(
     () => ({
@@ -289,7 +322,11 @@ export default function CalendarView({
         height={isMobile ? "calc(100dvh - 220px)" : "100%"}
         events={calEvents}
         eventContent={renderEventContent}
-        eventClick={(info) => onTableClick(info.event.id)}
+        eventClick={(info) => {
+          // Les creneaux cuisine sont informatifs : pas de modale de table
+          if (info.event.extendedProps.kind === "meal") return;
+          onTableClick(info.event.id);
+        }}
         datesSet={handleDatesSet}
         locale="fr"
         firstDay={1}
