@@ -70,6 +70,9 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions) + emissions socket de sync multi-appareils (notification:new/read/read-all/deleted, pas d'emission si ownership KO) + creation non-bloquante (null/[] si insert KO) + notifications MJ (GM_PLAYER_JOINED/WAITLISTED/LEFT, GM_TABLE_FULL, pas d'auto-notif JDS, MJ prevenu d'un update/delete admin, pas de notif sur ses propres updates) + notifications event (EVENT_UPDATED si nom/dates changent, pas de notif si rien de significatif, EVENT_DELETED, auteur exclu) + retention (purge lues >30j / non lues >90j)
 - `integration/preference.test.ts` - Preferences API (defaults false dans /me, PATCH bulk + upsert, 403 cles admin/beta pour non-admin, 400 cle inconnue/valeur non bool/body vide)
+- `integration/kitchen.test.ts` - Kitchen API CookV1 (GET modele par role + anti-fuite allergies/ingredients equipier, PATCH config + ecrasement MANUAL->ROLE, chefs/courses manuels + exclusivite (2.4), orphelinage retrait chef, liste sans affectation)
+- `integration/meal.test.ts` - Meal API CookV1 (CRUD chef/manager, unique 1 chef/repas, orphelinage/reassignation, ingredients find-or-create Product + ustensiles, inscription/deplacement/desinscription equipier transactionnels, capacite, exclusivite)
+- `integration/kitchenPlanning.test.ts` + `unit/kitchenPlanning.test.ts` - Generation planning (pool, tri startDateTime, exclusion courses, non-destructif + overCapacity, regen idempotente, clamps)
 
 ### Frontend (ROADMAP COMPLETE)
 
@@ -110,6 +113,11 @@ npx playwright test --grep "nom"         # Un test specifique
 - `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel, stepper reservedSeats plafonne a maxPlayers
 - `EditTableModal.test.tsx` - Encart occupation actuelle, avertissement + confirm avant demotion (maxPlayers/reservedSeats), submit sans confirm si pas d'impact
 - `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, boutons de promotion waitlist (simple ou double libre+reservee selon disponibilite, payload `seat`), bouton disabled si table pleine, conversion en place d'un joueur confirme (libre<->reservee), Modifier/Supprimer admin conditionnes au droit admin.tables
+- `KitchenTab.test.tsx` - Matrice de visibilite CookV1 (equipier masque, chef = CTA "Creer mon repas" sans panneau gestion, panneau gestion visible manager/admin)
+- `KitchenBoard.test.tsx` - Masquage si equipier + toggle off, visible toujours pour chef, badge "sans chef", join/move/leave (S'inscrire / Se deplacer ici / Se desinscrire), disabled si complet, places restantes
+- `KitchenManagementPanel.test.tsx` - Modales de confirmation (ecrasement chefs au set du chefRoleId, retrait chef, generation planning) + annulation, mode role (roster lecture seule), reassignation repas orphelin
+- `MealFichesList.test.tsx` - Warning nombre d'equipiers avant suppression, permissions edit/delete (proprietaire/manager/aucun), stepper capacite manager uniquement, empty state
+- `useEventSocket.test.tsx` (CookV1) - Reaction aux 4 evenements `kitchen:*` (config-updated, meal-changed, assistant-changed, planning-generated)
 
 Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phase 8 - pages)
 

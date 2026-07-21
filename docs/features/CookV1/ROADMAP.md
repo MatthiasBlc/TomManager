@@ -96,13 +96,27 @@ Modele : **Sonnet 5** | Effort : ~2-3h
 
 ## Lot E - Temps reel + UI
 
-- [ ] Events sockets `kitchen:*` (config / meal / assistant / planning) vers room event.
-- [ ] Onglet Cuisine (gestion RW responsable / R admin ; fiches chef) selon la matrice
-      de visibilite (spec 4).
-- [ ] Onglet Info : board repas + inscription equipier (si active), maj live.
-- [ ] Modales de confirmation (ecrasement chefs, regeneration warning, suppression repas).
-- [ ] Tests composants : rendu par matrice de visibilite, modales, board (inscription/
-      deplacement/desinscription, places restantes, repas "sans chef"), maj temps reel `kitchen:*`.
+- [x] Events sockets `kitchen:*` (config / meal / assistant / planning) vers room event
+      (extension de `useEventSocket`).
+- [x] Onglet Cuisine (`KitchenTab` + `KitchenManagementPanel` + `MealFichesList` +
+      `MealFormModal`) selon la matrice de visibilite (spec 4) : responsable (RW),
+      admin simple (R via `isAdmin`), chef (RW sa fiche, R les autres), equipier (masque).
+- [x] Onglet Info : `KitchenBoard` (board repas + inscription/deplacement/desinscription
+      equipier), maj live.
+- [x] Modales de confirmation (`useConfirm`) : ecrasement chefs au set du chefRoleId,
+      retrait d'un chef, regeneration du planning, suppression d'un repas (avec compte
+      equipiers impactes).
+- [x] Tests composants (Vitest + Testing Library) : `KitchenTab` (matrice de visibilite),
+      `KitchenBoard` (affichage/masquage selon role+toggle, join/move/leave, "sans chef",
+      places restantes), `KitchenManagementPanel` (modales de confirmation, roster,
+      reassignation), `MealFichesList` (permissions edit/delete, warning equipiers),
+      `useEventSocket` (reaction aux 4 evenements `kitchen:*`).
+
+Note : pas de fetch dediee au chargement de l'onglet (chaque composant racine fetche les
+siennes, coherent avec `PlanningTab`/`BoardGameTab`). Candidats de "chef manuel"/"equipe
+courses" dans `KitchenManagementPanel` limites a la liste `unassigned` (simplification V1 —
+promouvoir un equipier/courses deja affecte en chef reste possible cote backend, juste pas
+via un menu dedie ; retirer d'abord son role actuel puis l'ajouter fonctionne).
 
 Modele : **Sonnet 5** | Effort : ~5-7h
 

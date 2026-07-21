@@ -163,7 +163,7 @@ src/
 │   │   ├── CalendarView.tsx       # FullCalendar timegrid (drag/resize si GM/admin, multi-day, mobile nav)
 │   │   ├── CalendarEventBlock.tsx # Custom event block renderer (couleur selon statut utilisateur)
 │   │   └── computeLayout.ts       # Layout helpers timeline/calendar
-│   └── boardgames/
+│   ├── boardgames/
 │       ├── BoardGameTab.tsx           # Onglets All (lecture seule) / My List (avec bouton Remove)
 │       ├── BoardGameSearchInput.tsx   # Autocomplete search (local + BGG)
 │       ├── BoardGameCard.tsx          # Game card (Remove: proprietaire ou admin)
@@ -172,16 +172,25 @@ src/
 │       ├── AddBoardGameModal.tsx      # Modal: search + add or create manually
 │       ├── ManualBoardGameForm.tsx    # Manual creation form
 │       └── PoweredByBGG.tsx           # Attribution BGG
+│   └── kitchen/                       # Module cuisine (CookV1) — onglet "Cuisine" + board dans "Infos"
+│       ├── KitchenTab.tsx             # Racine onglet Cuisine : fetch, socket, matrice de visibilite
+│       ├── KitchenManagementPanel.tsx # Gestion (responsable RW / admin R) : config, roster, courses, generate, reassignation
+│       ├── KitchenBoard.tsx           # Board (onglet Infos) : liste repas + inscription/deplacement/desinscription equipier
+│       ├── MealFichesList.tsx         # Liste des fiches repas (edit proprietaire/manager, capacite manager)
+│       ├── MealFormModal.tsx          # Creation/edition d'un repas (nom, service, horaires, ingredients, ustensiles)
+│       ├── IngredientListInput.tsx    # Lignes ingredient (nom + quantite + unite), autocomplete Product
+│       ├── UtensilListInput.tsx       # Liste libre d'ustensiles (tags, sans autocomplete)
+│       └── units.ts                   # UNIT_OPTIONS/SERVICE_OPTIONS + labels francais
 ├── hooks/
 │   ├── useSocket.ts             # Socket.io singleton connection
-│   ├── useEventSocket.ts        # Join/leave event room, listen to events
+│   ├── useEventSocket.ts        # Join/leave event room, listen to events (dont kitchen:*, CookV1)
 │   ├── useNotifications.ts      # Notification fetch, socket, mark read, pagination
 │   ├── useIsMobile.ts           # matchMedia hook for mobile breakpoint detection
 │   ├── useOnlineStatus.ts       # Browser online/offline detection hook
 │   ├── useTheme.ts              # Dark/light mode, localStorage, data-theme sur <html>
 │   ├── useModalA11y.ts          # A11y modales : Echap, focus trap, auto-focus, restore focus (pile de modales)
 │   ├── usePageTitle.ts          # document.title par page ("<titre> - TomManager")
-│   └── useAdminRights.ts        # Droits admin opt-in derives des preferences (canManageEvents, canModerateTables, canModerateGames, pdfExportEnabled, gameDbEnabled)
+│   └── useAdminRights.ts        # Droits admin opt-in derives des preferences (canManageEvents, canModerateTables, canModerateGames, isKitchenManager, pdfExportEnabled, gameDbEnabled)
 ├── contexts/
 │   ├── AuthContext.tsx     # AuthProvider, useAuth hook (login, logout, Discord link/unlink, preferences + updatePreferences optimiste)
 │   ├── ConfirmContext.tsx  # ConfirmProvider + useConfirm : confirmDialog(options) -> Promise<boolean>
@@ -193,7 +202,7 @@ src/
 │   ├── LoginPage.tsx             # Login form (identifier + password, bouton Discord)
 │   ├── OAuthPopupCallbackPage.tsx # Callback popup OAuth Discord
 │   ├── EventListPage.tsx         # /events — event cards grid (bouton creer si admin)
-│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info/planning/games/participants
+│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info(+KitchenBoard)/planning/games/participants/kitchen
 │   ├── PlanningPage.tsx          # /events/:eventId/planning — timeline view + create table
 │   ├── ProfilePage.tsx           # /profile — compte, theme, droits d'administration (toggles + master), Discord
 │   └── NotFoundPage.tsx          # 404
