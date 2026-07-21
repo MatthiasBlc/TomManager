@@ -143,7 +143,9 @@ export default function KitchenManagementPanel({
     if (!selectedNewCoursesMember) return;
     setPendingAction("add-courses");
     try {
-      await api.post(`/api/events/${eventId}/kitchen/courses`, { userId: selectedNewCoursesMember });
+      await api.post(`/api/events/${eventId}/kitchen/courses`, {
+        userId: selectedNewCoursesMember,
+      });
       toast.success("Ajouté à l'équipe courses");
       setSelectedNewCoursesMember("");
       onChanged();
@@ -196,7 +198,9 @@ export default function KitchenManagementPanel({
       const res = await api.post(`/api/events/${eventId}/kitchen/generate`);
       const { pool, overCapacity } = res.data.data;
       if (overCapacity.length > 0) {
-        toast.error(`Planning généré (pool: ${pool}) — ${overCapacity.length} repas en sur-occupation`);
+        toast.error(
+          `Planning généré (pool: ${pool}) — ${overCapacity.length} repas en sur-occupation`
+        );
       } else {
         toast.success(`Planning généré (pool: ${pool})`);
       }
@@ -302,7 +306,9 @@ export default function KitchenManagementPanel({
                 disabled={!selectedNewChef || !!pendingAction}
                 onClick={handleAddChef}
               >
-                {pendingAction === "add-chef" && <span className="loading loading-spinner loading-xs" />}
+                {pendingAction === "add-chef" && (
+                  <span className="loading loading-spinner loading-xs" />
+                )}
                 Ajouter
               </button>
             </div>
@@ -352,7 +358,9 @@ export default function KitchenManagementPanel({
               disabled={!selectedNewCoursesMember || !!pendingAction}
               onClick={handleAddCoursesMember}
             >
-              {pendingAction === "add-courses" && <span className="loading loading-spinner loading-xs" />}
+              {pendingAction === "add-courses" && (
+                <span className="loading loading-spinner loading-xs" />
+              )}
               Ajouter
             </button>
           </div>
@@ -419,8 +427,14 @@ export default function KitchenManagementPanel({
           <p className="text-xs opacity-70 mb-2">
             Répartit les équipiers disponibles entre les repas existants.
           </p>
-          <button className="btn btn-warning btn-sm" disabled={!!pendingAction} onClick={handleGenerate}>
-            {pendingAction === "generate" && <span className="loading loading-spinner loading-xs" />}
+          <button
+            className="btn btn-warning btn-sm"
+            disabled={!!pendingAction}
+            onClick={handleGenerate}
+          >
+            {pendingAction === "generate" && (
+              <span className="loading loading-spinner loading-xs" />
+            )}
             Générer le planning
           </button>
         </div>

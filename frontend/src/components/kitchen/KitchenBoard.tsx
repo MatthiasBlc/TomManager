@@ -134,7 +134,9 @@ export default function KitchenBoard({ eventId }: { eventId: string }) {
                           <span className="badge badge-outline badge-sm">
                             {serviceLabel(meal.service)}
                           </span>
-                          {!meal.chef && <span className="badge badge-warning badge-sm">sans chef</span>}
+                          {!meal.chef && (
+                            <span className="badge badge-warning badge-sm">sans chef</span>
+                          )}
                         </h4>
                         <p className="text-xs opacity-70 mt-0.5">
                           {meal.chef ? displayedName(meal.chef) : "Sans chef"} ·{" "}

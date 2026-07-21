@@ -63,7 +63,9 @@ describe("KitchenBoard", () => {
   it("renders nothing for a plain equipier when the board is not enabled", async () => {
     mockAuth({ id: "u3", role: "USER" });
     apiGetMock.mockResolvedValue({
-      data: { data: { currentUserKitchenRole: "equipier", equipierPlanningEnabled: false, meals: [] } },
+      data: {
+        data: { currentUserKitchenRole: "equipier", equipierPlanningEnabled: false, meals: [] },
+      },
     });
     const { container } = render(<KitchenBoard eventId="ev1" />);
     await waitFor(() => expect(apiGetMock).toHaveBeenCalled());
@@ -87,7 +89,9 @@ describe("KitchenBoard", () => {
   it("always shows the board for a chef, regardless of the toggle", async () => {
     mockAuth({ id: "chef1", role: "USER" });
     apiGetMock.mockResolvedValue({
-      data: { data: { currentUserKitchenRole: "chef", equipierPlanningEnabled: false, meals: [MEAL] } },
+      data: {
+        data: { currentUserKitchenRole: "chef", equipierPlanningEnabled: false, meals: [MEAL] },
+      },
     });
     render(<KitchenBoard eventId="ev1" />);
     await waitFor(() => expect(screen.getByText("Couscous")).toBeInTheDocument());
@@ -174,7 +178,9 @@ describe("KitchenBoard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Se désinscrire" }));
     await waitFor(() =>
-      expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1/assistants/me")
+      expect(apiDeleteMock).toHaveBeenCalledWith(
+        "/api/events/ev1/kitchen/meals/meal1/assistants/me"
+      )
     );
     expect(toastSuccess).toHaveBeenCalled();
   });

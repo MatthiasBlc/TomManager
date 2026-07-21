@@ -20,7 +20,15 @@ vi.mock("../contexts/ConfirmContext", () => ({
   useConfirm: () => vi.fn().mockResolvedValue(true),
 }));
 vi.mock("../components/common/ResponsiveModal", () => ({
-  default: ({ open, children, title }: { open: boolean; children: React.ReactNode; title: string }) =>
+  default: ({
+    open,
+    children,
+    title,
+  }: {
+    open: boolean;
+    children: React.ReactNode;
+    title: string;
+  }) =>
     open ? (
       <div role="dialog" aria-label={title}>
         {children}

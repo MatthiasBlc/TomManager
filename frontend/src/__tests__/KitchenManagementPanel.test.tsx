@@ -99,7 +99,9 @@ describe("KitchenManagementPanel", () => {
 
     await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
     expect(confirmDialogMock.mock.calls[0][0].title).toMatch(/générer le planning/i);
-    await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/generate"));
+    await waitFor(() =>
+      expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/generate")
+    );
   });
 
   it("does not generate when declined", async () => {

@@ -1,7 +1,12 @@
 import prisma from "../util/db";
 import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
-import { getEventOr404, getOrCreateEventKitchen, isKitchenManagerUser, USER_SELECT } from "./kitchen";
+import {
+  getEventOr404,
+  getOrCreateEventKitchen,
+  isKitchenManagerUser,
+  USER_SELECT,
+} from "./kitchen";
 import { findOrCreateProducts } from "./product";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -162,7 +167,9 @@ export async function createMeal(eventId: string, actingUserId: string, data: Cr
   }
 
   const existingMeal = await prisma.meal.findUnique({
-    where: { eventKitchenId_chefUserId: { eventKitchenId: eventKitchen.id, chefUserId: targetChefUserId } },
+    where: {
+      eventKitchenId_chefUserId: { eventKitchenId: eventKitchen.id, chefUserId: targetChefUserId },
+    },
   });
   if (existingMeal) {
     throw createError(409, "This chef already has a meal", { code: "MEAL_ALREADY_EXISTS" });
@@ -227,7 +234,9 @@ export async function updateMeal(
     }
     if (data.chefUserId !== null) {
       const chefRow = await prisma.kitchenChef.findUnique({
-        where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: data.chefUserId } },
+        where: {
+          eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: data.chefUserId },
+        },
       });
       if (!chefRow) {
         throw createError(400, "Target user is not in the chef roster", {
@@ -236,7 +245,10 @@ export async function updateMeal(
       }
       const existingMeal = await prisma.meal.findUnique({
         where: {
-          eventKitchenId_chefUserId: { eventKitchenId: eventKitchen.id, chefUserId: data.chefUserId },
+          eventKitchenId_chefUserId: {
+            eventKitchenId: eventKitchen.id,
+            chefUserId: data.chefUserId,
+          },
         },
       });
       if (existingMeal) {

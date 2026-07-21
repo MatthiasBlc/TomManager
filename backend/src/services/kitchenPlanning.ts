@@ -42,7 +42,12 @@ export async function generatePlanning(eventId: string) {
   emitToEvent(eventId, "kitchen:planning-generated", { eventId });
 
   const overCapacity = meals
-    .map((meal, i) => ({ mealId: meal.id, name: meal.name, occupied: meal.assistants.length, maxAssistants: capacities[i] }))
+    .map((meal, i) => ({
+      mealId: meal.id,
+      name: meal.name,
+      occupied: meal.assistants.length,
+      maxAssistants: capacities[i],
+    }))
     .filter((m) => m.occupied > m.maxAssistants);
 
   return { pool, mealCount: meals.length, capacities, overCapacity };
