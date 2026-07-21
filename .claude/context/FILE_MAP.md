@@ -20,9 +20,10 @@ src/
 │   ├── tag.ts             # tag autocomplete search
 │   ├── boardGame.ts       # search, detail, create, findOrCreateBGG
 │   ├── eventBoardGame.ts  # add, list, remove event board games
-│   └── notification.ts    # list, unreadCount, markAsRead, markAllAsRead, delete
+│   ├── notification.ts    # list, unreadCount, markAsRead, markAllAsRead, delete
+│   └── kitchen.ts         # module cuisine (CookV1) : GET config, PATCH config, chefs, courses
 ├── middleware/
-│   ├── auth.ts            # requireAuth, requireAdmin, requireEventParticipant, requireEventCreator, requireTableGMOrAdmin
+│   ├── auth.ts            # requireAuth, requireAdmin, requireEventParticipant, requireEventCreator, requireTableGMOrAdmin, requireKitchenManager
 │   ├── errorHandler.ts    # Global error handler
 │   ├── rateLimiter.ts     # authRateLimiter (15min window, 10 req, skipped in test)
 │   └── validateBody.ts    # validateBody(zodSchema), validateUUID(param)
@@ -38,17 +39,19 @@ src/
 │   ├── boardGame.ts       # BoardGame routes (search, detail, create, from-bgg)
 │   ├── eventBoardGame.ts  # EventBoardGame routes (add, list, remove)
 │   ├── notification.ts    # Notification routes (list, count, read, readAll, delete)
+│   ├── kitchen.ts         # Kitchen routes (GET, PATCH config, POST/DELETE chefs + courses)
 │   └── test.ts            # Seed E2E (seed-admin, seed-participant) — test/dev only
 ├── schemas/
 │   ├── auth.ts            # loginSchema (zod)
 │   ├── event.ts           # create/update event schemas
 │   ├── gameTable.ts       # create/update table + status schemas
 │   ├── preference.ts      # PREFERENCE_KEYS (liste blanche) + updatePreferencesSchema
-│   └── boardGame.ts       # boardgame schemas + updateBoardGameAdminSchema + mergeSchema
+│   ├── boardGame.ts       # boardgame schemas + updateBoardGameAdminSchema + mergeSchema
+│   └── kitchen.ts         # update config + add chef/courses member schemas
 ├── services/
 │   ├── auth.ts            # Auth business logic
 │   ├── discordAuth.ts     # OAuth Discord (token exchange, role sync, link/unlink)
-│   ├── adminSync.ts       # Discord guild members sync
+│   ├── adminSync.ts       # Discord guild members sync + getLocalUserIdsForDiscordRole (kitchen)
 │   ├── adminBoardGame.ts  # Admin board game list/update/delete/merge
 │   ├── event.ts           # Event CRUD + purge + cascade to GameTables
 │   ├── gameTable.ts       # GameTable CRUD, join/leave/kick, waitlist
@@ -58,7 +61,8 @@ src/
 │   ├── bgg.ts             # BGG XML API client (search, thing detail)
 │   ├── boardGame.ts       # BoardGame CRUD, search (local + BGG fallback)
 │   ├── eventBoardGame.ts  # EventBoardGame CRUD (add/list/remove per event)
-│   └── notification.ts    # Notification CRUD, bulk create, cursor pagination
+│   ├── notification.ts    # Notification CRUD, bulk create, cursor pagination
+│   └── kitchen.ts         # Config + roster chef (manuel/role) + courses + vue par role (CookV1)
 ├── socket/
 │   ├── index.ts           # Socket.io setup, session auth, room handlers (event + user rooms), getIO()
 │   └── emitter.ts         # emitToEvent, emitToUser helpers for services
@@ -74,7 +78,31 @@ src/
         ├── health.test.ts, auth.test.ts, discordAuth.test.ts
         ├── event.test.ts, gameTable.test.ts, participant.test.ts
         ├── boardGame.test.ts, eventBoardGame.test.ts, adminBoardGame.test.ts
-        └── socket.test.ts, notification.test.ts, validation.test.ts, preference.test.ts
+        ├── socket.test.ts, notification.test.ts, validation.test.ts, preference.test.ts
+        └── kitchen.test.ts
+```
+
+## Discord Bot (discord-bot/src/)
+
+Client bot separe (discord.js), meme DB que le backend (`prisma/schema.prisma` copie/tenu a
+jour manuellement en parallele de celui du backend — regenerer le client apres tout
+changement de schema : `npx prisma generate`).
+
+```
+src/
+├── index.ts                        # Client discord.js, startupSync au ready, listeners
+├── handlers/
+│   └── guildMemberUpdate.ts        # Diff roles ajoutes/retires -> sync participation + chef cuisine + admin
+├── services/
+│   ├── syncParticipation.ts        # handleRoleAdded/Removed (participation event), handleAdminRoleChange
+│   ├── syncKitchenChef.ts          # handleChefRoleAdded/Removed (roster KitchenChef ROLE, CookV1)
+│   └── startupSync.ts              # Reconciliation complete au demarrage (events + rosters chef)
+├── util/
+│   ├── db.ts                       # PrismaClient singleton
+│   └── env.ts                      # Env validation
+└── __tests__/
+    ├── handlers/guildMemberUpdate.test.ts
+    └── services/syncParticipation.test.ts, syncKitchenChef.test.ts, startupSync.test.ts
 ```
 
 ## Frontend (frontend/src/)

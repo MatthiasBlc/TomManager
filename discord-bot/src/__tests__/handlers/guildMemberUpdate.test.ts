@@ -15,12 +15,18 @@ vi.mock("../../services/syncParticipation", () => ({
   buildAvatarUrl: vi.fn().mockReturnValue("https://default-avatar.png"),
 }));
 
+vi.mock("../../services/syncKitchenChef", () => ({
+  handleChefRoleAdded: vi.fn(),
+  handleChefRoleRemoved: vi.fn(),
+}));
+
 // ------------------------------------------------------------------ helpers
 import {
   handleRoleAdded,
   handleRoleRemoved,
   handleAdminRoleChange,
 } from "../../services/syncParticipation";
+import { handleChefRoleAdded, handleChefRoleRemoved } from "../../services/syncKitchenChef";
 
 function makeMember(roleIds: string[], userId = "user-123", partial = false) {
   const member = {
@@ -129,5 +135,15 @@ describe("onGuildMemberUpdate", () => {
     await expect(onGuildMemberUpdate(old as never, next as never)).resolves.not.toThrow();
 
     expect(handleRoleAdded).toHaveBeenCalledTimes(2);
+  });
+
+  it("appelle handleChefRoleAdded/handleChefRoleRemoved pour chaque role ajoute/supprime", async () => {
+    const old = makeMember(["role-a"]);
+    const next = makeMember(["role-b"]);
+
+    await onGuildMemberUpdate(old as never, next as never);
+
+    expect(handleChefRoleAdded).toHaveBeenCalledWith("user-123", "role-b");
+    expect(handleChefRoleRemoved).toHaveBeenCalledWith("user-123", "role-a");
   });
 });

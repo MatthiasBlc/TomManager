@@ -7,6 +7,7 @@ import {
   handleAdminRoleChange,
   buildAvatarUrl,
 } from "./syncParticipation";
+import { handleChefRoleAdded, handleChefRoleRemoved } from "./syncKitchenChef";
 
 // Sync complete au demarrage : reconcilie la DB avec l'etat actuel du guild
 export async function startupSync(guild: Guild): Promise<void> {
@@ -17,13 +18,20 @@ export async function startupSync(guild: Guild): Promise<void> {
     select: { id: true, discordRoleId: true },
   });
 
-  if (events.length === 0) {
-    console.log("[startup-sync] Aucun event avec discordRoleId, rien a faire.");
+  const eventKitchens = await prisma.eventKitchen.findMany({
+    where: { chefRoleId: { not: null } },
+    select: { id: true, chefRoleId: true },
+  });
+
+  if (events.length === 0 && eventKitchens.length === 0) {
+    console.log("[startup-sync] Aucun event/roster chef avec role Discord, rien a faire.");
     return;
   }
 
   const members = await guild.members.fetch();
-  console.log(`[startup-sync] ${members.size} membres, ${events.length} events a reconcilier.`);
+  console.log(
+    `[startup-sync] ${members.size} membres, ${events.length} events, ${eventKitchens.length} rosters chef a reconcilier.`
+  );
 
   let processed = 0;
   let errors = 0;
@@ -40,6 +48,14 @@ export async function startupSync(guild: Guild): Promise<void> {
           await handleRoleAdded(discordId, discordUsername, avatarUrl, event.discordRoleId!);
         } else {
           await handleRoleRemoved(discordId, event.discordRoleId!);
+        }
+      }
+
+      for (const eventKitchen of eventKitchens) {
+        if (memberRoleIds.includes(eventKitchen.chefRoleId!)) {
+          await handleChefRoleAdded(discordId, eventKitchen.chefRoleId!);
+        } else {
+          await handleChefRoleRemoved(discordId, eventKitchen.chefRoleId!);
         }
       }
 

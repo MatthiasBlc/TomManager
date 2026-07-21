@@ -6,6 +6,7 @@ import {
   handleAdminRoleChange,
   buildAvatarUrl,
 } from "../services/syncParticipation";
+import { handleChefRoleAdded, handleChefRoleRemoved } from "../services/syncKitchenChef";
 
 export async function onGuildMemberUpdate(
   oldMember: GuildMember | PartialGuildMember,
@@ -29,6 +30,7 @@ export async function onGuildMemberUpdate(
   for (const roleId of addedRoles) {
     try {
       await handleRoleAdded(discordId, discordUsername, avatarUrl, roleId);
+      await handleChefRoleAdded(discordId, roleId);
 
       if (env.DISCORD_ADMIN_ROLE_ID && roleId === env.DISCORD_ADMIN_ROLE_ID) {
         await handleAdminRoleChange(discordId, true);
@@ -41,6 +43,7 @@ export async function onGuildMemberUpdate(
   for (const roleId of removedRoles) {
     try {
       await handleRoleRemoved(discordId, roleId);
+      await handleChefRoleRemoved(discordId, roleId);
 
       if (env.DISCORD_ADMIN_ROLE_ID && roleId === env.DISCORD_ADMIN_ROLE_ID) {
         await handleAdminRoleChange(discordId, false);

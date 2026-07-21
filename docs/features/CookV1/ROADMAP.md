@@ -59,11 +59,13 @@ Le sync initial backend (au set du chefRoleId) a ete implemente avec le Lot B
 (`syncChefRoleRoster` dans `services/kitchen.ts`, reutilise `getLocalUserIdsForDiscordRole`
 dans `adminSync.ts`). Reste a faire ici : la synchro **continue** cote discord-bot.
 
-- [ ] `guildMemberUpdate` : gain/perte d'un `chefRoleId` -> ajout/retrait `KitchenChef`
+- [x] `guildMemberUpdate` : gain/perte d'un `chefRoleId` -> ajout/retrait `KitchenChef`
       `ROLE` + resolution exclusivite ; contrainte "doit etre participant".
-- [ ] `startupSync` : reconcilier les rosters `ROLE`.
-- [ ] Tests bot : `guildMemberUpdate` chef (gain/perte + exclusivite + participant),
+- [x] `startupSync` : reconcilier les rosters `ROLE`.
+- [x] Tests bot : `guildMemberUpdate` chef (gain/perte + exclusivite + participant),
       `startupSync` reconciliation.
+- [x] `discord-bot/prisma/schema.prisma` resynchronise avec le backend (avait deja
+      derive avant CookV1 — meme DB partagee) + `npx prisma generate`.
 
 Modele : **Sonnet 5** | Effort : ~2-3h (calque sur syncParticipation existant)
 
