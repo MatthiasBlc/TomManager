@@ -1,0 +1,133 @@
+# ROADMAP - Module Cuisine (CookV1)
+
+Spec : `SPEC_COOKING.md`. Branche de base : `Developement` -> `feature/cooking-v1`.
+
+Ordre pense pour livrer par couches testables (DB -> API -> bot -> UI -> conflits -> purge).
+
+**Rappel PROD** (spec 17) : migration 100% additive, aucun ALTER/DROP sur l'existant ;
+chown 1003:1003 sur le fichier de migration ; relire le SQL ; jamais `migrate dev` en prod.
+**Tests** (spec 16) : chaque lot livre ses tests dans le meme commit ; seuils CI 50%/50%.
+
+## Modele par lot (points de bascule)
+
+| Lot                                   | Modele        |
+| ------------------------------------- | ------------- |
+| A, B, B-bis, C, D, E                   | **Sonnet 5**  |
+| **F (moteur de conflits)**            | **Opus 4.8**  |
+| G                                     | **Sonnet 5**  |
+
+> **STOP avant le Lot F** : terminer E en Sonnet 5, PUIS basculer sur **Opus 4.8** pour
+> tout le Lot F (moteur de conflits, code planning prod critique), PUIS **revenir a
+> Sonnet 5** pour le Lot G. B et C : escalade Opus autorisee mid-course si la logique
+> exclusivite/orphelinage se noue (sinon rester en Sonnet 5).
+
+---
+
+## Lot A - Fondations DB & preference
+
+- [ ] Migration Prisma **additive** : `EventKitchen`, `KitchenChef`,
+      `KitchenCoursesMember`, `Meal`, `MealIngredient`, `Product`, `MealUtensil`,
+      `MealAssistant` + enums `ChefSource`, `MealService`,
+      `Unit` (G/KG/ML/CL/L/CAS/CAC/PIECE). Uniquement CREATE, aucun ALTER/DROP.
+- [ ] Ajouter la cle `admin.kitchen` a la liste blanche `schemas/preference.ts`.
+- [ ] Relire le SQL genere, chown 1003:1003, tester sur la base docker.
+- [ ] Mettre a jour `.claude/context/DB_MODELS.md`.
+
+Modele : **Sonnet 5** | Effort : ~1-2h
+
+## Lot B - API gestion cuisine (responsable)
+
+- [ ] `EventKitchen` get/upsert config (chefRoleId, allergiesNotes, equipierPlanningEnabled).
+- [ ] Roster chef materialise : add/remove `MANUAL` (participants only) ; retrait d'un
+      chef avec repas **orpheline** le repas (chefUserId=null, fiche conservee) ;
+      ecrasement `MANUAL` -> `ROLE` au set du chefRoleId (orpheline les non-survivants).
+- [ ] Equipe courses : assigner/retirer (participants only) + exclusivite
+      (`ROLE_EXCLUSIVITY`).
+- [ ] Liste "sans affectation" + repas orphelins a reassigner.
+- [ ] GET / **modele par role** (equipier = board sans allergies/ingredients) +
+      `currentUserKitchenRole` + etat par defaut si pas d'EventKitchen (pas de 404).
+- [ ] Middleware `requireKitchenManager` + lecture cuisine (admin/chef/equipier).
+- [ ] Tests integration (dont exclusivite, blocages, fuite allergies equipier).
+
+Modele : **Sonnet 5** | Effort : ~2-3h
+
+## Lot B-bis - Sync bot du roster chef (source ROLE)
+
+- [ ] `guildMemberUpdate` : gain/perte d'un `chefRoleId` -> ajout/retrait `KitchenChef`
+      `ROLE` + resolution exclusivite ; contrainte "doit etre participant".
+- [ ] `startupSync` : reconcilier les rosters `ROLE`.
+- [ ] Sync initial au set du chefRoleId : cote **backend**, reutiliser
+      `fetchAllGuildMembers()` (adminSync.ts) + filtre, comme
+      `syncEventParticipantsFromDiscord` (pas de RPC bot).
+- [ ] Tests bot : `guildMemberUpdate` chef (gain/perte + exclusivite + participant),
+      `startupSync` reconciliation, sync initial backend.
+
+Modele : **Sonnet 5** | Effort : ~2-3h (calque sur syncParticipation existant)
+
+## Lot C - API fiches repas & inscriptions
+
+- [ ] `Meal` CRUD : creation reservee au roster (`NOT_IN_CHEF_ROSTER`), unique 1
+      chef/repas (`MEAL_ALREADY_EXISTS`), `chefUserId` **nullable** (orphelin si le chef
+      sort du roster), edit chef-owner ou manager, reassignation d'un orphelin par manager.
+- [ ] Ingredients (autocomplete `Product` calque sur `/api/tags`) + ustensiles.
+- [ ] `MealAssistant` : s'inscrire / se deplacer (transaction) / quitter ; controle
+      capacite (`MEAL_FULL`) + exclusivite (pas chef/courses).
+- [ ] Tests integration : CRUD repas + auth, orphelinage/reassignation, ingredients
+      (find-or-create Product) + ustensiles, inscription/deplacement/capacite,
+      deplacement transactionnel (rollback si dest pleine).
+
+Modele : **Sonnet 5** | Effort : ~3-4h
+
+## Lot D - Generation du planning
+
+- [ ] Endpoint generation : `base = floor(pool/nbRepas)`, `reste` aux premiers repas ;
+      clamp pool<=0 / nbRepas=0. pool = participants - chefs - membres courses.
+- [ ] Regeneration non destructive (conserve inscriptions, applique la capacite meme si
+      sur-occupation, avertit ; join refuse si inscrits >= maxAssistants).
+- [ ] Tests unitaires du calcul (0 repas, pool negatif, reste, sur-occupation).
+
+Modele : **Sonnet 5** | Effort : ~2-3h
+
+## Lot E - Temps reel + UI
+
+- [ ] Events sockets `kitchen:*` (config / meal / assistant / planning) vers room event.
+- [ ] Onglet Cuisine (gestion RW responsable / R admin ; fiches chef) selon la matrice
+      de visibilite (spec 4).
+- [ ] Onglet Info : board repas + inscription equipier (si active), maj live.
+- [ ] Modales de confirmation (ecrasement chefs, regeneration warning, suppression repas).
+- [ ] Tests composants : rendu par matrice de visibilite, modales, board (inscription/
+      deplacement/desinscription, places restantes, repas "sans chef"), maj temps reel `kitchen:*`.
+
+Modele : **Sonnet 5** | Effort : ~5-7h
+
+## Lot F - Integration moteur de conflits (planning)
+
+- [ ] Unifier intervalles tables + occupations cuisine (chef sur son repas, equipier sur
+      son repas) dans le calcul de `gameTable.ts`.
+- [ ] Surbrillance visible : personne concernee + chef + MJ.
+- [ ] Rendu creneaux cuisine dans l'onglet Planning.
+- [ ] Tests unitaires du calcul unifie : chevauchement table<->cuisine, chef occupe par
+      son repas + inscrit a une table, visibilite surbrillance (personne/chef/MJ).
+      Non-regression : les tests conflits tables existants passent toujours.
+
+Modele : **Opus 4.8** | Effort : ~3-5h (touche le coeur du planning, subtil)
+
+## Lot G - E2E, purge & finitions
+
+- [ ] E2E Playwright spec `cuisine` : responsable configure -> chef cree un repas ->
+      equipier s'inscrit -> conflit visible dans Planning -> purge (seed API + `loginAs`).
+- [ ] Etendre le purge : conserver EventKitchen + chefRoleId ; purger repas/inscriptions
+      + courses + chefs `MANUAL` seulement ; chefs `ROLE` reconstitues au re-import.
+- [ ] Mise a jour `.claude/context/` (API_MAP, FILE_MAP, TESTS, PROGRESS, DB_MODELS).
+- [ ] Changelog utilisateur.
+
+Modele : **Sonnet 5** | Effort : ~2-3h
+
+---
+
+## V2 (hors scope, ne pas implementer maintenant)
+
+- Allergies self-service par participant (persistees inter-events).
+- Notifications cuisine.
+- Module courses : agregation par `Product`, conversion d'unites par dimension,
+  liste de courses generee depuis les ingredients.
