@@ -10,11 +10,11 @@ chown 1003:1003 sur le fichier de migration ; relire le SQL ; jamais `migrate de
 
 ## Modele par lot (points de bascule)
 
-| Lot                                   | Modele        |
-| ------------------------------------- | ------------- |
-| A, B, B-bis, C, D, E                   | **Sonnet 5**  |
-| **F (moteur de conflits)**            | **Opus 4.8**  |
-| G                                     | **Sonnet 5**  |
+| Lot                        | Modele       |
+| -------------------------- | ------------ |
+| A, B, B-bis, C, D, E       | **Sonnet 5** |
+| **F (moteur de conflits)** | **Opus 4.8** |
+| G                          | **Sonnet 5** |
 
 > **STOP avant le Lot F** : terminer E en Sonnet 5, PUIS basculer sur **Opus 4.8** pour
 > tout le Lot F (moteur de conflits, code planning prod critique), PUIS **revenir a
@@ -122,24 +122,39 @@ Modele : **Sonnet 5** | Effort : ~5-7h
 
 ## Lot F - Integration moteur de conflits (planning)
 
-- [ ] Unifier intervalles tables + occupations cuisine (chef sur son repas, equipier sur
-      son repas) dans le calcul de `gameTable.ts`.
-- [ ] Surbrillance visible : personne concernee + chef + MJ.
-- [ ] Rendu creneaux cuisine dans l'onglet Planning.
-- [ ] Tests unitaires du calcul unifie : chevauchement table<->cuisine, chef occupe par
-      son repas + inscrit a une table, visibilite surbrillance (personne/chef/MJ).
-      Non-regression : les tests conflits tables existants passent toujours.
+- [x] Unifier intervalles tables + occupations cuisine (chef sur son repas, equipier sur
+      son repas) dans le calcul de `gameTable.ts`. Moteur extrait dans
+      `services/conflicts.ts` (`getEventOccupations` + `computeConflicts`), partage entre
+      `listTables` (cote tables) et `getKitchenView` (cote repas).
+- [x] Surbrillance visible : personne concernee (`currentUserConflict`) + chef/MJ
+      (`conflictingCount` / `conflictingPlayerCount`, montre au chef du repas / au MJ).
+- [x] Rendu creneaux cuisine dans l'onglet Planning (vue calendrier + vue liste). Le
+      PlanningTab fetche les repas via `GET /kitchen` et refetche les DEUX domaines a
+      chaque evenement socket `table:*` ou `kitchen:*` (conflits croises).
+- [x] Tests unitaires du calcul unifie (`__tests__/unit/conflicts.test.ts`) + integration
+      cross-domaine (`__tests__/integration/kitchenConflicts.test.ts`) + composants
+      (`TimelineView.test.tsx`). Non-regression : les tests conflits tables existants
+      passent toujours.
 
 Modele : **Opus 4.8** | Effort : ~3-5h (touche le coeur du planning, subtil)
 
 ## Lot G - E2E, purge & finitions
 
-- [ ] E2E Playwright spec `cuisine` : responsable configure -> chef cree un repas ->
-      equipier s'inscrit -> conflit visible dans Planning -> purge (seed API + `loginAs`).
-- [ ] Etendre le purge : conserver EventKitchen + chefRoleId ; purger repas/inscriptions
-      + courses + chefs `MANUAL` seulement ; chefs `ROLE` reconstitues au re-import.
-- [ ] Mise a jour `.claude/context/` (API_MAP, FILE_MAP, TESTS, PROGRESS, DB_MODELS).
-- [ ] Changelog utilisateur.
+- [x] E2E Playwright spec `cuisine` (`e2e/cuisine.spec.ts`) : responsable configure
+      (equipierPlanningEnabled + chef manuel) -> chef cree un repas -> responsable genere
+      le planning (maxAssistants demarre a 0, spec 5) -> equipier s'inscrit au repas puis
+      rejoint une table chevauchante -> conflit visible dans Planning (badge "Conflit")
+      -> purge (bouton UI + reload) -> repas et chef MANUAL disparus. Nouveau helper
+      fixture `enableKitchenManager` (`e2e/fixtures/seed.ts`).
+- [x] Purge etendue (`services/event.ts::purgeEvent`) : conserve `EventKitchen` (config
+      incluse) + `chefRoleId` ; purge repas (cascade ingredients/ustensiles/inscriptions),
+      `KitchenCoursesMember`, chefs `MANUAL` uniquement ; chefs `ROLE` reconstitues via
+      `syncChefRoleRoster` une fois les participants re-importes (best-effort). Message de
+      confirmation UI (`EditEventModal`) mis a jour. Tests : `kitchenPurge.test.ts`
+      (suppression + reconstitution ROLE avec adminSync mocke, aucun appel reseau reel).
+- [x] Mise a jour `.claude/context/` (API_MAP, FILE_MAP, TESTS, PROGRESS). DB_MODELS
+      inchange (aucune migration dans ce lot).
+- [x] Changelog utilisateur (`docs/changelogs/`).
 
 Modele : **Sonnet 5** | Effort : ~2-3h
 

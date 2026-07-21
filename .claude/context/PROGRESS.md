@@ -1,8 +1,9 @@
 # Avancement du projet
 
-## Phase actuelle : Version 1.0 lancee
+## Phase actuelle : CookV1 (module cuisine)
 
-Toutes les phases et features prevues sont terminees et integrees.
+Lots A a G : voir `docs/features/CookV1/ROADMAP.md`. Lot G (E2E, purge, docs, changelog) en
+finition sur la branche `CookingV1`.
 
 Prochaines etapes : `docs/NEXT_STEPS.md`
 Test manuel complet : `docs/MANUAL_TESTING.md`

@@ -13,7 +13,7 @@ src/
 │   ├── discordAuth.ts     # OAuth Discord (initiate, callback, unlink)
 │   ├── adminSync.ts       # Sync manuelle membres Discord -> DB
 │   ├── adminBoardGame.ts  # Admin: list/update/delete/merge board games
-│   ├── event.ts           # CRUD event + purge
+│   ├── event.ts           # CRUD event + purge (etend au contenu cuisine, cf services/event.ts)
 │   ├── gameTable.ts       # CRUD table + join/leave/kick/status
 │   ├── participant.ts     # list, remove, leave participants
 │   ├── preference.ts      # update user preferences (toggles admin/beta)
@@ -56,7 +56,7 @@ src/
 │   ├── discordAuth.ts     # OAuth Discord (token exchange, role sync, link/unlink)
 │   ├── adminSync.ts       # Discord guild members sync + getLocalUserIdsForDiscordRole (kitchen)
 │   ├── adminBoardGame.ts  # Admin board game list/update/delete/merge
-│   ├── event.ts           # Event CRUD + purge + cascade to GameTables
+│   ├── event.ts           # Event CRUD + purge (garde EventKitchen+chefRoleId, purge repas/courses/chefs MANUAL, resync ROLE) + cascade to GameTables
 │   ├── gameTable.ts       # GameTable CRUD, join/leave/kick, waitlist
 │   ├── participant.ts     # Participant management + cascade to GameTables
 │   ├── preference.ts      # get/update preferences (map complete, upsert, controle role)
@@ -65,10 +65,11 @@ src/
 │   ├── boardGame.ts       # BoardGame CRUD, search (local + BGG fallback)
 │   ├── eventBoardGame.ts  # EventBoardGame CRUD (add/list/remove per event)
 │   ├── notification.ts    # Notification CRUD, bulk create, cursor pagination
-│   ├── kitchen.ts         # Config + roster chef (manuel/role) + courses + vue par role (CookV1)
+│   ├── kitchen.ts         # Config + roster chef (manuel/role) + courses + vue par role, meals enrichis conflits (CookV1)
 │   ├── meal.ts            # Meal CRUD, ingredients/ustensiles (remplacement), join/move/leave transactionnel (CookV1)
 │   ├── product.ts         # Product find-or-create + search, pattern Tag (CookV1)
-│   └── kitchenPlanning.ts # Generation planning : computeMealCapacities (pur) + generatePlanning (CookV1)
+│   ├── kitchenPlanning.ts # Generation planning : computeMealCapacities (pur) + generatePlanning (CookV1)
+│   └── conflicts.ts       # Moteur de conflits UNIFIE tables+cuisine : getEventOccupations + computeConflicts (CookV1 Lot F), partage par gameTable.ts et kitchen.ts
 ├── socket/
 │   ├── index.ts           # Socket.io setup, session auth, room handlers (event + user rooms), getIO()
 │   └── emitter.ts         # emitToEvent, emitToUser helpers for services
@@ -85,10 +86,11 @@ src/
         ├── event.test.ts, gameTable.test.ts, participant.test.ts
         ├── boardGame.test.ts, eventBoardGame.test.ts, adminBoardGame.test.ts
         ├── socket.test.ts, notification.test.ts, validation.test.ts, preference.test.ts
-        └── kitchen.test.ts, meal.test.ts, kitchenPlanning.test.ts
+        ├── kitchen.test.ts, meal.test.ts, kitchenPlanning.test.ts
+        └── kitchenConflicts.test.ts (conflits cross-domaine tables<->cuisine), kitchenPurge.test.ts (purge etendue, sync ROLE mockee)
 ```
 
-Unitaires purs (`src/__tests__/unit/`) : `kitchenPlanning.test.ts` (computeMealCapacities).
+Unitaires purs (`src/__tests__/unit/`) : `kitchenPlanning.test.ts` (computeMealCapacities), `conflicts.test.ts` (computeConflicts).
 
 ## Discord Bot (discord-bot/src/)
 
@@ -159,9 +161,11 @@ src/
 │   │   ├── TableDetailModal.tsx   # Detail table (join/leave, gestion joueurs si GM/admin)
 │   │   ├── TagInput.tsx           # Tag autocomplete multi-select
 │   │   ├── BoardGameSelector.tsx  # Selection jeu pour une table
-│   │   ├── TimelineView.tsx       # Chronological table list grouped by date
-│   │   ├── CalendarView.tsx       # FullCalendar timegrid (drag/resize si GM/admin, multi-day, mobile nav)
-│   │   ├── CalendarEventBlock.tsx # Custom event block renderer (couleur selon statut utilisateur)
+│   │   ├── TimelineView.tsx       # Chronological table list grouped by date + creneaux cuisine (CookV1 Lot F)
+│   │   ├── CalendarView.tsx       # FullCalendar timegrid (drag/resize si GM/admin, multi-day, mobile nav) + creneaux cuisine lecture seule
+│   │   ├── CalendarEventBlock.tsx # Custom event block renderer (table ou repas, couleur selon statut/conflit)
+│   │   ├── MealSlotCard.tsx       # Carte creneau cuisine (vue liste Planning), surbrillance conflit personne/chef (CookV1 Lot F)
+│   │   ├── kitchenSlots.ts        # Type MealSlot partage (donnees GET /kitchen affichees dans le Planning)
 │   │   └── computeLayout.ts       # Layout helpers timeline/calendar
 │   ├── boardgames/
 │       ├── BoardGameTab.tsx           # Onglets All (lecture seule) / My List (avec bouton Remove)
