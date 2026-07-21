@@ -25,6 +25,11 @@ const ADMIN_RIGHT_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
     label: "Modération des jeux",
     tip: "Retirer d'un événement des jeux apportés par d'autres participants.",
   },
+  {
+    key: "admin.kitchen",
+    label: "Gestion cuisine",
+    tip: "Devenir responsable cuisine : lecture et écriture sur toutes les parties cuisine de tous les événements.",
+  },
 ];
 
 const BETA_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
@@ -91,6 +96,7 @@ export default function ProfilePage() {
         "admin.events": enabling,
         "admin.tables": enabling,
         "admin.games": enabling,
+        "admin.kitchen": enabling,
       });
     } catch {
       toast.error("Échec de la mise à jour des options");

@@ -25,13 +25,13 @@ chown 1003:1003 sur le fichier de migration ; relire le SQL ; jamais `migrate de
 
 ## Lot A - Fondations DB & preference
 
-- [ ] Migration Prisma **additive** : `EventKitchen`, `KitchenChef`,
+- [x] Migration Prisma **additive** : `EventKitchen`, `KitchenChef`,
       `KitchenCoursesMember`, `Meal`, `MealIngredient`, `Product`, `MealUtensil`,
       `MealAssistant` + enums `ChefSource`, `MealService`,
       `Unit` (G/KG/ML/CL/L/CAS/CAC/PIECE). Uniquement CREATE, aucun ALTER/DROP.
-- [ ] Ajouter la cle `admin.kitchen` a la liste blanche `schemas/preference.ts`.
-- [ ] Relire le SQL genere, chown 1003:1003, tester sur la base docker.
-- [ ] Mettre a jour `.claude/context/DB_MODELS.md`.
+- [x] Ajouter la cle `admin.kitchen` a la liste blanche `schemas/preference.ts`.
+- [x] Relire le SQL genere, chown 1003:1003, tester sur la base docker.
+- [x] Mettre a jour `.claude/context/DB_MODELS.md`.
 
 Modele : **Sonnet 5** | Effort : ~1-2h
 

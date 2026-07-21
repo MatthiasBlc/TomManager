@@ -3,6 +3,7 @@ export type PreferenceKey =
   | "admin.events"
   | "admin.tables"
   | "admin.games"
+  | "admin.kitchen"
   | "beta.pdfExport"
   | "beta.gameDb";
 
@@ -12,6 +13,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   "admin.events": false,
   "admin.tables": false,
   "admin.games": false,
+  "admin.kitchen": false,
   "beta.pdfExport": false,
   "beta.gameDb": false,
 };

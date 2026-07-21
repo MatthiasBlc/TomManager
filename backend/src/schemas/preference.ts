@@ -6,6 +6,7 @@ export const PREFERENCE_KEYS = [
   "admin.events",
   "admin.tables",
   "admin.games",
+  "admin.kitchen",
   "beta.pdfExport",
   "beta.gameDb",
 ] as const;
