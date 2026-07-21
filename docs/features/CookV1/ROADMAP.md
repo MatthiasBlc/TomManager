@@ -71,13 +71,13 @@ Modele : **Sonnet 5** | Effort : ~2-3h (calque sur syncParticipation existant)
 
 ## Lot C - API fiches repas & inscriptions
 
-- [ ] `Meal` CRUD : creation reservee au roster (`NOT_IN_CHEF_ROSTER`), unique 1
+- [x] `Meal` CRUD : creation reservee au roster (`NOT_IN_CHEF_ROSTER`), unique 1
       chef/repas (`MEAL_ALREADY_EXISTS`), `chefUserId` **nullable** (orphelin si le chef
       sort du roster), edit chef-owner ou manager, reassignation d'un orphelin par manager.
-- [ ] Ingredients (autocomplete `Product` calque sur `/api/tags`) + ustensiles.
-- [ ] `MealAssistant` : s'inscrire / se deplacer (transaction) / quitter ; controle
+- [x] Ingredients (autocomplete `Product` calque sur `/api/tags`) + ustensiles.
+- [x] `MealAssistant` : s'inscrire / se deplacer (transaction) / quitter ; controle
       capacite (`MEAL_FULL`) + exclusivite (pas chef/courses).
-- [ ] Tests integration : CRUD repas + auth, orphelinage/reassignation, ingredients
+- [x] Tests integration : CRUD repas + auth, orphelinage/reassignation, ingredients
       (find-or-create Product) + ustensiles, inscription/deplacement/capacite,
       deplacement transactionnel (rollback si dest pleine).
 

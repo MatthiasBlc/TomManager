@@ -118,6 +118,31 @@ Codes d'erreur specifiques : `KITCHEN_MANAGER_REQUIRED`, `CHEF_ROLE_MODE_ACTIVE`
 `NOT_IN_CHEF_ROSTER`, `ALREADY_COURSES_MEMBER`, `NOT_COURSES_MEMBER`, `ROLE_EXCLUSIVITY`,
 `ALLERGIES_TOO_LONG` (+ `NOT_EVENT_PARTICIPANT` reutilise).
 
+### Repas & inscriptions (meme prefixe, `requireMealChefOrManager` = chef proprietaire du
+repas OU responsable cuisine)
+
+| Method | Path                          | Auth                                   | Description                                                                 |
+| ------ | ----------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------- |
+| POST   | `/meals`                      | requireAuth + requireEventParticipant    | Cree un repas — chef (soi-meme, roster) ou manager (au nom d'un chef du roster via `chefUserId`) ; 400 `NOT_IN_CHEF_ROSTER`, 409 `MEAL_ALREADY_EXISTS`, 403 `FORBIDDEN` si chef pour un autre |
+| PATCH  | `/meals/:mealId`              | requireAuth + requireMealChefOrManager   | Edite un repas (nom, service, horaires, ingredients/ustensiles = remplacement complet) ; `maxAssistants` et `chefUserId` (reassignation d'un orphelin uniquement, 400 `MEAL_NOT_ORPHAN` sinon) reserves au manager (403 `FORBIDDEN` sinon) |
+| DELETE | `/meals/:mealId`              | requireAuth + requireMealChefOrManager   | Supprime un repas (cascade ingredients/ustensiles/inscriptions)             |
+| POST   | `/meals/:mealId/assistants`   | requireAuth + requireEventParticipant    | Equipier s'inscrit ou se deplace (transaction, verrou ligne repas) — 409 `MEAL_FULL`, `ROLE_EXCLUSIVITY` (chef/courses), `ALREADY_MEAL_ASSISTANT` |
+| DELETE | `/meals/:mealId/assistants/me`| requireAuth + requireEventParticipant    | Equipier se desinscrit — 404 `NOT_MEAL_ASSISTANT`                           |
+
+Ingredients/ustensiles : listes envoyees dans le body de PATCH (`ingredients: [{name, quantity,
+unit}]`, `utensils: [{name}]`), remplacement complet a chaque appel (delete+recreate). Les
+ingredients font un find-or-create sur `Product` (nom normalise lowercase, cf `/api/kitchen/products`).
+
+Codes supplementaires : `MEAL_NOT_FOUND`, `MEAL_NOT_ORPHAN`, `MEAL_START_OUT_OF_BOUNDS`,
+`MEAL_END_OUT_OF_BOUNDS`, `ALREADY_MEAL_ASSISTANT`, `NOT_MEAL_ASSISTANT` (+ `FORBIDDEN`,
+`END_BEFORE_START`, `INVALID_START_DATETIME`, `INVALID_END_DATETIME` reutilises).
+
+## Kitchen Products (`/api/kitchen/products`) — autocomplete ingredients (CookV1)
+
+| Method | Path | Auth        | Description                                        |
+| ------ | ---- | ----------- | --------------------------------------------------- |
+| GET    | `/`  | requireAuth | Autocomplete produits (`?q=`), calque sur `/api/tags` |
+
 ## Admin (`/api/admin`)
 
 | Method | Path                    | Auth                       | Description                                      |

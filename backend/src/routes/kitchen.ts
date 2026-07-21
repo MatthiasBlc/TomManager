@@ -1,11 +1,19 @@
 import { Router } from "express";
-import { requireAuth, requireEventParticipant, requireKitchenManager } from "../middleware/auth";
+import {
+  requireAuth,
+  requireEventParticipant,
+  requireKitchenManager,
+  requireMealChefOrManager,
+} from "../middleware/auth";
 import * as kitchenController from "../controllers/kitchen";
+import * as mealController from "../controllers/meal";
 import { validateBody, validateUUID } from "../middleware/validateBody";
 import {
   updateKitchenConfigSchema,
   addKitchenChefSchema,
   addKitchenCoursesMemberSchema,
+  createMealSchema,
+  updateMealSchema,
 } from "../schemas/kitchen";
 
 const router = Router();
@@ -59,6 +67,48 @@ router.delete(
   validateUUID("eventId", "userId"),
   requireKitchenManager,
   kitchenController.removeCoursesMember
+);
+
+router.post(
+  "/:eventId/kitchen/meals",
+  requireAuth,
+  validateUUID("eventId"),
+  requireEventParticipant,
+  validateBody(createMealSchema),
+  mealController.create
+);
+
+router.patch(
+  "/:eventId/kitchen/meals/:mealId",
+  requireAuth,
+  validateUUID("eventId", "mealId"),
+  requireMealChefOrManager,
+  validateBody(updateMealSchema),
+  mealController.update
+);
+
+router.delete(
+  "/:eventId/kitchen/meals/:mealId",
+  requireAuth,
+  validateUUID("eventId", "mealId"),
+  requireMealChefOrManager,
+  mealController.remove
+);
+
+router.post(
+  "/:eventId/kitchen/meals/:mealId/assistants",
+  requireAuth,
+  validateUUID("eventId", "mealId"),
+  requireEventParticipant,
+  mealController.joinOrMove
+);
+
+router.delete(
+  "/:eventId/kitchen/meals/:mealId/assistants/me",
+  requireAuth,
+  validateUUID("eventId", "mealId"),
+  requireEventParticipant,
+  mealController.leave
 );
 
 export default router;

@@ -67,6 +67,12 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   MEAL_ALREADY_EXISTS: "Cette personne a déjà un repas",
   MEAL_FULL: "Ce repas est complet",
   ALLERGIES_TOO_LONG: "Le texte des allergies ne doit pas dépasser 5000 caractères",
+  MEAL_NOT_FOUND: "Repas introuvable",
+  MEAL_NOT_ORPHAN: "Ce repas a déjà un chef",
+  ALREADY_MEAL_ASSISTANT: "Vous êtes déjà inscrit à ce repas",
+  NOT_MEAL_ASSISTANT: "Vous n'êtes pas inscrit à ce repas",
+  MEAL_START_OUT_OF_BOUNDS: "Le début du repas doit être dans les dates de l'événement",
+  MEAL_END_OUT_OF_BOUNDS: "La fin du repas doit être dans les dates de l'événement",
 };
 
 interface ApiErrorShape {

@@ -4,7 +4,7 @@ import logger from "../util/logger";
 import { emitToEvent } from "../socket/emitter";
 import { getLocalUserIdsForDiscordRole } from "./adminSync";
 
-const USER_SELECT = { id: true, username: true, displayName: true } as const;
+export const USER_SELECT = { id: true, username: true, displayName: true } as const;
 
 type KitchenRole = "manager" | "chef" | "equipier" | "none";
 
@@ -22,7 +22,7 @@ export async function getEventOr404(eventId: string) {
   return event;
 }
 
-async function getOrCreateEventKitchen(eventId: string) {
+export async function getOrCreateEventKitchen(eventId: string) {
   const existing = await prisma.eventKitchen.findUnique({ where: { eventId } });
   if (existing) return existing;
   return prisma.eventKitchen.create({ data: { eventId } });
@@ -41,6 +41,11 @@ async function isKitchenManager(userId: string, isAdmin: boolean) {
     where: { userId_key: { userId, key: "admin.kitchen" } },
   });
   return pref?.value === true;
+}
+
+export async function isKitchenManagerUser(userId: string): Promise<boolean> {
+  const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
+  return isKitchenManager(userId, user?.role === "ADMIN");
 }
 
 // Reconstruit le roster ROLE d'un EventKitchen depuis les membres actuels de la
