@@ -1,6 +1,6 @@
 import prisma from "../util/db";
 import { emitToEvent } from "../socket/emitter";
-import { getEventOr404, getOrCreateEventKitchen } from "./kitchen";
+import { computeAvailablePool, getEventOr404, getOrCreateEventKitchen } from "./kitchen";
 
 // Fuseau de reference pour la matrice de repas. L'app est franco-centree et les
 // heures des creneaux sont exprimees en heure murale locale (10h30, 18h30) : on
@@ -133,17 +133,6 @@ export function slotKey(start: Date, service: Service): string {
   return `${start.getTime()}|${service}`;
 }
 
-// Construit un creneau orphelin a la demande du responsable (creation manuelle
-// hors-grille, Evolutions.md point 1) : memes horaires murales par defaut et meme
-// convention de nom que la grille generee, pour un jour/service donnes.
-export function buildManualSlot(dateStr: string, service: Service): ExpectedSlot {
-  const [y, mo, d] = dateStr.split("-").map(Number);
-  const hours = service === "LUNCH" ? LUNCH_HOURS : DINNER_HOURS;
-  const start = zonedWallClockToUtc(y, mo, d, hours.startH, hours.startM, TZ);
-  const end = zonedWallClockToUtc(y, mo, d, hours.endH, hours.endM, TZ);
-  return { service, name: slotName(service, start), startDateTime: start, endDateTime: end };
-}
-
 // Repartition equilibree de `pool` equipiers sur `mealCount` repas (tries par
 // startDateTime) : base = floor(pool/mealCount), les `reste` premiers repas
 // recoivent base+1. Clamp a 0 partout si pool<=0 ou mealCount=0 (spec CookV1 5).
@@ -168,10 +157,8 @@ export async function generatePlanning(eventId: string) {
 
   const expectedSlots = computeExpectedSlots(event.startDateTime, event.endDateTime);
 
-  const [participantCount, chefCount, coursesCount, existingMeals] = await Promise.all([
-    prisma.eventParticipation.count({ where: { eventId } }),
-    prisma.kitchenChef.count({ where: { eventKitchenId: eventKitchen.id } }),
-    prisma.kitchenCoursesMember.count({ where: { eventKitchenId: eventKitchen.id } }),
+  const [pool, existingMeals] = await Promise.all([
+    computeAvailablePool(eventId, eventKitchen.id),
     prisma.meal.findMany({
       where: { eventKitchenId: eventKitchen.id },
       select: { startDateTime: true, service: true, maxAssistants: true },
@@ -188,7 +175,6 @@ export async function generatePlanning(eventId: string) {
     (s) => !existingKeys.has(slotKey(s.startDateTime, s.service))
   );
 
-  const pool = participantCount - chefCount - coursesCount;
   const consumed = existingMeals.reduce((sum, m) => sum + m.maxAssistants, 0);
   const remainingPool = Math.max(0, pool - consumed);
   const capacities = computeMealCapacities(remainingPool, missingSlots.length);
@@ -233,4 +219,21 @@ export async function generatePlanning(eventId: string) {
     capacities,
     overCapacity,
   };
+}
+
+// Reinitialise le planning (Admin Chef point 1/2) : supprime tous les repas de
+// l'event (cascade ingredients/ustensiles/equipiers/echanges), sans toucher aux
+// rosters chefs/equipe courses. Fait reapparaitre le bouton "Generer" (perimetre
+// distinct de purgeEvent, qui reset l'event entier).
+export async function resetPlanning(eventId: string) {
+  await getEventOr404(eventId);
+  const eventKitchen = await getOrCreateEventKitchen(eventId);
+
+  const { count } = await prisma.meal.deleteMany({
+    where: { eventKitchenId: eventKitchen.id },
+  });
+
+  emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: null });
+
+  return { deletedCount: count };
 }

@@ -140,13 +140,28 @@ export async function updateConfig(eventId: string, userId: string, data: Update
   return getKitchenView(eventId, userId);
 }
 
-async function assertParticipant(eventId: string, userId: string) {
+export async function assertParticipant(eventId: string, userId: string) {
   const participant = await isEventParticipant(eventId, userId);
   if (!participant) {
     throw createError(400, "Target user is not an event participant", {
       code: "NOT_EVENT_PARTICIPANT",
     });
   }
+}
+
+// Pool d'equipiers disponibles pour la repartition des capacites (section 4 Admin
+// Chef) : participants totaux moins chefs moins equipe courses. Reutilise par
+// generatePlanning (kitchenPlanning.ts) pour eviter de dupliquer les 3 counts.
+export async function computeAvailablePool(
+  eventId: string,
+  eventKitchenId: string
+): Promise<number> {
+  const [participantCount, chefCount, coursesCount] = await Promise.all([
+    prisma.eventParticipation.count({ where: { eventId } }),
+    prisma.kitchenChef.count({ where: { eventKitchenId } }),
+    prisma.kitchenCoursesMember.count({ where: { eventKitchenId } }),
+  ]);
+  return participantCount - chefCount - coursesCount;
 }
 
 export async function addManualChef(eventId: string, actingUserId: string, targetUserId: string) {
@@ -427,6 +442,12 @@ export async function getKitchenView(eventId: string, userId: string | undefined
       )
       .map((p) => p.user);
     result.orphanMeals = mealsView.filter((m) => m.chef === null);
+
+    // Compteur "equipiers repartis" (Admin Chef point 4) : places allouees sur
+    // l'ensemble des repas vs pool total disponible (participants - chefs - courses).
+    const poolTotal = await computeAvailablePool(eventId, eventKitchen.id);
+    const allocated = mealsView.reduce((sum, m) => sum + m.maxAssistants, 0);
+    result.capacitySummary = { allocated, poolTotal: Math.max(0, poolTotal) };
   }
 
   if (isPlainAdmin) {

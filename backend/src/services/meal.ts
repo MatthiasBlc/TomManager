@@ -2,6 +2,7 @@ import prisma from "../util/db";
 import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
 import {
+  assertParticipant,
   getEventOr404,
   getOrCreateEventKitchen,
   isKitchenManagerUser,
@@ -9,7 +10,6 @@ import {
 } from "./kitchen";
 import { findOrCreateProducts } from "./product";
 import { findOrCreateUtensils } from "./utensil";
-import { buildManualSlot, slotKey } from "./kitchenPlanning";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -21,11 +21,6 @@ interface IngredientInput {
 
 interface UtensilInput {
   name: string;
-}
-
-interface CreateMealInput {
-  date: string;
-  service: "LUNCH" | "DINNER";
 }
 
 interface UpdateMealInput {
@@ -147,46 +142,6 @@ async function replaceIngredientsAndUtensils(
       });
     }
   }
-}
-
-// Creation manuelle d'un creneau hors-grille (manager only, Evolutions.md point 1) :
-// produit un creneau orphelin identique a un creneau genere (meme convention de nom/
-// horaires, meme cle d'anti-doublon), reclame et edite ensuite comme n'importe quel
-// autre creneau de la grille (claim, puis PATCH par le chef/le manager).
-export async function createMeal(eventId: string, data: CreateMealInput) {
-  await getEventOr404(eventId);
-  const eventKitchen = await getOrCreateEventKitchen(eventId);
-
-  const slot = buildManualSlot(data.date, data.service);
-  await assertBoundsAndOrder(eventId, slot.startDateTime, slot.endDateTime);
-
-  // Anti-doublon jour+service : meme cle que la grille generee (generatePlanning).
-  const siblings = await prisma.meal.findMany({
-    where: { eventKitchenId: eventKitchen.id, service: data.service },
-    select: { startDateTime: true, service: true },
-  });
-  const key = slotKey(slot.startDateTime, slot.service);
-  if (siblings.some((m) => slotKey(m.startDateTime, m.service as "LUNCH" | "DINNER") === key)) {
-    throw createError(409, "A meal slot already exists for this day and service", {
-      code: "SLOT_ALREADY_EXISTS",
-    });
-  }
-
-  const meal = await prisma.meal.create({
-    data: {
-      eventKitchenId: eventKitchen.id,
-      chefUserId: null,
-      name: slot.name,
-      service: slot.service,
-      startDateTime: slot.startDateTime,
-      endDateTime: slot.endDateTime,
-      maxAssistants: 0,
-    },
-  });
-
-  emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: meal.id });
-
-  return getMealDetail(meal.id);
 }
 
 export async function updateMeal(
@@ -341,6 +296,7 @@ export async function claimMeal(eventId: string, mealId: string, chefUserId: str
 
 export async function joinOrMoveMeal(eventId: string, mealId: string, userId: string) {
   const eventKitchen = await getOrCreateEventKitchen(eventId);
+  await assertParticipant(eventId, userId);
 
   const isChef = await prisma.kitchenChef.findUnique({
     where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId } },

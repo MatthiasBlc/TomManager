@@ -84,3 +84,12 @@ export async function generate(req: Request, res: Response, next: NextFunction) 
     next(err);
   }
 }
+
+export async function reset(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await kitchenPlanningService.resetPlanning(req.params.eventId);
+    res.json({ data });
+  } catch (err) {
+    next(err);
+  }
+}

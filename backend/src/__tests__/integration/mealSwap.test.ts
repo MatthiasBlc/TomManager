@@ -46,27 +46,36 @@ interface MealOpts {
   utensils?: { name: string }[];
 }
 
-// Cree un creneau orphelin (manager) puis le fait reclamer et editer par le chef :
-// le parcours standard depuis Evolutions.md point 1 (POST /meals ne cree plus
-// qu'un creneau nu jour+service, sans chef ni recette).
-async function createMeal(
-  eventId: string,
-  managerCookie: string[],
-  chefCookie: string[],
-  opts: MealOpts
-) {
-  const createRes = await request
-    .post(`/api/events/${eventId}/kitchen/meals`)
-    .set("Cookie", managerCookie)
-    .send({ date: opts.date, service: opts.service });
-  const mealId = createRes.body.data.id;
-
-  await request
-    .post(`/api/events/${eventId}/kitchen/meals/${mealId}/claim`)
-    .set("Cookie", chefCookie);
+// Cree un repas deja assigne au chef directement en base (la creation manuelle
+// hors-grille a ete retiree, cf Admin Chef point 3 ; tous les repas naissent
+// desormais de generatePlanning). Le nom/ingredients/ustensiles passent par un
+// PATCH via l'API pour conserver la resolution find-or-create des catalogues
+// Product/Utensil. Les horaires approximatifs (LUNCH/DINNER) suffisent ici :
+// l'anti-collision de generatePlanning est cle par (startDateTime, service), donc
+// deux services differents ne collisionnent jamais quelle que soit l'heure exacte.
+async function createMeal(eventId: string, chefCookie: string[], opts: MealOpts) {
+  const meResult = await request.get("/api/auth/me").set("Cookie", chefCookie);
+  const chefUserId = meResult.body.user.id;
+  const eventKitchen = await prisma.eventKitchen.upsert({
+    where: { eventId },
+    create: { eventId },
+    update: {},
+  });
+  const hours = opts.service === "LUNCH" ? ["10:30:00", "13:00:00"] : ["18:30:00", "21:00:00"];
+  const meal = await prisma.meal.create({
+    data: {
+      eventKitchenId: eventKitchen.id,
+      chefUserId,
+      name: opts.name,
+      service: opts.service,
+      startDateTime: new Date(`${opts.date}T${hours[0]}Z`),
+      endDateTime: new Date(`${opts.date}T${hours[1]}Z`),
+      maxAssistants: 0,
+    },
+  });
 
   const patchRes = await request
-    .patch(`/api/events/${eventId}/kitchen/meals/${mealId}`)
+    .patch(`/api/events/${eventId}/kitchen/meals/${meal.id}`)
     .set("Cookie", chefCookie)
     .send({
       name: opts.name,
@@ -95,14 +104,14 @@ async function setupTwoChefsWithMeals(suffix: string) {
     username: `swapchef2${suffix}`,
   });
 
-  const meal1 = await createMeal(event.id, managerCookie, chef1.cookie, {
+  const meal1 = await createMeal(event.id, chef1.cookie, {
     date: "2026-06-01",
     service: "DINNER",
     name: "Tartiflette",
     ingredients: [{ name: "Reblochon", quantity: 1, unit: "PIECE" }],
     utensils: [{ name: "Plat a gratin" }],
   });
-  const meal2 = await createMeal(event.id, managerCookie, chef2.cookie, {
+  const meal2 = await createMeal(event.id, chef2.cookie, {
     date: "2026-06-01",
     service: "LUNCH",
     name: "Raclette",
@@ -276,7 +285,7 @@ describe("Meal swap API", () => {
     });
     // Service LUNCH pour ne pas entrer en collision avec le creneau DINNER que la
     // grille va generer pour le 1er jour (regle "premier jour = diner seul").
-    await createMeal(event.id, managerCookie, chef1.cookie, {
+    await createMeal(event.id, chef1.cookie, {
       date: "2026-06-01",
       service: "LUNCH",
       name: "Tartiflette",

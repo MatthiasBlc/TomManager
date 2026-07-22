@@ -1,3 +1,5 @@
+import { formatParisDate } from "../../utils/dateTime";
+
 export const UNIT_OPTIONS = [
   { value: "G", label: "g" },
   { value: "KG", label: "kg" },
@@ -24,11 +26,15 @@ export function serviceLabel(service: string): string {
   return SERVICE_OPTIONS.find((s) => s.value === service)?.label ?? service;
 }
 
-// Libelle de jour pour regrouper les creneaux repas (ex: "samedi 1 aout").
+// Libelle de jour pour regrouper les creneaux repas (ex: "samedi 1 aout"), toujours
+// en heure de Paris (cf frontend/src/utils/dateTime.ts).
 export function dayLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  return formatParisDate(iso, { weekday: "long", day: "numeric", month: "long" });
+}
+
+// Libelle de creneau non-editable pour la liste Admin Chef (ex: "Dîner - vendredi") :
+// identifie la fiche sans exposer de champ jour/debut/fin editable (spec CookV1 5).
+export function slotLabel(meal: { service: string; startDateTime: string }): string {
+  const weekday = formatParisDate(meal.startDateTime, { weekday: "long" });
+  return `${serviceLabel(meal.service)} - ${weekday}`;
 }

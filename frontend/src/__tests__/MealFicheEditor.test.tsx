@@ -47,11 +47,14 @@ beforeEach(() => {
   vi.useRealTimers();
 });
 
+// MealFicheEditor est reserve a "Mon repas" (le chef n'edite que nom/ingredients/
+// ustensiles de sa propre fiche) depuis que la Gestion (Admin Chef) utilise
+// MealFichesList (liste + modale details), teste separement.
 describe("MealFicheEditor", () => {
   it("autosaves the name field after a debounce, with no save button anywhere", async () => {
     vi.useFakeTimers();
     apiPatchMock.mockResolvedValue({});
-    render(<MealFicheEditor eventId="ev1" meal={MEAL} canEditSchedule={false} onChanged={vi.fn()} />);
+    render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
 
     expect(screen.queryByRole("button", { name: /enregistrer/i })).not.toBeInTheDocument();
 
@@ -70,37 +73,19 @@ describe("MealFicheEditor", () => {
     vi.useRealTimers();
   });
 
-  it("hides schedule/service/capacity fields from a chef (canEditSchedule=false)", () => {
-    render(<MealFicheEditor eventId="ev1" meal={MEAL} canEditSchedule={false} onChanged={vi.fn()} />);
+  it("shows a read-only schedule/capacity summary, no editable service/capacity controls", () => {
+    render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
     expect(screen.queryByRole("radio", { name: "Soir" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Augmenter")).not.toBeInTheDocument();
     expect(screen.getByText(/Soir/)).toBeInTheDocument();
-  });
-
-  it("shows editable schedule/service/capacity fields to a manager (canEditSchedule=true)", () => {
-    render(<MealFicheEditor eventId="ev1" meal={MEAL} canEditSchedule={true} onChanged={vi.fn()} />);
-    expect(screen.getByRole("radio", { name: "Soir" })).toBeChecked();
-    expect(screen.getByLabelText("Augmenter")).toBeInTheDocument();
-  });
-
-  it("saves service/capacity changes immediately (no debounce) for a manager", async () => {
-    apiPatchMock.mockResolvedValue({});
-    render(<MealFicheEditor eventId="ev1" meal={MEAL} canEditSchedule={true} onChanged={vi.fn()} />);
-
-    fireEvent.click(screen.getByLabelText("Augmenter"));
-
-    await waitFor(() =>
-      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
-        maxAssistants: 4,
-      })
-    );
+    expect(screen.getByText(/1\/3/)).toBeInTheDocument();
   });
 
   it("warns about the number of registered assistants before deleting", async () => {
     confirmDialogMock.mockResolvedValue(true);
     apiDeleteMock.mockResolvedValue({});
     const onChanged = vi.fn();
-    render(<MealFicheEditor eventId="ev1" meal={MEAL} canEditSchedule={false} onChanged={onChanged} />);
+    render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={onChanged} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
     await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
@@ -113,16 +98,14 @@ describe("MealFicheEditor", () => {
 
   it("resets fields when switching to a different meal", () => {
     const { rerender } = render(
-      <MealFicheEditor eventId="ev1" meal={MEAL} canEditSchedule={false} onChanged={vi.fn()} />
+      <MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />
     );
     fireEvent.change(screen.getByLabelText("Nom du repas"), {
       target: { value: "Draft non sauvegarde" },
     });
 
     const otherMeal: MealFiche = { ...MEAL, id: "meal2", name: "Raclette" };
-    rerender(
-      <MealFicheEditor eventId="ev1" meal={otherMeal} canEditSchedule={false} onChanged={vi.fn()} />
-    );
+    rerender(<MealFicheEditor eventId="ev1" meal={otherMeal} onChanged={vi.fn()} />);
 
     expect(screen.getByDisplayValue("Raclette")).toBeInTheDocument();
   });

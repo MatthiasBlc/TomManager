@@ -40,17 +40,6 @@ const utensilSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be at most 100 characters"),
 });
 
-// Creation manuelle hors-grille (manager only) : ne produit qu'un creneau orphelin
-// (jour + service), au meme titre qu'un creneau de la grille generee. Nom/horaires
-// sont derives par le backend (buildManualSlot) ; le reste (nom du repas,
-// ingredients, ustensiles) s'edite ensuite via PATCH, une fois le creneau reclame.
-export const createMealSchema = z.object({
-  date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
-  service: z.enum(["LUNCH", "DINNER"]),
-});
-
 export const createSwapRequestSchema = z.object({
   targetMealId: z.string().uuid("Invalid meal ID"),
 });

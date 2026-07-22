@@ -39,36 +39,52 @@ async function setupChef(
   return { user, cookie };
 }
 
-const SLOT_PAYLOAD = { date: "2026-06-01", service: "DINNER" as const };
-
-// Creation d'un repas assigne a un chef : desormais un parcours en 2 temps (POST
-// /meals cree un creneau orphelin, manager only ; le chef le reclame) — le parcours
-// standard depuis Evolutions.md point 1 (plus de creation directe avec chef/nom).
+// Creation directe d'un repas deja assigne a un chef (la creation manuelle
+// hors-grille a ete retiree : desormais tous les repas naissent de generatePlanning,
+// cf kitchenPlanning.test.ts). Meme pattern direct-DB que kitchen.test.ts ; le chef
+// est resolu depuis son cookie via /api/auth/me pour ne pas changer la signature
+// (eventId, managerCookie, chefCookie) attendue par tous les appelants existants.
 async function createMealForChef(
   eventId: string,
   managerCookie: string[],
   chefCookie: string[],
   patchOverrides: Record<string, unknown> = {},
-  slotOverrides: Partial<{ date: string; service: "LUNCH" | "DINNER" }> = {}
+  slotOverrides: Partial<{
+    service: "LUNCH" | "DINNER";
+    startDateTime: string;
+    endDateTime: string;
+  }> = {}
 ) {
-  const createRes = await request
-    .post(`/api/events/${eventId}/kitchen/meals`)
-    .set("Cookie", managerCookie)
-    .send({ ...SLOT_PAYLOAD, ...slotOverrides });
-  const mealId = createRes.body.data.id;
+  const meRes = await request.get("/api/auth/me").set("Cookie", chefCookie);
+  const chefUserId = meRes.body.user.id;
 
-  const claimRes = await request
-    .post(`/api/events/${eventId}/kitchen/meals/${mealId}/claim`)
-    .set("Cookie", chefCookie);
+  const eventKitchen = await prisma.eventKitchen.upsert({
+    where: { eventId },
+    create: { eventId },
+    update: {},
+  });
+  const meal = await prisma.meal.create({
+    data: {
+      eventKitchenId: eventKitchen.id,
+      chefUserId,
+      name: "Repas de test",
+      service: slotOverrides.service ?? "DINNER",
+      startDateTime: new Date(slotOverrides.startDateTime ?? "2026-06-01T18:30:00Z"),
+      endDateTime: new Date(slotOverrides.endDateTime ?? "2026-06-01T21:00:00Z"),
+      maxAssistants: 0,
+    },
+  });
 
   if (Object.keys(patchOverrides).length > 0) {
     const patchRes = await request
-      .patch(`/api/events/${eventId}/kitchen/meals/${mealId}`)
+      .patch(`/api/events/${eventId}/kitchen/meals/${meal.id}`)
       .set("Cookie", managerCookie)
       .send(patchOverrides);
     return patchRes.body.data;
   }
-  return claimRes.body.data;
+
+  const res = await request.get(`/api/events/${eventId}/kitchen`).set("Cookie", managerCookie);
+  return res.body.data.meals.find((m: { id: string }) => m.id === meal.id);
 }
 
 async function generateAndGetMeals(eventId: string, managerCookie: string[]) {
@@ -82,75 +98,6 @@ async function generateAndGetMeals(eventId: string, managerCookie: string[]) {
 }
 
 describe("Meal API", () => {
-  describe("POST /api/events/:eventId/kitchen/meals (manager only, creneau orphelin)", () => {
-    it("rejects a chef trying to create a meal slot (endpoint reserved to the manager)", async () => {
-      const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
-      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
-        email: "chefA@example.com",
-        username: "chefA",
-      });
-
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(SLOT_PAYLOAD);
-
-      expect(res.status).toBe(403);
-      expect(res.body.error.code).toBe("ADMIN_REQUIRED");
-    });
-
-    it("creates an orphan slot with derived name/hours and maxAssistants 0", async () => {
-      const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
-
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", managerCookie)
-        .send(SLOT_PAYLOAD);
-
-      expect(res.status).toBe(201);
-      expect(res.body.data.chef).toBeNull();
-      expect(res.body.data.maxAssistants).toBe(0);
-      expect(res.body.data.service).toBe("DINNER");
-      expect(res.body.data.name).toBeTruthy();
-    });
-
-    it("rejects a duplicate slot for the same day and service", async () => {
-      const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
-
-      await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", managerCookie)
-        .send(SLOT_PAYLOAD);
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", managerCookie)
-        .send(SLOT_PAYLOAD);
-
-      expect(res.status).toBe(409);
-      expect(res.body.error.code).toBe("SLOT_ALREADY_EXISTS");
-    });
-
-    it("rejects a slot whose default hours fall outside the event bounds", async () => {
-      const { cookie: managerCookie } = await setupManager();
-      // Bornes trop etroites pour couvrir le diner par defaut (18h30-21h Paris)
-      const event = await createTestEvent(managerCookie, {
-        startDateTime: "2026-06-01T00:00:00Z",
-        endDateTime: "2026-06-01T10:00:00Z",
-      });
-
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", managerCookie)
-        .send(SLOT_PAYLOAD);
-
-      expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe("MEAL_END_OUT_OF_BOUNDS");
-    });
-  });
-
   describe("POST /api/events/:eventId/kitchen/meals/:mealId/claim", () => {
     it("allows a roster chef to claim an orphan slot", async () => {
       const { cookie: managerCookie } = await setupManager();
@@ -643,6 +590,108 @@ describe("Meal API", () => {
         .set("Cookie", cookie);
       expect(res.status).toBe(404);
       expect(res.body.error.code).toBe("NOT_MEAL_ASSISTANT");
+    });
+
+    describe("Manager assigns/removes a third-party equipier (Admin Chef point 5)", () => {
+    it("allows the manager to assign an equipier directly onto a meal", async () => {
+      const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
+      const { user } = await addTestParticipant(event.id, {
+        email: "eqM1@example.com",
+        username: "eqM1",
+      });
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
+        .set("Cookie", managerCookie);
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.assistants.map((a: { id: string }) => a.id)).toContain(user.id);
+    });
+
+    it("rejects a manager assignment when the meal is full", async () => {
+      const { event, managerCookie, mealId } = await setupMealWithCapacity(1);
+      const { user: user1 } = await addTestParticipant(event.id, {
+        email: "eqM2@example.com",
+        username: "eqM2",
+      });
+      const { user: user2 } = await addTestParticipant(event.id, {
+        email: "eqM3@example.com",
+        username: "eqM3",
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user1.id}`)
+        .set("Cookie", managerCookie);
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user2.id}`)
+        .set("Cookie", managerCookie);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("MEAL_FULL");
+    });
+
+    it("rejects assigning a chef (role exclusivity)", async () => {
+      const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
+      const { user: chefUser } = await setupChef(event.id, managerCookie, {
+        email: "eqM4@example.com",
+        username: "eqM4",
+      });
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${chefUser.id}`)
+        .set("Cookie", managerCookie);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("ROLE_EXCLUSIVITY");
+    });
+
+    it("rejects assigning a user who is not an event participant", async () => {
+      const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
+      const { user: outsider } = await setupAdmin({
+        email: "eqM5@example.com",
+        username: "eqM5",
+      });
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${outsider.id}`)
+        .set("Cookie", managerCookie);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("NOT_EVENT_PARTICIPANT");
+    });
+
+    it("rejects a non-manager caller", async () => {
+      const { event, mealId } = await setupMealWithCapacity(2);
+      const { user, cookie } = await addTestParticipant(event.id, {
+        email: "eqM6@example.com",
+        username: "eqM6",
+      });
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
+        .set("Cookie", cookie);
+
+      expect(res.status).toBe(403);
+    });
+
+    it("allows the manager to remove an assigned equipier", async () => {
+      const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
+      const { user } = await addTestParticipant(event.id, {
+        email: "eqM7@example.com",
+        username: "eqM7",
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
+        .set("Cookie", managerCookie);
+
+      const res = await request
+        .delete(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
+        .set("Cookie", managerCookie);
+
+      expect(res.status).toBe(204);
+      const remaining = await prisma.mealAssistant.findMany({ where: { mealId } });
+      expect(remaining).toHaveLength(0);
+    });
     });
   });
 });

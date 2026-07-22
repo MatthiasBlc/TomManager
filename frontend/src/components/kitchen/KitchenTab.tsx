@@ -12,8 +12,6 @@ import MealSwapPanel, { type SwapRequest } from "./MealSwapPanel";
 
 interface Props {
   eventId: string;
-  eventStartDate?: string;
-  eventEndDate?: string;
   data: KitchenViewData | null;
   swaps: SwapRequest[];
   loading: boolean;
@@ -24,8 +22,6 @@ type Section = "gestion" | "mon-repas";
 
 export default function KitchenTab({
   eventId,
-  eventStartDate,
-  eventEndDate,
   data,
   swaps,
   loading,
@@ -112,9 +108,8 @@ export default function KitchenTab({
           coursesMembers={data.coursesMembers ?? []}
           unassigned={data.unassigned ?? []}
           meals={data.meals}
+          capacitySummary={data.capacitySummary}
           onChanged={fetchKitchen}
-          eventStartDate={eventStartDate}
-          eventEndDate={eventEndDate}
         />
       )}
 
@@ -130,12 +125,7 @@ export default function KitchenTab({
           {!myMeal && <MealClaimSelect eventId={eventId} meals={data.meals} onClaimed={fetchKitchen} />}
 
           {myMeal && (
-            <MealFicheEditor
-              eventId={eventId}
-              meal={myMeal}
-              canEditSchedule={false}
-              onChanged={fetchKitchen}
-            />
+            <MealFicheEditor eventId={eventId} meal={myMeal} onChanged={fetchKitchen} />
           )}
 
           {myMeal && user && (

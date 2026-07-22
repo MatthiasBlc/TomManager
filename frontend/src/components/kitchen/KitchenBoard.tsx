@@ -8,6 +8,7 @@ import EmptyState from "../common/EmptyState";
 import { SkeletonCardGrid } from "../common/Skeleton";
 import { getErrorMessage } from "../../config/apiErrors";
 import { serviceLabel, dayLabel } from "./units";
+import { parisDayKey } from "../../utils/dateTime";
 
 interface Person {
   id: string;
@@ -16,11 +17,6 @@ interface Person {
 }
 
 const displayedName = (u: Person) => u.displayName ?? u.username;
-
-// Jour calendaire Europe/Paris (cle de tri/regroupement), independant du fuseau
-// serveur/navigateur — meme logique que le backend (kitchenPlanning.ts zonedYMD).
-const parisDayKey = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
 
 type Service = "LUNCH" | "DINNER";
 const SERVICES: Service[] = ["LUNCH", "DINNER"];

@@ -13,7 +13,6 @@ import {
   updateKitchenConfigSchema,
   addKitchenChefSchema,
   addKitchenCoursesMemberSchema,
-  createMealSchema,
   updateMealSchema,
   createSwapRequestSchema,
 } from "../schemas/kitchen";
@@ -79,15 +78,14 @@ router.post(
   kitchenController.generate
 );
 
-// Creation manuelle hors-grille : reservee au manager (filet de securite pour un
-// repas atypique). Le parcours chef standard passe par la matrice + claim.
+// Reinitialise le planning (supprime tous les repas de l'event, rosters conserves) :
+// fait reapparaitre "Generer" a la place de "Reinitialiser" cote UI.
 router.post(
-  "/:eventId/kitchen/meals",
+  "/:eventId/kitchen/reset",
   requireAuth,
   validateUUID("eventId"),
   requireKitchenManager,
-  validateBody(createMealSchema),
-  mealController.create
+  kitchenController.reset
 );
 
 router.patch(
@@ -131,6 +129,24 @@ router.delete(
   validateUUID("eventId", "mealId"),
   requireEventParticipant,
   mealController.leave
+);
+
+// Le manager assigne/retire un equipier tiers sur un creneau (Admin Chef point 5),
+// via les memes regles metier que l'auto-inscription (joinOrMoveMeal/leaveMeal).
+router.post(
+  "/:eventId/kitchen/meals/:mealId/assistants/:userId",
+  requireAuth,
+  validateUUID("eventId", "mealId", "userId"),
+  requireKitchenManager,
+  mealController.assignAssistant
+);
+
+router.delete(
+  "/:eventId/kitchen/meals/:mealId/assistants/:userId",
+  requireAuth,
+  validateUUID("eventId", "mealId", "userId"),
+  requireKitchenManager,
+  mealController.removeAssistant
 );
 
 // Echange de creneau entre deux chefs (confirmation mutuelle). Le controle fin (etre

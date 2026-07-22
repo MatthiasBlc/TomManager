@@ -234,8 +234,6 @@ export default function EventDetailPage() {
         {tab === "kitchen" && (
           <KitchenTab
             eventId={event.id}
-            eventStartDate={event.startDateTime.slice(0, 10)}
-            eventEndDate={event.endDateTime.slice(0, 10)}
             data={kitchen.data}
             swaps={kitchen.swaps}
             loading={kitchen.loading}

@@ -160,7 +160,7 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
     expect(secondMeals.map((m) => m.id).sort()).toEqual(firstMeals.map((m) => m.id).sort());
   });
 
-  it("coexists with a manual meal: subtracts its capacity and only fills the generated slots", async () => {
+  it("coexists with a directly-seeded meal outside the generated grid: subtracts its capacity and only fills the generated slots", async () => {
     const { event, managerCookie } = await setupManagerAndEvent("g6");
     await addEquipiers(event.id, 5, "gen6eq");
     const chef = await addTestParticipant(event.id, {
@@ -172,23 +172,26 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
       .set("Cookie", managerCookie)
       .send({ userId: chef.user.id });
 
-    // Repas manuel (hors grille, capacite 2) : le 3e jour (dernier jour) n'est pas
-    // couvert par la grille generee (regle "dernier jour = aucun repas"), ce
-    // creneau reste donc distinct des 3 que /generate va creer.
-    const manualCreate = await request
-      .post(`/api/events/${event.id}/kitchen/meals`)
-      .set("Cookie", managerCookie)
-      .send({ date: "2026-06-03", service: "LUNCH" });
-    const manualId = manualCreate.body.data.id;
-    await request
-      .post(`/api/events/${event.id}/kitchen/meals/${manualId}/claim`)
-      .set("Cookie", chef.cookie);
-    await request
-      .patch(`/api/events/${event.id}/kitchen/meals/${manualId}`)
-      .set("Cookie", managerCookie)
-      .send({ maxAssistants: 2 });
+    // Repas seede directement en base (la creation manuelle hors-grille a ete
+    // retiree, cf Admin Chef point 3) : le 3e jour (dernier jour) n'est pas couvert
+    // par la grille generee (regle "dernier jour = aucun repas"), ce creneau reste
+    // donc distinct des 3 que /generate va creer.
+    const eventKitchen = await prisma.eventKitchen.findUniqueOrThrow({
+      where: { eventId: event.id },
+    });
+    const seededMeal = await prisma.meal.create({
+      data: {
+        eventKitchenId: eventKitchen.id,
+        chefUserId: chef.user.id,
+        name: "Repas hors grille",
+        service: "LUNCH",
+        startDateTime: new Date("2026-06-03T10:30:00Z"),
+        endDateTime: new Date("2026-06-03T13:00:00Z"),
+        maxAssistants: 2,
+      },
+    });
 
-    // pool = 5 equipiers + chef(participant) - chef(roster) = 5 ; consomme = 2 (manuel)
+    // pool = 5 equipiers + chef(participant) - chef(roster) = 5 ; consomme = 2 (seede)
     // -> remainingPool = 3 sur 3 creneaux generes -> [1, 1, 1]
     const res = await request
       .post(`/api/events/${event.id}/kitchen/generate`)
@@ -197,12 +200,12 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
     expect(res.body.data.createdCount).toBe(3);
     expect(res.body.data.capacities).toEqual([1, 1, 1]);
 
-    // Le repas manuel n'est pas modifie
+    // Le repas seede n'est pas modifie
     const meals = await getMeals(event.id, managerCookie);
-    const manualAfter = meals.find((m) => m.id === manualId);
-    expect(manualAfter?.maxAssistants).toBe(2);
-    expect(manualAfter?.chef?.id).toBe(chef.user.id);
-    expect(meals).toHaveLength(4); // 1 manuel + 3 generes
+    const seededAfter = meals.find((m) => m.id === seededMeal.id);
+    expect(seededAfter?.maxAssistants).toBe(2);
+    expect(seededAfter?.chef?.id).toBe(chef.user.id);
+    expect(meals).toHaveLength(4); // 1 hors grille + 3 generes
   });
 
   it("reports over-occupation without modifying the over-occupied slot", async () => {
@@ -244,5 +247,60 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
     // Inscriptions conservees, capacite inchangee
     const assistants = await prisma.mealAssistant.findMany({ where: { mealId: slot.id } });
     expect(assistants).toHaveLength(2);
+  });
+});
+
+describe("POST /api/events/:eventId/kitchen/reset", () => {
+  it("rejects a non-manager user", async () => {
+    const { event } = await setupManagerAndEvent("r1");
+    const { cookie: equipierCookie } = await addTestParticipant(event.id, {
+      email: "reset-nonadmin@example.com",
+      username: "resetnonadmin",
+    });
+
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/reset`)
+      .set("Cookie", equipierCookie);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("ADMIN_REQUIRED");
+  });
+
+  it("deletes all meals but keeps the chef/courses rosters intact", async () => {
+    const { event, managerCookie } = await setupManagerAndEvent("r2");
+    const courses = await addTestParticipant(event.id, {
+      email: "reset-courses@example.com",
+      username: "resetcourses",
+    });
+    await request
+      .post(`/api/events/${event.id}/kitchen/courses`)
+      .set("Cookie", managerCookie)
+      .send({ userId: courses.user.id });
+    await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
+    const before = await getMeals(event.id, managerCookie);
+    expect(before.length).toBeGreaterThan(0);
+
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/reset`)
+      .set("Cookie", managerCookie);
+    expect(res.status).toBe(200);
+    expect(res.body.data.deletedCount).toBe(before.length);
+
+    const after = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", managerCookie);
+    expect(after.body.data.meals).toHaveLength(0);
+    expect(after.body.data.chefs.length).toBeGreaterThan(0);
+    expect(after.body.data.coursesMembers).toHaveLength(1);
+  });
+
+  it("lets /generate rebuild the full grid after a reset", async () => {
+    const { event, managerCookie } = await setupManagerAndEvent("r3");
+    await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+    await request.post(`/api/events/${event.id}/kitchen/reset`).set("Cookie", managerCookie);
+
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
+    expect(res.body.data.createdCount).toBe(3);
   });
 });

@@ -24,11 +24,10 @@ vi.mock("react-hot-toast", () => ({
     error: (...a: unknown[]) => toastError(...a),
   },
 }));
-// CreateMealSlotModal (creation manuelle manager) tire ResponsiveModal ->
-// useIsMobile -> window.matchMedia, absent en jsdom. On le neutralise : ce
-// panneau ne teste pas la creation manuelle.
-vi.mock("../components/kitchen/CreateMealSlotModal", () => ({
-  default: () => null,
+// MealFichesList ouvre une modale de details qui tire ResponsiveModal ->
+// useIsMobile -> window.matchMedia, absent en jsdom.
+vi.mock("../hooks/useIsMobile", () => ({
+  useIsMobile: () => false,
 }));
 
 const baseProps = {
@@ -141,37 +140,58 @@ describe("KitchenManagementPanel", () => {
     );
   });
 
-  it("reassigns an orphan meal to a free chef", async () => {
-    apiPatchMock.mockResolvedValue({});
+  const ONE_MEAL = [
+    {
+      id: "meal1",
+      name: "Repas",
+      service: "DINNER" as const,
+      startDateTime: "2026-06-01T18:00:00.000Z",
+      endDateTime: "2026-06-01T20:00:00.000Z",
+      maxAssistants: 2,
+      remainingSeats: 2,
+      chef: null,
+      assistants: [],
+    },
+  ];
+
+  it("shows Reset instead of Generate once meals exist", () => {
+    render(<KitchenManagementPanel {...baseProps} meals={ONE_MEAL} />);
+    expect(screen.queryByRole("button", { name: "Générer le planning" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Réinitialiser le planning" })).toBeInTheDocument();
+  });
+
+  it("warns before resetting the planning and calls the reset endpoint", async () => {
+    confirmDialogMock.mockResolvedValue(true);
+    apiPostMock.mockResolvedValue({});
+    render(<KitchenManagementPanel {...baseProps} meals={ONE_MEAL} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Réinitialiser le planning" }));
+
+    await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
+    expect(confirmDialogMock.mock.calls[0][0].variant).toBe("danger");
+    await waitFor(() =>
+      expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/reset")
+    );
+  });
+
+  it("does not reset when declined", async () => {
+    confirmDialogMock.mockResolvedValue(false);
+    render(<KitchenManagementPanel {...baseProps} meals={ONE_MEAL} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Réinitialiser le planning" }));
+
+    await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
+    expect(apiPostMock).not.toHaveBeenCalled();
+  });
+
+  it("displays the allocated/pool capacity summary when provided", () => {
     render(
       <KitchenManagementPanel
         {...baseProps}
-        meals={[
-          {
-            id: "meal1",
-            name: "Repas orphelin",
-            service: "DINNER",
-            startDateTime: "2026-06-01T18:00:00.000Z",
-            endDateTime: "2026-06-01T20:00:00.000Z",
-            maxAssistants: 0,
-            remainingSeats: 0,
-            chef: null,
-            assistants: [],
-          },
-        ]}
+        meals={ONE_MEAL}
+        capacitySummary={{ allocated: 10, poolTotal: 12 }}
       />
     );
-
-    expect(screen.getByText("Repas orphelins à réassigner")).toBeInTheDocument();
-    // Le select de reassignation est le dernier combobox de la page (apres ajout chef + ajout courses)
-    const selects = screen.getAllByRole("combobox");
-    fireEvent.change(selects[selects.length - 1], { target: { value: "chef1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Réassigner" }));
-
-    await waitFor(() =>
-      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
-        chefUserId: "chef1",
-      })
-    );
+    expect(screen.getByText(/10\/12/)).toBeInTheDocument();
   });
 });

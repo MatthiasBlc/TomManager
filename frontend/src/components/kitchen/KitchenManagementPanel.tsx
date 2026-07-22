@@ -5,7 +5,6 @@ import api from "../../config/api";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import EmptyState from "../common/EmptyState";
 import { getErrorMessage } from "../../config/apiErrors";
-import CreateMealSlotModal from "./CreateMealSlotModal";
 import MealFichesList, { type MealFiche } from "./MealFichesList";
 
 interface Person {
@@ -33,9 +32,8 @@ interface Props {
   coursesMembers: Person[];
   unassigned: Person[];
   meals: MealFiche[];
+  capacitySummary?: { allocated: number; poolTotal: number };
   onChanged: () => void;
-  eventStartDate?: string;
-  eventEndDate?: string;
 }
 
 const displayedName = (u: Person) => u.displayName ?? u.username;
@@ -49,16 +47,13 @@ export default function KitchenManagementPanel({
   coursesMembers,
   unassigned,
   meals,
+  capacitySummary,
   onChanged,
-  eventStartDate,
-  eventEndDate,
 }: Props) {
   const confirmDialog = useConfirm();
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [selectedNewChef, setSelectedNewChef] = useState("");
   const [selectedNewCoursesMember, setSelectedNewCoursesMember] = useState("");
-  const [reassignChoices, setReassignChoices] = useState<Record<string, string>>({});
-  const [showCreateMeal, setShowCreateMeal] = useState(false);
 
   const {
     register,
@@ -73,12 +68,6 @@ export default function KitchenManagementPanel({
   });
 
   const isRoleMode = !!chefRoleId;
-  const orphanMeals = meals.filter((m) => !m.chef);
-  const freeChefIds = new Set(chefs.map((c) => c.id));
-  meals.forEach((m) => {
-    if (m.chef) freeChefIds.delete(m.chef.id);
-  });
-  const eligibleChefsForReassign = chefs.filter((c) => freeChefIds.has(c.id));
 
   const onSaveConfig = async (data: ConfigForm) => {
     const nextChefRoleId = data.chefRoleId.trim() || null;
@@ -170,21 +159,6 @@ export default function KitchenManagementPanel({
     }
   };
 
-  const handleReassign = async (meal: MealFiche) => {
-    const chefId = reassignChoices[meal.id];
-    if (!chefId) return;
-    setPendingAction(`reassign:${meal.id}`);
-    try {
-      await api.patch(`/api/events/${eventId}/kitchen/meals/${meal.id}`, { chefUserId: chefId });
-      toast.success("Repas réassigné");
-      onChanged();
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Échec de la réassignation"));
-    } finally {
-      setPendingAction(null);
-    }
-  };
-
   const handleGenerate = async () => {
     const ok = await confirmDialog({
       title: "Générer le planning",
@@ -210,6 +184,27 @@ export default function KitchenManagementPanel({
       onChanged();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Échec de la génération du planning"));
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleReset = async () => {
+    const ok = await confirmDialog({
+      title: "Réinitialiser le planning",
+      message:
+        "Supprime tous les repas de l'événement (plats, ingrédients, ustensiles, équipiers inscrits, échanges en cours). Les rosters chefs et équipe courses sont conservés. Cette action est irréversible.",
+      confirmLabel: "Réinitialiser",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setPendingAction("reset");
+    try {
+      await api.post(`/api/events/${eventId}/kitchen/reset`);
+      toast.success("Planning réinitialisé");
+      onChanged();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Échec de la réinitialisation du planning"));
     } finally {
       setPendingAction(null);
     }
@@ -381,75 +376,43 @@ export default function KitchenManagementPanel({
         </div>
       </div>
 
-      {orphanMeals.length > 0 && (
-        <div className="card bg-base-200 border-l-4 border-warning shadow-none">
-          <div className="card-body p-3">
-            <h4 className="font-semibold text-sm mb-2">Repas orphelins à réassigner</h4>
-            {eligibleChefsForReassign.length === 0 && (
-              <p className="text-xs opacity-60 mb-2">Aucun chef libre pour reprendre un repas.</p>
-            )}
-            <ul className="space-y-2">
-              {orphanMeals.map((meal) => (
-                <li key={meal.id} className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm flex-1">{meal.name}</span>
-                  <select
-                    className="select select-bordered select-sm"
-                    value={reassignChoices[meal.id] ?? ""}
-                    onChange={(e) =>
-                      setReassignChoices((prev) => ({ ...prev, [meal.id]: e.target.value }))
-                    }
-                    disabled={eligibleChefsForReassign.length === 0}
-                  >
-                    <option value="">Choisir un chef...</option>
-                    {eligibleChefsForReassign.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {displayedName(c)}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    className="btn btn-sm"
-                    disabled={!reassignChoices[meal.id] || !!pendingAction}
-                    onClick={() => handleReassign(meal)}
-                  >
-                    {pendingAction === `reassign:${meal.id}` && (
-                      <span className="loading loading-spinner loading-xs" />
-                    )}
-                    Réassigner
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
       <div className="card bg-base-200 shadow-none">
         <div className="card-body p-3">
           <h4 className="font-semibold text-sm mb-2">Planning</h4>
           <p className="text-xs opacity-70 mb-2">
             Génère la grille des repas (midi/soir) depuis les dates de l'événement et répartit les
-            places d'équipiers sur les nouveaux créneaux. Relançable sans risque : les créneaux
-            existants ne sont pas modifiés.
+            places d'équipiers entre les créneaux. Le chef/l'équipier de chaque repas s'assigne
+            ensuite depuis les fiches ci-dessous.
           </p>
+          {capacitySummary && (
+            <p className="text-xs opacity-70 mb-2">
+              Équipiers répartis : {capacitySummary.allocated}/{capacitySummary.poolTotal}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
-            <button
-              className="btn btn-warning btn-sm"
-              disabled={!!pendingAction}
-              onClick={handleGenerate}
-            >
-              {pendingAction === "generate" && (
-                <span className="loading loading-spinner loading-xs" />
-              )}
-              Générer le planning
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
-              disabled={!!pendingAction}
-              onClick={() => setShowCreateMeal(true)}
-            >
-              Créer un repas manuellement
-            </button>
+            {meals.length === 0 ? (
+              <button
+                className="btn btn-warning btn-sm"
+                disabled={!!pendingAction}
+                onClick={handleGenerate}
+              >
+                {pendingAction === "generate" && (
+                  <span className="loading loading-spinner loading-xs" />
+                )}
+                Générer le planning
+              </button>
+            ) : (
+              <button
+                className="btn btn-error btn-outline btn-sm"
+                disabled={!!pendingAction}
+                onClick={handleReset}
+              >
+                {pendingAction === "reset" && (
+                  <span className="loading loading-spinner loading-xs" />
+                )}
+                Réinitialiser le planning
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -465,20 +428,12 @@ export default function KitchenManagementPanel({
         <MealFichesList
           eventId={eventId}
           meals={meals}
+          chefs={chefs}
+          unassigned={unassigned}
+          capacitySummary={capacitySummary}
           onChanged={onChanged}
-          eventStartDate={eventStartDate}
-          eventEndDate={eventEndDate}
         />
       </div>
-
-      <CreateMealSlotModal
-        open={showCreateMeal}
-        onClose={() => setShowCreateMeal(false)}
-        onSaved={onChanged}
-        eventId={eventId}
-        eventStartDate={eventStartDate}
-        eventEndDate={eventEndDate}
-      />
     </div>
   );
 }

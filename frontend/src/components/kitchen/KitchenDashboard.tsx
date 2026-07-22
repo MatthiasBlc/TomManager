@@ -1,5 +1,6 @@
 import EmptyState from "../common/EmptyState";
 import { serviceLabel } from "./units";
+import { formatParisDateTime } from "../../utils/dateTime";
 
 interface Person {
   id: string;
@@ -29,7 +30,7 @@ interface Props {
 const displayedName = (u: Person) => u.displayName ?? u.username;
 
 const formatDateTime = (iso: string) =>
-  new Date(iso).toLocaleString("fr-FR", {
+  formatParisDateTime(iso, {
     weekday: "short",
     day: "numeric",
     month: "short",

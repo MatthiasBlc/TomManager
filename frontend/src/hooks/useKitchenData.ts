@@ -23,6 +23,7 @@ export interface KitchenViewData {
   coursesMembers?: { id: string; username: string; displayName?: string | null }[];
   unassigned?: { id: string; username: string; displayName?: string | null }[];
   dashboard?: { chefsCount: number; coursesCount: number; unassignedCount: number };
+  capacitySummary?: { allocated: number; poolTotal: number };
 }
 
 // Fetch + temps reel partages entre l'onglet Infos (KitchenBoard) et l'onglet

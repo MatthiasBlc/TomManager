@@ -1,3 +1,13 @@
+❯ D'ailleurs tout le planning est en Paris window time, partout. de même que tout les
+sélecteurs de temps (déjà existant ou à venir), et les data en base. Si un user a déjà
+sélectionné 16h00 quelquepart, ça doit vouloir dire 16h00 paris time.
+Attention des utilisateurs sont en production et pensent que tout est déjà en heure de paris. Cela doit impérativement être corrigé et invisible pour eux.
+s'ils ont saisis 10h00 à un moment dans l'application, il doivent voir l'évènement à 10h00 sur le planning et cela doit être 10h00 heure de paris en DB.
+C'est capital que ça soit totalement fluide, invisible et sans heurt pour les users !
+Bien entendu, tout doit être affiché en Paris Time. Tout le temps.
+
+---
+
 Revoir l'interface admin responsablecuisine
 
 ---

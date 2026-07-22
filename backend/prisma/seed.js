@@ -19,8 +19,18 @@ const DEV_KITCHEN_USERS = [
   { email: "user@local.dev", username: "user", password: "user123", role: "USER" },
 ];
 
+// Chefs supplementaires (non-admin) : de quoi peupler chaque scenario de fiche
+// repas (complet, sur-occupe, minimal) sans jamais donner 2 repas au meme chef
+// (contrainte @@unique([eventKitchenId, chefUserId])).
+const DEV_EXTRA_CHEFS = [
+  { email: "chef2@local.dev", username: "chef2", password: "chef123", role: "USER" },
+  { email: "chef3@local.dev", username: "chef3", password: "chef123", role: "USER" },
+  { email: "chef4@local.dev", username: "chef4", password: "chef123", role: "USER" },
+];
+
 // Participants generiques (equipiers sans role particulier) pour peupler l'event de
-// demo. Avec admin/adminchef/chef/user (4), ca porte le total a 15 participants.
+// demo : sert aussi de reservoir pour l'equipe courses et les inscriptions repas
+// (participant1 = courses, participant2/3/4 = assistants, le reste = sans affectation).
 const FILLER_PARTICIPANT_COUNT = 11;
 
 async function getOrCreateUser({ email, username, password, role }) {
@@ -46,13 +56,43 @@ async function seedAdmins() {
   }
 }
 
+// Cree (ou retrouve, idempotence) un creneau repas identifie par (eventKitchenId,
+// startDateTime, service) — meme cle que slotKey() cote generatePlanning — pour ne
+// jamais dupliquer un creneau du seed si le script est relance.
+async function findOrCreateMeal(eventKitchenId, { chefUserId, name, service, startDateTime, endDateTime, maxAssistants }) {
+  const existing = await prisma.meal.findFirst({
+    where: { eventKitchenId, startDateTime, service },
+  });
+  if (existing) return existing;
+  return prisma.meal.create({
+    data: { eventKitchenId, chefUserId, name, service, startDateTime, endDateTime, maxAssistants },
+  });
+}
+
+async function addAssistant(eventKitchenId, mealId, userId) {
+  await prisma.mealAssistant.upsert({
+    where: { mealId_userId: { mealId, userId } },
+    create: { mealId, eventKitchenId, userId },
+    update: {},
+  });
+}
+
 // Comptes + donnees de demo pour le module cuisine (CookV1). Idempotent comme le
 // reste du seed : peut etre relance sans dupliquer (docker restarte le seed a
 // chaque demarrage du backend, cf docker-compose.yml).
-async function seedKitchenDemo(event) {
+//
+// Grille couverte (event 14-19 aout 2026, Europe/Paris, memes horaires fixes que
+// generatePlanning : dejeuner 10h30-13h00, diner 18h30-21h00 -> 08h30-11h00 et
+// 16h30-19h00 UTC en aout/DST) : 1er jour diner seul, jours intermediaires
+// dejeuner+diner, dernier jour aucun repas = 9 creneaux. Varietes couvertes pour
+// tester l'Admin Chef : creneaux orphelins, repas LUNCH, repas complet, repas en
+// sur-occupation, repas sans ingredients/ustensiles, equipe courses peuplee.
+async function seedKitchenDemo(event, fillerParticipants) {
   const adminChef = await getOrCreateUser(DEV_KITCHEN_USERS[0]);
   const chef = await getOrCreateUser(DEV_KITCHEN_USERS[1]);
   const user = await getOrCreateUser(DEV_KITCHEN_USERS[2]);
+  const [chef2, chef3, chef4] = await Promise.all(DEV_EXTRA_CHEFS.map(getOrCreateUser));
+  const [courses1, assistant2, assistant3, assistant4] = fillerParticipants;
 
   // admin.kitchen : seul adminChef a la case cochee (responsable complet).
   // admin@local.dev reste un admin "classique" (dashboard cuisine en lecture seule).
@@ -62,7 +102,7 @@ async function seedKitchenDemo(event) {
     update: { value: true },
   });
 
-  for (const u of [adminChef, chef, user]) {
+  for (const u of [adminChef, chef, user, chef2, chef3, chef4]) {
     await prisma.eventParticipation.upsert({
       where: { eventId_userId: { eventId: event.id, userId: u.id } },
       create: { eventId: event.id, userId: u.id },
@@ -81,10 +121,9 @@ async function seedKitchenDemo(event) {
   });
 
   // Roster chef en mode manuel (pas de chefRoleId : aucune guilde Discord reelle en
-  // local). adminChef ET chef sont chefs ; adminChef n'a volontairement PAS de repas
-  // encore, pour tester le bouton "Generer le planning" (grille) puis "Choisir mon
-  // creneau" sous le sous-menu "Mon repas".
-  for (const u of [adminChef, chef]) {
+  // local). adminChef n'a volontairement PAS de repas encore, pour tester le bouton
+  // "Generer le planning" (grille) puis "Choisir mon creneau" sous "Mon repas".
+  for (const u of [adminChef, chef, chef2, chef3, chef4]) {
     await prisma.kitchenChef.upsert({
       where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: u.id } },
       create: { eventKitchenId: eventKitchen.id, userId: u.id, source: "MANUAL" },
@@ -92,49 +131,149 @@ async function seedKitchenDemo(event) {
     });
   }
 
-  let meal = await prisma.meal.findFirst({
-    where: { eventKitchenId: eventKitchen.id, chefUserId: chef.id },
-  });
-  if (!meal) {
-    meal = await prisma.meal.create({
-      data: {
-        eventKitchenId: eventKitchen.id,
-        chefUserId: chef.id,
-        name: "Couscous royal",
-        service: "DINNER",
-        // Aligne sur le vrai creneau "diner" que genererait la grille (2e jour de
-        // l'event, 18h30-21h00 heure de Paris = 16h30-19h00 UTC en aout/DST) : ce
-        // repas est reconnu comme deja existant si le responsable clique sur
-        // "Generer le planning" (idempotence par startDateTime+service).
-        startDateTime: new Date("2026-08-15T16:30:00.000Z"),
-        endDateTime: new Date("2026-08-15T19:00:00.000Z"),
-        maxAssistants: 3,
-      },
-    });
-    await prisma.mealIngredient.createMany({
-      data: [
-        { mealId: meal.id, name: "Semoule", quantity: 2, unit: "KG" },
-        { mealId: meal.id, name: "Merguez", quantity: 1.5, unit: "KG" },
-      ],
-    });
-    await prisma.mealUtensil.create({ data: { mealId: meal.id, name: "Couscoussier" } });
-    console.log("Repas cree : Couscous royal (chef)");
-  }
-
-  await prisma.mealAssistant.upsert({
-    where: { mealId_userId: { mealId: meal.id, userId: user.id } },
-    create: { mealId: meal.id, eventKitchenId: eventKitchen.id, userId: user.id },
+  // Equipe courses (jamais peuplee auparavant dans le seed) : un equipier retire du
+  // pool "equipiers a repartir sur les repas".
+  await prisma.kitchenCoursesMember.upsert({
+    where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: courses1.id } },
+    create: { eventKitchenId: eventKitchen.id, userId: courses1.id },
     update: {},
   });
 
+  // Creneau 1 (jour 14, diner seul) : reste ORPHELIN (aucun chef), pour tester
+  // l'assignation de chef directement depuis la fiche (Admin Chef point 5).
+  await findOrCreateMeal(eventKitchen.id, {
+    chefUserId: null,
+    name: "Dîner du vendredi",
+    service: "DINNER",
+    startDateTime: new Date("2026-08-14T16:30:00.000Z"),
+    endDateTime: new Date("2026-08-14T19:00:00.000Z"),
+    maxAssistants: 2,
+  });
+
+  // Creneau 2 (jour 15, dejeuner) : orphelin egalement.
+  await findOrCreateMeal(eventKitchen.id, {
+    chefUserId: null,
+    name: "Déjeuner du samedi",
+    service: "LUNCH",
+    startDateTime: new Date("2026-08-15T08:30:00.000Z"),
+    endDateTime: new Date("2026-08-15T11:00:00.000Z"),
+    maxAssistants: 2,
+  });
+
+  // Creneau 3 (jour 15, diner) : repas complet du chef, recette + ingredients +
+  // ustensiles, 1 equipier inscrit (1/3 places).
+  const couscous = await findOrCreateMeal(eventKitchen.id, {
+    chefUserId: chef.id,
+    name: "Couscous royal",
+    service: "DINNER",
+    startDateTime: new Date("2026-08-15T16:30:00.000Z"),
+    endDateTime: new Date("2026-08-15T19:00:00.000Z"),
+    maxAssistants: 3,
+  });
+  if ((await prisma.mealIngredient.count({ where: { mealId: couscous.id } })) === 0) {
+    await prisma.mealIngredient.createMany({
+      data: [
+        { mealId: couscous.id, name: "Semoule", quantity: 2, unit: "KG" },
+        { mealId: couscous.id, name: "Merguez", quantity: 1.5, unit: "KG" },
+      ],
+    });
+    await prisma.mealUtensil.create({ data: { mealId: couscous.id, name: "Couscoussier" } });
+  }
+  await addAssistant(eventKitchen.id, couscous.id, user.id);
+
+  // Creneau 4 (jour 16, dejeuner) : repas COMPLET (capacite pleine, 1/1).
+  const saladeNicoise = await findOrCreateMeal(eventKitchen.id, {
+    chefUserId: chef2.id,
+    name: "Salade Niçoise",
+    service: "LUNCH",
+    startDateTime: new Date("2026-08-16T08:30:00.000Z"),
+    endDateTime: new Date("2026-08-16T11:00:00.000Z"),
+    maxAssistants: 1,
+  });
+  if ((await prisma.mealIngredient.count({ where: { mealId: saladeNicoise.id } })) === 0) {
+    await prisma.mealIngredient.createMany({
+      data: [
+        { mealId: saladeNicoise.id, name: "Thon", quantity: 500, unit: "G" },
+        { mealId: saladeNicoise.id, name: "Tomates", quantity: 1, unit: "KG" },
+      ],
+    });
+  }
+  await addAssistant(eventKitchen.id, saladeNicoise.id, assistant2.id);
+
+  // Creneau 5 (jour 16, diner) : orphelin.
+  await findOrCreateMeal(eventKitchen.id, {
+    chefUserId: null,
+    name: "Dîner du dimanche",
+    service: "DINNER",
+    startDateTime: new Date("2026-08-16T16:30:00.000Z"),
+    endDateTime: new Date("2026-08-16T19:00:00.000Z"),
+    maxAssistants: 2,
+  });
+
+  // Creneau 6 (jour 17, dejeuner) : orphelin.
+  await findOrCreateMeal(eventKitchen.id, {
+    chefUserId: null,
+    name: "Déjeuner du lundi",
+    service: "LUNCH",
+    startDateTime: new Date("2026-08-17T08:30:00.000Z"),
+    endDateTime: new Date("2026-08-17T11:00:00.000Z"),
+    maxAssistants: 2,
+  });
+
+  // Creneau 7 (jour 17, diner) : repas en SUR-OCCUPATION (2 inscrits, capacite 1) —
+  // pour tester le badge d'alerte (generatePlanning.overCapacity / dashboard).
+  const raclette = await findOrCreateMeal(eventKitchen.id, {
+    chefUserId: chef3.id,
+    name: "Raclette",
+    service: "DINNER",
+    startDateTime: new Date("2026-08-17T16:30:00.000Z"),
+    endDateTime: new Date("2026-08-17T19:00:00.000Z"),
+    maxAssistants: 1,
+  });
+  if ((await prisma.mealIngredient.count({ where: { mealId: raclette.id } })) === 0) {
+    await prisma.mealIngredient.createMany({
+      data: [{ mealId: raclette.id, name: "Fromage à raclette", quantity: 2, unit: "KG" }],
+    });
+    await prisma.mealUtensil.create({ data: { mealId: raclette.id, name: "Appareil à raclette" } });
+  }
+  await addAssistant(eventKitchen.id, raclette.id, assistant3.id);
+  await addAssistant(eventKitchen.id, raclette.id, assistant4.id);
+
+  // Creneau 8 (jour 18, dejeuner) : fiche MINIMALE (recette nommee, sans ingredient
+  // ni ustensile renseigne).
+  await findOrCreateMeal(eventKitchen.id, {
+    chefUserId: chef4.id,
+    name: "Buffet froid",
+    service: "LUNCH",
+    startDateTime: new Date("2026-08-18T08:30:00.000Z"),
+    endDateTime: new Date("2026-08-18T11:00:00.000Z"),
+    maxAssistants: 2,
+  });
+
+  // Creneau 9 (jour 18, diner) : orphelin.
+  await findOrCreateMeal(eventKitchen.id, {
+    chefUserId: null,
+    name: "Dîner du mardi",
+    service: "DINNER",
+    startDateTime: new Date("2026-08-18T16:30:00.000Z"),
+    endDateTime: new Date("2026-08-18T19:00:00.000Z"),
+    maxAssistants: 2,
+  });
+  // (Jour 19, dernier jour de l'event : aucun repas, regle de la grille.)
+
   console.log(
-    "Cuisine (demo) : adminchef@local.dev (responsable+chef sans repas), " +
-      "chef@local.dev (chef, repas Couscous royal), user@local.dev (equipier, inscrit au repas)"
+    "Cuisine (demo) : 9 creneaux (grille complete 14-19 aout), 5 chefs " +
+      "(adminchef sans repas, chef/chef2/chef3/chef4 assignes), 4 creneaux orphelins, " +
+      "1 repas complet, 1 en sur-occupation, 1 fiche minimale, equipe courses peuplee (participant1)"
   );
 }
 
 // Participants generiques (equipiers), pour peupler un peu plus l'event de demo.
+// Retourne la liste des comptes crees : seedKitchenDemo reutilise les premiers pour
+// l'equipe courses et quelques inscriptions repas plutot que de creer des comptes
+// dedies.
 async function seedFillerParticipants(event) {
+  const participants = [];
   for (let i = 1; i <= FILLER_PARTICIPANT_COUNT; i++) {
     const participant = await getOrCreateUser({
       email: `participant${i}@local.dev`,
@@ -147,10 +286,12 @@ async function seedFillerParticipants(event) {
       create: { eventId: event.id, userId: participant.id },
       update: {},
     });
+    participants.push(participant);
   }
   console.log(
     `Participants generiques : ${FILLER_PARTICIPANT_COUNT} (participant1..${FILLER_PARTICIPANT_COUNT}@local.dev, mdp participant123)`
   );
+  return participants;
 }
 
 async function seedDemoData() {
@@ -191,8 +332,10 @@ async function seedDemoData() {
 
   // --- Module cuisine (CookV1) : comptes de demo + donnees ---
   // Voir docs/features/CookV1/SPEC_COOKING.md #4 pour la matrice de droits testee.
-  await seedKitchenDemo(event);
-  await seedFillerParticipants(event);
+  // Les filler participants sont crees en premier : seedKitchenDemo en reutilise
+  // quelques-uns pour l'equipe courses et les inscriptions repas.
+  const fillerParticipants = await seedFillerParticipants(event);
+  await seedKitchenDemo(event, fillerParticipants);
 
   // --- Jeux de societe ---
   const gamesData = [
