@@ -4,6 +4,8 @@ Revoir l'interface admin + responsablecuisine
 
 7/ est-ce que le bouton de génération des créneaux de repas est vraiment nécessaire( et son pendant de suppression aussi par la même occasion) ? (admin cuisine) Ou n'est-ce pas plus logique que ça soit automatique (puisque les créneaux sont automatique) + purgé du content avec la purge event ?
 
+
+8/ Dans info, ajouter une catégorie "mon planning" avec la liste des parties sur lesquelles je suis inscrits (en tant que MJ et joueur)
 ---
 
 système de notif cuisine
