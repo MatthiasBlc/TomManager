@@ -18,6 +18,7 @@ interface EventSocketCallbacks {
   onKitchenAssistantChanged?: () => void;
   onKitchenPlanningGenerated?: () => void;
   onKitchenSwapRequestChanged?: () => void;
+  onKitchenAssistantSwapChanged?: () => void;
   // Appele apres une reconnexion (pas au premier connect) : le join:event
   // precedent est perdu cote serveur, et des evenements ont pu etre manques
   // pendant la coupure — l'appelant doit refetcher les donnees actives.
@@ -61,6 +62,7 @@ export function useEventSocket(eventId: string | undefined, callbacks: EventSock
       ["kitchen:assistant-changed", callbacks.onKitchenAssistantChanged],
       ["kitchen:planning-generated", callbacks.onKitchenPlanningGenerated],
       ["kitchen:swap-request-changed", callbacks.onKitchenSwapRequestChanged],
+      ["kitchen:assistant-swap-changed", callbacks.onKitchenAssistantSwapChanged],
     ];
 
     const handlers: [string, () => void][] = [];

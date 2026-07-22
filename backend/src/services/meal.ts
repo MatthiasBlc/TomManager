@@ -3,6 +3,7 @@ import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
 import {
   assertParticipant,
+  cancelStaleAssistantSwapRequests,
   getEventOr404,
   getOrCreateEventKitchen,
   isKitchenManagerUser,
@@ -327,6 +328,10 @@ export async function joinOrMoveMeal(eventId: string, mealId: string, userId: st
     await tx.mealAssistant.create({
       data: { mealId, eventKitchenId: eventKitchen.id, userId },
     });
+    // L'ancien emplacement referme par une demande d'echange equipier en attente
+    // (point 4, Evolutions.md) : elle n'a plus de sens, quel que soit le chemin
+    // (auto-deplacement ou reassignation manager).
+    await cancelStaleAssistantSwapRequests(tx, eventKitchen.id, userId);
   });
 
   emitToEvent(eventId, "kitchen:assistant-changed", { eventId, mealId });
@@ -344,7 +349,10 @@ export async function leaveMeal(eventId: string, mealId: string, userId: string)
     throw createError(404, "Not registered on this meal", { code: "NOT_MEAL_ASSISTANT" });
   }
 
-  await prisma.mealAssistant.delete({ where: { id: assistant.id } });
+  await prisma.$transaction(async (tx) => {
+    await tx.mealAssistant.delete({ where: { id: assistant.id } });
+    await cancelStaleAssistantSwapRequests(tx, eventKitchen.id, userId);
+  });
 
   emitToEvent(eventId, "kitchen:assistant-changed", { eventId, mealId });
 }

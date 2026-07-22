@@ -68,6 +68,8 @@ describe("useEventSocket", () => {
     ["kitchen:meal-changed", "onKitchenMealChanged"],
     ["kitchen:assistant-changed", "onKitchenAssistantChanged"],
     ["kitchen:planning-generated", "onKitchenPlanningGenerated"],
+    ["kitchen:swap-request-changed", "onKitchenSwapRequestChanged"],
+    ["kitchen:assistant-swap-changed", "onKitchenAssistantSwapChanged"],
   ] as const)("reacts to the %s server event via %s", (event, callbackName) => {
     const socket = makeFakeSocket(true);
     useSocketMock.mockReturnValue(socket);

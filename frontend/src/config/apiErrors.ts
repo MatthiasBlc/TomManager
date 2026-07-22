@@ -82,6 +82,12 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   SWAP_STALE: "L'état a changé depuis la demande, réessaie",
   SWAP_SAME_MEAL: "Impossible d'échanger un repas avec lui-même",
   SWAP_NOT_FOUND: "Demande d'échange introuvable",
+  TARGET_MEAL_HAS_SEATS: "Ce créneau a encore de la place, déplace-toi directement",
+  ASSISTANT_SWAP_SAME_MEAL: "Impossible de demander un échange avec ton propre repas",
+  ASSISTANT_SWAP_ALREADY_PENDING: "Tu as déjà une demande d'échange en attente",
+  ASSISTANT_SWAP_NOT_FOUND: "Demande d'échange introuvable",
+  ASSISTANT_SWAP_NOT_PENDING: "Cette demande d'échange n'est plus en attente",
+  ASSISTANT_SWAP_STALE: "La situation a changé depuis la demande, réessaie",
 };
 
 interface ApiErrorShape {

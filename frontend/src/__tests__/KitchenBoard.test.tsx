@@ -47,11 +47,15 @@ const ORPHAN_MEAL = {
   chef: null,
 };
 
-function renderBoard(data: Partial<KitchenViewData> & { meals: unknown[] }) {
+function renderBoard(
+  data: Partial<KitchenViewData> & { meals: unknown[] },
+  assistantSwaps: unknown[] = []
+) {
   return render(
     <KitchenBoard
       eventId="ev1"
       data={data as unknown as KitchenViewData}
+      assistantSwaps={assistantSwaps as never[]}
       loading={false}
       onChanged={() => {}}
     />
@@ -96,7 +100,11 @@ describe("KitchenBoard", () => {
 
   it("shows the board for an equipier when equipierPlanningEnabled is true", () => {
     mockAuth({ id: "u3", role: "USER" });
-    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [MEAL],
+    });
     expect(screen.getAllByText("Couscous").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Alice/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/1\/2/).length).toBeGreaterThan(0);
@@ -122,7 +130,11 @@ describe("KitchenBoard", () => {
   it("joins a meal and shows a success toast", async () => {
     mockAuth({ id: "u3", role: "USER" });
     apiPostMock.mockResolvedValue({ data: { data: {} } });
-    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [MEAL],
+    });
 
     fireEvent.click(firstOf(screen.getAllByRole("button", { name: "S'inscrire" })));
     await waitFor(() =>
@@ -166,7 +178,11 @@ describe("KitchenBoard", () => {
   it("leaves a meal and shows a success toast", async () => {
     mockAuth({ id: "u2", role: "USER" });
     apiDeleteMock.mockResolvedValue({});
-    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [MEAL],
+    });
 
     fireEvent.click(firstOf(screen.getAllByRole("button", { name: "Se désinscrire" })));
     await waitFor(() =>
@@ -196,14 +212,75 @@ describe("KitchenBoard", () => {
 
   it("shows the 'choisis ton créneau' banner to an unassigned equipier only (point 11)", () => {
     mockAuth({ id: "u3", role: "USER" });
-    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [MEAL],
+    });
     expect(screen.getByText(/pas encore choisi ton créneau/i)).toBeInTheDocument();
   });
 
   it("hides the 'choisis ton créneau' banner once the equipier has a meal", () => {
     mockAuth({ id: "u2", role: "USER" });
-    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [MEAL],
+    });
     expect(screen.queryByText(/pas encore choisi ton créneau/i)).not.toBeInTheDocument();
+  });
+
+  it("renders the assistant swap panel for an equipier with a meal (point 4)", () => {
+    mockAuth({ id: "u2", role: "USER" });
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [MEAL],
+    });
+    expect(screen.getByText("Échanger ma place")).toBeInTheDocument();
+  });
+
+  it("does not render the assistant swap panel for a chef or courses member (point 4)", () => {
+    mockAuth({ id: "chef1", role: "USER" });
+    renderBoard({ currentUserKitchenRole: "chef", equipierPlanningEnabled: false, meals: [MEAL] });
+    expect(screen.queryByText("Échanger ma place")).not.toBeInTheDocument();
+  });
+
+  it("does not render the assistant swap panel for an equipier without a meal yet", () => {
+    mockAuth({ id: "u3", role: "USER" });
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [MEAL],
+    });
+    expect(screen.queryByText("Échanger ma place")).not.toBeInTheDocument();
+  });
+
+  it("passes assistantSwaps down to the swap panel", () => {
+    mockAuth({ id: "u2", role: "USER" });
+    renderBoard(
+      { currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] },
+      [
+        {
+          id: "req1",
+          status: "PENDING",
+          requester: { id: "someoneElse", username: "Zoe" },
+          requesterMeal: {
+            id: "meal9",
+            name: "Autre",
+            service: "LUNCH",
+            startDateTime: MEAL.startDateTime,
+          },
+          targetMeal: {
+            id: "meal1",
+            name: "Couscous",
+            service: "DINNER",
+            startDateTime: MEAL.startDateTime,
+          },
+        },
+      ]
+    );
+    expect(screen.getByText(/Zoe/)).toBeInTheDocument();
   });
 
   it("groups meals in a day x service matrix", () => {

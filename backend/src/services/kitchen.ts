@@ -4,6 +4,7 @@ import logger from "../util/logger";
 import { emitToEvent } from "../socket/emitter";
 import { getLocalUserIdsForDiscordRole } from "./adminSync";
 import { computeEventConflicts } from "./conflicts";
+import type { TxClient } from "./mealTransfer";
 
 export const USER_SELECT = { id: true, username: true, displayName: true } as const;
 
@@ -13,6 +14,22 @@ interface UpdateConfigInput {
   chefRoleId?: string | null;
   allergiesNotes?: string | null;
   equipierPlanningEnabled?: boolean;
+}
+
+// Annule toute demande d'echange equipier PENDING dont `userId` est le demandeur : a
+// appeler dans la MEME transaction que toute suppression/deplacement de son
+// MealAssistant (leave, move, retrait manager, auto-desinscription role cuisine —
+// point 4, Evolutions.md). Un demandeur n'a qu'une demande PENDING a la fois, donc
+// "annuler la mienne" = "annuler celle qui referencait mon ancien emplacement".
+export async function cancelStaleAssistantSwapRequests(
+  tx: TxClient,
+  eventKitchenId: string,
+  userId: string
+) {
+  await tx.assistantSwapRequest.updateMany({
+    where: { eventKitchenId, requesterUserId: userId, status: "PENDING" },
+    data: { status: "CANCELLED", respondedAt: new Date() },
+  });
 }
 
 export async function getEventOr404(eventId: string) {
@@ -86,6 +103,7 @@ export async function syncChefRoleRoster(
       await tx.kitchenChef.create({ data: { eventKitchenId, userId, source: "ROLE" } });
       await tx.kitchenCoursesMember.deleteMany({ where: { eventKitchenId, userId } });
       await tx.mealAssistant.deleteMany({ where: { eventKitchenId, userId } });
+      await cancelStaleAssistantSwapRequests(tx, eventKitchenId, userId);
     }
   });
 
@@ -211,6 +229,7 @@ export async function addManualChef(eventId: string, actingUserId: string, targe
         });
         claimedMealId = assistantRow.mealId;
       }
+      await cancelStaleAssistantSwapRequests(tx, eventKitchen.id, targetUserId);
     }
   });
 
@@ -290,6 +309,7 @@ export async function addCoursesMember(
     await tx.mealAssistant.deleteMany({
       where: { eventKitchenId: eventKitchen.id, userId: targetUserId },
     });
+    await cancelStaleAssistantSwapRequests(tx, eventKitchen.id, targetUserId);
   });
 
   emitToEvent(eventId, "kitchen:config-updated", { eventId });

@@ -93,8 +93,41 @@ describe("Event purge - Kitchen extension (CookV1 Lot G)", () => {
       data: { mealId: meal.id, eventKitchenId: eventKitchen.id, userId: equipierUser.id },
     });
 
+    // Un 2e repas + une demande d'echange equipier en attente (point 4, Evolutions.md) :
+    // doit disparaitre en cascade via la suppression du repas (onDelete: Cascade).
+    const { user: otherEquipierUser } = await addTestParticipant(event.id, {
+      email: "otherequipier@example.com",
+      username: "otherequipier1",
+    });
+    const meal2 = await prisma.meal.create({
+      data: {
+        eventKitchenId: eventKitchen.id,
+        chefUserId: null,
+        name: "",
+        service: "LUNCH",
+        startDateTime: new Date("2026-06-01T10:30:00Z"),
+        endDateTime: new Date("2026-06-01T13:00:00Z"),
+        maxAssistants: 1,
+      },
+    });
+    await prisma.mealAssistant.create({
+      data: { mealId: meal2.id, eventKitchenId: eventKitchen.id, userId: otherEquipierUser.id },
+    });
+    const assistantSwapRequest = await prisma.assistantSwapRequest.create({
+      data: {
+        eventKitchenId: eventKitchen.id,
+        requesterMealId: meal.id,
+        targetMealId: meal2.id,
+        requesterUserId: equipierUser.id,
+      },
+    });
+
     const res = await request.post(`/api/events/${event.id}/purge`).set("Cookie", cookie);
     expect(res.status).toBe(200);
+
+    expect(
+      await prisma.assistantSwapRequest.findUnique({ where: { id: assistantSwapRequest.id } })
+    ).toBeNull();
 
     // EventKitchen conserve (config incluse)
     const kitchenAfter = await prisma.eventKitchen.findUnique({ where: { eventId: event.id } });

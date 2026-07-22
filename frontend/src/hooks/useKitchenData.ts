@@ -4,6 +4,7 @@ import api from "../config/api";
 import { useEventSocket } from "./useEventSocket";
 import type { MealFiche } from "../components/kitchen/MealFichesList";
 import type { SwapRequest } from "../components/kitchen/MealSwapPanel";
+import type { AssistantSwapRequest } from "../components/kitchen/AssistantSwapPanel";
 
 export interface KitchenViewData {
   eventKitchenId: string | null;
@@ -46,6 +47,7 @@ export interface KitchenViewData {
 export function useKitchenData(eventId: string | undefined) {
   const [data, setData] = useState<KitchenViewData | null>(null);
   const [swaps, setSwaps] = useState<SwapRequest[]>([]);
+  const [assistantSwaps, setAssistantSwaps] = useState<AssistantSwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchKitchen = useCallback(async () => {
@@ -68,15 +70,26 @@ export function useKitchenData(eventId: string | undefined) {
     }
   }, [eventId]);
 
+  const fetchAssistantSwaps = useCallback(async () => {
+    try {
+      const res = await api.get(`/api/events/${eventId}/kitchen/assistant-swaps`);
+      setAssistantSwaps(Array.isArray(res.data.data) ? res.data.data : []);
+    } catch {
+      // Silencieux : les demandes d'echange ne bloquent pas l'affichage
+    }
+  }, [eventId]);
+
   const refetchAll = useCallback(() => {
     fetchKitchen();
     fetchSwaps();
-  }, [fetchKitchen, fetchSwaps]);
+    fetchAssistantSwaps();
+  }, [fetchKitchen, fetchSwaps, fetchAssistantSwaps]);
 
   useEffect(() => {
     fetchKitchen();
     fetchSwaps();
-  }, [fetchKitchen, fetchSwaps]);
+    fetchAssistantSwaps();
+  }, [fetchKitchen, fetchSwaps, fetchAssistantSwaps]);
 
   useEventSocket(eventId, {
     onKitchenConfigUpdated: fetchKitchen,
@@ -84,8 +97,9 @@ export function useKitchenData(eventId: string | undefined) {
     onKitchenAssistantChanged: fetchKitchen,
     onKitchenPlanningGenerated: fetchKitchen,
     onKitchenSwapRequestChanged: fetchSwaps,
+    onKitchenAssistantSwapChanged: fetchAssistantSwaps,
     onReconnected: refetchAll,
   });
 
-  return { data, swaps, loading, fetchKitchen, refetchAll };
+  return { data, swaps, assistantSwaps, loading, fetchKitchen, refetchAll };
 }

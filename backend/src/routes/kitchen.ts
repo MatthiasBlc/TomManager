@@ -8,6 +8,7 @@ import {
 import * as kitchenController from "../controllers/kitchen";
 import * as mealController from "../controllers/meal";
 import * as mealSwapController from "../controllers/mealSwap";
+import * as assistantSwapController from "../controllers/assistantSwap";
 import { validateBody, validateUUID } from "../middleware/validateBody";
 import {
   updateKitchenConfigSchema,
@@ -200,6 +201,42 @@ router.post(
   validateUUID("eventId", "swapRequestId"),
   requireEventParticipant,
   mealSwapController.cancel
+);
+
+// Echange entre equipiers (point 4, Evolutions.md) : la cible est un repas, pas une
+// personne — pas de "reject" individuel, seulement accept (n'importe quel assistant
+// courant du repas cible) et cancel (le demandeur).
+router.get(
+  "/:eventId/kitchen/assistant-swaps",
+  requireAuth,
+  validateUUID("eventId"),
+  requireEventParticipant,
+  assistantSwapController.list
+);
+
+router.post(
+  "/:eventId/kitchen/assistant-swaps",
+  requireAuth,
+  validateUUID("eventId"),
+  requireEventParticipant,
+  validateBody(createSwapRequestSchema),
+  assistantSwapController.create
+);
+
+router.post(
+  "/:eventId/kitchen/assistant-swaps/:assistantSwapRequestId/accept",
+  requireAuth,
+  validateUUID("eventId", "assistantSwapRequestId"),
+  requireEventParticipant,
+  assistantSwapController.accept
+);
+
+router.post(
+  "/:eventId/kitchen/assistant-swaps/:assistantSwapRequestId/cancel",
+  requireAuth,
+  validateUUID("eventId", "assistantSwapRequestId"),
+  requireEventParticipant,
+  assistantSwapController.cancel
 );
 
 export default router;
