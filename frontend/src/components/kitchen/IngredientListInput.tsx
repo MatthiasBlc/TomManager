@@ -77,16 +77,39 @@ function ProductNameField({
 }
 
 export default function IngredientListInput({ value, onChange }: Props) {
+  // Saisie brute par ligne (point 8, virgule ET point acceptes) : affiche le texte
+  // tape tel quel tant qu'il ne parse pas encore en nombre valide (ex. "1," en
+  // cours de frappe avant le "5"), pour ne jamais "avaler" le separateur decimal.
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
+
   const updateRow = (index: number, patch: Partial<IngredientRow>) => {
     onChange(value.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
 
+  const handleQuantityChange = (index: number, raw: string) => {
+    setQuantityDrafts((prev) => ({ ...prev, [index]: raw }));
+    const parsed = Number(raw.replace(",", "."));
+    if (raw.trim() !== "" && Number.isFinite(parsed)) {
+      updateRow(index, { quantity: parsed });
+    }
+  };
+
+  const clearDraft = (index: number) => {
+    setQuantityDrafts((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  };
+
   const removeRow = (index: number) => {
     onChange(value.filter((_, i) => i !== index));
+    setQuantityDrafts({});
   };
 
   const addRow = () => {
     onChange([...value, { name: "", quantity: 1, unit: "G" }]);
+    setQuantityDrafts({});
   };
 
   return (
@@ -95,12 +118,12 @@ export default function IngredientListInput({ value, onChange }: Props) {
         <div key={i} className="flex flex-wrap items-center gap-2">
           <ProductNameField value={row.name} onChange={(name) => updateRow(i, { name })} />
           <input
-            type="number"
-            min={0}
-            step="any"
+            type="text"
+            inputMode="decimal"
             className="input input-bordered input-sm w-20"
-            value={row.quantity}
-            onChange={(e) => updateRow(i, { quantity: Number(e.target.value) })}
+            value={quantityDrafts[i] ?? String(row.quantity)}
+            onChange={(e) => handleQuantityChange(i, e.target.value)}
+            onBlur={() => clearDraft(i)}
           />
           <select
             className="select select-bordered select-sm w-24"

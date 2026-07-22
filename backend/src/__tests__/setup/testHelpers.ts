@@ -65,6 +65,15 @@ export async function setupAdmin(overrides?: {
   return { user, cookie, email, username, password };
 }
 
+// Bornes larges pour les tests cuisine qui creent des creneaux manuels (Meal API,
+// Meal swap API) : les horaires murales par defaut (10h30-13h / 18h30-21h
+// Europe/Paris, cf kitchenPlanning.buildManualSlot) ne rentrent pas dans les
+// bornes par defaut de createTestEvent ci-dessous.
+export const KITCHEN_WIDE_EVENT_BOUNDS = {
+  startDateTime: "2026-06-01T00:00:00Z",
+  endDateTime: "2026-06-02T22:00:00Z",
+};
+
 /**
  * Creates an event and returns it. Requires an admin cookie.
  */

@@ -1,20 +1,11 @@
-1/ Un admin qio n'a pas coché la case "Gestion cuisine" ne doit pas avoir de boutons associé à cela dans son interface. En différence mineure, il peut tout de même accéder à un onglet cuisine. Par contre ce dernier ne doit être qu'un dashboard avec les informations sur le sujet et rien de plus. Pour le reste il doit avoir la même expérience qu'un utilisateur lambda sans droit particulier sur le sujet.
-2/ cocher l'option Gestion cuisine doit donner accés au dashboard complet avec les boutons et plus d'informations si nécessaire.
-3/ J'ai associé un rôle discord (par id) aux chefs et je n'ai pas vu les chefs ayants ce rôle dans la liste Chefs apparaitre. Est-ce un problème d'actualisation?
-4/ je suis admin (avec la case gestion cochée) et j'ai aussi le rôle de chef. Ou est le bouton pour organiser un repas (je suis chef tout de même). Si plusieurs interface différentes pour l'onglet "cuisine" existe, utilise des sous menus suivant les droits que j'ai (admin avec une interface admin) + (chef avec une interface chef). Si je n'ai qu'une seule page à afficher n'affiche pas le sous menu (exemple un chef non admin verra l'onglet cuisine mais n'a pas besoin de sous onglet puisqu'il n'en a qu'un seul)
+Admin Chef :
 
----
+1/ Bouton générer le planning, Fonctionne une fois. Disparait une fois qu'il a été utilisé (en attente du reset event ou d'un reset planning.)
+2/ Lorsque le bouton est en cooldown, il doit être remplacé par le bouton de reset du planning cuisine.
+3/ Retrait du bouton "créer un repas manuellement" et du code associé.
+4/ Il doit avoir au niveau du bloc "planning" le nombre total d'équipier (total participants - chefs - team course) et le nombre de slot(capacité) qui ont été réparti entre tout les repas. Exemple s'il y a 12 équipiers au total et 4 repas, que sur le premier il y a max 3 places, sur le deuxième 2 places, sur le troisième 4 places et que sur le quatrième 1 places, y avoir 10/12, ce qui veut dire qu'il peut monter n'importe laquelle de ces valeurs de +2 max.
+5/ fiches repas : doit voir les repas en mode liste, il doit y voir le créneau, si ce dernier est libre ou pris, le nom du plat (sil y en a un), le nom du chef (s'il y en a un, sinon il doit pouvoir choisir un chef à assigner parmis ceux qui ne sont pas encore sur un créneau), le nom des équipiers assignés (s'il y en a, sinon il doit pouvoir chercher parmi les disponibles pour les assigner sur ce créneau si et seulement si il reste des place vide).
+Il doit cliquer sur une des fiche en question pour voir la modale "détails" de cette dernière. Il ne doit être qu'en lecture jusqu'au moment ou il clique sur "modifier" dans la modale, alors il arrive à une modification de la fiche avec une validation (qui sert à fermer la modale)
+Une fiche repas ne doit pas avoir de champ visible jour, de champ début, de champ fin. Pour la capacité il doit avoir un nombre X/Y (X = nombre de place déjà prise, Y = nombre de place total) et un sélecteur pour choisir le nombre de places max (s'il en reste de dispo). Il ne peut pas supprimer un créneau une fois généré.
 
-système de notif cuisine
-
-- lister toutes les notifs à mettre en place
-- mettre en place ces notifs
-
-V2 ?
--Liste de course ?
-
-- _Récupère les occurrences d'un même produits et calcules le poids pour chaque produits_
-
-Allergies V2 :
-Ajouter un champ directement à l'utilisateur pour indiquer ses allergies.
-Reporter automatiquement la liste
+Update le Seed afin d'avoir des données de test un peu partout sur la partie cuisine.

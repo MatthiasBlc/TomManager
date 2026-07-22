@@ -215,6 +215,36 @@ describe("Kitchen API", () => {
         unassignedCount: 1,
       });
     });
+
+    it("exposes isCoursesMember as a self flag, never a nominative leak", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie);
+
+      const { user: coursesUser, cookie: coursesCookie } = await addTestParticipant(event.id, {
+        email: "courses1@example.com",
+        username: "courses1",
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/courses`)
+        .set("Cookie", managerCookie)
+        .send({ userId: coursesUser.id });
+
+      const { cookie: equipierCookie } = await addTestParticipant(event.id, {
+        email: "e3@example.com",
+        username: "e3",
+      });
+
+      const coursesRes = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", coursesCookie);
+      expect(coursesRes.body.data.isCoursesMember).toBe(true);
+      expect(coursesRes.body.data.isChef).toBe(false);
+
+      const equipierRes = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", equipierCookie);
+      expect(equipierRes.body.data.isCoursesMember).toBe(false);
+    });
   });
 
   describe("PATCH /api/events/:eventId/kitchen", () => {

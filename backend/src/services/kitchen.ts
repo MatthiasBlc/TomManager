@@ -302,6 +302,16 @@ export async function getKitchenView(eventId: string, userId: string | undefined
         })) !== null
       : false;
 
+  // Flag self (pas une liste nominative) : necessaire au front pour masquer le
+  // bouton "S'inscrire" a un membre de l'equipe courses (point 4 Evolutions.md).
+  // Non sensible, meme traitement que isChef (expose a tous les roles).
+  const isCoursesMember =
+    userId && eventKitchen
+      ? (await prisma.kitchenCoursesMember.findUnique({
+          where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId } },
+        })) !== null
+      : false;
+
   const participant = userId ? await isEventParticipant(eventId, userId) : false;
 
   let currentUserKitchenRole: KitchenRole = "none";
@@ -327,6 +337,7 @@ export async function getKitchenView(eventId: string, userId: string | undefined
     equipierPlanningEnabled: eventKitchen?.equipierPlanningEnabled ?? false,
     currentUserKitchenRole,
     isChef,
+    isCoursesMember,
     meals: [] as unknown[],
   };
 

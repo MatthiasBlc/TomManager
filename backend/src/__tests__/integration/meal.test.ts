@@ -5,6 +5,7 @@ import {
   createTestEvent,
   addTestParticipant,
   loginTestUser,
+  KITCHEN_WIDE_EVENT_BOUNDS,
 } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
@@ -38,20 +39,54 @@ async function setupChef(
   return { user, cookie };
 }
 
-// Bornes par defaut de createTestEvent : 2026-06-01T10:00:00Z -> 2026-06-01T18:00:00Z
-const MEAL_PAYLOAD = {
-  name: "Tartiflette",
-  service: "DINNER" as const,
-  startDateTime: "2026-06-01T15:00:00Z",
-  endDateTime: "2026-06-01T17:00:00Z",
-};
+const SLOT_PAYLOAD = { date: "2026-06-01", service: "DINNER" as const };
+
+// Creation d'un repas assigne a un chef : desormais un parcours en 2 temps (POST
+// /meals cree un creneau orphelin, manager only ; le chef le reclame) — le parcours
+// standard depuis Evolutions.md point 1 (plus de creation directe avec chef/nom).
+async function createMealForChef(
+  eventId: string,
+  managerCookie: string[],
+  chefCookie: string[],
+  patchOverrides: Record<string, unknown> = {},
+  slotOverrides: Partial<{ date: string; service: "LUNCH" | "DINNER" }> = {}
+) {
+  const createRes = await request
+    .post(`/api/events/${eventId}/kitchen/meals`)
+    .set("Cookie", managerCookie)
+    .send({ ...SLOT_PAYLOAD, ...slotOverrides });
+  const mealId = createRes.body.data.id;
+
+  const claimRes = await request
+    .post(`/api/events/${eventId}/kitchen/meals/${mealId}/claim`)
+    .set("Cookie", chefCookie);
+
+  if (Object.keys(patchOverrides).length > 0) {
+    const patchRes = await request
+      .patch(`/api/events/${eventId}/kitchen/meals/${mealId}`)
+      .set("Cookie", managerCookie)
+      .send(patchOverrides);
+    return patchRes.body.data;
+  }
+  return claimRes.body.data;
+}
+
+async function generateAndGetMeals(eventId: string, managerCookie: string[]) {
+  await request.post(`/api/events/${eventId}/kitchen/generate`).set("Cookie", managerCookie);
+  const res = await request.get(`/api/events/${eventId}/kitchen`).set("Cookie", managerCookie);
+  return res.body.data.meals as {
+    id: string;
+    service: string;
+    chef: { id: string } | null;
+  }[];
+}
 
 describe("Meal API", () => {
-  describe("POST /api/events/:eventId/kitchen/meals", () => {
-    it("allows a chef to create their own meal", async () => {
+  describe("POST /api/events/:eventId/kitchen/meals (manager only, creneau orphelin)", () => {
+    it("rejects a chef trying to create a meal slot (endpoint reserved to the manager)", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
-      const { cookie: chefCookie, user: chefUser } = await setupChef(event.id, managerCookie, {
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
         email: "chefA@example.com",
         username: "chefA",
       });
@@ -59,152 +94,172 @@ describe("Meal API", () => {
       const res = await request
         .post(`/api/events/${event.id}/kitchen/meals`)
         .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
-
-      expect(res.status).toBe(201);
-      expect(res.body.data.name).toBe("Tartiflette");
-      expect(res.body.data.chef.id).toBe(chefUser.id);
-      expect(res.body.data.maxAssistants).toBe(0);
-    });
-
-    it("rejects a chef trying to create a meal for someone else", async () => {
-      const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
-      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
-        email: "chefB@example.com",
-        username: "chefB",
-      });
-      const { user: otherChef } = await setupChef(event.id, managerCookie, {
-        email: "chefC@example.com",
-        username: "chefC",
-      });
-
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send({ ...MEAL_PAYLOAD, chefUserId: otherChef.id });
+        .send(SLOT_PAYLOAD);
 
       expect(res.status).toBe(403);
-      expect(res.body.error.code).toBe("FORBIDDEN");
+      expect(res.body.error.code).toBe("ADMIN_REQUIRED");
     });
 
-    it("allows a manager to create a meal on behalf of a roster chef", async () => {
+    it("creates an orphan slot with derived name/hours and maxAssistants 0", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
-      const { user: chefUser } = await setupChef(event.id, managerCookie, {
-        email: "chefD@example.com",
-        username: "chefD",
-      });
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
 
       const res = await request
         .post(`/api/events/${event.id}/kitchen/meals`)
         .set("Cookie", managerCookie)
-        .send({ ...MEAL_PAYLOAD, chefUserId: chefUser.id });
+        .send(SLOT_PAYLOAD);
 
       expect(res.status).toBe(201);
-      expect(res.body.data.chef.id).toBe(chefUser.id);
+      expect(res.body.data.chef).toBeNull();
+      expect(res.body.data.maxAssistants).toBe(0);
+      expect(res.body.data.service).toBe("DINNER");
+      expect(res.body.data.name).toBeTruthy();
     });
 
-    it("rejects creation for a user not in the chef roster", async () => {
+    it("rejects a duplicate slot for the same day and service", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
-      const { user } = await addTestParticipant(event.id, {
-        email: "notchefE@example.com",
-        username: "notchefE",
-      });
-
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", managerCookie)
-        .send({ ...MEAL_PAYLOAD, chefUserId: user.id });
-
-      expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe("NOT_IN_CHEF_ROSTER");
-    });
-
-    it("rejects a second meal for the same chef (unique 1 chef/repas)", async () => {
-      const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
-      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
-        email: "chefF@example.com",
-        username: "chefF",
-      });
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
 
       await request
         .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
+        .set("Cookie", managerCookie)
+        .send(SLOT_PAYLOAD);
       const res = await request
         .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
+        .set("Cookie", managerCookie)
+        .send(SLOT_PAYLOAD);
 
       expect(res.status).toBe(409);
-      expect(res.body.error.code).toBe("MEAL_ALREADY_EXISTS");
+      expect(res.body.error.code).toBe("SLOT_ALREADY_EXISTS");
     });
 
-    it("rejects meal times outside event bounds", async () => {
+    it("rejects a slot whose default hours fall outside the event bounds", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
-      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
-        email: "chefG@example.com",
-        username: "chefG",
+      // Bornes trop etroites pour couvrir le diner par defaut (18h30-21h Paris)
+      const event = await createTestEvent(managerCookie, {
+        startDateTime: "2026-06-01T00:00:00Z",
+        endDateTime: "2026-06-01T10:00:00Z",
       });
 
       const res = await request
         .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send({ ...MEAL_PAYLOAD, startDateTime: "2026-05-31T18:00:00Z" });
+        .set("Cookie", managerCookie)
+        .send(SLOT_PAYLOAD);
 
       expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe("MEAL_START_OUT_OF_BOUNDS");
+      expect(res.body.error.code).toBe("MEAL_END_OUT_OF_BOUNDS");
     });
+  });
 
-    it("creates ingredients with find-or-create Product and utensils", async () => {
+  describe("POST /api/events/:eventId/kitchen/meals/:mealId/claim", () => {
+    it("allows a roster chef to claim an orphan slot", async () => {
       const { cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie);
-      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
-        email: "chefH@example.com",
-        username: "chefH",
+      const { cookie: chefCookie, user: chefUser } = await setupChef(event.id, managerCookie, {
+        email: "claimchefA@example.com",
+        username: "claimchefA",
       });
 
+      const meals = await generateAndGetMeals(event.id, managerCookie);
+      const orphan = meals.find((m) => m.chef === null)!;
+
       const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send({
-          ...MEAL_PAYLOAD,
-          ingredients: [
-            { name: "Reblochon", quantity: 1, unit: "PIECE" },
-            { name: "Pommes de terre", quantity: 2, unit: "KG" },
-          ],
-          utensils: [{ name: "Plat a gratin" }],
-        });
+        .post(`/api/events/${event.id}/kitchen/meals/${orphan.id}/claim`)
+        .set("Cookie", chefCookie);
 
-      expect(res.status).toBe(201);
-      expect(res.body.data.ingredients).toHaveLength(2);
-      expect(res.body.data.utensils).toHaveLength(1);
+      expect(res.status).toBe(200);
+      expect(res.body.data.chef.id).toBe(chefUser.id);
+    });
 
-      const product = await prisma.product.findUnique({ where: { name: "reblochon" } });
-      expect(product).not.toBeNull();
+    it("rejects claiming a slot that already has a chef", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie);
+      const { cookie: chef1Cookie } = await setupChef(event.id, managerCookie, {
+        email: "claimchefB@example.com",
+        username: "claimchefB",
+      });
+      const { cookie: chef2Cookie } = await setupChef(event.id, managerCookie, {
+        email: "claimchefC@example.com",
+        username: "claimchefC",
+      });
+
+      const meals = await generateAndGetMeals(event.id, managerCookie);
+      const orphan = meals.find((m) => m.chef === null)!;
+
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphan.id}/claim`)
+        .set("Cookie", chef1Cookie);
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphan.id}/claim`)
+        .set("Cookie", chef2Cookie);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("MEAL_ALREADY_CLAIMED");
+    });
+
+    it("rejects a participant who is not in the chef roster", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie);
+      await setupChef(event.id, managerCookie, {
+        email: "claimchefD@example.com",
+        username: "claimchefD",
+      });
+      const { cookie: outsiderCookie } = await addTestParticipant(event.id, {
+        email: "claimoutsider@example.com",
+        username: "claimoutsider",
+      });
+
+      const meals = await generateAndGetMeals(event.id, managerCookie);
+      const orphan = meals.find((m) => m.chef === null)!;
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphan.id}/claim`)
+        .set("Cookie", outsiderCookie);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe("NOT_IN_CHEF_ROSTER");
+    });
+
+    it("rejects a chef who already owns a meal from claiming another slot", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      // Event 3 jours -> plusieurs creneaux orphelins
+      const event = await createTestEvent(managerCookie, {
+        startDateTime: "2026-06-01T10:00:00Z",
+        endDateTime: "2026-06-03T18:00:00Z",
+      });
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "claimchefE@example.com",
+        username: "claimchefE",
+      });
+
+      const meals = await generateAndGetMeals(event.id, managerCookie);
+      const orphans = meals.filter((m) => m.chef === null);
+      expect(orphans.length).toBeGreaterThanOrEqual(2);
+
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphans[0].id}/claim`)
+        .set("Cookie", chefCookie);
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphans[1].id}/claim`)
+        .set("Cookie", chefCookie);
+
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("CHEF_ALREADY_HAS_MEAL");
     });
   });
 
   describe("PATCH /api/events/:eventId/kitchen/meals/:mealId", () => {
-    it("allows the owning chef to edit their meal", async () => {
+    it("allows the owning chef to edit their meal name", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
       const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
         email: "chefI@example.com",
         username: "chefI",
       });
-      const createRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
-      const mealId = createRes.body.data.id;
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
 
       const res = await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", chefCookie)
         .send({ name: "Tartiflette revisitee" });
 
@@ -212,18 +267,71 @@ describe("Meal API", () => {
       expect(res.body.data.name).toBe("Tartiflette revisitee");
     });
 
+    it("sets ingredients/utensils with find-or-create Product/Utensil catalogs (points 7/8)", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "chefH@example.com",
+        username: "chefH",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({
+          ingredients: [
+            { name: "Reblochon", quantity: 1, unit: "PIECE" },
+            // Quantite envoyee en string ("1.5") : z.coerce.number() l'accepte
+            // (defense en profondeur). La normalisation virgule -> point est faite
+            // cote frontend avant envoi (IngredientListInput, teste separement) ;
+            // le backend ne parse pas la virgule lui-meme.
+            { name: "Pommes de terre", quantity: "1.5", unit: "KG" },
+          ],
+          utensils: [{ name: "Plat à gratin" }],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.ingredients).toHaveLength(2);
+      expect(res.body.data.utensils).toHaveLength(1);
+      expect(Number(res.body.data.ingredients[1].quantity)).toBe(1.5);
+
+      const product = await prisma.product.findUnique({ where: { name: "reblochon" } });
+      expect(product).not.toBeNull();
+
+      // Dedup lowercase, pattern identique a Product/Tag.
+      const utensil = await prisma.utensil.findUnique({ where: { name: "plat à gratin" } });
+      expect(utensil).not.toBeNull();
+      const utensilRow = res.body.data.utensils[0];
+      expect(utensilRow.utensilId).toBe(utensil!.id);
+    });
+
+    it("rejects a chef trying to change the schedule or service (manager only)", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "chefIsched@example.com",
+        username: "chefIsched",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({ startDateTime: "2026-06-01T16:00:00Z" });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe("FORBIDDEN");
+    });
+
     it("rejects a non-owning, non-manager user", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
       const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
         email: "chefJ@example.com",
         username: "chefJ",
       });
-      const createRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
-      const mealId = createRes.body.data.id;
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
 
       const { cookie: otherCookie } = await addTestParticipant(event.id, {
         email: "outsiderK@example.com",
@@ -231,7 +339,7 @@ describe("Meal API", () => {
       });
 
       const res = await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", otherCookie)
         .send({ name: "Hack" });
 
@@ -240,19 +348,15 @@ describe("Meal API", () => {
 
     it("rejects a chef trying to set maxAssistants (manager only)", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
       const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
         email: "chefL@example.com",
         username: "chefL",
       });
-      const createRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
-      const mealId = createRes.body.data.id;
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
 
       const res = await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", chefCookie)
         .send({ maxAssistants: 5 });
 
@@ -262,19 +366,15 @@ describe("Meal API", () => {
 
     it("allows the manager to set maxAssistants", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
       const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
         email: "chefM@example.com",
         username: "chefM",
       });
-      const createRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
-      const mealId = createRes.body.data.id;
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
 
       const res = await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", managerCookie)
         .send({ maxAssistants: 3 });
 
@@ -284,16 +384,12 @@ describe("Meal API", () => {
 
     it("allows the manager to reassign an orphan meal to a free roster chef", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
       const { cookie: chefCookie, user: chefUser } = await setupChef(event.id, managerCookie, {
         email: "chefN@example.com",
         username: "chefN",
       });
-      const createRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
-      const mealId = createRes.body.data.id;
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
 
       // Le chef sort du roster -> le repas devient orphelin
       await request
@@ -306,7 +402,7 @@ describe("Meal API", () => {
       });
 
       const res = await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", managerCookie)
         .send({ chefUserId: newChef.id });
 
@@ -316,16 +412,12 @@ describe("Meal API", () => {
 
     it("rejects reassignment when the meal already has a chef (not orphan)", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
       const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
         email: "chefP@example.com",
         username: "chefP",
       });
-      const createRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
-      const mealId = createRes.body.data.id;
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
 
       const { user: otherChef } = await setupChef(event.id, managerCookie, {
         email: "chefQ@example.com",
@@ -333,7 +425,7 @@ describe("Meal API", () => {
       });
 
       const res = await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", managerCookie)
         .send({ chefUserId: otherChef.id });
 
@@ -345,18 +437,14 @@ describe("Meal API", () => {
   describe("DELETE /api/events/:eventId/kitchen/meals/:mealId", () => {
     it("deletes a meal and cascades assistants", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
       const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
         email: "chefR@example.com",
         username: "chefR",
       });
-      const createRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
-      const mealId = createRes.body.data.id;
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
       await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", managerCookie)
         .send({ maxAssistants: 2 });
 
@@ -365,17 +453,19 @@ describe("Meal API", () => {
         username: "assistantR",
       });
       await request
-        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants`)
+        .post(`/api/events/${event.id}/kitchen/meals/${meal.id}/assistants`)
         .set("Cookie", assistantCookie);
 
       const res = await request
-        .delete(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .delete(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", chefCookie);
       expect(res.status).toBe(204);
 
-      const remaining = await prisma.meal.findUnique({ where: { id: mealId } });
+      const remaining = await prisma.meal.findUnique({ where: { id: meal.id } });
       expect(remaining).toBeNull();
-      const remainingAssistants = await prisma.mealAssistant.findMany({ where: { mealId } });
+      const remainingAssistants = await prisma.mealAssistant.findMany({
+        where: { mealId: meal.id },
+      });
       expect(remainingAssistants).toHaveLength(0);
     });
   });
@@ -383,21 +473,17 @@ describe("Meal API", () => {
   describe("Meal assistants (inscription equipier)", () => {
     async function setupMealWithCapacity(capacity: number) {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
       const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
         email: `chefcap-${capacity}-${Math.random()}@example.com`,
         username: `chefcap${capacity}${Math.floor(Math.random() * 100000)}`,
       });
-      const createRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
-      const mealId = createRes.body.data.id;
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
       await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${mealId}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", managerCookie)
         .send({ maxAssistants: capacity });
-      return { event, managerCookie, mealId };
+      return { event, managerCookie, mealId: meal.id };
     }
 
     it("allows an equipier to join a meal with available seats", async () => {
@@ -439,17 +525,14 @@ describe("Meal API", () => {
 
     it("blocks a chef from registering as an assistant (exclusivity)", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
       const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
         email: "chefS@example.com",
         username: "chefS",
       });
-      const createRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chefCookie)
-        .send(MEAL_PAYLOAD);
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
       await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${createRes.body.data.id}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
         .set("Cookie", managerCookie)
         .send({ maxAssistants: 5 });
 
@@ -460,7 +543,7 @@ describe("Meal API", () => {
       const { cookie: otherChefCookie } = await loginTestUser("chefT@example.com");
 
       const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals/${createRes.body.data.id}/assistants`)
+        .post(`/api/events/${event.id}/kitchen/meals/${meal.id}/assistants`)
         .set("Cookie", otherChefCookie);
 
       expect(res.status).toBe(409);
@@ -469,18 +552,15 @@ describe("Meal API", () => {
 
     it("moves an assistant to another meal transactionally, and rejects the move if destination is full", async () => {
       const { cookie: managerCookie } = await setupManager();
-      const event = await createTestEvent(managerCookie);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
 
       const { cookie: chef1Cookie } = await setupChef(event.id, managerCookie, {
         email: "chefU@example.com",
         username: "chefU",
       });
-      const meal1Res = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chef1Cookie)
-        .send(MEAL_PAYLOAD);
+      const meal1 = await createMealForChef(event.id, managerCookie, chef1Cookie);
       await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${meal1Res.body.data.id}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal1.id}`)
         .set("Cookie", managerCookie)
         .send({ maxAssistants: 2 });
 
@@ -488,12 +568,15 @@ describe("Meal API", () => {
         email: "chefV@example.com",
         username: "chefV",
       });
-      const meal2Res = await request
-        .post(`/api/events/${event.id}/kitchen/meals`)
-        .set("Cookie", chef2Cookie)
-        .send({ ...MEAL_PAYLOAD, name: "Raclette" });
+      const meal2 = await createMealForChef(
+        event.id,
+        managerCookie,
+        chef2Cookie,
+        { name: "Raclette" },
+        { service: "LUNCH" }
+      );
       await request
-        .patch(`/api/events/${event.id}/kitchen/meals/${meal2Res.body.data.id}`)
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal2.id}`)
         .set("Cookie", managerCookie)
         .send({ maxAssistants: 1 });
 
@@ -502,7 +585,7 @@ describe("Meal API", () => {
         username: "fillerW",
       });
       await request
-        .post(`/api/events/${event.id}/kitchen/meals/${meal2Res.body.data.id}/assistants`)
+        .post(`/api/events/${event.id}/kitchen/meals/${meal2.id}/assistants`)
         .set("Cookie", fillerCookie);
 
       const { cookie: moverCookie } = await addTestParticipant(event.id, {
@@ -510,12 +593,12 @@ describe("Meal API", () => {
         username: "moverX",
       });
       await request
-        .post(`/api/events/${event.id}/kitchen/meals/${meal1Res.body.data.id}/assistants`)
+        .post(`/api/events/${event.id}/kitchen/meals/${meal1.id}/assistants`)
         .set("Cookie", moverCookie);
 
       // meal2 est deja plein (fillerW) -> le deplacement doit echouer sans desinscrire de meal1
       const moveRes = await request
-        .post(`/api/events/${event.id}/kitchen/meals/${meal2Res.body.data.id}/assistants`)
+        .post(`/api/events/${event.id}/kitchen/meals/${meal2.id}/assistants`)
         .set("Cookie", moverCookie);
       expect(moveRes.status).toBe(409);
       expect(moveRes.body.error.code).toBe("MEAL_FULL");
@@ -523,9 +606,7 @@ describe("Meal API", () => {
       const meal1Check = await request
         .get(`/api/events/${event.id}/kitchen`)
         .set("Cookie", managerCookie);
-      const meal1Data = meal1Check.body.data.meals.find(
-        (m: { id: string }) => m.id === meal1Res.body.data.id
-      );
+      const meal1Data = meal1Check.body.data.meals.find((m: { id: string }) => m.id === meal1.id);
       expect(meal1Data.assistants.map((a: { id: string }) => a.id)).toContain(
         (await prisma.user.findUnique({ where: { username: "moverX" } }))!.id
       );

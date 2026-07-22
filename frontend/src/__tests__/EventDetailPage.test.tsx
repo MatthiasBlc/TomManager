@@ -90,4 +90,38 @@ describe("EventDetailPage", () => {
     // Component should render or show error gracefully
     expect(container.firstChild).toBeInTheDocument();
   });
+
+  function mockApiGet(kitchenData: Record<string, unknown>) {
+    apiGetMock.mockImplementation((url: string) => {
+      if (url.endsWith("/kitchen")) return Promise.resolve({ data: { data: kitchenData } });
+      if (url.endsWith("/kitchen/swaps")) return Promise.resolve({ data: { data: [] } });
+      return Promise.resolve({ data: { data: baseEvent } });
+    });
+  }
+
+  it("hides the Cuisine tab for a plain USER, never chef nor admin (point 10)", async () => {
+    mockApiGet({ currentUserKitchenRole: "equipier", isChef: false, meals: [] });
+    useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });
+    renderWithRouter(<EventDetailPage />, { route: "/events/ev1" });
+    await waitFor(() => expect(screen.getAllByText("Festival JDR").length).toBeGreaterThan(0));
+    expect(screen.queryByRole("button", { name: "Cuisine" })).not.toBeInTheDocument();
+  });
+
+  it("shows the Cuisine tab for an ADMIN even without chef/manager status", async () => {
+    mockApiGet({ currentUserKitchenRole: "none", isChef: false, meals: [] });
+    useAuthMock.mockReturnValue({ user: { id: "admin1", role: "ADMIN" }, preferences: {} });
+    renderWithRouter(<EventDetailPage />, { route: "/events/ev1" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Cuisine" })).toBeInTheDocument()
+    );
+  });
+
+  it("shows the Cuisine tab for a chef who is not an admin", async () => {
+    mockApiGet({ currentUserKitchenRole: "chef", isChef: true, meals: [] });
+    useAuthMock.mockReturnValue({ user: { id: "chef1", role: "USER" } });
+    renderWithRouter(<EventDetailPage />, { route: "/events/ev1" });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Cuisine" })).toBeInTheDocument()
+    );
+  });
 });

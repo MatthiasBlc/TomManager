@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
-import { useEventSocket } from "../../hooks/useEventSocket";
+import type { KitchenViewData } from "../../hooks/useKitchenData";
+import type { MealFiche } from "./MealFichesList";
 import EmptyState from "../common/EmptyState";
 import { SkeletonCardGrid } from "../common/Skeleton";
 import { getErrorMessage } from "../../config/apiErrors";
-import { serviceLabel } from "./units";
+import { serviceLabel, dayLabel } from "./units";
 
 interface Person {
   id: string;
@@ -14,63 +15,26 @@ interface Person {
   displayName?: string | null;
 }
 
-interface BoardMeal {
-  id: string;
-  name: string;
-  service: "LUNCH" | "DINNER";
-  startDateTime: string;
-  endDateTime: string;
-  maxAssistants: number;
-  remainingSeats: number;
-  chef: Person | null;
-  assistants: Person[];
-}
-
-interface KitchenView {
-  currentUserKitchenRole: "manager" | "chef" | "equipier" | "none";
-  equipierPlanningEnabled: boolean;
-  meals: BoardMeal[];
-}
-
 const displayedName = (u: Person) => u.displayName ?? u.username;
 
-const formatDateTime = (iso: string) =>
-  new Date(iso).toLocaleString("fr-FR", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+// Jour calendaire Europe/Paris (cle de tri/regroupement), independant du fuseau
+// serveur/navigateur — meme logique que le backend (kitchenPlanning.ts zonedYMD).
+const parisDayKey = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
 
-export default function KitchenBoard({ eventId }: { eventId: string }) {
+type Service = "LUNCH" | "DINNER";
+const SERVICES: Service[] = ["LUNCH", "DINNER"];
+
+interface Props {
+  eventId: string;
+  data: KitchenViewData | null;
+  loading: boolean;
+  onChanged: () => void;
+}
+
+export default function KitchenBoard({ eventId, data, loading, onChanged: fetchKitchen }: Props) {
   const { user } = useAuth();
-  const [data, setData] = useState<KitchenView | null>(null);
-  const [loading, setLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
-
-  const fetchKitchen = useCallback(async () => {
-    try {
-      const res = await api.get(`/api/events/${eventId}/kitchen`);
-      setData(res.data.data);
-    } catch {
-      // Silencieux : le board ne bloque pas l'affichage de l'onglet Infos
-    } finally {
-      setLoading(false);
-    }
-  }, [eventId]);
-
-  useEffect(() => {
-    fetchKitchen();
-  }, [fetchKitchen]);
-
-  useEventSocket(eventId, {
-    onKitchenMealChanged: fetchKitchen,
-    onKitchenAssistantChanged: fetchKitchen,
-    onKitchenPlanningGenerated: fetchKitchen,
-    onKitchenConfigUpdated: fetchKitchen,
-    onReconnected: fetchKitchen,
-  });
 
   if (loading) return <SkeletonCardGrid count={2} />;
   if (!data) return null;
@@ -83,6 +47,9 @@ export default function KitchenBoard({ eventId }: { eventId: string }) {
   if (!canSeeBoard) return null;
 
   const currentMeal = data.meals.find((m) => m.assistants.some((a) => a.id === user?.id));
+  // Point 4 : le bouton s'inscrire/se deplacer/se desinscrire n'est jamais propose
+  // a un chef ni a un membre de l'equipe courses (role-exclusivite backend).
+  const canJoin = data.currentUserKitchenRole === "equipier" && !data.isCoursesMember;
 
   const handleJoin = async (mealId: string) => {
     setPendingAction(mealId);
@@ -110,77 +77,117 @@ export default function KitchenBoard({ eventId }: { eventId: string }) {
     }
   };
 
+  // Matrice construite depuis les repas reellement presents (pas un recalcul
+  // theorique de la grille attendue) : gere naturellement les creneaux manuels
+  // hors-grille et l'absence de generation.
+  const dayKeys = Array.from(new Set(data.meals.map((m) => parisDayKey(m.startDateTime)))).sort();
+  const dayIso = new Map(dayKeys.map((k) => [k, data.meals.find((m) => parisDayKey(m.startDateTime) === k)!.startDateTime]));
+  const cellByKey = new Map(data.meals.map((m) => [`${parisDayKey(m.startDateTime)}|${m.service}`, m]));
+
+  const renderCell = (meal: MealFiche | undefined) => {
+    if (!meal) {
+      return <div className="text-xs opacity-30 italic px-1">—</div>;
+    }
+    const isCurrent = currentMeal?.id === meal.id;
+    const isFull = meal.remainingSeats <= 0;
+    return (
+      <div className="space-y-1 min-w-[9rem]">
+        <p className="font-semibold text-sm">{meal.name}</p>
+        <p className="text-xs opacity-70">{meal.chef ? displayedName(meal.chef) : "Sans chef"}</p>
+        <p className="text-xs opacity-70">
+          Équipiers :{" "}
+          {meal.assistants.length > 0
+            ? meal.assistants.map(displayedName).join(", ")
+            : "aucun équipier"}{" "}
+          ({meal.assistants.length}/{meal.maxAssistants})
+        </p>
+        {canJoin && (
+          <div className="pt-1">
+            {isCurrent ? (
+              <button
+                className="btn btn-outline btn-warning btn-xs"
+                disabled={!!pendingAction}
+                onClick={() => handleLeave(meal.id)}
+              >
+                {pendingAction === meal.id && <span className="loading loading-spinner loading-xs" />}
+                Se désinscrire
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary btn-xs"
+                disabled={!!pendingAction || isFull}
+                onClick={() => handleJoin(meal.id)}
+              >
+                {pendingAction === meal.id && <span className="loading loading-spinner loading-xs" />}
+                {isFull ? "Complet" : currentMeal ? "Se déplacer ici" : "S'inscrire"}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="card bg-base-100 shadow-sm">
       <div className="card-body p-4 md:p-6">
         <h3 className="card-title text-base md:text-lg">Planning cuisine</h3>
+
+        {canJoin && !currentMeal && (
+          <div className="alert alert-info py-2 text-sm">
+            <span>🍳 Tu n'as pas encore choisi ton créneau de cuisine !</span>
+          </div>
+        )}
+
         {data.meals.length === 0 ? (
           <EmptyState icon={<span>🍽️</span>} title="Aucun repas planifié pour l'instant" />
         ) : (
-          <div className="space-y-3 mt-2">
-            {data.meals.map((meal) => {
-              const isCurrent = currentMeal?.id === meal.id;
-              const isFull = meal.remainingSeats <= 0;
-              return (
-                <div key={meal.id} className="card bg-base-200 shadow-none">
-                  <div className="card-body p-3">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div>
-                        <h4 className="font-semibold text-sm flex items-center gap-2">
-                          {meal.name}
-                          <span className="badge badge-outline badge-sm">
-                            {serviceLabel(meal.service)}
-                          </span>
-                          {!meal.chef && (
-                            <span className="badge badge-warning badge-sm">sans chef</span>
-                          )}
-                        </h4>
-                        <p className="text-xs opacity-70 mt-0.5">
-                          {meal.chef ? displayedName(meal.chef) : "Sans chef"} ·{" "}
-                          {formatDateTime(meal.startDateTime)} → {formatDateTime(meal.endDateTime)}
-                        </p>
+          <>
+            {/* Desktop : matrice jour (colonnes) x service (lignes) */}
+            <div className="hidden md:block overflow-x-auto mt-2">
+              <table className="table table-sm border border-base-300">
+                <thead>
+                  <tr>
+                    <th className="bg-base-200"></th>
+                    {dayKeys.map((k) => (
+                      <th key={k} className="bg-base-200 capitalize">
+                        {dayLabel(dayIso.get(k)!)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {SERVICES.map((service) => (
+                    <tr key={service}>
+                      <th className="bg-base-200 align-top">{serviceLabel(service)}</th>
+                      {dayKeys.map((k) => (
+                        <td key={k} className="align-top">
+                          {renderCell(cellByKey.get(`${k}|${service}`))}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile : une carte par jour, sous-lignes Midi/Soir */}
+            <div className="md:hidden space-y-3 mt-2">
+              {dayKeys.map((k) => (
+                <div key={k} className="card bg-base-200 shadow-none">
+                  <div className="card-body p-3 space-y-2">
+                    <h4 className="font-semibold text-sm capitalize">{dayLabel(dayIso.get(k)!)}</h4>
+                    {SERVICES.map((service) => (
+                      <div key={service} className="border-t border-base-300 pt-2 first:border-t-0 first:pt-0">
+                        <p className="text-xs font-medium opacity-60 mb-1">{serviceLabel(service)}</p>
+                        {renderCell(cellByKey.get(`${k}|${service}`))}
                       </div>
-                      <span className="badge badge-ghost badge-sm shrink-0">
-                        {meal.assistants.length}/{meal.maxAssistants} places
-                      </span>
-                    </div>
-
-                    {meal.assistants.length > 0 && (
-                      <p className="text-xs opacity-70 mt-2">
-                        Inscrits : {meal.assistants.map(displayedName).join(", ")}
-                      </p>
-                    )}
-
-                    <div className="mt-2">
-                      {isCurrent ? (
-                        <button
-                          className="btn btn-outline btn-warning btn-xs"
-                          disabled={!!pendingAction}
-                          onClick={() => handleLeave(meal.id)}
-                        >
-                          {pendingAction === meal.id && (
-                            <span className="loading loading-spinner loading-xs" />
-                          )}
-                          Se désinscrire
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-primary btn-xs"
-                          disabled={!!pendingAction || isFull}
-                          onClick={() => handleJoin(meal.id)}
-                        >
-                          {pendingAction === meal.id && (
-                            <span className="loading loading-spinner loading-xs" />
-                          )}
-                          {isFull ? "Complet" : currentMeal ? "Se déplacer ici" : "S'inscrire"}
-                        </button>
-                      )}
-                    </div>
+                    ))}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -1,73 +1,51 @@
-import { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import api from "../../config/api";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAdminRights } from "../../hooks/useAdminRights";
-import { useEventSocket } from "../../hooks/useEventSocket";
+import type { KitchenViewData } from "../../hooks/useKitchenData";
 import { SkeletonCardGrid } from "../common/Skeleton";
 import EmptyState from "../common/EmptyState";
 import KitchenManagementPanel from "./KitchenManagementPanel";
 import KitchenDashboard from "./KitchenDashboard";
-import MealFichesList, { type MealFiche } from "./MealFichesList";
-import MealFormModal from "./MealFormModal";
-
-interface KitchenView {
-  eventKitchenId: string | null;
-  chefRoleId: string | null;
-  equipierPlanningEnabled: boolean;
-  currentUserKitchenRole: "manager" | "chef" | "equipier" | "none";
-  isChef: boolean;
-  meals: MealFiche[];
-  allergiesNotes?: string | null;
-  chefs?: {
-    id: string;
-    username: string;
-    displayName?: string | null;
-    source: "ROLE" | "MANUAL";
-  }[];
-  coursesMembers?: { id: string; username: string; displayName?: string | null }[];
-  unassigned?: { id: string; username: string; displayName?: string | null }[];
-  dashboard?: { chefsCount: number; coursesCount: number; unassignedCount: number };
-}
+import MealFicheEditor from "./MealFicheEditor";
+import MealClaimSelect from "./MealClaimSelect";
+import MealSwapPanel, { type SwapRequest } from "./MealSwapPanel";
 
 interface Props {
   eventId: string;
   eventStartDate?: string;
   eventEndDate?: string;
+  data: KitchenViewData | null;
+  swaps: SwapRequest[];
+  loading: boolean;
+  onChanged: () => void;
 }
 
 type Section = "gestion" | "mon-repas";
 
-export default function KitchenTab({ eventId, eventStartDate, eventEndDate }: Props) {
+export default function KitchenTab({
+  eventId,
+  eventStartDate,
+  eventEndDate,
+  data,
+  swaps,
+  loading,
+  onChanged: fetchKitchen,
+}: Props) {
   const { user } = useAuth();
   const { isAdmin } = useAdminRights();
-  const [data, setData] = useState<KitchenView | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showCreateMeal, setShowCreateMeal] = useState(false);
   const [section, setSection] = useState<Section>("gestion");
+  const hasAutoSelected = useRef(false);
 
-  const fetchKitchen = useCallback(async () => {
-    try {
-      const res = await api.get(`/api/events/${eventId}/kitchen`);
-      setData(res.data.data);
-    } catch {
-      toast.error("Échec du chargement du module cuisine");
-    } finally {
-      setLoading(false);
-    }
-  }, [eventId]);
-
+  // Point 5 : un utilisateur qui cumule responsable ET chef atterrit sur "Mon
+  // repas" en premier. Ne s'execute qu'une fois (des que les donnees sont
+  // chargees) pour ne pas ecraser un changement d'onglet manuel ulterieur.
   useEffect(() => {
-    fetchKitchen();
-  }, [fetchKitchen]);
-
-  useEventSocket(eventId, {
-    onKitchenConfigUpdated: fetchKitchen,
-    onKitchenMealChanged: fetchKitchen,
-    onKitchenAssistantChanged: fetchKitchen,
-    onKitchenPlanningGenerated: fetchKitchen,
-    onReconnected: fetchKitchen,
-  });
+    if (hasAutoSelected.current || !data) return;
+    hasAutoSelected.current = true;
+    if (data.currentUserKitchenRole === "manager" && data.isChef) {
+      setSection("mon-repas");
+    }
+  }, [data]);
 
   if (loading) return <SkeletonCardGrid count={2} />;
   if (!data) return null;
@@ -101,7 +79,9 @@ export default function KitchenTab({ eventId, eventStartDate, eventEndDate }: Pr
 
   const myMeal = data.meals.find((m) => m.chef?.id === user?.id) ?? null;
   const showManagement = isManager && (!isChefUser || section === "gestion");
-  const showCreateCta = isChefUser && !myMeal && (!isManager || section === "mon-repas");
+  // Parcours chef : choisir un creneau de la grille tant qu'il n'a pas de repas,
+  // puis proposer/recevoir un echange une fois son creneau reclame.
+  const showChefTools = isChefUser && (!isManager || section === "mon-repas");
 
   return (
     <div className="space-y-6">
@@ -133,42 +113,42 @@ export default function KitchenTab({ eventId, eventStartDate, eventEndDate }: Pr
           unassigned={data.unassigned ?? []}
           meals={data.meals}
           onChanged={fetchKitchen}
-        />
-      )}
-
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-sm">Fiches repas</h3>
-          {showCreateCta && (
-            <button className="btn btn-primary btn-sm" onClick={() => setShowCreateMeal(true)}>
-              Créer mon repas
-            </button>
-          )}
-        </div>
-        {data.allergiesNotes && (
-          <div className="alert alert-warning mb-3 text-sm py-2">
-            <span>Allergies : {data.allergiesNotes}</span>
-          </div>
-        )}
-        <MealFichesList
-          eventId={eventId}
-          meals={data.meals}
-          currentUserId={user?.id}
-          isKitchenManager={isManager}
-          onChanged={fetchKitchen}
           eventStartDate={eventStartDate}
           eventEndDate={eventEndDate}
         />
-      </div>
+      )}
 
-      <MealFormModal
-        open={showCreateMeal}
-        onClose={() => setShowCreateMeal(false)}
-        onSaved={fetchKitchen}
-        eventId={eventId}
-        eventStartDate={eventStartDate}
-        eventEndDate={eventEndDate}
-      />
+      {showChefTools && (
+        <div className="space-y-4">
+          {/* Point 1 : allergies toujours visibles en haut de "Mon repas". */}
+          {data.allergiesNotes && (
+            <div className="alert alert-warning text-sm py-2">
+              <span>Allergies : {data.allergiesNotes}</span>
+            </div>
+          )}
+
+          {!myMeal && <MealClaimSelect eventId={eventId} meals={data.meals} onClaimed={fetchKitchen} />}
+
+          {myMeal && (
+            <MealFicheEditor
+              eventId={eventId}
+              meal={myMeal}
+              canEditSchedule={false}
+              onChanged={fetchKitchen}
+            />
+          )}
+
+          {myMeal && user && (
+            <MealSwapPanel
+              eventId={eventId}
+              meals={data.meals}
+              currentUserId={user.id}
+              swaps={swaps}
+              onChanged={fetchKitchen}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

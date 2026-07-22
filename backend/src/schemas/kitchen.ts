@@ -30,7 +30,9 @@ const isoDatetime = z.string().refine((s) => !isNaN(Date.parse(s)), "Invalid dat
 
 const ingredientSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be at most 100 characters"),
-  quantity: z.number().positive("Quantity must be positive").max(100000),
+  // coerce : filet de securite si une valeur non-normalisee arrive (le frontend
+  // normalise deja virgule/point avant envoi, cf IngredientListInput point 8).
+  quantity: z.coerce.number().positive("Quantity must be positive").max(100000),
   unit: z.enum(["G", "KG", "ML", "CL", "L", "CAS", "CAC", "PIECE"]),
 });
 
@@ -38,14 +40,19 @@ const utensilSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be at most 100 characters"),
 });
 
+// Creation manuelle hors-grille (manager only) : ne produit qu'un creneau orphelin
+// (jour + service), au meme titre qu'un creneau de la grille generee. Nom/horaires
+// sont derives par le backend (buildManualSlot) ; le reste (nom du repas,
+// ingredients, ustensiles) s'edite ensuite via PATCH, une fois le creneau reclame.
 export const createMealSchema = z.object({
-  chefUserId: z.string().uuid("Invalid user ID").optional(),
-  name: z.string().min(1, "Name is required").max(150, "Name must be at most 150 characters"),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
   service: z.enum(["LUNCH", "DINNER"]),
-  startDateTime: isoDatetime,
-  endDateTime: isoDatetime,
-  ingredients: z.array(ingredientSchema).max(50).optional(),
-  utensils: z.array(utensilSchema).max(50).optional(),
+});
+
+export const createSwapRequestSchema = z.object({
+  targetMealId: z.string().uuid("Invalid meal ID"),
 });
 
 export const updateMealSchema = z

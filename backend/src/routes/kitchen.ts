@@ -7,6 +7,7 @@ import {
 } from "../middleware/auth";
 import * as kitchenController from "../controllers/kitchen";
 import * as mealController from "../controllers/meal";
+import * as mealSwapController from "../controllers/mealSwap";
 import { validateBody, validateUUID } from "../middleware/validateBody";
 import {
   updateKitchenConfigSchema,
@@ -14,6 +15,7 @@ import {
   addKitchenCoursesMemberSchema,
   createMealSchema,
   updateMealSchema,
+  createSwapRequestSchema,
 } from "../schemas/kitchen";
 
 const router = Router();
@@ -77,11 +79,13 @@ router.post(
   kitchenController.generate
 );
 
+// Creation manuelle hors-grille : reservee au manager (filet de securite pour un
+// repas atypique). Le parcours chef standard passe par la matrice + claim.
 router.post(
   "/:eventId/kitchen/meals",
   requireAuth,
   validateUUID("eventId"),
-  requireEventParticipant,
+  requireKitchenManager,
   validateBody(createMealSchema),
   mealController.create
 );
@@ -103,6 +107,16 @@ router.delete(
   mealController.remove
 );
 
+// Un chef du roster reclame un creneau orphelin de la grille (le controle roster est
+// fait dans le service ; requireMealChefOrManager bloquerait un non-owner ici).
+router.post(
+  "/:eventId/kitchen/meals/:mealId/claim",
+  requireAuth,
+  validateUUID("eventId", "mealId"),
+  requireEventParticipant,
+  mealController.claim
+);
+
 router.post(
   "/:eventId/kitchen/meals/:mealId/assistants",
   requireAuth,
@@ -117,6 +131,49 @@ router.delete(
   validateUUID("eventId", "mealId"),
   requireEventParticipant,
   mealController.leave
+);
+
+// Echange de creneau entre deux chefs (confirmation mutuelle). Le controle fin (etre
+// le bon chef) est fait dans le service.
+router.get(
+  "/:eventId/kitchen/swaps",
+  requireAuth,
+  validateUUID("eventId"),
+  requireEventParticipant,
+  mealSwapController.list
+);
+
+router.post(
+  "/:eventId/kitchen/swaps",
+  requireAuth,
+  validateUUID("eventId"),
+  requireEventParticipant,
+  validateBody(createSwapRequestSchema),
+  mealSwapController.create
+);
+
+router.post(
+  "/:eventId/kitchen/swaps/:swapRequestId/accept",
+  requireAuth,
+  validateUUID("eventId", "swapRequestId"),
+  requireEventParticipant,
+  mealSwapController.accept
+);
+
+router.post(
+  "/:eventId/kitchen/swaps/:swapRequestId/reject",
+  requireAuth,
+  validateUUID("eventId", "swapRequestId"),
+  requireEventParticipant,
+  mealSwapController.reject
+);
+
+router.post(
+  "/:eventId/kitchen/swaps/:swapRequestId/cancel",
+  requireAuth,
+  validateUUID("eventId", "swapRequestId"),
+  requireEventParticipant,
+  mealSwapController.cancel
 );
 
 export default router;

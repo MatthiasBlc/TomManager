@@ -22,8 +22,10 @@ src/
 │   ├── eventBoardGame.ts  # add, list, remove event board games
 │   ├── notification.ts    # list, unreadCount, markAsRead, markAllAsRead, delete
 │   ├── kitchen.ts         # module cuisine (CookV1) : GET config, PATCH config, chefs, courses, generate
-│   ├── meal.ts            # CRUD repas + inscriptions equipier (CookV1)
-│   └── product.ts         # autocomplete produits ingredients (CookV1)
+│   ├── meal.ts            # CRUD repas (creation = creneau orphelin jour+service) + claim + inscriptions equipier (CookV1)
+│   ├── mealSwap.ts        # echange de creneau chefs : create/list/accept/reject/cancel (CookV1)
+│   ├── product.ts         # autocomplete produits ingredients (CookV1)
+│   └── utensil.ts         # autocomplete ustensiles (CookV1, Evolutions.md point 7)
 ├── middleware/
 │   ├── auth.ts            # requireAuth, requireAdmin, requireEventParticipant, requireEventCreator, requireTableGMOrAdmin, requireKitchenManager, requireMealChefOrManager
 │   ├── errorHandler.ts    # Global error handler
@@ -43,6 +45,7 @@ src/
 │   ├── notification.ts    # Notification routes (list, count, read, readAll, delete)
 │   ├── kitchen.ts         # Kitchen + meal routes (config, chefs, courses, meals CRUD, assistants)
 │   ├── product.ts         # GET /api/kitchen/products (autocomplete)
+│   ├── utensil.ts         # GET /api/kitchen/utensils (autocomplete, CookV1)
 │   └── test.ts            # Seed E2E (seed-admin, seed-participant) — test/dev only
 ├── schemas/
 │   ├── auth.ts            # loginSchema (zod)
@@ -50,7 +53,7 @@ src/
 │   ├── gameTable.ts       # create/update table + status schemas
 │   ├── preference.ts      # PREFERENCE_KEYS (liste blanche) + updatePreferencesSchema
 │   ├── boardGame.ts       # boardgame schemas + updateBoardGameAdminSchema + mergeSchema
-│   └── kitchen.ts         # config, chef/courses member, create/update meal (ingredients/utensils)
+│   └── kitchen.ts         # config, chef/courses member, create/update meal, createSwapRequestSchema (ingredients/utensils)
 ├── services/
 │   ├── auth.ts            # Auth business logic
 │   ├── discordAuth.ts     # OAuth Discord (token exchange, role sync, link/unlink)
@@ -66,9 +69,11 @@ src/
 │   ├── eventBoardGame.ts  # EventBoardGame CRUD (add/list/remove per event)
 │   ├── notification.ts    # Notification CRUD, bulk create, cursor pagination
 │   ├── kitchen.ts         # Config + roster chef (manuel/role) + courses + vue par role, meals enrichis conflits (CookV1)
-│   ├── meal.ts            # Meal CRUD, ingredients/ustensiles (remplacement), join/move/leave transactionnel (CookV1)
+│   ├── meal.ts            # Meal CRUD (creation manuelle = creneau orphelin, buildManualSlot), claimMeal, join/move/leave transactionnel ; champs structurants manager-only (CookV1)
+│   ├── mealSwap.ts        # Echange de creneau entre chefs : create/list/accept/reject/cancel, transaction de swap recette (CookV1)
 │   ├── product.ts         # Product find-or-create + search, pattern Tag (CookV1)
-│   ├── kitchenPlanning.ts # Generation planning : computeMealCapacities (pur) + generatePlanning (CookV1)
+│   ├── utensil.ts         # Utensil find-or-create + search, pattern Product/Tag (CookV1, Evolutions.md point 7)
+│   ├── kitchenPlanning.ts # Generation planning : computeExpectedSlots (grille Paris) + computeMealCapacities + generatePlanning idempotent + buildManualSlot/slotKey (reutilises par meal.ts createMeal) (CookV1)
 │   └── conflicts.ts       # Moteur de conflits UNIFIE tables+cuisine : getEventOccupations + computeConflicts (CookV1 Lot F), partage par gameTable.ts et kitchen.ts
 ├── socket/
 │   ├── index.ts           # Socket.io setup, session auth, room handlers (event + user rooms), getIO()
@@ -86,11 +91,11 @@ src/
         ├── event.test.ts, gameTable.test.ts, participant.test.ts
         ├── boardGame.test.ts, eventBoardGame.test.ts, adminBoardGame.test.ts
         ├── socket.test.ts, notification.test.ts, validation.test.ts, preference.test.ts
-        ├── kitchen.test.ts, meal.test.ts, kitchenPlanning.test.ts
+        ├── kitchen.test.ts, meal.test.ts (create manager-only + claim), mealSwap.test.ts, kitchenPlanning.test.ts (grille + idempotence)
         └── kitchenConflicts.test.ts (conflits cross-domaine tables<->cuisine), kitchenPurge.test.ts (purge etendue, sync ROLE mockee)
 ```
 
-Unitaires purs (`src/__tests__/unit/`) : `kitchenPlanning.test.ts` (computeMealCapacities), `conflicts.test.ts` (computeConflicts).
+Unitaires purs (`src/__tests__/unit/`) : `kitchenPlanning.test.ts` (computeMealCapacities + computeExpectedSlots), `conflicts.test.ts` (computeConflicts).
 
 ## Discord Bot (discord-bot/src/)
 
@@ -140,7 +145,8 @@ src/
 │   │   ├── EmptyState.tsx         # Reusable empty state (icon + title + description + CTA)
 │   │   ├── ScrollToTop.tsx        # window.scrollTo(0,0) au changement de pathname
 │   │   ├── ConfirmModal.tsx       # Dialogue de confirmation themable (variant danger/warning/neutral)
-│   │   └── NumberStepper.tsx      # +/- numeric input (min/max/step)
+│   │   ├── NumberStepper.tsx      # +/- numeric input (min/max/step)
+│   │   └── ChipAutocompleteInput.tsx # Chips + autocomplete generique (extrait de TagInput) : searchEndpoint/labels parametres, reutilise par TagInput et UtensilListInput (CookV1)
 │   ├── notifications/
 │   │   ├── NotificationBell.tsx   # Bell icon + badge + dropdown
 │   │   └── NotificationItem.tsx   # Single notification item with icon, nav, delete
@@ -159,7 +165,7 @@ src/
 │   │   ├── EditTableModal.tsx     # Modal for editing tables
 │   │   ├── TableCard.tsx          # Table summary card
 │   │   ├── TableDetailModal.tsx   # Detail table (join/leave, gestion joueurs si GM/admin)
-│   │   ├── TagInput.tsx           # Tag autocomplete multi-select
+│   │   ├── TagInput.tsx           # Tag autocomplete multi-select (wrapper fin sur common/ChipAutocompleteInput)
 │   │   ├── BoardGameSelector.tsx  # Selection jeu pour une table
 │   │   ├── TimelineView.tsx       # Chronological table list grouped by date + creneaux cuisine (CookV1 Lot F)
 │   │   ├── CalendarView.tsx       # FullCalendar timegrid (drag/resize si GM/admin, multi-day, mobile nav) + creneaux cuisine lecture seule
@@ -177,14 +183,17 @@ src/
 │       ├── ManualBoardGameForm.tsx    # Manual creation form
 │       └── PoweredByBGG.tsx           # Attribution BGG
 │   └── kitchen/                       # Module cuisine (CookV1) — onglet "Cuisine" + board dans "Infos"
-│       ├── KitchenTab.tsx             # Racine onglet Cuisine : fetch, socket, matrice de visibilite
-│       ├── KitchenManagementPanel.tsx # Gestion (responsable RW / admin R) : config, roster, courses, generate, reassignation
-│       ├── KitchenBoard.tsx           # Board (onglet Infos) : liste repas + inscription/deplacement/desinscription equipier
-│       ├── MealFichesList.tsx         # Liste des fiches repas (edit proprietaire/manager, capacite manager)
-│       ├── MealFormModal.tsx          # Creation/edition d'un repas (nom, service, horaires, ingredients, ustensiles)
-│       ├── IngredientListInput.tsx    # Lignes ingredient (nom + quantite + unite), autocomplete Product
-│       ├── UtensilListInput.tsx       # Liste libre d'ustensiles (tags, sans autocomplete)
-│       └── units.ts                   # UNIT_OPTIONS/SERVICE_OPTIONS + labels francais
+│       ├── KitchenTab.tsx             # Racine onglet Cuisine (donnees en props via useKitchenData) : redirige chef+manager sur "Mon repas" ; "Mon repas" = allergies + (claim ou MealFicheEditor de sa seule fiche) + swap, jamais la liste complete (point 6)
+│       ├── KitchenManagementPanel.tsx # Gestion (responsable RW / admin R) : config, roster, courses, generate (grille), creation manuelle (CreateMealSlotModal), reassignation, + liste complete des fiches (MealFichesList, manager only)
+│       ├── KitchenBoard.tsx           # Board (onglet Infos, donnees en props) : matrice jour x service (desktop table / cartes mobiles), inscription/deplacement/desinscription equipier (jamais propose a un chef/membre courses), banniere "choisis ton creneau"
+│       ├── MealClaimSelect.tsx        # Chef sans repas : liste deroulante des creneaux (groupes par jour, pris grises) -> claim
+│       ├── MealSwapPanel.tsx          # Chef avec repas : proposer un echange + accepter/refuser/annuler (demandes PENDING)
+│       ├── MealFichesList.tsx         # Wrapper Gestion-only : une MealFicheEditor (canEditSchedule) par repas, jamais utilise dans "Mon repas"
+│       ├── MealFicheEditor.tsx        # Fiche editable inline, autosave par champ (useDebouncedSave, pas de bouton) : nom/ingredients/ustensiles (chef+manager), service/horaires/capacite (manager only), suppression
+│       ├── CreateMealSlotModal.tsx    # Creation manuelle hors-grille (manager, mini-modale jour+service) : cree un creneau orphelin, nom/horaires derives backend
+│       ├── IngredientListInput.tsx    # Lignes ingredient (nom + quantite + unite), autocomplete Product, quantite virgule/point (point 8)
+│       ├── UtensilListInput.tsx       # Chips + autocomplete Utensil (wrapper sur common/ChipAutocompleteInput, point 7)
+│       └── units.ts                   # UNIT_OPTIONS/SERVICE_OPTIONS + labels francais + dayLabel
 ├── hooks/
 │   ├── useSocket.ts             # Socket.io singleton connection
 │   ├── useEventSocket.ts        # Join/leave event room, listen to events (dont kitchen:*, CookV1)
@@ -194,7 +203,9 @@ src/
 │   ├── useTheme.ts              # Dark/light mode, localStorage, data-theme sur <html>
 │   ├── useModalA11y.ts          # A11y modales : Echap, focus trap, auto-focus, restore focus (pile de modales)
 │   ├── usePageTitle.ts          # document.title par page ("<titre> - TomManager")
-│   └── useAdminRights.ts        # Droits admin opt-in derives des preferences (canManageEvents, canModerateTables, canModerateGames, isKitchenManager, pdfExportEnabled, gameDbEnabled)
+│   ├── useAdminRights.ts        # Droits admin opt-in derives des preferences (canManageEvents, canModerateTables, canModerateGames, isKitchenManager, pdfExportEnabled, gameDbEnabled)
+│   ├── useKitchenData.ts        # GET /kitchen + /kitchen/swaps + wiring socket kitchen:*, partage entre EventDetailPage (visibilite onglet) / KitchenBoard / KitchenTab (evite les doubles fetch, CookV1)
+│   └── useDebouncedSave.ts      # Sauvegarde a la volee generique (debounce + statut idle/saving/saved/error), utilise par MealFicheEditor (CookV1)
 ├── contexts/
 │   ├── AuthContext.tsx     # AuthProvider, useAuth hook (login, logout, Discord link/unlink, preferences + updatePreferences optimiste)
 │   ├── ConfirmContext.tsx  # ConfirmProvider + useConfirm : confirmDialog(options) -> Promise<boolean>
@@ -206,7 +217,7 @@ src/
 │   ├── LoginPage.tsx             # Login form (identifier + password, bouton Discord)
 │   ├── OAuthPopupCallbackPage.tsx # Callback popup OAuth Discord
 │   ├── EventListPage.tsx         # /events — event cards grid (bouton creer si admin)
-│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info(+KitchenBoard)/planning/games/participants/kitchen
+│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info(+KitchenBoard)/planning/games/participants/kitchen ; useKitchenData partage, onglet Cuisine masque si ni admin ni chef ni manager
 │   ├── PlanningPage.tsx          # /events/:eventId/planning — timeline view + create table
 │   ├── ProfilePage.tsx           # /profile — compte, theme, droits d'administration (toggles + master), Discord
 │   └── NotFoundPage.tsx          # 404

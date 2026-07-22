@@ -8,6 +8,8 @@ import {
   USER_SELECT,
 } from "./kitchen";
 import { findOrCreateProducts } from "./product";
+import { findOrCreateUtensils } from "./utensil";
+import { buildManualSlot, slotKey } from "./kitchenPlanning";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -22,13 +24,8 @@ interface UtensilInput {
 }
 
 interface CreateMealInput {
-  chefUserId?: string;
-  name: string;
+  date: string;
   service: "LUNCH" | "DINNER";
-  startDateTime: string;
-  endDateTime: string;
-  ingredients?: IngredientInput[];
-  utensils?: UtensilInput[];
 }
 
 interface UpdateMealInput {
@@ -76,7 +73,7 @@ function serializeMeal(meal: {
   };
 }
 
-async function getMealDetail(mealId: string) {
+export async function getMealDetail(mealId: string) {
   const meal = await prisma.meal.findUnique({ where: { id: mealId }, include: MEAL_INCLUDE });
   if (!meal) {
     throw createError(404, "Meal not found", { code: "MEAL_NOT_FOUND" });
@@ -136,62 +133,55 @@ async function replaceIngredientsAndUtensils(
   if (utensils !== undefined) {
     await tx.mealUtensil.deleteMany({ where: { mealId } });
     if (utensils.length > 0) {
+      const catalog = await findOrCreateUtensils(
+        utensils.map((u) => u.name),
+        tx
+      );
+      const utensilByName = new Map(catalog.map((u) => [u.name, u]));
       await tx.mealUtensil.createMany({
-        data: utensils.map((u) => ({ mealId, name: u.name })),
+        data: utensils.map((u) => ({
+          mealId,
+          utensilId: utensilByName.get(u.name.trim().toLowerCase())?.id ?? null,
+          name: u.name,
+        })),
       });
     }
   }
 }
 
-export async function createMeal(eventId: string, actingUserId: string, data: CreateMealInput) {
+// Creation manuelle d'un creneau hors-grille (manager only, Evolutions.md point 1) :
+// produit un creneau orphelin identique a un creneau genere (meme convention de nom/
+// horaires, meme cle d'anti-doublon), reclame et edite ensuite comme n'importe quel
+// autre creneau de la grille (claim, puis PATCH par le chef/le manager).
+export async function createMeal(eventId: string, data: CreateMealInput) {
   await getEventOr404(eventId);
   const eventKitchen = await getOrCreateEventKitchen(eventId);
 
-  const isManager = await isKitchenManagerUser(actingUserId);
-  let targetChefUserId = data.chefUserId ?? actingUserId;
+  const slot = buildManualSlot(data.date, data.service);
+  await assertBoundsAndOrder(eventId, slot.startDateTime, slot.endDateTime);
 
-  if (!isManager && data.chefUserId && data.chefUserId !== actingUserId) {
-    throw createError(403, "Only a kitchen manager can create a meal for another chef", {
-      code: "FORBIDDEN",
+  // Anti-doublon jour+service : meme cle que la grille generee (generatePlanning).
+  const siblings = await prisma.meal.findMany({
+    where: { eventKitchenId: eventKitchen.id, service: data.service },
+    select: { startDateTime: true, service: true },
+  });
+  const key = slotKey(slot.startDateTime, slot.service);
+  if (siblings.some((m) => slotKey(m.startDateTime, m.service as "LUNCH" | "DINNER") === key)) {
+    throw createError(409, "A meal slot already exists for this day and service", {
+      code: "SLOT_ALREADY_EXISTS",
     });
   }
-  if (!isManager) {
-    targetChefUserId = actingUserId;
-  }
 
-  const chefRow = await prisma.kitchenChef.findUnique({
-    where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: targetChefUserId } },
-  });
-  if (!chefRow) {
-    throw createError(400, "Target user is not in the chef roster", { code: "NOT_IN_CHEF_ROSTER" });
-  }
-
-  const existingMeal = await prisma.meal.findUnique({
-    where: {
-      eventKitchenId_chefUserId: { eventKitchenId: eventKitchen.id, chefUserId: targetChefUserId },
+  const meal = await prisma.meal.create({
+    data: {
+      eventKitchenId: eventKitchen.id,
+      chefUserId: null,
+      name: slot.name,
+      service: slot.service,
+      startDateTime: slot.startDateTime,
+      endDateTime: slot.endDateTime,
+      maxAssistants: 0,
     },
-  });
-  if (existingMeal) {
-    throw createError(409, "This chef already has a meal", { code: "MEAL_ALREADY_EXISTS" });
-  }
-
-  const start = new Date(data.startDateTime);
-  const end = new Date(data.endDateTime);
-  await assertBoundsAndOrder(eventId, start, end);
-
-  const meal = await prisma.$transaction(async (tx) => {
-    const created = await tx.meal.create({
-      data: {
-        eventKitchenId: eventKitchen.id,
-        chefUserId: targetChefUserId,
-        name: data.name,
-        service: data.service,
-        startDateTime: start,
-        endDateTime: end,
-      },
-    });
-    await replaceIngredientsAndUtensils(tx, created.id, data.ingredients, data.utensils);
-    return created;
   });
 
   emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: meal.id });
@@ -216,10 +206,20 @@ export async function updateMeal(
   const isManager = await isKitchenManagerUser(actingUserId);
   const isOwner = meal.chefUserId === actingUserId;
 
-  if ((data.maxAssistants !== undefined || data.chefUserId !== undefined) && !isManager) {
-    throw createError(403, "Only a kitchen manager can reassign the chef or set the capacity", {
-      code: "FORBIDDEN",
-    });
+  // Champs structurants (chef, capacite, horaires, service) reserves au manager : ils
+  // definissent la grille generee ; le chef n'edite que name/ingredients/utensils.
+  const touchesManagerOnly =
+    data.maxAssistants !== undefined ||
+    data.chefUserId !== undefined ||
+    data.startDateTime !== undefined ||
+    data.endDateTime !== undefined ||
+    data.service !== undefined;
+  if (touchesManagerOnly && !isManager) {
+    throw createError(
+      403,
+      "Only a kitchen manager can change the chef, capacity, schedule or service",
+      { code: "FORBIDDEN" }
+    );
   }
   if (!isManager && !isOwner) {
     throw createError(403, "Only the meal chef or a kitchen manager can edit this meal", {
@@ -298,6 +298,45 @@ export async function deleteMeal(eventId: string, mealId: string) {
 
 async function lockMealRow(tx: TxClient, mealId: string) {
   await tx.$queryRaw`SELECT id FROM "Meal" WHERE id = ${mealId} FOR UPDATE`;
+}
+
+// Un chef du roster reclame un creneau orphelin de la grille generee. Le verrou de
+// ligne serialise deux reclamations concurrentes sur le meme creneau (le 2e voit le
+// creneau deja pris).
+export async function claimMeal(eventId: string, mealId: string, chefUserId: string) {
+  await getEventOr404(eventId);
+  const eventKitchen = await getOrCreateEventKitchen(eventId);
+
+  const chefRow = await prisma.kitchenChef.findUnique({
+    where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: chefUserId } },
+  });
+  if (!chefRow) {
+    throw createError(403, "You are not in the chef roster", { code: "NOT_IN_CHEF_ROSTER" });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await lockMealRow(tx, mealId);
+    const meal = await tx.meal.findUnique({ where: { id: mealId } });
+    if (!meal || meal.eventKitchenId !== eventKitchen.id) {
+      throw createError(404, "Meal not found", { code: "MEAL_NOT_FOUND" });
+    }
+    if (meal.chefUserId !== null) {
+      throw createError(409, "This meal already has a chef", { code: "MEAL_ALREADY_CLAIMED" });
+    }
+    const existingMeal = await tx.meal.findUnique({
+      where: {
+        eventKitchenId_chefUserId: { eventKitchenId: eventKitchen.id, chefUserId },
+      },
+    });
+    if (existingMeal) {
+      throw createError(409, "You already have a meal", { code: "CHEF_ALREADY_HAS_MEAL" });
+    }
+    await tx.meal.update({ where: { id: mealId }, data: { chefUserId } });
+  });
+
+  emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId });
+
+  return getMealDetail(mealId);
 }
 
 export async function joinOrMoveMeal(eventId: string, mealId: string, userId: string) {

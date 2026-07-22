@@ -5,6 +5,8 @@ import api from "../../config/api";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import EmptyState from "../common/EmptyState";
 import { getErrorMessage } from "../../config/apiErrors";
+import CreateMealSlotModal from "./CreateMealSlotModal";
+import MealFichesList, { type MealFiche } from "./MealFichesList";
 
 interface Person {
   id: string;
@@ -14,12 +16,6 @@ interface Person {
 
 interface ChefEntry extends Person {
   source: "ROLE" | "MANUAL";
-}
-
-interface MealSummary {
-  id: string;
-  name: string;
-  chef: Person | null;
 }
 
 interface ConfigForm {
@@ -36,8 +32,10 @@ interface Props {
   chefs: ChefEntry[];
   coursesMembers: Person[];
   unassigned: Person[];
-  meals: MealSummary[];
+  meals: MealFiche[];
   onChanged: () => void;
+  eventStartDate?: string;
+  eventEndDate?: string;
 }
 
 const displayedName = (u: Person) => u.displayName ?? u.username;
@@ -52,12 +50,15 @@ export default function KitchenManagementPanel({
   unassigned,
   meals,
   onChanged,
+  eventStartDate,
+  eventEndDate,
 }: Props) {
   const confirmDialog = useConfirm();
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [selectedNewChef, setSelectedNewChef] = useState("");
   const [selectedNewCoursesMember, setSelectedNewCoursesMember] = useState("");
   const [reassignChoices, setReassignChoices] = useState<Record<string, string>>({});
+  const [showCreateMeal, setShowCreateMeal] = useState(false);
 
   const {
     register,
@@ -169,7 +170,7 @@ export default function KitchenManagementPanel({
     }
   };
 
-  const handleReassign = async (meal: MealSummary) => {
+  const handleReassign = async (meal: MealFiche) => {
     const chefId = reassignChoices[meal.id];
     if (!chefId) return;
     setPendingAction(`reassign:${meal.id}`);
@@ -188,7 +189,7 @@ export default function KitchenManagementPanel({
     const ok = await confirmDialog({
       title: "Générer le planning",
       message:
-        "Répartit le nombre de places par repas selon le nombre de participants disponibles. Les inscriptions existantes sont conservées ; une sur-occupation temporaire est possible.",
+        "Crée la grille des repas de l'événement (midi et soir) à partir des dates : le premier jour n'a qu'un dîner, le dernier jour aucun repas. Les créneaux déjà présents et les inscriptions sont conservés ; seules les places manquantes sont ajoutées.",
       confirmLabel: "Générer",
       variant: "warning",
     });
@@ -196,13 +197,15 @@ export default function KitchenManagementPanel({
     setPendingAction("generate");
     try {
       const res = await api.post(`/api/events/${eventId}/kitchen/generate`);
-      const { pool, overCapacity } = res.data.data;
+      const { createdCount, overCapacity } = res.data.data;
+      const base =
+        createdCount > 0
+          ? `Planning généré — ${createdCount} créneau(x) ajouté(s)`
+          : "Planning déjà à jour — aucun créneau ajouté";
       if (overCapacity.length > 0) {
-        toast.error(
-          `Planning généré (pool: ${pool}) — ${overCapacity.length} repas en sur-occupation`
-        );
+        toast.error(`${base} — ${overCapacity.length} repas en sur-occupation`);
       } else {
-        toast.success(`Planning généré (pool: ${pool})`);
+        toast.success(base);
       }
       onChanged();
     } catch (err: unknown) {
@@ -425,24 +428,57 @@ export default function KitchenManagementPanel({
         <div className="card-body p-3">
           <h4 className="font-semibold text-sm mb-2">Planning</h4>
           <p className="text-xs opacity-70 mb-2">
-            Répartit les équipiers disponibles entre les repas existants.
+            Génère la grille des repas (midi/soir) depuis les dates de l'événement et répartit les
+            places d'équipiers sur les nouveaux créneaux. Relançable sans risque : les créneaux
+            existants ne sont pas modifiés.
           </p>
-          <button
-            className="btn btn-warning btn-sm"
-            disabled={!!pendingAction}
-            onClick={handleGenerate}
-          >
-            {pendingAction === "generate" && (
-              <span className="loading loading-spinner loading-xs" />
-            )}
-            Générer le planning
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="btn btn-warning btn-sm"
+              disabled={!!pendingAction}
+              onClick={handleGenerate}
+            >
+              {pendingAction === "generate" && (
+                <span className="loading loading-spinner loading-xs" />
+              )}
+              Générer le planning
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              disabled={!!pendingAction}
+              onClick={() => setShowCreateMeal(true)}
+            >
+              Créer un repas manuellement
+            </button>
+          </div>
         </div>
       </div>
 
       {chefs.length === 0 && coursesMembers.length === 0 && unassigned.length === 0 && (
         <EmptyState icon={<span>🍳</span>} title="Aucun participant sur cet événement" />
       )}
+
+      <div>
+        {/* Point 2 : le responsable voit et edite toutes les fiches ici (Gestion),
+            jamais dans "Mon repas" (reserve a la seule fiche du chef). */}
+        <h4 className="font-semibold text-sm mb-2">Fiches repas</h4>
+        <MealFichesList
+          eventId={eventId}
+          meals={meals}
+          onChanged={onChanged}
+          eventStartDate={eventStartDate}
+          eventEndDate={eventEndDate}
+        />
+      </div>
+
+      <CreateMealSlotModal
+        open={showCreateMeal}
+        onClose={() => setShowCreateMeal(false)}
+        onSaved={onChanged}
+        eventId={eventId}
+        eventStartDate={eventStartDate}
+        eventEndDate={eventEndDate}
+      />
     </div>
   );
 }

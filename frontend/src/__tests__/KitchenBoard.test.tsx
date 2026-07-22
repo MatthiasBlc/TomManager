@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import KitchenBoard from "../components/kitchen/KitchenBoard";
+import type { KitchenViewData } from "../hooks/useKitchenData";
 
-const apiGetMock = vi.fn();
 const apiPostMock = vi.fn();
 const apiDeleteMock = vi.fn();
 const useAuthMock = vi.fn();
@@ -10,16 +10,12 @@ const toastError = vi.fn();
 
 vi.mock("../config/api", () => ({
   default: {
-    get: (...args: unknown[]) => apiGetMock(...args),
     post: (...args: unknown[]) => apiPostMock(...args),
     delete: (...args: unknown[]) => apiDeleteMock(...args),
   },
 }));
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => useAuthMock(),
-}));
-vi.mock("../hooks/useEventSocket", () => ({
-  useEventSocket: () => {},
 }));
 vi.mock("react-hot-toast", () => ({
   default: {
@@ -51,8 +47,23 @@ const ORPHAN_MEAL = {
   chef: null,
 };
 
+function renderBoard(data: Partial<KitchenViewData> & { meals: unknown[] }) {
+  return render(
+    <KitchenBoard
+      eventId="ev1"
+      data={data as unknown as KitchenViewData}
+      loading={false}
+      onChanged={() => {}}
+    />
+  );
+}
+
+// La matrice rend desktop + mobile en parallele (visibilite geree en CSS, pas en
+// conditionnel React) : chaque contenu apparait donc 2 fois dans le DOM de test.
+// On cible systematiquement la 1re occurrence (comportement identique des deux).
+const firstOf = <T,>(els: T[]) => els[0];
+
 beforeEach(() => {
-  apiGetMock.mockReset();
   apiPostMock.mockReset();
   apiDeleteMock.mockReset();
   toastSuccess.mockReset();
@@ -60,144 +71,159 @@ beforeEach(() => {
 });
 
 describe("KitchenBoard", () => {
-  it("renders nothing for a plain equipier when the board is not enabled", async () => {
+  it("renders nothing for a plain equipier when the board is not enabled", () => {
     mockAuth({ id: "u3", role: "USER" });
-    apiGetMock.mockResolvedValue({
-      data: {
-        data: { currentUserKitchenRole: "equipier", equipierPlanningEnabled: false, meals: [] },
-      },
+    const { container } = renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: false,
+      meals: [],
     });
-    const { container } = render(<KitchenBoard eventId="ev1" />);
-    await waitFor(() => expect(apiGetMock).toHaveBeenCalled());
-    await waitFor(() => expect(container.querySelector(".skeleton")).not.toBeInTheDocument());
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders nothing for a plain admin (no admin.kitchen) when the toggle is off", async () => {
+  it("renders nothing for a plain admin (no admin.kitchen) when the toggle is off", () => {
     // Un admin sans admin.kitchen doit avoir la meme experience qu'un participant
     // lambda sur ce board (onglet Infos) : role backend "equipier"/"none", jamais un
     // bypass sur le simple fait d'etre ADMIN.
     mockAuth({ id: "admin1", role: "ADMIN" }, {});
-    apiGetMock.mockResolvedValue({
-      data: {
-        data: { currentUserKitchenRole: "none", equipierPlanningEnabled: false, meals: [] },
-      },
+    const { container } = renderBoard({
+      currentUserKitchenRole: "none",
+      equipierPlanningEnabled: false,
+      meals: [],
     });
-    const { container } = render(<KitchenBoard eventId="ev1" />);
-    await waitFor(() => expect(apiGetMock).toHaveBeenCalled());
-    await waitFor(() => expect(container.querySelector(".skeleton")).not.toBeInTheDocument());
     expect(container.firstChild).toBeNull();
   });
 
-  it("shows the board for an equipier when equipierPlanningEnabled is true", async () => {
+  it("shows the board for an equipier when equipierPlanningEnabled is true", () => {
     mockAuth({ id: "u3", role: "USER" });
-    apiGetMock.mockResolvedValue({
-      data: {
-        data: { currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] },
-      },
-    });
-    render(<KitchenBoard eventId="ev1" />);
-    await waitFor(() => expect(screen.getByText("Couscous")).toBeInTheDocument());
-    expect(screen.getByText(/Alice/)).toBeInTheDocument();
-    expect(screen.getByText(/1\/2 places/)).toBeInTheDocument();
+    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
+    expect(screen.getAllByText("Couscous").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Alice/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/1\/2/).length).toBeGreaterThan(0);
   });
 
-  it("always shows the board for a chef, regardless of the toggle", async () => {
+  it("always shows the board for a chef, regardless of the toggle", () => {
     mockAuth({ id: "chef1", role: "USER" });
-    apiGetMock.mockResolvedValue({
-      data: {
-        data: { currentUserKitchenRole: "chef", equipierPlanningEnabled: false, meals: [MEAL] },
-      },
-    });
-    render(<KitchenBoard eventId="ev1" />);
-    await waitFor(() => expect(screen.getByText("Couscous")).toBeInTheDocument());
+    renderBoard({ currentUserKitchenRole: "chef", equipierPlanningEnabled: false, meals: [MEAL] });
+    expect(screen.getAllByText("Couscous").length).toBeGreaterThan(0);
   });
 
-  it("shows a 'sans chef' badge for an orphan meal", async () => {
+  it("shows a 'sans chef' label for an orphan meal", () => {
     mockAuth({ id: "u3", role: "USER" });
-    apiGetMock.mockResolvedValue({
-      data: {
-        data: {
-          currentUserKitchenRole: "equipier",
-          equipierPlanningEnabled: true,
-          meals: [ORPHAN_MEAL],
-        },
-      },
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [ORPHAN_MEAL],
     });
-    render(<KitchenBoard eventId="ev1" />);
-    await waitFor(() => expect(screen.getByText("Raclette")).toBeInTheDocument());
-    expect(screen.getByText("sans chef")).toBeInTheDocument();
+    expect(screen.getAllByText("Raclette").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Sans chef").length).toBeGreaterThan(0);
   });
 
   it("joins a meal and shows a success toast", async () => {
     mockAuth({ id: "u3", role: "USER" });
-    apiGetMock.mockResolvedValue({
-      data: {
-        data: { currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] },
-      },
-    });
     apiPostMock.mockResolvedValue({ data: { data: {} } });
-    render(<KitchenBoard eventId="ev1" />);
-    await waitFor(() => expect(screen.getByText("Couscous")).toBeInTheDocument());
+    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
 
-    fireEvent.click(screen.getByRole("button", { name: "S'inscrire" }));
+    fireEvent.click(firstOf(screen.getAllByRole("button", { name: "S'inscrire" })));
     await waitFor(() =>
       expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1/assistants")
     );
     expect(toastSuccess).toHaveBeenCalled();
   });
 
-  it("shows 'Se désinscrire' for the meal the user is registered on, and 'Se déplacer ici' for others", async () => {
+  it("shows 'Se désinscrire' for the meal the user is registered on, and 'Se déplacer ici' for others", () => {
     mockAuth({ id: "u2", role: "USER" });
-    apiGetMock.mockResolvedValue({
-      data: {
-        data: {
-          currentUserKitchenRole: "equipier",
-          equipierPlanningEnabled: true,
-          meals: [MEAL, { ...ORPHAN_MEAL, remainingSeats: 2, assistants: [] }],
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [
+        MEAL,
+        {
+          ...ORPHAN_MEAL,
+          service: "LUNCH",
+          startDateTime: "2026-06-01T10:30:00.000Z",
+          endDateTime: "2026-06-01T13:00:00.000Z",
+          remainingSeats: 2,
+          assistants: [],
         },
-      },
+      ],
     });
-    render(<KitchenBoard eventId="ev1" />);
-    await waitFor(() => expect(screen.getByText("Couscous")).toBeInTheDocument());
 
-    expect(screen.getByRole("button", { name: "Se désinscrire" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Se déplacer ici" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Se désinscrire" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Se déplacer ici" }).length).toBeGreaterThan(0);
   });
 
-  it("disables joining a full meal", async () => {
+  it("disables joining a full meal", () => {
     mockAuth({ id: "u3", role: "USER" });
-    apiGetMock.mockResolvedValue({
-      data: {
-        data: {
-          currentUserKitchenRole: "equipier",
-          equipierPlanningEnabled: true,
-          meals: [{ ...MEAL, remainingSeats: 0 }],
-        },
-      },
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [{ ...MEAL, remainingSeats: 0 }],
     });
-    render(<KitchenBoard eventId="ev1" />);
-    await waitFor(() => expect(screen.getByText("Couscous")).toBeInTheDocument());
-    expect(screen.getByRole("button", { name: "Complet" })).toBeDisabled();
+    expect(firstOf(screen.getAllByRole("button", { name: "Complet" }))).toBeDisabled();
   });
 
   it("leaves a meal and shows a success toast", async () => {
     mockAuth({ id: "u2", role: "USER" });
-    apiGetMock.mockResolvedValue({
-      data: {
-        data: { currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] },
-      },
-    });
     apiDeleteMock.mockResolvedValue({});
-    render(<KitchenBoard eventId="ev1" />);
-    await waitFor(() => expect(screen.getByText("Couscous")).toBeInTheDocument());
+    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
 
-    fireEvent.click(screen.getByRole("button", { name: "Se désinscrire" }));
+    fireEvent.click(firstOf(screen.getAllByRole("button", { name: "Se désinscrire" })));
     await waitFor(() =>
       expect(apiDeleteMock).toHaveBeenCalledWith(
         "/api/events/ev1/kitchen/meals/meal1/assistants/me"
       )
     );
     expect(toastSuccess).toHaveBeenCalled();
+  });
+
+  it("never shows the join/leave button to a chef, even on their own meal (point 4)", () => {
+    mockAuth({ id: "chef1", role: "USER" });
+    renderBoard({ currentUserKitchenRole: "chef", equipierPlanningEnabled: false, meals: [MEAL] });
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("never shows the join button to a courses-team member (point 4)", () => {
+    mockAuth({ id: "u3", role: "USER" });
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      isCoursesMember: true,
+      equipierPlanningEnabled: true,
+      meals: [MEAL],
+    });
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows the 'choisis ton créneau' banner to an unassigned equipier only (point 11)", () => {
+    mockAuth({ id: "u3", role: "USER" });
+    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
+    expect(screen.getByText(/pas encore choisi ton créneau/i)).toBeInTheDocument();
+  });
+
+  it("hides the 'choisis ton créneau' banner once the equipier has a meal", () => {
+    mockAuth({ id: "u2", role: "USER" });
+    renderBoard({ currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [MEAL] });
+    expect(screen.queryByText(/pas encore choisi ton créneau/i)).not.toBeInTheDocument();
+  });
+
+  it("groups meals in a day x service matrix", () => {
+    mockAuth({ id: "u3", role: "USER" });
+    const otherDayMeal = {
+      ...MEAL,
+      id: "meal3",
+      name: "Raclette",
+      service: "LUNCH" as const,
+      startDateTime: "2026-06-02T10:30:00.000Z",
+      endDateTime: "2026-06-02T13:00:00.000Z",
+    };
+    renderBoard({
+      currentUserKitchenRole: "equipier",
+      equipierPlanningEnabled: true,
+      meals: [MEAL, otherDayMeal],
+    });
+    expect(screen.getAllByText("Midi").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Soir").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Couscous").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Raclette").length).toBeGreaterThan(0);
   });
 });

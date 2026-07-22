@@ -82,7 +82,8 @@ async function seedKitchenDemo(event) {
 
   // Roster chef en mode manuel (pas de chefRoleId : aucune guilde Discord reelle en
   // local). adminChef ET chef sont chefs ; adminChef n'a volontairement PAS de repas
-  // encore, pour tester le bouton "Creer mon repas" sous le sous-menu "Mon repas".
+  // encore, pour tester le bouton "Generer le planning" (grille) puis "Choisir mon
+  // creneau" sous le sous-menu "Mon repas".
   for (const u of [adminChef, chef]) {
     await prisma.kitchenChef.upsert({
       where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: u.id } },
@@ -101,8 +102,12 @@ async function seedKitchenDemo(event) {
         chefUserId: chef.id,
         name: "Couscous royal",
         service: "DINNER",
-        startDateTime: new Date("2026-07-16T18:00:00.000Z"),
-        endDateTime: new Date("2026-07-16T20:00:00.000Z"),
+        // Aligne sur le vrai creneau "diner" que genererait la grille (2e jour de
+        // l'event, 18h30-21h00 heure de Paris = 16h30-19h00 UTC en aout/DST) : ce
+        // repas est reconnu comme deja existant si le responsable clique sur
+        // "Generer le planning" (idempotence par startDateTime+service).
+        startDateTime: new Date("2026-08-15T16:30:00.000Z"),
+        endDateTime: new Date("2026-08-15T19:00:00.000Z"),
         maxAssistants: 3,
       },
     });
@@ -167,8 +172,8 @@ async function seedDemoData() {
     event = await prisma.event.create({
       data: {
         name: "Convention Ete 2026",
-        startDateTime: new Date("2026-07-15T10:00:00.000Z"),
-        endDateTime: new Date("2026-07-20T22:00:00.000Z"),
+        startDateTime: new Date("2026-08-14T10:00:00.000Z"),
+        endDateTime: new Date("2026-08-19T22:00:00.000Z"),
         createdBy: admin.id,
       },
     });
@@ -237,103 +242,103 @@ async function seedDemoData() {
   // --- Tables ---
   // Les tables couvrent differents cas de chevauchement pour tester la vue liste :
   //
-  // Jour 16 : sequentielles (pas de conflit) → 2 colonnes pleine largeur empilees
-  // Jour 17 : 2 tables simultanees (cote a cote) → grid 2 colonnes
-  // Jour 18 : B longue chevauche A et C → A|B / C|B (B avec rowSpan=2)
-  // Jour 19 : 3 tables simultanees → grid 3 colonnes
-  // Jour 20 : mix complexe (sequentielles + simultanees + longue qui span)
+  // Jour 15 : sequentielles (pas de conflit) → 2 colonnes pleine largeur empilees
+  // Jour 16 : 2 tables simultanees (cote a cote) → grid 2 colonnes
+  // Jour 17 : B longue chevauche A et C → A|B / C|B (B avec rowSpan=2)
+  // Jour 18 : 3 tables simultanees → grid 3 colonnes
+  // Jour 19 : mix complexe (sequentielles + simultanees + longue qui span)
   const tablesData = [
-    // --- Jour 16 : sequentielles, pas de conflit ---
+    // --- Jour 15 : sequentielles, pas de conflit ---
     {
       title: "L'Appel de Cthulhu - Scenario debutant",
       pitch:
         "Un scenario d'introduction au jeu de role lovecraftien. Personnages pre-tires fournis.",
       maxPlayers: 5,
-      startDateTime: new Date("2026-07-16T08:00:00.000Z"),
-      endDateTime: new Date("2026-07-16T11:00:00.000Z"),
+      startDateTime: new Date("2026-08-15T08:00:00.000Z"),
+      endDateTime: new Date("2026-08-15T11:00:00.000Z"),
       tags: ["jdr", "initiation"],
     },
     {
       title: "Donjons & Dragons 5e - La Crypte Oubliee",
       pitch: "Donjon classique pour 4-5 aventuriers. Niveau 3 recommande.",
       maxPlayers: 5,
-      startDateTime: new Date("2026-07-16T13:00:00.000Z"),
-      endDateTime: new Date("2026-07-16T17:00:00.000Z"),
+      startDateTime: new Date("2026-08-15T13:00:00.000Z"),
+      endDateTime: new Date("2026-08-15T17:00:00.000Z"),
       tags: ["jdr"],
     },
 
-    // --- Jour 17 : 2 tables vraiment simultanees ---
+    // --- Jour 16 : 2 tables vraiment simultanees ---
     {
       title: "Pathfinder 2e - Quete des Anciens",
       pitch: "Aventure heroique dans un monde de haute fantasy. Regles completes.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-17T09:00:00.000Z"),
-      endDateTime: new Date("2026-07-17T13:00:00.000Z"),
+      startDateTime: new Date("2026-08-16T09:00:00.000Z"),
+      endDateTime: new Date("2026-08-16T13:00:00.000Z"),
       tags: ["jdr"],
     },
     {
       title: "Shadowrun 6e - Run de nuit",
       pitch: "Mission dans les rues de Seattle 2080. Infiltration et action garanties.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-17T09:00:00.000Z"),
-      endDateTime: new Date("2026-07-17T13:00:00.000Z"),
+      startDateTime: new Date("2026-08-16T09:00:00.000Z"),
+      endDateTime: new Date("2026-08-16T13:00:00.000Z"),
       tags: ["jdr"],
     },
 
-    // --- Jour 18 : B longue chevauche A et C ---
+    // --- Jour 17 : B longue chevauche A et C ---
     // Resultat attendu : A|B  puis  C|B (B avec rowSpan=2)
     {
       title: "Vampire la Mascarade - Nuit de sang", // A : 10h-12h
       pitch: "Intrigues politiques entre clans vampiriques dans une ville moderne.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-18T08:00:00.000Z"),
-      endDateTime: new Date("2026-07-18T11:00:00.000Z"),
+      startDateTime: new Date("2026-08-17T08:00:00.000Z"),
+      endDateTime: new Date("2026-08-17T11:00:00.000Z"),
       tags: ["jdr"],
     },
     {
       title: "Warhammer 40k RPG - Requiem Infernal", // B : 10h-17h (longue)
       pitch: "Campagne en espace lointain. Duree estimee 7h. Univers sombre et brutal.",
       maxPlayers: 5,
-      startDateTime: new Date("2026-07-18T08:00:00.000Z"),
-      endDateTime: new Date("2026-07-18T16:00:00.000Z"),
+      startDateTime: new Date("2026-08-17T08:00:00.000Z"),
+      endDateTime: new Date("2026-08-17T16:00:00.000Z"),
       tags: ["jdr"],
     },
     {
       title: "Star Wars Edge of the Empire - La Kessel Run", // C : 14h-17h
       pitch: "Du contrebandier a l'hero de la Rebellion. Univers Star Wars canonique.",
       maxPlayers: 5,
-      startDateTime: new Date("2026-07-18T13:00:00.000Z"),
-      endDateTime: new Date("2026-07-18T16:00:00.000Z"),
+      startDateTime: new Date("2026-08-17T13:00:00.000Z"),
+      endDateTime: new Date("2026-08-17T16:00:00.000Z"),
       tags: ["jdr", "initiation"],
     },
 
-    // --- Jour 19 : 3 tables vraiment simultanees ---
+    // --- Jour 18 : 3 tables vraiment simultanees ---
     {
       title: "Blades in the Dark - Le Gang des Cendres",
       pitch: "Jeu de braquage dans une ville victorienne fantasmagorique.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-19T08:00:00.000Z"),
-      endDateTime: new Date("2026-07-19T12:00:00.000Z"),
+      startDateTime: new Date("2026-08-18T08:00:00.000Z"),
+      endDateTime: new Date("2026-08-18T12:00:00.000Z"),
       tags: ["jdr"],
     },
     {
       title: "Monster of the Week - Nuit des Createurs",
       pitch: "Chasseurs de monstres dans l'Amerique contemporaine. Inspire de Supernatural.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-19T08:00:00.000Z"),
-      endDateTime: new Date("2026-07-19T12:00:00.000Z"),
+      startDateTime: new Date("2026-08-18T08:00:00.000Z"),
+      endDateTime: new Date("2026-08-18T12:00:00.000Z"),
       tags: ["jdr", "initiation"],
     },
     {
       title: "Ironsworn - Terres de Fer",
       pitch: "JDR solo ou cooperatif sans MJ dans un monde de fantasy nordique.",
       maxPlayers: 3,
-      startDateTime: new Date("2026-07-19T08:00:00.000Z"),
-      endDateTime: new Date("2026-07-19T12:00:00.000Z"),
+      startDateTime: new Date("2026-08-18T08:00:00.000Z"),
+      endDateTime: new Date("2026-08-18T12:00:00.000Z"),
       tags: ["jdr"],
     },
 
-    // --- Jour 20 : mix complexe ---
+    // --- Jour 19 : mix complexe ---
     // Alien : 10h-12h (col 0)    Delta Green : 10h-12h (col 1)    Dungeon World : 10h-17h (col 2, span)
     // Mothership : 14h-17h (col 0)
     // Resultat attendu :
@@ -343,16 +348,16 @@ async function seedDemoData() {
       title: "Alien RPG - Chariot des Dieux",
       pitch: "Survival horror dans l'espace. Scenario officiel. Deconseille aux ames sensibles.",
       maxPlayers: 5,
-      startDateTime: new Date("2026-07-20T08:00:00.000Z"),
-      endDateTime: new Date("2026-07-20T11:00:00.000Z"),
+      startDateTime: new Date("2026-08-19T08:00:00.000Z"),
+      endDateTime: new Date("2026-08-19T11:00:00.000Z"),
       tags: ["jdr"],
     },
     {
       title: "Delta Green - Operation OUTLOOK",
       pitch: "Agents gouvernementaux face a l'indicible. Horreur lovecraftienne contemporaine.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-20T08:00:00.000Z"),
-      endDateTime: new Date("2026-07-20T11:00:00.000Z"),
+      startDateTime: new Date("2026-08-19T08:00:00.000Z"),
+      endDateTime: new Date("2026-08-19T11:00:00.000Z"),
       tags: ["jdr"],
     },
     {
@@ -360,16 +365,16 @@ async function seedDemoData() {
       pitch:
         "JDR narratif fantasy leger. Ideal pour joueurs voulant un rythme rapide et cinematique.",
       maxPlayers: 5,
-      startDateTime: new Date("2026-07-20T08:00:00.000Z"),
-      endDateTime: new Date("2026-07-20T16:00:00.000Z"),
+      startDateTime: new Date("2026-08-19T08:00:00.000Z"),
+      endDateTime: new Date("2026-08-19T16:00:00.000Z"),
       tags: ["jdr", "initiation"],
     },
     {
       title: "Mothership - Station Terreur",
       pitch: "Sci-fi horror old school. Equipage en perdition sur une station abandonnee.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-20T13:00:00.000Z"),
-      endDateTime: new Date("2026-07-20T16:00:00.000Z"),
+      startDateTime: new Date("2026-08-19T13:00:00.000Z"),
+      endDateTime: new Date("2026-08-19T16:00:00.000Z"),
       tags: ["jdr"],
     },
     // --- Sessions JDS ---
@@ -380,8 +385,8 @@ async function seedDemoData() {
       pitch:
         "Defense cooperative de l'ile contre les colonisateurs. Complexite elevee, session de nuit.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-20T00:30:00.000Z"),
-      endDateTime: new Date("2026-07-20T03:30:00.000Z"),
+      startDateTime: new Date("2026-08-19T00:30:00.000Z"),
+      endDateTime: new Date("2026-08-19T03:30:00.000Z"),
       tags: ["coopératif", "strategie"],
     },
     {
@@ -391,8 +396,8 @@ async function seedDemoData() {
       pitch:
         "Construisez le sanctuaire d'oiseaux le plus attractif. Partie competitive 3-5 joueurs.",
       maxPlayers: 5,
-      startDateTime: new Date("2026-07-17T14:00:00.000Z"),
-      endDateTime: new Date("2026-07-17T16:30:00.000Z"),
+      startDateTime: new Date("2026-08-16T14:00:00.000Z"),
+      endDateTime: new Date("2026-08-16T16:30:00.000Z"),
       tags: ["familial", "strategie"],
     },
     {
@@ -402,8 +407,8 @@ async function seedDemoData() {
       pitch:
         "Concevez un zoo moderne en soutenant des projets de conservation. Jeu dense, initiation possible.",
       maxPlayers: 4,
-      startDateTime: new Date("2026-07-19T13:00:00.000Z"),
-      endDateTime: new Date("2026-07-19T17:00:00.000Z"),
+      startDateTime: new Date("2026-08-18T13:00:00.000Z"),
+      endDateTime: new Date("2026-08-18T17:00:00.000Z"),
       tags: ["strategie"],
     },
     {
@@ -411,8 +416,8 @@ async function seedDemoData() {
       title: "Partie libre JDS - apportez vos jeux",
       pitch: "Table ouverte pour toute partie de jeu de societe. Jeux du coin ou les votres.",
       maxPlayers: 8,
-      startDateTime: new Date("2026-07-16T18:00:00.000Z"),
-      endDateTime: new Date("2026-07-16T21:00:00.000Z"),
+      startDateTime: new Date("2026-08-15T18:00:00.000Z"),
+      endDateTime: new Date("2026-08-15T21:00:00.000Z"),
       tags: ["familial"],
     },
   ];

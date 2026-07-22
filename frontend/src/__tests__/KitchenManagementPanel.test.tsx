@@ -24,6 +24,12 @@ vi.mock("react-hot-toast", () => ({
     error: (...a: unknown[]) => toastError(...a),
   },
 }));
+// CreateMealSlotModal (creation manuelle manager) tire ResponsiveModal ->
+// useIsMobile -> window.matchMedia, absent en jsdom. On le neutralise : ce
+// panneau ne teste pas la creation manuelle.
+vi.mock("../components/kitchen/CreateMealSlotModal", () => ({
+  default: () => null,
+}));
 
 const baseProps = {
   eventId: "ev1",
@@ -140,7 +146,19 @@ describe("KitchenManagementPanel", () => {
     render(
       <KitchenManagementPanel
         {...baseProps}
-        meals={[{ id: "meal1", name: "Repas orphelin", chef: null }]}
+        meals={[
+          {
+            id: "meal1",
+            name: "Repas orphelin",
+            service: "DINNER",
+            startDateTime: "2026-06-01T18:00:00.000Z",
+            endDateTime: "2026-06-01T20:00:00.000Z",
+            maxAssistants: 0,
+            remainingSeats: 0,
+            chef: null,
+            assistants: [],
+          },
+        ]}
       />
     );
 

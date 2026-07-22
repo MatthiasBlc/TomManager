@@ -57,7 +57,7 @@ npx playwright test --grep "nom"         # Un test specifique
 
 ## Inventaire des tests
 
-### Backend (367 tests)
+### Backend (384 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me, error format consistency)
@@ -71,8 +71,10 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions) + emissions socket de sync multi-appareils (notification:new/read/read-all/deleted, pas d'emission si ownership KO) + creation non-bloquante (null/[] si insert KO) + notifications MJ (GM_PLAYER_JOINED/WAITLISTED/LEFT, GM_TABLE_FULL, pas d'auto-notif JDS, MJ prevenu d'un update/delete admin, pas de notif sur ses propres updates) + notifications event (EVENT_UPDATED si nom/dates changent, pas de notif si rien de significatif, EVENT_DELETED, auteur exclu) + retention (purge lues >30j / non lues >90j)
 - `integration/preference.test.ts` - Preferences API (defaults false dans /me, PATCH bulk + upsert, 403 cles admin/beta pour non-admin, 400 cle inconnue/valeur non bool/body vide)
 - `integration/kitchen.test.ts` - Kitchen API CookV1 (GET modele par role + anti-fuite allergies/ingredients equipier, PATCH config + ecrasement MANUAL->ROLE, chefs/courses manuels + exclusivite (2.4), orphelinage retrait chef, liste sans affectation)
-- `integration/meal.test.ts` - Meal API CookV1 (CRUD chef/manager, unique 1 chef/repas, orphelinage/reassignation, ingredients find-or-create Product + ustensiles, inscription/deplacement/desinscription equipier transactionnels, capacite, exclusivite)
-- `integration/kitchenPlanning.test.ts` + `unit/kitchenPlanning.test.ts` - Generation planning (pool, tri startDateTime, exclusion courses, non-destructif + overCapacity, regen idempotente, clamps)
+- `integration/meal.test.ts` - Meal API CookV1 (creation manuelle = creneau orphelin jour+service manager-only, anti-doublon `SLOT_ALREADY_EXISTS`, hors-bornes ; reclamation `claim` d'un creneau orphelin + concurrence/roster/deja-un-repas, edition champs structurants manager-only, unique 1 chef/repas, orphelinage/reassignation, ingredients/ustensiles find-or-create Product/Utensil + quantite coercee, inscription/deplacement/desinscription equipier transactionnels, capacite, exclusivite)
+- `integration/utensil.test.ts` - Autocomplete ustensiles CookV1 (auth requise, prefix match normalise lowercase, query vide, pattern Product/Tag) (Evolutions.md point 7)
+- `integration/mealSwap.test.ts` - Echange de creneau chefs (CookV1) : swap recette+chef avec equipiers/horaires inchanges, doublon PENDING refuse, accept reserve a la cible, reject/cancel, refus contre un creneau orphelin
+- `integration/kitchenPlanning.test.ts` + `unit/kitchenPlanning.test.ts` - Generation planning (grille depuis dates `computeExpectedSlots` Paris multi-jours/1 jour/2 jours, repartition sur nouveaux creneaux, exclusion chefs/courses, idempotence double-generate, coexistence repas manuel, overCapacity ; `computeMealCapacities` floor/reste/clamps)
 - `unit/conflicts.test.ts` - Moteur de conflits unifie (CookV1 Lot F) : computeConflicts pur (chevauchement/adjacence, garde-fou meme source, isolation par personne, 3 engagements simultanes, comptage multi-personnes sur une source)
 - `integration/kitchenConflicts.test.ts` - Conflit cross-domaine (CookV1 Lot F) : chef occupe par son repas + inscrit a une table (visible chef ET MJ), pas de conflit si disjoint, equipier inscrit a un repas + une table chevauchante (visibilite personne/chef)
 - `integration/kitchenPurge.test.ts` - Extension purge (CookV1 Lot G) : EventKitchen+chefRoleId+config conserves, repas (cascade ingredients/assistants)/courses/chefs MANUAL purges, chefs ROLE preserves par la suppression ; reconstitution ROLE au re-import (adminSync mocke : le container dev a un vrai token/guild Discord, jamais solliciter le reseau reel en test) ; no-op si pas d'EventKitchen
@@ -109,18 +111,22 @@ npx playwright test --grep "nom"         # Un test specifique
 - `AddBoardGameModal.test.tsx` - Modes search/manual, ajout local, import BGG, close
 - `AdminBoardGamePanel.test.tsx` - Liste, total, edit/delete/merge modals, empty state recherche sans resultat
 - `EventListPage.test.tsx` - Fetch/affichage, empty state, etat d'erreur distinct + retry, FAB/bouton creation selon droit admin.events (admin sans droit = pas de bouton)
-- `EventDetailPage.test.tsx` - Skeleton pendant le chargement puis contenu, params non definis
+- `EventDetailPage.test.tsx` - Skeleton pendant le chargement puis contenu, params non definis, onglet Cuisine masque a un USER classique / visible admin ou chef (point 10)
 - `CreateEventModal.test.tsx` - Submit succes, validation croisee endDateTime > startDateTime
 - `EditEventModal.test.tsx` - Submit succes, validation croisee endDateTime > startDateTime
 - `ProfilePage.test.tsx` - Link/unlink Discord, confirmation avant unlink, disabled selon email, section droits admin (toggles, master toggle + confirmation, appels updatePreferences)
 - `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel, stepper reservedSeats plafonne a maxPlayers
 - `EditTableModal.test.tsx` - Encart occupation actuelle, avertissement + confirm avant demotion (maxPlayers/reservedSeats), submit sans confirm si pas d'impact
 - `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, boutons de promotion waitlist (simple ou double libre+reservee selon disponibilite, payload `seat`), bouton disabled si table pleine, conversion en place d'un joueur confirme (libre<->reservee), Modifier/Supprimer admin conditionnes au droit admin.tables
-- `KitchenTab.test.tsx` - Matrice de visibilite CookV1 (equipier masque, chef = CTA "Creer mon repas" sans panneau gestion, panneau gestion visible manager/admin)
-- `KitchenBoard.test.tsx` - Masquage si equipier + toggle off, visible toujours pour chef, badge "sans chef", join/move/leave (S'inscrire / Se deplacer ici / Se desinscrire), disabled si complet, places restantes
+- `KitchenTab.test.tsx` - Matrice de visibilite CookV1 (equipier masque, chef = claim picker sans panneau gestion, panneau gestion visible manager/admin, redirection auto sur "Mon repas" pour un chef+manager)
+- `KitchenBoard.test.tsx` - Masquage si equipier + toggle off, visible toujours pour chef, matrice jour x service, badge "Sans chef", join/move/leave jamais propose a un chef/membre courses (point 4), banniere "choisis ton creneau" (point 11), disabled si complet
 - `KitchenManagementPanel.test.tsx` - Modales de confirmation (ecrasement chefs au set du chefRoleId, retrait chef, generation planning) + annulation, mode role (roster lecture seule), reassignation repas orphelin
-- `MealFichesList.test.tsx` - Warning nombre d'equipiers avant suppression, permissions edit/delete (proprietaire/manager/aucun), stepper capacite manager uniquement, empty state
-- `useEventSocket.test.tsx` (CookV1) - Reaction aux 4 evenements `kitchen:*` (config-updated, meal-changed, assistant-changed, planning-generated)
+- `MealFichesList.test.tsx` - Wrapper Gestion-only : empty state, rend une MealFicheEditor par repas
+- `MealFicheEditor.test.tsx` - Autosave par champ sans bouton (debounce nom, immediat service/capacite), champs schedule masques pour un chef (canEditSchedule=false), warning nombre d'equipiers avant suppression, reset des champs au changement de repas
+- `CreateMealSlotModal.test.tsx` - Creation d'un creneau (jour+service uniquement, pas de nom/chef), toast d'erreur sans fermeture
+- `IngredientListInput.test.tsx` - Quantite virgule ET point acceptees (point 8), pas de commit sur saisie non-parsable
+- `UtensilListInput.test.tsx` - Badges, ajout (Enter), autocomplete `/api/kitchen/utensils` (point 7)
+- `useEventSocket.test.tsx` (CookV1) - Reaction aux evenements `kitchen:*` (config-updated, meal-changed, assistant-changed, planning-generated, swap-request-changed)
 
 Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phase 8 - pages)
 

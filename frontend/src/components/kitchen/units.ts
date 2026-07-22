@@ -23,3 +23,12 @@ export const SERVICE_OPTIONS = [
 export function serviceLabel(service: string): string {
   return SERVICE_OPTIONS.find((s) => s.value === service)?.label ?? service;
 }
+
+// Libelle de jour pour regrouper les creneaux repas (ex: "samedi 1 aout").
+export function dayLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}

@@ -3,7 +3,7 @@ import * as mealService from "../services/meal";
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await mealService.createMeal(req.params.eventId, req.session.userId!, req.body);
+    const data = await mealService.createMeal(req.params.eventId, req.body);
     res.status(201).json({ data });
   } catch (err) {
     next(err);
@@ -28,6 +28,19 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     await mealService.deleteMeal(req.params.eventId, req.params.mealId);
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function claim(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await mealService.claimMeal(
+      req.params.eventId,
+      req.params.mealId,
+      req.session.userId!
+    );
+    res.json({ data });
   } catch (err) {
     next(err);
   }

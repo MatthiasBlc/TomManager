@@ -14,6 +14,7 @@ import ResponsiveModal from "../components/common/ResponsiveModal";
 import AdminBoardGamePanel from "../components/admin/AdminBoardGamePanel";
 import { useAdminRights } from "../hooks/useAdminRights";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { useKitchenData } from "../hooks/useKitchenData";
 import { SkeletonEventDetail } from "../components/common/Skeleton";
 
 interface EventDetail {
@@ -53,7 +54,15 @@ export default function EventDetailPage() {
   usePageTitle(event?.name);
 
   const isMobile = useIsMobile();
-  const { canManageEvents, gameDbEnabled } = useAdminRights();
+  const { isAdmin, canManageEvents, gameDbEnabled } = useAdminRights();
+
+  // Fetch + temps reel cuisine partages entre l'onglet Infos et l'onglet Cuisine
+  // (evite un double GET /kitchen) ; sert aussi a decider si l'onglet "Cuisine"
+  // doit apparaitre dans la nav (point 10 : un USER classique ne doit jamais le
+  // voir).
+  const kitchen = useKitchenData(eventId);
+  const canSeeKitchenTab =
+    isAdmin || kitchen.data?.currentUserKitchenRole === "manager" || !!kitchen.data?.isChef;
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -165,12 +174,14 @@ export default function EventDetailPage() {
             >
               Participants ({event.participants.length})
             </button>
-            <button
-              className={`tab ${tab === "kitchen" ? "tab-active" : ""}`}
-              onClick={() => setTab("kitchen")}
-            >
-              Cuisine
-            </button>
+            {canSeeKitchenTab && (
+              <button
+                className={`tab ${tab === "kitchen" ? "tab-active" : ""}`}
+                onClick={() => setTab("kitchen")}
+              >
+                Cuisine
+              </button>
+            )}
           </div>
         </div>
         {/* Affordance de scroll : degrade sur le bord droit, mobile uniquement */}
@@ -196,7 +207,12 @@ export default function EventDetailPage() {
                 </div>
               </div>
             </div>
-            <KitchenBoard eventId={event.id} />
+            <KitchenBoard
+              eventId={event.id}
+              data={kitchen.data}
+              loading={kitchen.loading}
+              onChanged={kitchen.fetchKitchen}
+            />
           </div>
         )}
 
@@ -220,6 +236,10 @@ export default function EventDetailPage() {
             eventId={event.id}
             eventStartDate={event.startDateTime.slice(0, 10)}
             eventEndDate={event.endDateTime.slice(0, 10)}
+            data={kitchen.data}
+            swaps={kitchen.swaps}
+            loading={kitchen.loading}
+            onChanged={kitchen.refetchAll}
           />
         )}
       </div>

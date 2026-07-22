@@ -11,6 +11,7 @@ import notificationRouter from "./notification";
 import preferenceRouter from "./preference";
 import kitchenRouter from "./kitchen";
 import productRouter from "./product";
+import utensilRouter from "./utensil";
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use("/events", gameTableRouter);
 router.use("/events", eventBoardGameRouter);
 router.use("/events", kitchenRouter);
 router.use("/kitchen", productRouter);
+router.use("/kitchen", utensilRouter);
 router.use("/tags", tagRouter);
 router.use("/boardgames", boardGameRouter);
 router.use("/notifications", notificationRouter);

@@ -105,8 +105,10 @@ Voir `docs/features/CookV1/SPEC_COOKING.md`. `requireKitchenManager` = ADMIN + p
 `admin.kitchen`. GET est module par role (`currentUserKitchenRole`) : voir 9 de la spec pour
 la matrice exacte de champs exposes (anti-fuite allergies/ingredients pour un equipier ET
 pour un ADMIN sans `admin.kitchen`, qui recoit un bloc `dashboard` en plus au lieu des
-fiches/gestion). La reponse expose aussi `isChef` (booleen, roster brut) independamment de
-`currentUserKitchenRole` pour distinguer un responsable qui est aussi chef (cf 4/9 de la spec).
+fiches/gestion). La reponse expose aussi `isChef` et `isCoursesMember` (booleens, flags self)
+independamment de `currentUserKitchenRole` : `isChef` distingue un responsable qui est aussi
+chef (cf 4/9 de la spec) ; `isCoursesMember` sert au front a masquer le bouton "S'inscrire"
+du board Infos a un membre de l'equipe courses (role-exclusivite, Evolutions.md point 4).
 
 | Method | Path               | Auth                                  | Description                                                                                                                                                                                                                                                                              |
 | ------ | ------------------ | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -127,9 +129,10 @@ repas OU responsable cuisine)
 
 | Method | Path                           | Auth                                   | Description                                                                                                                                                                                                                                |
 | ------ | ------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| POST   | `/meals`                       | requireAuth + requireEventParticipant  | Cree un repas — chef (soi-meme, roster) ou manager (au nom d'un chef du roster via `chefUserId`) ; 400 `NOT_IN_CHEF_ROSTER`, 409 `MEAL_ALREADY_EXISTS`, 403 `FORBIDDEN` si chef pour un autre                                              |
-| PATCH  | `/meals/:mealId`               | requireAuth + requireMealChefOrManager | Edite un repas (nom, service, horaires, ingredients/ustensiles = remplacement complet) ; `maxAssistants` et `chefUserId` (reassignation d'un orphelin uniquement, 400 `MEAL_NOT_ORPHAN` sinon) reserves au manager (403 `FORBIDDEN` sinon) |
+| POST   | `/meals`                       | requireAuth + requireKitchenManager    | Cree un creneau orphelin hors-grille (manager only), payload minimal `{ date, service }` — nom/horaires derives (`kitchenPlanning.buildManualSlot`, memes horaires murales par defaut que la grille), `maxAssistants` 0, jamais de chef a la creation. 409 `SLOT_ALREADY_EXISTS` si le jour+service existe deja. Le chef reclame ensuite via `/meals/:id/claim` comme un creneau de grille                   |
+| PATCH  | `/meals/:mealId`               | requireAuth + requireMealChefOrManager | Edite un repas ; le chef proprietaire n'edite que `name`/ingredients/ustensiles. `service`, `startDateTime`, `endDateTime`, `maxAssistants`, `chefUserId` (reassignation d'un orphelin, 400 `MEAL_NOT_ORPHAN`) reserves au manager (403 `FORBIDDEN`) |
 | DELETE | `/meals/:mealId`               | requireAuth + requireMealChefOrManager | Supprime un repas (cascade ingredients/ustensiles/inscriptions)                                                                                                                                                                            |
+| POST   | `/meals/:mealId/claim`         | requireAuth + requireEventParticipant  | Un chef du roster reclame un creneau orphelin de la grille (verrou de ligne) — 403 `NOT_IN_CHEF_ROSTER`, 409 `MEAL_ALREADY_CLAIMED`, 409 `CHEF_ALREADY_HAS_MEAL`                                                                          |
 | POST   | `/meals/:mealId/assistants`    | requireAuth + requireEventParticipant  | Equipier s'inscrit ou se deplace (transaction, verrou ligne repas) — 409 `MEAL_FULL`, `ROLE_EXCLUSIVITY` (chef/courses), `ALREADY_MEAL_ASSISTANT`                                                                                          |
 | DELETE | `/meals/:mealId/assistants/me` | requireAuth + requireEventParticipant  | Equipier se desinscrit — 404 `NOT_MEAL_ASSISTANT`                                                                                                                                                                                          |
 
@@ -137,21 +140,39 @@ Ingredients/ustensiles : listes envoyees dans le body de PATCH (`ingredients: [{
 unit}]`, `utensils: [{name}]`), remplacement complet a chaque appel (delete+recreate). Les
 ingredients font un find-or-create sur `Product` (nom normalise lowercase, cf `/api/kitchen/products`).
 
-Codes supplementaires : `MEAL_NOT_FOUND`, `MEAL_NOT_ORPHAN`, `MEAL_START_OUT_OF_BOUNDS`,
-`MEAL_END_OUT_OF_BOUNDS`, `ALREADY_MEAL_ASSISTANT`, `NOT_MEAL_ASSISTANT` (+ `FORBIDDEN`,
-`END_BEFORE_START`, `INVALID_START_DATETIME`, `INVALID_END_DATETIME` reutilises).
+Codes supplementaires : `MEAL_NOT_FOUND`, `MEAL_NOT_ORPHAN`, `SLOT_ALREADY_EXISTS` (creation
+manuelle, jour+service deja pris), `MEAL_START_OUT_OF_BOUNDS`, `MEAL_END_OUT_OF_BOUNDS`,
+`ALREADY_MEAL_ASSISTANT`, `NOT_MEAL_ASSISTANT` (+ `FORBIDDEN`, `END_BEFORE_START`,
+`INVALID_START_DATETIME`, `INVALID_END_DATETIME`, `MEAL_ALREADY_EXISTS` (reassignation PATCH
+uniquement desormais) reutilises).
 
 ### Generation planning (meme prefixe)
 
-| Method | Path        | Auth                                | Description                                                                                                                                                                                                                                                                                                                                                                |
-| ------ | ----------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST   | `/generate` | requireAuth + requireKitchenManager | (Re)genere `maxAssistants` de tous les repas : `pool = participants - chefs - courses`, repartition `floor(pool/nbRepas)` + reste aux premiers repas (tries par startDateTime), clamp a 0 si pool<=0 ou 0 repas. Non destructif (garde les inscriptions ; sur-occupation possible, signalee dans `overCapacity`). Reponse `{ pool, mealCount, capacities, overCapacity }`. |
+| Method | Path        | Auth                                | Description                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------ | ----------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/generate` | requireAuth + requireKitchenManager | Genere la grille de repas depuis les dates de l'event (Europe/Paris : diner J1, midi+soir intermediaires, rien le dernier jour ; heures 10h30-13h / 18h30-21h). Idempotent : ne recree/modifie jamais un creneau existant (cle `startDateTime`+`service`), ajoute seulement les manquants. Repartit `remainingPool = pool - sum(existants)` sur les nouveaux. Reponse `{ pool, createdCount, mealCount, capacities, overCapacity }`. |
+
+### Echange de creneau entre chefs (`/swaps`, meme prefixe)
+
+| Method | Path                           | Auth                                  | Description                                                                                              |
+| ------ | ------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| GET    | `/swaps`                       | requireAuth + requireEventParticipant | Demandes PENDING visibles par l'appelant (demandeur/cible, ou toutes si manager)                        |
+| POST   | `/swaps`                       | requireAuth + requireEventParticipant | Propose un echange `{ targetMealId }` — 404 `NOT_A_CHEF_WITH_MEAL`, 400 `TARGET_MEAL_ORPHAN`/`SWAP_SAME_MEAL`, 409 `SWAP_ALREADY_PENDING` |
+| POST   | `/swaps/:swapRequestId/accept` | requireAuth + requireEventParticipant | Cible accepte : swap chef+nom+ingredients+ustensiles ; equipiers/horaires/service inchanges. 403/409 `SWAP_STALE`/`SWAP_NOT_PENDING` |
+| POST   | `/swaps/:swapRequestId/reject` | requireAuth + requireEventParticipant | Cible refuse (statut REJECTED)                                                                           |
+| POST   | `/swaps/:swapRequestId/cancel` | requireAuth + requireEventParticipant | Demandeur annule (statut CANCELLED)                                                                      |
 
 ## Kitchen Products (`/api/kitchen/products`) — autocomplete ingredients (CookV1)
 
 | Method | Path | Auth        | Description                                           |
 | ------ | ---- | ----------- | ----------------------------------------------------- |
 | GET    | `/`  | requireAuth | Autocomplete produits (`?q=`), calque sur `/api/tags` |
+
+## Kitchen Utensils (`/api/kitchen/utensils`) — autocomplete ustensiles (CookV1, Evolutions.md point 7)
+
+| Method | Path | Auth        | Description                                             |
+| ------ | ---- | ----------- | -------------------------------------------------------- |
+| GET    | `/`  | requireAuth | Autocomplete ustensiles (`?q=`), calque sur `/api/tags` — find-or-create a l'ajout via PATCH meal (`utensilId` sur `MealUtensil`) |
 
 ## Admin (`/api/admin`)
 
