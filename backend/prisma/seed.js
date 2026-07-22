@@ -9,24 +9,119 @@ const prisma = new PrismaClient();
 // Pour la prod, utiliser le script one-shot via docker exec
 const DEV_ADMINS = [{ email: "admin@local.dev", username: "admin", password: "admin123" }];
 
+// Comptes de demo pour tester manuellement la matrice de droits du module cuisine
+// (voir docs/features/CookV1/SPEC_COOKING.md #4) : un admin "classique" (sans
+// admin.kitchen, dashboard seul), un admin-responsable qui est AUSSI chef (sous-menu
+// Gestion/Mon repas), un chef non-admin, et un utilisateur normal (equipier).
+const DEV_KITCHEN_USERS = [
+  { email: "adminchef@local.dev", username: "adminchef", password: "admin123", role: "ADMIN" },
+  { email: "chef@local.dev", username: "chef", password: "chef123", role: "USER" },
+  { email: "user@local.dev", username: "user", password: "user123", role: "USER" },
+];
+
+async function getOrCreateUser({ email, username, password, role }) {
+  const existing = await prisma.user.findFirst({
+    where: { OR: [{ email }, { username }] },
+  });
+  if (existing) {
+    console.log(`Deja existant, ignore : ${username} (${email})`);
+    return existing;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = await prisma.user.create({
+    data: { email, username, passwordHash, role },
+  });
+  console.log(`Compte cree : ${username} (${email}, ${role})`);
+  return user;
+}
+
 async function seedAdmins() {
   for (const { email, username, password } of DEV_ADMINS) {
-    const existing = await prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] },
-    });
-
-    if (existing) {
-      console.log(`Deja existant, ignore : ${username} (${email})`);
-      continue;
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    await prisma.user.create({
-      data: { email, username, passwordHash, role: "ADMIN" },
-    });
-
-    console.log(`Admin cree : ${username} (${email})`);
+    await getOrCreateUser({ email, username, password, role: "ADMIN" });
   }
+}
+
+// Comptes + donnees de demo pour le module cuisine (CookV1). Idempotent comme le
+// reste du seed : peut etre relance sans dupliquer (docker restarte le seed a
+// chaque demarrage du backend, cf docker-compose.yml).
+async function seedKitchenDemo(event) {
+  const adminChef = await getOrCreateUser(DEV_KITCHEN_USERS[0]);
+  const chef = await getOrCreateUser(DEV_KITCHEN_USERS[1]);
+  const user = await getOrCreateUser(DEV_KITCHEN_USERS[2]);
+
+  // admin.kitchen : seul adminChef a la case cochee (responsable complet).
+  // admin@local.dev reste un admin "classique" (dashboard cuisine en lecture seule).
+  await prisma.userPreference.upsert({
+    where: { userId_key: { userId: adminChef.id, key: "admin.kitchen" } },
+    create: { userId: adminChef.id, key: "admin.kitchen", value: true },
+    update: { value: true },
+  });
+
+  for (const u of [adminChef, chef, user]) {
+    await prisma.eventParticipation.upsert({
+      where: { eventId_userId: { eventId: event.id, userId: u.id } },
+      create: { eventId: event.id, userId: u.id },
+      update: {},
+    });
+  }
+
+  const eventKitchen = await prisma.eventKitchen.upsert({
+    where: { eventId: event.id },
+    create: {
+      eventId: event.id,
+      allergiesNotes: "Une convive est allergique aux fruits a coque.",
+      equipierPlanningEnabled: true,
+    },
+    update: {},
+  });
+
+  // Roster chef en mode manuel (pas de chefRoleId : aucune guilde Discord reelle en
+  // local). adminChef ET chef sont chefs ; adminChef n'a volontairement PAS de repas
+  // encore, pour tester le bouton "Creer mon repas" sous le sous-menu "Mon repas".
+  for (const u of [adminChef, chef]) {
+    await prisma.kitchenChef.upsert({
+      where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: u.id } },
+      create: { eventKitchenId: eventKitchen.id, userId: u.id, source: "MANUAL" },
+      update: {},
+    });
+  }
+
+  let meal = await prisma.meal.findFirst({
+    where: { eventKitchenId: eventKitchen.id, chefUserId: chef.id },
+  });
+  if (!meal) {
+    meal = await prisma.meal.create({
+      data: {
+        eventKitchenId: eventKitchen.id,
+        chefUserId: chef.id,
+        name: "Couscous royal",
+        service: "DINNER",
+        startDateTime: new Date("2026-07-16T18:00:00.000Z"),
+        endDateTime: new Date("2026-07-16T20:00:00.000Z"),
+        maxAssistants: 3,
+      },
+    });
+    await prisma.mealIngredient.createMany({
+      data: [
+        { mealId: meal.id, name: "Semoule", quantity: 2, unit: "KG" },
+        { mealId: meal.id, name: "Merguez", quantity: 1.5, unit: "KG" },
+      ],
+    });
+    await prisma.mealUtensil.create({ data: { mealId: meal.id, name: "Couscoussier" } });
+    console.log("Repas cree : Couscous royal (chef)");
+  }
+
+  await prisma.mealAssistant.upsert({
+    where: { mealId_userId: { mealId: meal.id, userId: user.id } },
+    create: { mealId: meal.id, eventKitchenId: eventKitchen.id, userId: user.id },
+    update: {},
+  });
+
+  console.log(
+    "Cuisine (demo) : adminchef@local.dev (responsable+chef sans repas), " +
+      "chef@local.dev (chef, repas Couscous royal), user@local.dev (equipier, inscrit au repas)"
+  );
 }
 
 async function seedDemoData() {
@@ -64,6 +159,10 @@ async function seedDemoData() {
     create: { eventId: event.id, userId: admin.id },
     update: {},
   });
+
+  // --- Module cuisine (CookV1) : comptes de demo + donnees ---
+  // Voir docs/features/CookV1/SPEC_COOKING.md #4 pour la matrice de droits testee.
+  await seedKitchenDemo(event);
 
   // --- Jeux de societe ---
   const gamesData = [
