@@ -8,7 +8,7 @@ import {
   USER_SELECT,
 } from "./kitchen";
 import { getMealDetail } from "./meal";
-import { lockMealRowsSorted, swapRecipesByPk } from "./mealTransfer";
+import { lockMealRowsSorted, moveRecipeByPk, swapRecipesByPk } from "./mealTransfer";
 
 const SWAP_INCLUDE = {
   requesterMeal: { select: { id: true, name: true, service: true, startDateTime: true } },
@@ -92,6 +92,87 @@ export async function createSwapRequest(
   emitToEvent(eventId, "kitchen:swap-request-changed", { eventId });
 
   return serializeSwapRequest(created.id);
+}
+
+// Un chef proprietaire d'un repas se deplace instantanement vers un creneau
+// ORPHELIN de la grille (point 1, Evolutions.md) : contrairement a l'echange avec
+// un autre chef, personne n'a besoin de confirmer (le creneau etait libre). Le
+// creneau d'origine devient orphelin ; ses equipiers/horaires/service/capacite ne
+// bougent pas (meme regle que l'echange classique). Toute demande d'echange
+// PENDING referencant l'un des deux repas n'a plus de sens et est annulee.
+export async function moveToOrphanMeal(
+  eventId: string,
+  actingUserId: string,
+  targetMealId: string
+) {
+  await getEventOr404(eventId);
+  const eventKitchen = await getOrCreateEventKitchen(eventId);
+
+  const requesterMeal = await prisma.meal.findUnique({
+    where: {
+      eventKitchenId_chefUserId: { eventKitchenId: eventKitchen.id, chefUserId: actingUserId },
+    },
+  });
+  if (!requesterMeal) {
+    throw createError(404, "You do not own a meal to move", { code: "NOT_A_CHEF_WITH_MEAL" });
+  }
+
+  const targetMeal = await prisma.meal.findUnique({ where: { id: targetMealId } });
+  if (!targetMeal || targetMeal.eventKitchenId !== eventKitchen.id) {
+    throw createError(404, "Target meal not found", { code: "MEAL_NOT_FOUND" });
+  }
+  if (targetMeal.id === requesterMeal.id) {
+    throw createError(400, "Cannot move to your own meal", { code: "SWAP_SAME_MEAL" });
+  }
+  if (targetMeal.chefUserId !== null) {
+    throw createError(400, "Target meal already has a chef", { code: "MEAL_NOT_ORPHAN" });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await lockMealRowsSorted(tx, requesterMeal.id, targetMeal.id);
+
+    const freshRequesterMeal = await tx.meal.findUnique({ where: { id: requesterMeal.id } });
+    const freshTargetMeal = await tx.meal.findUnique({ where: { id: targetMeal.id } });
+    if (!freshRequesterMeal || freshRequesterMeal.chefUserId !== actingUserId) {
+      throw createError(409, "Your meal ownership changed", { code: "SWAP_STALE" });
+    }
+    if (!freshTargetMeal || freshTargetMeal.chefUserId !== null) {
+      throw createError(409, "Target meal was just claimed by someone else", {
+        code: "MEAL_ALREADY_CLAIMED",
+      });
+    }
+
+    const movedName = freshRequesterMeal.name;
+    await tx.meal.update({ where: { id: freshRequesterMeal.id }, data: { chefUserId: null } });
+    await tx.meal.update({
+      where: { id: freshTargetMeal.id },
+      data: { chefUserId: actingUserId, name: movedName },
+    });
+    await moveRecipeByPk(tx, freshRequesterMeal.id, freshTargetMeal.id);
+
+    // Defense en profondeur : une demande d'echange PENDING referencant l'un des
+    // deux repas n'a plus de sens (le chef d'origine a change de creneau).
+    await tx.mealSwapRequest.updateMany({
+      where: {
+        status: "PENDING",
+        OR: [
+          { requesterMealId: { in: [freshRequesterMeal.id, freshTargetMeal.id] } },
+          { targetMealId: { in: [freshRequesterMeal.id, freshTargetMeal.id] } },
+        ],
+      },
+      data: { status: "CANCELLED", respondedAt: new Date() },
+    });
+  });
+
+  emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: requesterMeal.id });
+  emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: targetMeal.id });
+  emitToEvent(eventId, "kitchen:swap-request-changed", { eventId });
+
+  const [vacatedMeal, claimedMeal] = await Promise.all([
+    getMealDetail(requesterMeal.id),
+    getMealDetail(targetMeal.id),
+  ]);
+  return { vacatedMeal, claimedMeal };
 }
 
 export async function listSwapRequests(eventId: string, userId: string) {

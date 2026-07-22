@@ -115,6 +115,16 @@ router.post(
   mealController.claim
 );
 
+// Un chef proprietaire d'un repas se deplace instantanement vers un creneau
+// orphelin (point 1, Evolutions.md) : pas de confirmation d'un tiers necessaire.
+router.post(
+  "/:eventId/kitchen/meals/:mealId/move",
+  requireAuth,
+  validateUUID("eventId", "mealId"),
+  requireEventParticipant,
+  mealSwapController.moveToOrphan
+);
+
 router.post(
   "/:eventId/kitchen/meals/:mealId/assistants",
   requireAuth,

@@ -14,6 +14,19 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function moveToOrphan(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await mealSwapService.moveToOrphanMeal(
+      req.params.eventId,
+      req.session.userId!,
+      req.params.mealId
+    );
+    res.json({ data });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await mealSwapService.listSwapRequests(req.params.eventId, req.session.userId!);
