@@ -1,19 +1,6 @@
-❯ D'ailleurs tout le planning est en Paris window time, partout. de même que tout les
-sélecteurs de temps (déjà existant ou à venir), et les data en base. Si un user a déjà
-sélectionné 16h00 quelquepart, ça doit vouloir dire 16h00 paris time.
-Attention des utilisateurs sont en production et pensent que tout est déjà en heure de paris. Cela doit impérativement être corrigé et invisible pour eux.
-s'ils ont saisis 10h00 à un moment dans l'application, il doivent voir l'évènement à 10h00 sur le planning et cela doit être 10h00 heure de paris en DB.
-C'est capital que ça soit totalement fluide, invisible et sans heurt pour les users !
-Bien entendu, tout doit être affiché en Paris Time. Tout le temps.
+Revoir l'interface admin + responsablecuisine
 
 ---
-
-Revoir l'interface admin responsablecuisine
-
----
-
-2/ Échange d'équipiers (À FAIRE — hors périmètre du lot chef ci-dessus)
-Un équipier doit pouvoir changer de place sur une place vide. Un équipier doit pouvoir demander un échange avec un autre équipier sur un autre créneau (s'il n'y a pas de place vide). Pour faire plus simple, on peut dire qu'un équipier (exemple le vendredi soir), veut finalement aller le dimanche midi, mais il n'y a pas de place vide. Il demande donc à faire un échange entre sa place et le dimanche midi, les équipiers déjà en poste sur le dimanche midi peuvent tous accepter d'échanger avec lui (il négicie avec nimporte qui du créneau de destination, pas un équipier en particulier)
 
 ---
 
@@ -34,3 +21,38 @@ V2 ?
 Allergies V2 :
 Ajouter un champ directement à l'utilisateur pour indiquer ses allergies.
 Reporter automatiquement la liste
+
+-------------INFO test seed---------------
+"Fonctionne uniquement en local avec la base seedée
+
+Le plus rapide sans toucher au code : ouvre http://localhost:3000, ouvre la console du navigateur (F12) et colle ceci pour te connecter avec un des comptes seedés :
+
+fetch("http://localhost:3001/api/auth/login", {
+method: "POST",
+credentials: "include",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ identifier: "admin@local.dev", password: "admin123" }),
+}).then(() => location.href = "/events");
+
+Remplace juste identifier/password pour changer de compte (adminchef@local.dev/admin123, chef@local.dev/chef123, user@local.dev/user123). Le cookie de session est posé sur localhost donc il fonctionne normalement ensuite dans l'appli sur le port 3000.
+------------------ADMINCHEF---------------------
+fetch("http://localhost:3001/api/auth/login", {
+method: "POST",
+credentials: "include",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ identifier: "adminchef@local.dev", password: "admin123" }),
+}).then(() => location.href = "/events");
+------------------CHEF---------------------
+fetch("http://localhost:3001/api/auth/login", {
+method: "POST",
+credentials: "include",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ identifier: "chef@local.dev", password: "chef123" }),
+}).then(() => location.href = "/events");
+------------------USER---------------------
+fetch("http://localhost:3001/api/auth/login", {
+method: "POST",
+credentials: "include",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ identifier: "user@local.dev", password: "user123" }),
+}).then(() => location.href = "/events");
