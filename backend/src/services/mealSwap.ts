@@ -1,10 +1,14 @@
 import prisma from "../util/db";
 import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
-import { getEventOr404, getOrCreateEventKitchen, isKitchenManagerUser, USER_SELECT } from "./kitchen";
+import {
+  getEventOr404,
+  getOrCreateEventKitchen,
+  isKitchenManagerUser,
+  USER_SELECT,
+} from "./kitchen";
 import { getMealDetail } from "./meal";
-
-type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+import { lockMealRowsSorted, moveRecipeByPk, swapRecipesByPk } from "./mealTransfer";
 
 const SWAP_INCLUDE = {
   requesterMeal: { select: { id: true, name: true, service: true, startDateTime: true } },
@@ -12,10 +16,6 @@ const SWAP_INCLUDE = {
   requester: { select: USER_SELECT },
   target: { select: USER_SELECT },
 } as const;
-
-async function lockMealRow(tx: TxClient, mealId: string) {
-  await tx.$queryRaw`SELECT id FROM "Meal" WHERE id = ${mealId} FOR UPDATE`;
-}
 
 async function serializeSwapRequest(id: string) {
   const req = await prisma.mealSwapRequest.findUnique({ where: { id }, include: SWAP_INCLUDE });
@@ -94,6 +94,87 @@ export async function createSwapRequest(
   return serializeSwapRequest(created.id);
 }
 
+// Un chef proprietaire d'un repas se deplace instantanement vers un creneau
+// ORPHELIN de la grille (point 1, Evolutions.md) : contrairement a l'echange avec
+// un autre chef, personne n'a besoin de confirmer (le creneau etait libre). Le
+// creneau d'origine devient orphelin ; ses equipiers/horaires/service/capacite ne
+// bougent pas (meme regle que l'echange classique). Toute demande d'echange
+// PENDING referencant l'un des deux repas n'a plus de sens et est annulee.
+export async function moveToOrphanMeal(
+  eventId: string,
+  actingUserId: string,
+  targetMealId: string
+) {
+  await getEventOr404(eventId);
+  const eventKitchen = await getOrCreateEventKitchen(eventId);
+
+  const requesterMeal = await prisma.meal.findUnique({
+    where: {
+      eventKitchenId_chefUserId: { eventKitchenId: eventKitchen.id, chefUserId: actingUserId },
+    },
+  });
+  if (!requesterMeal) {
+    throw createError(404, "You do not own a meal to move", { code: "NOT_A_CHEF_WITH_MEAL" });
+  }
+
+  const targetMeal = await prisma.meal.findUnique({ where: { id: targetMealId } });
+  if (!targetMeal || targetMeal.eventKitchenId !== eventKitchen.id) {
+    throw createError(404, "Target meal not found", { code: "MEAL_NOT_FOUND" });
+  }
+  if (targetMeal.id === requesterMeal.id) {
+    throw createError(400, "Cannot move to your own meal", { code: "SWAP_SAME_MEAL" });
+  }
+  if (targetMeal.chefUserId !== null) {
+    throw createError(400, "Target meal already has a chef", { code: "MEAL_NOT_ORPHAN" });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await lockMealRowsSorted(tx, requesterMeal.id, targetMeal.id);
+
+    const freshRequesterMeal = await tx.meal.findUnique({ where: { id: requesterMeal.id } });
+    const freshTargetMeal = await tx.meal.findUnique({ where: { id: targetMeal.id } });
+    if (!freshRequesterMeal || freshRequesterMeal.chefUserId !== actingUserId) {
+      throw createError(409, "Your meal ownership changed", { code: "SWAP_STALE" });
+    }
+    if (!freshTargetMeal || freshTargetMeal.chefUserId !== null) {
+      throw createError(409, "Target meal was just claimed by someone else", {
+        code: "MEAL_ALREADY_CLAIMED",
+      });
+    }
+
+    const movedName = freshRequesterMeal.name;
+    await tx.meal.update({ where: { id: freshRequesterMeal.id }, data: { chefUserId: null } });
+    await tx.meal.update({
+      where: { id: freshTargetMeal.id },
+      data: { chefUserId: actingUserId, name: movedName },
+    });
+    await moveRecipeByPk(tx, freshRequesterMeal.id, freshTargetMeal.id);
+
+    // Defense en profondeur : une demande d'echange PENDING referencant l'un des
+    // deux repas n'a plus de sens (le chef d'origine a change de creneau).
+    await tx.mealSwapRequest.updateMany({
+      where: {
+        status: "PENDING",
+        OR: [
+          { requesterMealId: { in: [freshRequesterMeal.id, freshTargetMeal.id] } },
+          { targetMealId: { in: [freshRequesterMeal.id, freshTargetMeal.id] } },
+        ],
+      },
+      data: { status: "CANCELLED", respondedAt: new Date() },
+    });
+  });
+
+  emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: requesterMeal.id });
+  emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: targetMeal.id });
+  emitToEvent(eventId, "kitchen:swap-request-changed", { eventId });
+
+  const [vacatedMeal, claimedMeal] = await Promise.all([
+    getMealDetail(requesterMeal.id),
+    getMealDetail(targetMeal.id),
+  ]);
+  return { vacatedMeal, claimedMeal };
+}
+
 export async function listSwapRequests(eventId: string, userId: string) {
   await getEventOr404(eventId);
   const eventKitchen = await prisma.eventKitchen.findUnique({ where: { eventId } });
@@ -151,9 +232,7 @@ export async function acceptSwapRequest(
 
   await prisma.$transaction(async (tx) => {
     // Verrous dans un ordre deterministe pour eviter les deadlocks croises.
-    const [firstId, secondId] = [req.requesterMealId, req.targetMealId].sort();
-    await lockMealRow(tx, firstId);
-    await lockMealRow(tx, secondId);
+    await lockMealRowsSorted(tx, req.requesterMealId, req.targetMealId);
 
     const requesterMeal = await tx.meal.findUnique({ where: { id: req.requesterMealId } });
     const targetMeal = await tx.meal.findUnique({ where: { id: req.targetMealId } });
@@ -176,15 +255,6 @@ export async function acceptSwapRequest(
     const requesterName = requesterMeal.name;
     const targetName = targetMeal.name;
 
-    // Capture des ids de recette AVANT tout deplacement (filtrage par PK, jamais par
-    // mealId, pour eviter que le 2e deplacement ne re-attrape les lignes du 1er).
-    const [reqIngredients, tgtIngredients, reqUtensils, tgtUtensils] = await Promise.all([
-      tx.mealIngredient.findMany({ where: { mealId: requesterMeal.id }, select: { id: true } }),
-      tx.mealIngredient.findMany({ where: { mealId: targetMeal.id }, select: { id: true } }),
-      tx.mealUtensil.findMany({ where: { mealId: requesterMeal.id }, select: { id: true } }),
-      tx.mealUtensil.findMany({ where: { mealId: targetMeal.id }, select: { id: true } }),
-    ]);
-
     // 1. Libere les deux chefUserId (etat null intermediaire) : la contrainte unique
     //    [eventKitchenId, chefUserId] interdit que deux lignes portent le meme chef,
     //    meme transitoirement, dans la transaction.
@@ -201,23 +271,9 @@ export async function acceptSwapRequest(
       data: { chefUserId: req.requesterUserId, name: requesterName },
     });
 
-    // 3. Deplace ingredients & ustensiles par reassignation du FK, filtre par PK.
-    await tx.mealIngredient.updateMany({
-      where: { id: { in: reqIngredients.map((r) => r.id) } },
-      data: { mealId: targetMeal.id },
-    });
-    await tx.mealIngredient.updateMany({
-      where: { id: { in: tgtIngredients.map((r) => r.id) } },
-      data: { mealId: requesterMeal.id },
-    });
-    await tx.mealUtensil.updateMany({
-      where: { id: { in: reqUtensils.map((r) => r.id) } },
-      data: { mealId: targetMeal.id },
-    });
-    await tx.mealUtensil.updateMany({
-      where: { id: { in: tgtUtensils.map((r) => r.id) } },
-      data: { mealId: requesterMeal.id },
-    });
+    // 3. Deplace ingredients & ustensiles (echange croise, capture des PK AVANT tout
+    //    mouvement, cf commentaire de swapRecipesByPk).
+    await swapRecipesByPk(tx, requesterMeal.id, targetMeal.id);
 
     await tx.mealSwapRequest.update({
       where: { id: req.id },

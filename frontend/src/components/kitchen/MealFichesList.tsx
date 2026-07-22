@@ -133,127 +133,132 @@ export default function MealFichesList({
   };
 
   return (
-    <div className="space-y-2">
-      {meals.map((meal) => {
-        const capacityMax =
-          poolRemaining !== undefined ? meal.maxAssistants + poolRemaining : undefined;
-        return (
-          <div
-            key={meal.id}
-            className="card bg-base-200 shadow-none cursor-pointer hover:bg-base-300 transition-colors"
-            onClick={() => setDetailMeal(meal)}
-          >
-            <div className="card-body p-3 space-y-2">
-              <div className="flex items-start justify-between gap-2 flex-wrap">
-                <div>
-                  <p className="font-semibold text-sm capitalize">{slotLabel(meal)}</p>
-                  {meal.name && <p className="text-xs opacity-70">{meal.name}</p>}
+    <>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {meals.map((meal) => {
+          const capacityMax =
+            poolRemaining !== undefined ? meal.maxAssistants + poolRemaining : undefined;
+          return (
+            <div
+              key={meal.id}
+              className="card bg-base-200 shadow-none cursor-pointer hover:bg-base-300 transition-colors"
+              onClick={() => setDetailMeal(meal)}
+            >
+              <div className="card-body p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div>
+                    <p className="font-semibold text-sm capitalize">{slotLabel(meal)}</p>
+                    {meal.name && <p className="text-xs opacity-70">{meal.name}</p>}
+                  </div>
+                  <span
+                    className={`badge badge-sm shrink-0 ${
+                      meal.remainingSeats > 0 ? "badge-ghost" : "badge-neutral"
+                    }`}
+                  >
+                    {meal.remainingSeats > 0 ? "places libres" : "complet"}
+                  </span>
                 </div>
-                <span
-                  className={`badge badge-sm shrink-0 ${
-                    meal.remainingSeats > 0 ? "badge-ghost" : "badge-neutral"
-                  }`}
+
+                <div
+                  className="flex items-center gap-2 flex-wrap"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  {meal.remainingSeats > 0 ? "places libres" : "complet"}
-                </span>
-              </div>
+                  <span className="text-xs opacity-60 w-16 shrink-0">Chef</span>
+                  {meal.chef ? (
+                    <span className="text-sm">{displayedName(meal.chef)}</span>
+                  ) : (
+                    <div className="flex gap-2 flex-1 min-w-[200px]">
+                      <select
+                        className="select select-bordered select-xs flex-1"
+                        value={chefChoices[meal.id] ?? ""}
+                        onChange={(e) =>
+                          setChefChoices((prev) => ({ ...prev, [meal.id]: e.target.value }))
+                        }
+                        disabled={eligibleChefs.length === 0}
+                      >
+                        <option value="">Choisir un chef...</option>
+                        {eligibleChefs.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {displayedName(c)}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        className="btn btn-xs"
+                        disabled={!chefChoices[meal.id] || !!pendingAction}
+                        onClick={() => handleAssignChef(meal)}
+                      >
+                        Assigner
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-              <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                <span className="text-xs opacity-60 w-16 shrink-0">Chef</span>
-                {meal.chef ? (
-                  <span className="text-sm">{displayedName(meal.chef)}</span>
-                ) : (
-                  <div className="flex gap-2 flex-1 min-w-[200px]">
-                    <select
-                      className="select select-bordered select-xs flex-1"
-                      value={chefChoices[meal.id] ?? ""}
-                      onChange={(e) =>
-                        setChefChoices((prev) => ({ ...prev, [meal.id]: e.target.value }))
-                      }
-                      disabled={eligibleChefs.length === 0}
-                    >
-                      <option value="">Choisir un chef...</option>
-                      {eligibleChefs.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {displayedName(c)}
-                        </option>
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <span className="text-xs opacity-60 w-16 shrink-0">Capacité</span>
+                  <span className="text-sm">
+                    {meal.assistants.length}/{meal.maxAssistants}
+                  </span>
+                  <NumberStepper
+                    value={meal.maxAssistants}
+                    min={meal.assistants.length}
+                    max={capacityMax}
+                    onChange={(v) => handleCapacityChange(meal, v)}
+                  />
+                </div>
+
+                <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
+                  <span className="text-xs opacity-60">Équipiers</span>
+                  {meal.assistants.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {meal.assistants.map((a) => (
+                        <span key={a.id} className="badge badge-outline gap-1">
+                          {displayedName(a)}
+                          <button
+                            type="button"
+                            className="text-error"
+                            disabled={!!pendingAction}
+                            onClick={() => handleRemoveAssistant(meal, a.id)}
+                            aria-label={`Retirer ${displayedName(a)}`}
+                          >
+                            ✕
+                          </button>
+                        </span>
                       ))}
-                    </select>
-                    <button
-                      className="btn btn-xs"
-                      disabled={!chefChoices[meal.id] || !!pendingAction}
-                      onClick={() => handleAssignChef(meal)}
-                    >
-                      Assigner
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                <span className="text-xs opacity-60 w-16 shrink-0">Capacité</span>
-                <span className="text-sm">
-                  {meal.assistants.length}/{meal.maxAssistants}
-                </span>
-                <NumberStepper
-                  value={meal.maxAssistants}
-                  min={meal.assistants.length}
-                  max={capacityMax}
-                  onChange={(v) => handleCapacityChange(meal, v)}
-                />
-              </div>
-
-              <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
-                <span className="text-xs opacity-60">Équipiers</span>
-                {meal.assistants.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {meal.assistants.map((a) => (
-                      <span key={a.id} className="badge badge-outline gap-1">
-                        {displayedName(a)}
-                        <button
-                          type="button"
-                          className="text-error"
-                          disabled={!!pendingAction}
-                          onClick={() => handleRemoveAssistant(meal, a.id)}
-                          aria-label={`Retirer ${displayedName(a)}`}
-                        >
-                          ✕
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {meal.remainingSeats > 0 && (
-                  <div className="flex gap-2">
-                    <select
-                      className="select select-bordered select-xs flex-1"
-                      value={equipierChoices[meal.id] ?? ""}
-                      onChange={(e) =>
-                        setEquipierChoices((prev) => ({ ...prev, [meal.id]: e.target.value }))
-                      }
-                      disabled={unassigned.length === 0}
-                    >
-                      <option value="">Choisir un équipier...</option>
-                      {unassigned.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {displayedName(p)}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      className="btn btn-xs"
-                      disabled={!equipierChoices[meal.id] || !!pendingAction}
-                      onClick={() => handleAddAssistant(meal)}
-                    >
-                      Ajouter
-                    </button>
-                  </div>
-                )}
+                    </div>
+                  )}
+                  {meal.remainingSeats > 0 && (
+                    <div className="flex gap-2">
+                      <select
+                        className="select select-bordered select-xs flex-1"
+                        value={equipierChoices[meal.id] ?? ""}
+                        onChange={(e) =>
+                          setEquipierChoices((prev) => ({ ...prev, [meal.id]: e.target.value }))
+                        }
+                        disabled={unassigned.length === 0}
+                      >
+                        <option value="">Choisir un équipier...</option>
+                        {unassigned.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {displayedName(p)}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        className="btn btn-xs"
+                        disabled={!equipierChoices[meal.id] || !!pendingAction}
+                        onClick={() => handleAddAssistant(meal)}
+                      >
+                        Ajouter
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       <MealFicheDetailModal
         eventId={eventId}
@@ -261,6 +266,6 @@ export default function MealFichesList({
         onClose={() => setDetailMeal(null)}
         onChanged={onChanged}
       />
-    </div>
+    </>
   );
 }

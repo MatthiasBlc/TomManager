@@ -33,6 +33,9 @@ vi.mock("../../util/db", () => ({
     meal: {
       updateMany: vi.fn(),
     },
+    assistantSwapRequest: {
+      updateMany: vi.fn(),
+    },
   },
 }));
 
@@ -50,6 +53,7 @@ const db = prisma as unknown as {
   kitchenCoursesMember: { deleteMany: ReturnType<typeof vi.fn> };
   mealAssistant: { deleteMany: ReturnType<typeof vi.fn> };
   meal: { updateMany: ReturnType<typeof vi.fn> };
+  assistantSwapRequest: { updateMany: ReturnType<typeof vi.fn> };
 };
 
 const KITCHEN = { id: "kitchen-1", eventId: "event-1", chefRoleId: "role-chef-1" };
@@ -110,6 +114,20 @@ describe("handleChefRoleAdded", () => {
     });
     expect(db.mealAssistant.deleteMany).toHaveBeenCalledWith({
       where: { eventKitchenId: "kitchen-1", userId: "user-1" },
+    });
+  });
+
+  it("annule toute demande d'echange equipier en attente du nouveau chef (point 4, Evolutions.md)", async () => {
+    db.eventKitchen.findMany.mockResolvedValue([KITCHEN]);
+    db.user.findFirst.mockResolvedValue(USER);
+    db.eventParticipation.findUnique.mockResolvedValue({ id: "part-1" });
+    db.kitchenChef.findUnique.mockResolvedValue(null);
+
+    await handleChefRoleAdded("discord-123", "role-chef-1");
+
+    expect(db.assistantSwapRequest.updateMany).toHaveBeenCalledWith({
+      where: { eventKitchenId: "kitchen-1", requesterUserId: "user-1", status: "PENDING" },
+      data: { status: "CANCELLED", respondedAt: expect.any(Date) },
     });
   });
 });

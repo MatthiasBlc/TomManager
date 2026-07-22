@@ -9,6 +9,7 @@ import { SkeletonCardGrid } from "../common/Skeleton";
 import { getErrorMessage } from "../../config/apiErrors";
 import { serviceLabel, dayLabel } from "./units";
 import { parisDayKey } from "../../utils/dateTime";
+import AssistantSwapPanel, { type AssistantSwapRequest } from "./AssistantSwapPanel";
 
 interface Person {
   id: string;
@@ -24,11 +25,18 @@ const SERVICES: Service[] = ["LUNCH", "DINNER"];
 interface Props {
   eventId: string;
   data: KitchenViewData | null;
+  assistantSwaps: AssistantSwapRequest[];
   loading: boolean;
   onChanged: () => void;
 }
 
-export default function KitchenBoard({ eventId, data, loading, onChanged: fetchKitchen }: Props) {
+export default function KitchenBoard({
+  eventId,
+  data,
+  assistantSwaps,
+  loading,
+  onChanged: fetchKitchen,
+}: Props) {
   const { user } = useAuth();
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
@@ -77,8 +85,15 @@ export default function KitchenBoard({ eventId, data, loading, onChanged: fetchK
   // theorique de la grille attendue) : gere naturellement les creneaux manuels
   // hors-grille et l'absence de generation.
   const dayKeys = Array.from(new Set(data.meals.map((m) => parisDayKey(m.startDateTime)))).sort();
-  const dayIso = new Map(dayKeys.map((k) => [k, data.meals.find((m) => parisDayKey(m.startDateTime) === k)!.startDateTime]));
-  const cellByKey = new Map(data.meals.map((m) => [`${parisDayKey(m.startDateTime)}|${m.service}`, m]));
+  const dayIso = new Map(
+    dayKeys.map((k) => [
+      k,
+      data.meals.find((m) => parisDayKey(m.startDateTime) === k)!.startDateTime,
+    ])
+  );
+  const cellByKey = new Map(
+    data.meals.map((m) => [`${parisDayKey(m.startDateTime)}|${m.service}`, m])
+  );
 
   const renderCell = (meal: MealFiche | undefined) => {
     if (!meal) {
@@ -105,7 +120,9 @@ export default function KitchenBoard({ eventId, data, loading, onChanged: fetchK
                 disabled={!!pendingAction}
                 onClick={() => handleLeave(meal.id)}
               >
-                {pendingAction === meal.id && <span className="loading loading-spinner loading-xs" />}
+                {pendingAction === meal.id && (
+                  <span className="loading loading-spinner loading-xs" />
+                )}
                 Se désinscrire
               </button>
             ) : (
@@ -114,7 +131,9 @@ export default function KitchenBoard({ eventId, data, loading, onChanged: fetchK
                 disabled={!!pendingAction || isFull}
                 onClick={() => handleJoin(meal.id)}
               >
-                {pendingAction === meal.id && <span className="loading loading-spinner loading-xs" />}
+                {pendingAction === meal.id && (
+                  <span className="loading loading-spinner loading-xs" />
+                )}
                 {isFull ? "Complet" : currentMeal ? "Se déplacer ici" : "S'inscrire"}
               </button>
             )}
@@ -174,8 +193,13 @@ export default function KitchenBoard({ eventId, data, loading, onChanged: fetchK
                   <div className="card-body p-3 space-y-2">
                     <h4 className="font-semibold text-sm capitalize">{dayLabel(dayIso.get(k)!)}</h4>
                     {SERVICES.map((service) => (
-                      <div key={service} className="border-t border-base-300 pt-2 first:border-t-0 first:pt-0">
-                        <p className="text-xs font-medium opacity-60 mb-1">{serviceLabel(service)}</p>
+                      <div
+                        key={service}
+                        className="border-t border-base-300 pt-2 first:border-t-0 first:pt-0"
+                      >
+                        <p className="text-xs font-medium opacity-60 mb-1">
+                          {serviceLabel(service)}
+                        </p>
                         {renderCell(cellByKey.get(`${k}|${service}`))}
                       </div>
                     ))}
@@ -184,6 +208,19 @@ export default function KitchenBoard({ eventId, data, loading, onChanged: fetchK
               ))}
             </div>
           </>
+        )}
+
+        {canJoin && currentMeal && (
+          <div className="mt-4">
+            <AssistantSwapPanel
+              eventId={eventId}
+              meals={data.meals}
+              currentUserId={user!.id}
+              currentMealId={currentMeal.id}
+              swaps={assistantSwaps}
+              onChanged={fetchKitchen}
+            />
+          </div>
         )}
       </div>
     </div>

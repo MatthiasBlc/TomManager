@@ -132,6 +132,7 @@ repas OU responsable cuisine)
 | PATCH  | `/meals/:mealId`                     | requireAuth + requireMealChefOrManager | Edite un repas ; le chef proprietaire n'edite que `name`/ingredients/ustensiles. `service`, `startDateTime`, `endDateTime`, `maxAssistants`, `chefUserId` (reassignation d'un orphelin, 400 `MEAL_NOT_ORPHAN`) reserves au manager (403 `FORBIDDEN`) |
 | DELETE | `/meals/:mealId`                     | requireAuth + requireMealChefOrManager | Supprime un repas (cascade ingredients/ustensiles/inscriptions) — plus expose dans l'UI Admin Chef (creneau genere non supprimable, point 5), conserve pour "Mon repas" (chef sur son propre creneau) |
 | POST   | `/meals/:mealId/claim`               | requireAuth + requireEventParticipant  | Un chef du roster reclame un creneau orphelin de la grille (verrou de ligne) — 403 `NOT_IN_CHEF_ROSTER`, 409 `MEAL_ALREADY_CLAIMED`, 409 `CHEF_ALREADY_HAS_MEAL`                                                                          |
+| POST   | `/meals/:mealId/move`                | requireAuth + requireEventParticipant  | Evolutions.md point 1 : un chef ayant deja un repas se deplace INSTANTANEMENT vers un creneau orphelin (pas de confirmation d'un tiers, contrairement a `/swaps`) — le creneau quitte devient orphelin (equipiers/horaires/capacite inchanges), recette+chef suivent. 404 `NOT_A_CHEF_WITH_MEAL`/`MEAL_NOT_FOUND`, 400 `SWAP_SAME_MEAL`/`MEAL_NOT_ORPHAN`, 409 `MEAL_ALREADY_CLAIMED`/`SWAP_STALE` |
 | POST   | `/meals/:mealId/assistants`          | requireAuth + requireEventParticipant  | Equipier s'inscrit ou se deplace (transaction, verrou ligne repas) — 409 `MEAL_FULL`, `ROLE_EXCLUSIVITY` (chef/courses), `ALREADY_MEAL_ASSISTANT`                                                                                          |
 | DELETE | `/meals/:mealId/assistants/me`       | requireAuth + requireEventParticipant  | Equipier se desinscrit — 404 `NOT_MEAL_ASSISTANT`                                                                                                                                                                                          |
 | POST   | `/meals/:mealId/assistants/:userId`  | requireAuth + requireKitchenManager    | Admin Chef point 5 : le manager assigne/deplace un equipier tiers sur un creneau (reutilise `joinOrMoveMeal`) — memes erreurs que l'auto-inscription + 400 `NOT_EVENT_PARTICIPANT`                                                          |
@@ -167,6 +168,24 @@ Codes supplementaires : `MEAL_NOT_FOUND`, `MEAL_NOT_ORPHAN`, `MEAL_START_OUT_OF_
 | POST   | `/swaps/:swapRequestId/accept` | requireAuth + requireEventParticipant | Cible accepte : swap chef+nom+ingredients+ustensiles ; equipiers/horaires/service inchanges. 403/409 `SWAP_STALE`/`SWAP_NOT_PENDING` |
 | POST   | `/swaps/:swapRequestId/reject` | requireAuth + requireEventParticipant | Cible refuse (statut REJECTED)                                                                           |
 | POST   | `/swaps/:swapRequestId/cancel` | requireAuth + requireEventParticipant | Demandeur annule (statut CANCELLED)                                                                      |
+
+### Echange de creneau entre equipiers (`/assistant-swaps`, meme prefixe, Evolutions.md point 4)
+
+La cible est un REPAS, pas une personne : n'importe quel `MealAssistant` courant du repas
+cible peut accepter (premier arrive, premier servi) — pas de `reject` individuel possible,
+seulement `accept`/`cancel`. Creation bloquee (`TARGET_MEAL_HAS_SEATS`) si le repas cible a
+encore une place libre (l'equipier doit utiliser `/meals/:mealId/assistants`, deplacement
+direct, deja possible). Une demande PENDING en attente est annulee automatiquement (statut
+CANCELLED) des que la fiche `MealAssistant` du demandeur change (leave/move/reassignation
+manager/auto-desinscription role cuisine) — voir `kitchen.ts::cancelStaleAssistantSwapRequests`,
+aussi duplique cote discord-bot (`syncKitchenChef.ts::materializeRoleChef`).
+
+| Method | Path                                     | Auth                                  | Description                                                                                                     |
+| ------ | ---------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| GET    | `/assistant-swaps`                       | requireAuth + requireEventParticipant | Demandes PENDING visibles par l'appelant (mes demandes envoyees + celles ciblant mon repas actuel, ou toutes si manager) |
+| POST   | `/assistant-swaps`                       | requireAuth + requireEventParticipant | Propose un echange `{ targetMealId }` — 404 `NOT_MEAL_ASSISTANT`/`MEAL_NOT_FOUND`, 400 `ASSISTANT_SWAP_SAME_MEAL`, 409 `TARGET_MEAL_HAS_SEATS`/`ASSISTANT_SWAP_ALREADY_PENDING` |
+| POST   | `/assistant-swaps/:assistantSwapRequestId/accept` | requireAuth + requireEventParticipant | N'importe quel equipier actuellement sur le repas cible accepte : echange 1-pour-1 des `MealAssistant.mealId`, capacite-neutre. 403 `FORBIDDEN` (pas sur le repas cible), 409 `ASSISTANT_SWAP_STALE`/`ASSISTANT_SWAP_NOT_PENDING` |
+| POST   | `/assistant-swaps/:assistantSwapRequestId/cancel` | requireAuth + requireEventParticipant | Demandeur annule (statut CANCELLED)                                                                              |
 
 ## Kitchen Products (`/api/kitchen/products`) — autocomplete ingredients (CookV1)
 

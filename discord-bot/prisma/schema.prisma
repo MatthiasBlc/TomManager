@@ -29,17 +29,21 @@ model User {
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
-  createdEvents             Event[]
-  eventParticipations       EventParticipation[]
-  createdGameTables         GameTable[]
-  gameTableParticipations   GameTableParticipant[]
-  eventBoardGames           EventBoardGame[]
-  notifications             Notification[]
-  preferences               UserPreference[]
-  kitchenChefRoster         KitchenChef[]
-  kitchenCoursesMemberships KitchenCoursesMember[]
-  meals                     Meal[]
-  mealAssistances           MealAssistant[]
+  createdEvents                 Event[]
+  eventParticipations           EventParticipation[]
+  createdGameTables             GameTable[]
+  gameTableParticipations       GameTableParticipant[]
+  eventBoardGames               EventBoardGame[]
+  notifications                 Notification[]
+  preferences                   UserPreference[]
+  kitchenChefRoster             KitchenChef[]
+  kitchenCoursesMemberships     KitchenCoursesMember[]
+  meals                         Meal[]
+  mealAssistances               MealAssistant[]
+  sentSwapRequests              MealSwapRequest[]      @relation("SwapRequester")
+  receivedSwapRequests          MealSwapRequest[]      @relation("SwapTarget")
+  sentAssistantSwapRequests     AssistantSwapRequest[] @relation("AssistantSwapRequester")
+  acceptedAssistantSwapRequests AssistantSwapRequest[] @relation("AssistantSwapAccepter")
 }
 
 // Preferences utilisateur (toggles admin/beta, extensible a d'autres options)
@@ -242,11 +246,13 @@ model EventKitchen {
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
-  event          Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  chefs          KitchenChef[]
-  coursesMembers KitchenCoursesMember[]
-  meals          Meal[]
-  assistants     MealAssistant[]
+  event                 Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  chefs                 KitchenChef[]
+  coursesMembers        KitchenCoursesMember[]
+  meals                 Meal[]
+  assistants            MealAssistant[]
+  mealSwapRequests      MealSwapRequest[]
+  assistantSwapRequests AssistantSwapRequest[]
 }
 
 model KitchenChef {
@@ -290,6 +296,12 @@ model Meal {
   utensils     MealUtensil[]
   assistants   MealAssistant[]
 
+  swapRequestsAsRequester MealSwapRequest[] @relation("SwapRequesterMeal")
+  swapRequestsAsTarget    MealSwapRequest[] @relation("SwapTargetMeal")
+
+  assistantSwapRequestsAsRequesterMeal AssistantSwapRequest[] @relation("AssistantSwapRequesterMeal")
+  assistantSwapRequestsAsTargetMeal    AssistantSwapRequest[] @relation("AssistantSwapTargetMeal")
+
   @@unique([eventKitchenId, chefUserId])
   @@index([eventKitchenId, startDateTime])
 }
@@ -314,11 +326,20 @@ model Product {
 }
 
 model MealUtensil {
-  id     String @id @default(uuid())
-  mealId String
-  name   String
+  id        String  @id @default(uuid())
+  mealId    String
+  utensilId String?
+  name      String
 
-  meal Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  meal    Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  utensil Utensil? @relation(fields: [utensilId], references: [id])
+}
+
+model Utensil {
+  id   String @id @default(uuid())
+  name String @unique
+
+  mealUtensils MealUtensil[]
 }
 
 model MealAssistant {
@@ -334,6 +355,65 @@ model MealAssistant {
 
   @@unique([mealId, userId])
   @@unique([eventKitchenId, userId])
+}
+
+// Demande d'echange de creneau entre deux chefs (confirmation mutuelle).
+// A l'acceptation, la recette (name + ingredients + ustensiles) et le chef suivent
+// dans l'echange, mais les equipiers (MealAssistant) et les horaires/service/capacite
+// restent attaches au creneau (slot) d'origine.
+model MealSwapRequest {
+  id              String     @id @default(uuid())
+  eventKitchenId  String
+  requesterMealId String
+  targetMealId    String
+  requesterUserId String
+  targetUserId    String
+  status          SwapStatus @default(PENDING)
+  createdAt       DateTime   @default(now())
+  respondedAt     DateTime?
+
+  eventKitchen  EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  requesterMeal Meal         @relation("SwapRequesterMeal", fields: [requesterMealId], references: [id], onDelete: Cascade)
+  targetMeal    Meal         @relation("SwapTargetMeal", fields: [targetMealId], references: [id], onDelete: Cascade)
+  requester     User         @relation("SwapRequester", fields: [requesterUserId], references: [id])
+  target        User         @relation("SwapTarget", fields: [targetUserId], references: [id])
+
+  @@index([eventKitchenId, status])
+  @@index([targetMealId, status])
+}
+
+// Demande d'echange entre equipiers (point 4, Evolutions.md) : la cible est un
+// REPAS, pas une personne — n'importe quel MealAssistant courant du repas cible
+// peut accepter (premier arrive, premier servi). Echange 1-pour-1 des
+// MealAssistant.mealId (capacite-neutre). accepterUserId n'est renseigne qu'a
+// l'acceptation (inconnu a la creation).
+model AssistantSwapRequest {
+  id              String     @id @default(uuid())
+  eventKitchenId  String
+  requesterMealId String
+  targetMealId    String
+  requesterUserId String
+  accepterUserId  String?
+  status          SwapStatus @default(PENDING)
+  createdAt       DateTime   @default(now())
+  respondedAt     DateTime?
+
+  eventKitchen  EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  requesterMeal Meal         @relation("AssistantSwapRequesterMeal", fields: [requesterMealId], references: [id], onDelete: Cascade)
+  targetMeal    Meal         @relation("AssistantSwapTargetMeal", fields: [targetMealId], references: [id], onDelete: Cascade)
+  requester     User         @relation("AssistantSwapRequester", fields: [requesterUserId], references: [id])
+  accepter      User?        @relation("AssistantSwapAccepter", fields: [accepterUserId], references: [id])
+
+  @@index([eventKitchenId, status])
+  @@index([targetMealId, status])
+  @@index([requesterUserId, status])
+}
+
+enum SwapStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
 }
 
 enum ChefSource {

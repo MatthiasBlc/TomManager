@@ -229,8 +229,7 @@ describe("Meal swap API", () => {
   });
 
   it("lets the target reject a request without swapping", async () => {
-    const { event, managerCookie, chef1, chef2, meal1, meal2 } =
-      await setupTwoChefsWithMeals("s4");
+    const { event, managerCookie, chef1, chef2, meal1, meal2 } = await setupTwoChefsWithMeals("s4");
 
     const proposeRes = await request
       .post(`/api/events/${event.id}/kitchen/swaps`)
@@ -305,5 +304,148 @@ describe("Meal swap API", () => {
       .send({ targetMealId: orphan.id });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("TARGET_MEAL_ORPHAN");
+  });
+
+  describe("POST /meals/:mealId/move (point 1, Evolutions.md — instant move to a free slot)", () => {
+    async function setupChefWithMealAndOrphanSlot(suffix: string) {
+      const { cookie: managerCookie } = await setupManager(suffix);
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+
+      const chef1 = await setupChef(event.id, managerCookie, {
+        email: `movechef1-${suffix}@example.com`,
+        username: `movechef1${suffix}`,
+      });
+      // Service LUNCH pour ne pas entrer en collision avec le creneau DINNER que la
+      // grille va generer pour le 1er jour (regle "premier jour = diner seul").
+      const meal1 = await createMeal(event.id, chef1.cookie, {
+        date: "2026-06-01",
+        service: "LUNCH",
+        name: "Tartiflette",
+        ingredients: [{ name: "Reblochon", quantity: 1, unit: "PIECE" }],
+        utensils: [{ name: "Plat a gratin" }],
+      });
+      await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal1.id}`)
+        .set("Cookie", managerCookie)
+        .send({ maxAssistants: 2 });
+      const eq1 = await addTestParticipant(event.id, {
+        email: `moveeq1-${suffix}@example.com`,
+        username: `moveeq1${suffix}`,
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${meal1.id}/assistants`)
+        .set("Cookie", eq1.cookie);
+
+      // Genere la grille : cree un creneau orphelin (DINNER du 1er jour).
+      await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+      const kitchen = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", managerCookie);
+      const orphan = kitchen.body.data.meals.find((m: { chef: unknown }) => m.chef === null);
+      expect(orphan).toBeDefined();
+
+      return { event, managerCookie, chef1, meal1, orphan, eq1 };
+    }
+
+    it("moves the chef's recipe to the orphan slot instantly, orphaning the vacated slot but keeping its assistants", async () => {
+      const { event, managerCookie, chef1, meal1, orphan, eq1 } =
+        await setupChefWithMealAndOrphanSlot("m1");
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphan.id}/move`)
+        .set("Cookie", chef1.cookie);
+      expect(res.status).toBe(200);
+
+      const vacated = await getMeal(event.id, managerCookie, meal1.id);
+      const claimed = await getMeal(event.id, managerCookie, orphan.id);
+
+      // Le creneau d'origine devient orphelin ; ses equipiers/horaires/service/
+      // capacite restent inchanges.
+      expect(vacated.chef).toBeNull();
+      expect(vacated.service).toBe("LUNCH");
+      expect(vacated.assistants.map((a: { id: string }) => a.id)).toEqual([eq1.user.id]);
+
+      // Le nouveau creneau recoit le chef + la recette.
+      expect(claimed.chef.id).toBe(chef1.user.id);
+      expect(claimed.name).toBe("Tartiflette");
+      expect(claimed.ingredients.map((i: { name: string }) => i.name)).toEqual(["Reblochon"]);
+      expect(claimed.utensils.map((u: { name: string }) => u.name)).toEqual(["Plat a gratin"]);
+    });
+
+    it("returns NOT_A_CHEF_WITH_MEAL when the caller has no meal to move", async () => {
+      const { cookie: managerCookie } = await setupManager("m2");
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const chef1 = await setupChef(event.id, managerCookie, {
+        email: "movechef2-m2@example.com",
+        username: "movechef2m2",
+      });
+      await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+      const kitchen = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", managerCookie);
+      const orphan = kitchen.body.data.meals[0];
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphan.id}/move`)
+        .set("Cookie", chef1.cookie);
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe("NOT_A_CHEF_WITH_MEAL");
+    });
+
+    it("returns SWAP_SAME_MEAL when moving to one's own meal", async () => {
+      const { event, chef1, meal1 } = await setupChefWithMealAndOrphanSlot("m3");
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${meal1.id}/move`)
+        .set("Cookie", chef1.cookie);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("SWAP_SAME_MEAL");
+    });
+
+    it("returns MEAL_NOT_ORPHAN when the target already has a chef", async () => {
+      const { event, chef1, meal2 } = await setupTwoChefsWithMeals("m4");
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${meal2.id}/move`)
+        .set("Cookie", chef1.cookie);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("MEAL_NOT_ORPHAN");
+    });
+
+    it("returns MEAL_NOT_FOUND for an unknown target meal", async () => {
+      const { event, chef1 } = await setupChefWithMealAndOrphanSlot("m5");
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/00000000-0000-4000-8000-000000000000/move`)
+        .set("Cookie", chef1.cookie);
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe("MEAL_NOT_FOUND");
+    });
+
+    it("cancels any pending chef swap request referencing either meal", async () => {
+      const { event, managerCookie, chef1, chef2, meal1, meal2 } =
+        await setupTwoChefsWithMeals("m6");
+      // chef2 propose un echange avec chef1 (meal2 -> meal1) : PENDING avant le move.
+      const proposeRes = await request
+        .post(`/api/events/${event.id}/kitchen/swaps`)
+        .set("Cookie", chef2.cookie)
+        .send({ targetMealId: meal1.id });
+      const swapId = proposeRes.body.data.id;
+
+      await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+      const kitchen = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", managerCookie);
+      const orphan = kitchen.body.data.meals.find((m: { chef: unknown }) => m.chef === null);
+      expect(orphan).toBeDefined();
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphan.id}/move`)
+        .set("Cookie", chef1.cookie);
+      expect(res.status).toBe(200);
+
+      const swap = await prisma.mealSwapRequest.findUnique({ where: { id: swapId } });
+      expect(swap?.status).toBe("CANCELLED");
+    });
   });
 });

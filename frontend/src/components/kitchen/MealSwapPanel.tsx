@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
+import { useConfirm } from "../../contexts/ConfirmContext";
 import { getErrorMessage } from "../../config/apiErrors";
 import { serviceLabel, dayLabel } from "./units";
 
@@ -48,14 +49,17 @@ const mealRefLabel = (m: SwapMealRef) =>
   `${serviceLabel(m.service)} ${dayLabel(m.startDateTime)} — ${m.name}`;
 
 export default function MealSwapPanel({ eventId, meals, currentUserId, swaps, onChanged }: Props) {
+  const confirmDialog = useConfirm();
   const [selected, setSelected] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
-  // Creneaux des AUTRES chefs, regroupes par jour (ordre chronologique conserve).
+  // Creneaux candidats : ceux des AUTRES chefs (echange avec confirmation) ET les
+  // creneaux libres de la grille (prise instantanee, point 1 Evolutions.md).
+  // Regroupes par jour (ordre chronologique conserve).
   const groups = useMemo(() => {
     const map = new Map<string, PanelMeal[]>();
     for (const m of meals) {
-      if (!m.chef || m.chef.id === currentUserId) continue;
+      if (m.chef?.id === currentUserId) continue;
       const key = dayLabel(m.startDateTime);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(m);
@@ -63,12 +67,38 @@ export default function MealSwapPanel({ eventId, meals, currentUserId, swaps, on
     return [...map.entries()];
   }, [meals, currentUserId]);
 
-  const hasOtherChefs = groups.length > 0;
+  const hasCandidateSlots = groups.length > 0;
+  const selectedMeal = meals.find((m) => m.id === selected);
   const received = swaps.filter((s) => s.target.id === currentUserId);
   const sent = swaps.filter((s) => s.requester.id === currentUserId);
 
   const handlePropose = async () => {
-    if (!selected) return;
+    if (!selected || !selectedMeal) return;
+
+    if (!selectedMeal.chef) {
+      // Creneau libre : deplacement instantane, pas de confirmation d'un tiers.
+      const ok = await confirmDialog({
+        title: "Prendre ce créneau libre",
+        message:
+          "Ta recette (nom, ingrédients, ustensiles) part avec toi. Les équipiers déjà inscrits sur ton créneau actuel y resteront, sans chef.",
+        confirmLabel: "Prendre ce créneau",
+        variant: "warning",
+      });
+      if (!ok) return;
+      setPendingAction("move");
+      try {
+        await api.post(`/api/events/${eventId}/kitchen/meals/${selected}/move`);
+        toast.success("Créneau changé !");
+        setSelected("");
+        onChanged();
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err, "Échec du changement de créneau"));
+      } finally {
+        setPendingAction(null);
+      }
+      return;
+    }
+
     setPendingAction("propose");
     try {
       await api.post(`/api/events/${eventId}/kitchen/swaps`, { targetMealId: selected });
@@ -149,8 +179,8 @@ export default function MealSwapPanel({ eventId, meals, currentUserId, swaps, on
                   className="text-xs bg-base-100 rounded p-2 flex items-center justify-between gap-2"
                 >
                   <span>
-                    En attente de <span className="font-medium">{displayedName(s.target)}</span> pour
-                    «&nbsp;{mealRefLabel(s.targetMeal)}&nbsp;»
+                    En attente de <span className="font-medium">{displayedName(s.target)}</span>{" "}
+                    pour «&nbsp;{mealRefLabel(s.targetMeal)}&nbsp;»
                   </span>
                   <button
                     className="btn btn-ghost btn-xs"
@@ -168,13 +198,14 @@ export default function MealSwapPanel({ eventId, meals, currentUserId, swaps, on
           </div>
         )}
 
-        {!hasOtherChefs ? (
-          <p className="text-xs opacity-60">Aucun autre chef n'a de créneau à échanger.</p>
+        {!hasCandidateSlots ? (
+          <p className="text-xs opacity-60">Aucun créneau disponible pour échanger.</p>
         ) : (
           <>
             <p className="text-xs opacity-70 mb-2">
-              Propose un échange à un autre chef. Ta recette suit ton créneau ; les équipiers déjà
-              inscrits restent sur leur repas.
+              Propose un échange à un autre chef, ou prends directement un créneau libre (sans
+              attendre de confirmation). Ta recette suit ton créneau ; les équipiers déjà inscrits
+              restent sur leur repas.
             </p>
             <div className="flex gap-2">
               <select
@@ -188,7 +219,7 @@ export default function MealSwapPanel({ eventId, meals, currentUserId, swaps, on
                     {dayMeals.map((m) => (
                       <option key={m.id} value={m.id}>
                         {serviceLabel(m.service)} — {m.name}
-                        {m.chef ? ` (${displayedName(m.chef)})` : ""}
+                        {m.chef ? ` (${displayedName(m.chef)})` : " (libre)"}
                       </option>
                     ))}
                   </optgroup>
@@ -199,10 +230,10 @@ export default function MealSwapPanel({ eventId, meals, currentUserId, swaps, on
                 disabled={!selected || !!pendingAction}
                 onClick={handlePropose}
               >
-                {pendingAction === "propose" && (
+                {(pendingAction === "propose" || pendingAction === "move") && (
                   <span className="loading loading-spinner loading-xs" />
                 )}
-                Proposer un échange
+                {selectedMeal && !selectedMeal.chef ? "Prendre ce créneau" : "Proposer un échange"}
               </button>
             </div>
           </>

@@ -210,8 +210,9 @@ export default function EventDetailPage() {
             <KitchenBoard
               eventId={event.id}
               data={kitchen.data}
+              assistantSwaps={kitchen.assistantSwaps}
               loading={kitchen.loading}
-              onChanged={kitchen.fetchKitchen}
+              onChanged={kitchen.refetchAll}
             />
           </div>
         )}

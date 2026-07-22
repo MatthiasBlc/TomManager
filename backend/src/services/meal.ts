@@ -3,6 +3,7 @@ import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
 import {
   assertParticipant,
+  cancelStaleAssistantSwapRequests,
   getEventOr404,
   getOrCreateEventKitchen,
   isKitchenManagerUser,
@@ -10,8 +11,7 @@ import {
 } from "./kitchen";
 import { findOrCreateProducts } from "./product";
 import { findOrCreateUtensils } from "./utensil";
-
-type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+import { lockMealRow, type TxClient } from "./mealTransfer";
 
 interface IngredientInput {
   name: string;
@@ -251,10 +251,6 @@ export async function deleteMeal(eventId: string, mealId: string) {
   emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId });
 }
 
-async function lockMealRow(tx: TxClient, mealId: string) {
-  await tx.$queryRaw`SELECT id FROM "Meal" WHERE id = ${mealId} FOR UPDATE`;
-}
-
 // Un chef du roster reclame un creneau orphelin de la grille generee. Le verrou de
 // ligne serialise deux reclamations concurrentes sur le meme creneau (le 2e voit le
 // creneau deja pris).
@@ -332,6 +328,10 @@ export async function joinOrMoveMeal(eventId: string, mealId: string, userId: st
     await tx.mealAssistant.create({
       data: { mealId, eventKitchenId: eventKitchen.id, userId },
     });
+    // L'ancien emplacement referme par une demande d'echange equipier en attente
+    // (point 4, Evolutions.md) : elle n'a plus de sens, quel que soit le chemin
+    // (auto-deplacement ou reassignation manager).
+    await cancelStaleAssistantSwapRequests(tx, eventKitchen.id, userId);
   });
 
   emitToEvent(eventId, "kitchen:assistant-changed", { eventId, mealId });
@@ -349,7 +349,10 @@ export async function leaveMeal(eventId: string, mealId: string, userId: string)
     throw createError(404, "Not registered on this meal", { code: "NOT_MEAL_ASSISTANT" });
   }
 
-  await prisma.mealAssistant.delete({ where: { id: assistant.id } });
+  await prisma.$transaction(async (tx) => {
+    await tx.mealAssistant.delete({ where: { id: assistant.id } });
+    await cancelStaleAssistantSwapRequests(tx, eventKitchen.id, userId);
+  });
 
   emitToEvent(eventId, "kitchen:assistant-changed", { eventId, mealId });
 }

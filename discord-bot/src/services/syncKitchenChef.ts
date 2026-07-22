@@ -32,6 +32,14 @@ async function materializeRoleChef(eventKitchenId: string, userId: string): Prom
   await prisma.mealAssistant.deleteMany({
     where: { eventKitchenId, userId },
   });
+  // Nettoie toute demande d'echange equipier en attente (point 4, Evolutions.md) :
+  // l'ancien emplacement qu'elle referencait n'existe plus. Miroir de
+  // cancelStaleAssistantSwapRequests (backend/src/services/kitchen.ts), duplique ici
+  // car ce process a son propre client Prisma.
+  await prisma.assistantSwapRequest.updateMany({
+    where: { eventKitchenId, requesterUserId: userId, status: "PENDING" },
+    data: { status: "CANCELLED", respondedAt: new Date() },
+  });
 }
 
 async function dematerializeRoleChef(eventKitchenId: string, userId: string): Promise<void> {

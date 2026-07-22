@@ -4,6 +4,7 @@ import logger from "../util/logger";
 import { emitToEvent } from "../socket/emitter";
 import { getLocalUserIdsForDiscordRole } from "./adminSync";
 import { computeEventConflicts } from "./conflicts";
+import type { TxClient } from "./mealTransfer";
 
 export const USER_SELECT = { id: true, username: true, displayName: true } as const;
 
@@ -13,6 +14,22 @@ interface UpdateConfigInput {
   chefRoleId?: string | null;
   allergiesNotes?: string | null;
   equipierPlanningEnabled?: boolean;
+}
+
+// Annule toute demande d'echange equipier PENDING dont `userId` est le demandeur : a
+// appeler dans la MEME transaction que toute suppression/deplacement de son
+// MealAssistant (leave, move, retrait manager, auto-desinscription role cuisine —
+// point 4, Evolutions.md). Un demandeur n'a qu'une demande PENDING a la fois, donc
+// "annuler la mienne" = "annuler celle qui referencait mon ancien emplacement".
+export async function cancelStaleAssistantSwapRequests(
+  tx: TxClient,
+  eventKitchenId: string,
+  userId: string
+) {
+  await tx.assistantSwapRequest.updateMany({
+    where: { eventKitchenId, requesterUserId: userId, status: "PENDING" },
+    data: { status: "CANCELLED", respondedAt: new Date() },
+  });
 }
 
 export async function getEventOr404(eventId: string) {
@@ -86,6 +103,7 @@ export async function syncChefRoleRoster(
       await tx.kitchenChef.create({ data: { eventKitchenId, userId, source: "ROLE" } });
       await tx.kitchenCoursesMember.deleteMany({ where: { eventKitchenId, userId } });
       await tx.mealAssistant.deleteMany({ where: { eventKitchenId, userId } });
+      await cancelStaleAssistantSwapRequests(tx, eventKitchenId, userId);
     }
   });
 
@@ -183,6 +201,8 @@ export async function addManualChef(eventId: string, actingUserId: string, targe
     throw createError(409, "User is already a chef", { code: "ALREADY_CHEF" });
   }
 
+  let claimedMealId: string | null = null;
+
   await prisma.$transaction(async (tx) => {
     await tx.kitchenChef.create({
       data: { eventKitchenId: eventKitchen.id, userId: targetUserId, source: "MANUAL" },
@@ -191,12 +211,32 @@ export async function addManualChef(eventId: string, actingUserId: string, targe
     await tx.kitchenCoursesMember.deleteMany({
       where: { eventKitchenId: eventKitchen.id, userId: targetUserId },
     });
-    await tx.mealAssistant.deleteMany({
-      where: { eventKitchenId: eventKitchen.id, userId: targetUserId },
+
+    const assistantRow = await tx.mealAssistant.findUnique({
+      where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: targetUserId } },
+      include: { meal: true },
     });
+    if (assistantRow) {
+      await tx.mealAssistant.delete({ where: { id: assistantRow.id } });
+      // Point 3 (Evolutions.md), attribution MANUELLE uniquement : si le creneau ou
+      // il etait inscrit est orphelin, il lui est automatiquement attribue. La
+      // synchro par role Discord (syncChefRoleRoster) garde le comportement inchange
+      // (desinscription seule, pas d'auto-attribution).
+      if (assistantRow.meal.chefUserId === null) {
+        await tx.meal.update({
+          where: { id: assistantRow.mealId },
+          data: { chefUserId: targetUserId },
+        });
+        claimedMealId = assistantRow.mealId;
+      }
+      await cancelStaleAssistantSwapRequests(tx, eventKitchen.id, targetUserId);
+    }
   });
 
   emitToEvent(eventId, "kitchen:config-updated", { eventId });
+  if (claimedMealId) {
+    emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: claimedMealId });
+  }
 
   return getKitchenView(eventId, actingUserId);
 }
@@ -251,15 +291,6 @@ export async function addCoursesMember(
     });
   }
 
-  const isAssistant = await prisma.mealAssistant.findFirst({
-    where: { eventKitchenId: eventKitchen.id, userId: targetUserId },
-  });
-  if (isAssistant) {
-    throw createError(409, "User is already registered on a meal", {
-      code: "ROLE_EXCLUSIVITY",
-    });
-  }
-
   const existing = await prisma.kitchenCoursesMember.findUnique({
     where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: targetUserId } },
   });
@@ -269,11 +300,20 @@ export async function addCoursesMember(
     });
   }
 
-  await prisma.kitchenCoursesMember.create({
-    data: { eventKitchenId: eventKitchen.id, userId: targetUserId },
+  await prisma.$transaction(async (tx) => {
+    await tx.kitchenCoursesMember.create({
+      data: { eventKitchenId: eventKitchen.id, userId: targetUserId },
+    });
+    // Le role courses preempte silencieusement l'inscription equipier, symetrique
+    // au chef (point 3 Evolutions.md).
+    await tx.mealAssistant.deleteMany({
+      where: { eventKitchenId: eventKitchen.id, userId: targetUserId },
+    });
+    await cancelStaleAssistantSwapRequests(tx, eventKitchen.id, targetUserId);
   });
 
   emitToEvent(eventId, "kitchen:config-updated", { eventId });
+  emitToEvent(eventId, "kitchen:assistant-changed", { eventId, mealId: null });
 
   return getKitchenView(eventId, actingUserId);
 }
@@ -298,6 +338,44 @@ export async function removeCoursesMember(
   emitToEvent(eventId, "kitchen:config-updated", { eventId });
 
   return getKitchenView(eventId, actingUserId);
+}
+
+// Listes de roster partagees entre la vue Gestion (responsable) et le dashboard
+// Admin simple (point 5 Evolutions.md : ce dernier recoit desormais les memes
+// listes nominatives, en lecture seule).
+async function computeRosterLists(eventId: string, eventKitchenId: string) {
+  const [chefs, coursesMembers, participations, assistants] = await Promise.all([
+    prisma.kitchenChef.findMany({
+      where: { eventKitchenId },
+      include: { user: { select: USER_SELECT } },
+    }),
+    prisma.kitchenCoursesMember.findMany({
+      where: { eventKitchenId },
+      include: { user: { select: USER_SELECT } },
+    }),
+    prisma.eventParticipation.findMany({
+      where: { eventId },
+      include: { user: { select: USER_SELECT } },
+    }),
+    prisma.mealAssistant.findMany({ where: { eventKitchenId }, select: { userId: true } }),
+  ]);
+
+  const chefUserIds = new Set(chefs.map((c) => c.userId));
+  const coursesUserIds = new Set(coursesMembers.map((c) => c.userId));
+  const assistedUserIds = new Set(assistants.map((a) => a.userId));
+
+  return {
+    chefs: chefs.map((c) => ({ ...c.user, source: c.source })),
+    coursesMembers: coursesMembers.map((c) => c.user),
+    unassigned: participations
+      .filter(
+        (p) =>
+          !chefUserIds.has(p.userId) &&
+          !coursesUserIds.has(p.userId) &&
+          !assistedUserIds.has(p.userId)
+      )
+      .map((p) => p.user),
+  };
 }
 
 export async function getKitchenView(eventId: string, userId: string | undefined) {
@@ -405,42 +483,11 @@ export async function getKitchenView(eventId: string, userId: string | undefined
   }
 
   if (isGestionReader) {
-    const [chefs, coursesMembers, participations] = await Promise.all([
-      prisma.kitchenChef.findMany({
-        where: { eventKitchenId: eventKitchen.id },
-        include: { user: { select: USER_SELECT } },
-      }),
-      prisma.kitchenCoursesMember.findMany({
-        where: { eventKitchenId: eventKitchen.id },
-        include: { user: { select: USER_SELECT } },
-      }),
-      prisma.eventParticipation.findMany({
-        where: { eventId },
-        include: { user: { select: USER_SELECT } },
-      }),
-    ]);
+    const roster = await computeRosterLists(eventId, eventKitchen.id);
 
-    const chefUserIds = new Set(chefs.map((c) => c.userId));
-    const coursesUserIds = new Set(coursesMembers.map((c) => c.userId));
-    const assistedUserIds = new Set(
-      (
-        await prisma.mealAssistant.findMany({
-          where: { eventKitchenId: eventKitchen.id },
-          select: { userId: true },
-        })
-      ).map((a) => a.userId)
-    );
-
-    result.chefs = chefs.map((c) => ({ ...c.user, source: c.source }));
-    result.coursesMembers = coursesMembers.map((c) => c.user);
-    result.unassigned = participations
-      .filter(
-        (p) =>
-          !chefUserIds.has(p.userId) &&
-          !coursesUserIds.has(p.userId) &&
-          !assistedUserIds.has(p.userId)
-      )
-      .map((p) => p.user);
+    result.chefs = roster.chefs;
+    result.coursesMembers = roster.coursesMembers;
+    result.unassigned = roster.unassigned;
     result.orphanMeals = mealsView.filter((m) => m.chef === null);
 
     // Compteur "equipiers repartis" (Admin Chef point 4) : places allouees sur
@@ -451,33 +498,20 @@ export async function getKitchenView(eventId: string, userId: string | undefined
   }
 
   if (isPlainAdmin) {
-    // Admin sans preference admin.kitchen : compteurs seulement (dashboard), jamais
-    // les listes nominatives (roster, courses, sans-affectation) ni les fiches.
-    const [chefUserIds, coursesUserIds, assistantUserIds, participantCount] = await Promise.all([
-      prisma.kitchenChef.findMany({
-        where: { eventKitchenId: eventKitchen.id },
-        select: { userId: true },
-      }),
-      prisma.kitchenCoursesMember.findMany({
-        where: { eventKitchenId: eventKitchen.id },
-        select: { userId: true },
-      }),
-      prisma.mealAssistant.findMany({
-        where: { eventKitchenId: eventKitchen.id },
-        select: { userId: true },
-      }),
-      prisma.eventParticipation.count({ where: { eventId } }),
-    ]);
-    const assignedUserIds = new Set([
-      ...chefUserIds.map((c) => c.userId),
-      ...coursesUserIds.map((c) => c.userId),
-      ...assistantUserIds.map((a) => a.userId),
-    ]);
+    // Admin sans preference admin.kitchen : dashboard en lecture seule. Depuis le
+    // point 5 (Evolutions.md), il recoit aussi les listes nominatives (chefs,
+    // equipe courses, sans-affectation) et les equipiers par repas (deja presents
+    // dans mealsView via canSeeBoard) — jamais les allergies/ingredients/ustensiles,
+    // qui restent chef/responsable uniquement (isFullReader).
+    const roster = await computeRosterLists(eventId, eventKitchen.id);
 
     result.dashboard = {
-      chefsCount: chefUserIds.length,
-      coursesCount: coursesUserIds.length,
-      unassignedCount: Math.max(0, participantCount - assignedUserIds.size),
+      chefsCount: roster.chefs.length,
+      coursesCount: roster.coursesMembers.length,
+      unassignedCount: roster.unassigned.length,
+      chefs: roster.chefs,
+      coursesMembers: roster.coursesMembers,
+      unassigned: roster.unassigned,
     };
   }
 

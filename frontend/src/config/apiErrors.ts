@@ -73,6 +73,21 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   NOT_MEAL_ASSISTANT: "Vous n'êtes pas inscrit à ce repas",
   MEAL_START_OUT_OF_BOUNDS: "Le début du repas doit être dans les dates de l'événement",
   MEAL_END_OUT_OF_BOUNDS: "La fin du repas doit être dans les dates de l'événement",
+  MEAL_ALREADY_CLAIMED: "Ce créneau vient d'être pris",
+  CHEF_ALREADY_HAS_MEAL: "Vous avez déjà un repas",
+  NOT_A_CHEF_WITH_MEAL: "Vous n'avez pas de repas à échanger",
+  TARGET_MEAL_ORPHAN: "Ce créneau n'a pas de chef à échanger",
+  SWAP_ALREADY_PENDING: "Une demande d'échange est déjà en attente sur l'un de ces repas",
+  SWAP_NOT_PENDING: "Cette demande d'échange n'est plus en attente",
+  SWAP_STALE: "L'état a changé depuis la demande, réessaie",
+  SWAP_SAME_MEAL: "Impossible d'échanger un repas avec lui-même",
+  SWAP_NOT_FOUND: "Demande d'échange introuvable",
+  TARGET_MEAL_HAS_SEATS: "Ce créneau a encore de la place, déplace-toi directement",
+  ASSISTANT_SWAP_SAME_MEAL: "Impossible de demander un échange avec ton propre repas",
+  ASSISTANT_SWAP_ALREADY_PENDING: "Tu as déjà une demande d'échange en attente",
+  ASSISTANT_SWAP_NOT_FOUND: "Demande d'échange introuvable",
+  ASSISTANT_SWAP_NOT_PENDING: "Cette demande d'échange n'est plus en attente",
+  ASSISTANT_SWAP_STALE: "La situation a changé depuis la demande, réessaie",
 };
 
 interface ApiErrorShape {
