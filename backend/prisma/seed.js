@@ -19,6 +19,10 @@ const DEV_KITCHEN_USERS = [
   { email: "user@local.dev", username: "user", password: "user123", role: "USER" },
 ];
 
+// Participants generiques (equipiers sans role particulier) pour peupler l'event de
+// demo. Avec admin/adminchef/chef/user (4), ca porte le total a 15 participants.
+const FILLER_PARTICIPANT_COUNT = 11;
+
 async function getOrCreateUser({ email, username, password, role }) {
   const existing = await prisma.user.findFirst({
     where: { OR: [{ email }, { username }] },
@@ -124,6 +128,26 @@ async function seedKitchenDemo(event) {
   );
 }
 
+// Participants generiques (equipiers), pour peupler un peu plus l'event de demo.
+async function seedFillerParticipants(event) {
+  for (let i = 1; i <= FILLER_PARTICIPANT_COUNT; i++) {
+    const participant = await getOrCreateUser({
+      email: `participant${i}@local.dev`,
+      username: `participant${i}`,
+      password: "participant123",
+      role: "USER",
+    });
+    await prisma.eventParticipation.upsert({
+      where: { eventId_userId: { eventId: event.id, userId: participant.id } },
+      create: { eventId: event.id, userId: participant.id },
+      update: {},
+    });
+  }
+  console.log(
+    `Participants generiques : ${FILLER_PARTICIPANT_COUNT} (participant1..${FILLER_PARTICIPANT_COUNT}@local.dev, mdp participant123)`
+  );
+}
+
 async function seedDemoData() {
   const admin = await prisma.user.findFirst({
     where: { email: "admin@local.dev" },
@@ -163,6 +187,7 @@ async function seedDemoData() {
   // --- Module cuisine (CookV1) : comptes de demo + donnees ---
   // Voir docs/features/CookV1/SPEC_COOKING.md #4 pour la matrice de droits testee.
   await seedKitchenDemo(event);
+  await seedFillerParticipants(event);
 
   // --- Jeux de societe ---
   const gamesData = [

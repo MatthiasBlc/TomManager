@@ -141,38 +141,31 @@ export async function requireMealChefOrManager(req: Request, res: Response, next
   }
 }
 
-export async function requireEventCreator(req: Request, res: Response, next: NextFunction) {
+// Verifie ADMIN + preference admin.events ; leve un createError sinon (a catcher par l'appelant).
+// Etre le createur de l'event ne donne aucun droit particulier : createur ou non, un
+// admin doit avoir active admin.events pour gerer un event (aligne sur assertKitchenManager).
+export async function assertEventManager(userId: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+  });
+  if (!user || user.role !== "ADMIN") {
+    throw createError(403, "Admin access required", { code: "ADMIN_REQUIRED" });
+  }
+
+  const pref = await prisma.userPreference.findUnique({
+    where: { userId_key: { userId, key: "admin.events" } },
+  });
+  if (!pref?.value) {
+    throw createError(403, "Event manager preference required", {
+      code: "EVENT_MANAGER_REQUIRED",
+    });
+  }
+}
+
+// Gestion des events : ADMIN ayant active la preference admin.events (opt-in profil).
+export async function requireEventManager(req: Request, res: Response, next: NextFunction) {
   try {
-    const eventId = req.params.eventId;
-    const userId = req.session.userId!;
-
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-    });
-
-    if (!event) {
-      res.status(404).json({ error: { message: "Event not found" } });
-      return;
-    }
-
-    if (event.createdBy === userId) {
-      next();
-      return;
-    }
-
-    const user = await prisma.user.findFirst({
-      where: { id: userId, deletedAt: null },
-    });
-
-    if (!user || user.role !== "ADMIN") {
-      res.status(403).json({
-        error: {
-          message: "Only the event creator or an admin can perform this action",
-        },
-      });
-      return;
-    }
-
+    await assertEventManager(req.session.userId!);
     next();
   } catch (err) {
     next(err);

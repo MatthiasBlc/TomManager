@@ -5,6 +5,7 @@ import {
   createTestEvent,
   createTestUserDirectly,
   loginTestUser,
+  enableEventManager,
 } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
@@ -59,8 +60,27 @@ describe("Participant API", () => {
   });
 
   describe("DELETE /api/events/:eventId/participants/:userId", () => {
-    it("should remove participant as creator", async () => {
+    it("rejects the creator alone, without admin.events", async () => {
+      // Etre le createur ne donne plus de droit particulier : il faut admin.events.
       const { cookie: adminCookie } = await setupAdmin();
+      const event = await createTestEvent(adminCookie);
+
+      const { user: regularUser } = await createTestUserDirectly({
+        email: "user@example.com",
+        username: "user",
+      });
+      await addParticipant(event.id, regularUser.id);
+
+      const res = await request
+        .delete(`/api/events/${event.id}/participants/${regularUser.id}`)
+        .set("Cookie", adminCookie);
+
+      expect(res.status).toBe(403);
+    });
+
+    it("removes a participant once admin.events is enabled", async () => {
+      const { cookie: adminCookie, user: admin } = await setupAdmin();
+      await enableEventManager(admin.id);
       const event = await createTestEvent(adminCookie);
 
       const { user: regularUser } = await createTestUserDirectly({
@@ -85,6 +105,7 @@ describe("Participant API", () => {
 
     it("should not allow removing the event creator", async () => {
       const { cookie: adminCookie, user: admin } = await setupAdmin();
+      await enableEventManager(admin.id);
       const event = await createTestEvent(adminCookie);
 
       const res = await request
@@ -95,7 +116,8 @@ describe("Participant API", () => {
     });
 
     it("should reject non-admin non-creator", async () => {
-      const { cookie: adminCookie } = await setupAdmin();
+      const { cookie: adminCookie, user: admin } = await setupAdmin();
+      await enableEventManager(admin.id);
       const event = await createTestEvent(adminCookie);
 
       const { user: regularUser } = await createTestUserDirectly({
@@ -120,7 +142,8 @@ describe("Participant API", () => {
     });
 
     it("should return 404 for non-participant", async () => {
-      const { cookie: adminCookie } = await setupAdmin();
+      const { cookie: adminCookie, user: admin } = await setupAdmin();
+      await enableEventManager(admin.id);
       const event = await createTestEvent(adminCookie);
 
       const res = await request

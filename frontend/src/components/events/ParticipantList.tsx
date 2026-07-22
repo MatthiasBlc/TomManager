@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
-import { useAuth } from "../../contexts/AuthContext";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
@@ -27,12 +26,9 @@ type SortKey = "name" | "joined" | "role";
 type FilterKey = "all" | "ADMIN" | "USER";
 
 export default function ParticipantList({ eventId, createdBy, participants, onChanged }: Props) {
-  const { user } = useAuth();
   const confirmDialog = useConfirm();
-  const { canManageEvents } = useAdminRights();
+  const { canManageEvents: canManage } = useAdminRights();
   const isMobile = useIsMobile();
-  const isCreator = user?.id === createdBy;
-  const canManage = isCreator || canManageEvents;
 
   const [sort, setSort] = useState<SortKey>("joined");
   const [filter, setFilter] = useState<FilterKey>("all");

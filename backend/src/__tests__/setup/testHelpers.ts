@@ -84,6 +84,19 @@ export async function createTestEvent(
 }
 
 /**
+ * Active la preference admin.events (gestion des events) pour un admin deja seede.
+ * Necessaire pour PATCH/DELETE /api/events/:eventId et DELETE .../participants/:userId
+ * (requireEventManager) : etre le createur ne donne plus de droit particulier.
+ */
+export async function enableEventManager(userId: string) {
+  await prisma.userPreference.upsert({
+    where: { userId_key: { userId, key: "admin.events" } },
+    create: { userId, key: "admin.events", value: true },
+    update: { value: true },
+  });
+}
+
+/**
  * Ajoute un user comme participant a un event directement en DB.
  * Remplace l'ancien flow invitation+signup.
  */

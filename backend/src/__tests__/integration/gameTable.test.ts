@@ -5,12 +5,14 @@ import {
   createTestEvent,
   addTestParticipant,
   createTestUserDirectly,
+  enableEventManager,
 } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
 // Helper: setup admin + event + participant user with cookie
 async function setupEventWithParticipant() {
   const admin = await setupAdmin();
+  await enableEventManager(admin.user.id);
   const event = await createTestEvent(admin.cookie);
   const { user, cookie: playerCookie } = await addTestParticipant(event.id, {
     email: "player@example.com",

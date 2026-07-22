@@ -14,6 +14,7 @@ import {
   setupAdmin,
   createTestEvent,
   addTestParticipant,
+  enableEventManager,
 } from "../setup/testHelpers";
 import * as notificationService from "../../services/notification";
 
@@ -761,6 +762,7 @@ describe("Notification API", () => {
 // Helper: setup admin + event + participant user
 async function setupEventWithPlayer() {
   const admin = await setupAdmin();
+  await enableEventManager(admin.user.id);
   const event = await createTestEvent(admin.cookie);
   const { user, cookie: playerCookie } = await addTestParticipant(event.id, {
     email: "player@notif.com",

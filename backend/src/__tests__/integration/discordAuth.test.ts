@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import supertest from "supertest";
 import app from "../../app";
-import { request, setupAdmin, createTestEvent } from "../setup/testHelpers";
+import { request, setupAdmin, createTestEvent, enableEventManager } from "../setup/testHelpers";
 import * as discordService from "../../services/discordAuth";
 
 // Note: tests requiring DB migration (discordId, discordRoleId fields) are marked
@@ -102,7 +102,8 @@ describe("Discord OAuth — DELETE /api/auth/discord/link", () => {
 
 describe("Event PATCH — discordRoleId Zod validation", () => {
   it("rejects invalid discordRoleId (Zod, pre-migration)", async () => {
-    const { cookie } = await setupAdmin();
+    const { cookie, user: admin } = await setupAdmin();
+    await enableEventManager(admin.id);
     const event = await createTestEvent(cookie);
 
     const res = await request

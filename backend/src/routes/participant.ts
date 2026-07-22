@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireEventParticipant, requireEventCreator } from "../middleware/auth";
+import { requireAuth, requireEventParticipant, requireEventManager } from "../middleware/auth";
 import * as participantController from "../controllers/participant";
 
 const router = Router();
@@ -24,7 +24,7 @@ router.delete(
 router.delete(
   "/:eventId/participants/:userId",
   requireAuth,
-  requireEventCreator,
+  requireEventManager,
   participantController.remove
 );
 

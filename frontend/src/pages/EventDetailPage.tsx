@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../config/api";
-import { useAuth } from "../contexts/AuthContext";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import EditEventModal from "../components/events/EditEventModal";
@@ -39,7 +38,6 @@ const VALID_TABS: Tab[] = ["info", "participants", "planning", "games", "kitchen
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const confirmDialog = useConfirm();
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,9 +53,7 @@ export default function EventDetailPage() {
   usePageTitle(event?.name);
 
   const isMobile = useIsMobile();
-  const isCreator = user?.id === event?.createdBy;
   const { canManageEvents, gameDbEnabled } = useAdminRights();
-  const canManageEvent = isCreator || canManageEvents;
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -125,7 +121,7 @@ export default function EventDetailPage() {
             {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
           </p>
         </div>
-        {canManageEvent && (
+        {canManageEvents && (
           <div className="flex flex-wrap gap-2 md:ml-2 md:shrink-0 md:justify-end">
             <button className="btn btn-outline btn-sm" onClick={() => setShowEdit(true)}>
               Modifier
