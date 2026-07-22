@@ -169,9 +169,7 @@ describe("KitchenManagementPanel", () => {
 
     await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
     expect(confirmDialogMock.mock.calls[0][0].variant).toBe("danger");
-    await waitFor(() =>
-      expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/reset")
-    );
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/reset"));
   });
 
   it("does not reset when declined", async () => {
@@ -193,5 +191,23 @@ describe("KitchenManagementPanel", () => {
       />
     );
     expect(screen.getByText(/10\/12/)).toBeInTheDocument();
+    expect(screen.queryByText(/sur-allocation/i)).not.toBeInTheDocument();
+  });
+
+  it("shows an over-allocation warning badge when allocated exceeds the pool", () => {
+    render(
+      <KitchenManagementPanel
+        {...baseProps}
+        meals={ONE_MEAL}
+        capacitySummary={{ allocated: 13, poolTotal: 12 }}
+      />
+    );
+    expect(screen.getByText(/13\/12/)).toBeInTheDocument();
+    expect(screen.getByText(/sur-allocation/i)).toBeInTheDocument();
+  });
+
+  it("renders the Chefs/Équipe courses/Sans affectation blocks in a responsive grid", () => {
+    const { container } = render(<KitchenManagementPanel {...baseProps} />);
+    expect(container.querySelector(".grid.md\\:grid-cols-2.lg\\:grid-cols-3")).not.toBeNull();
   });
 });

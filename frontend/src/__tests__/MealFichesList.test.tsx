@@ -124,9 +124,7 @@ describe("MealFichesList", () => {
     fireEvent.click(screen.getByRole("button", { name: "Ajouter" }));
 
     await waitFor(() =>
-      expect(apiPostMock).toHaveBeenCalledWith(
-        "/api/events/ev1/kitchen/meals/meal1/assistants/u3"
-      )
+      expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1/assistants/u3")
     );
   });
 
@@ -184,5 +182,18 @@ describe("MealFichesList", () => {
     expect(apiPatchMock).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByLabelText("Nom du plat")).not.toBeInTheDocument());
+  });
+
+  it("renders meal cards in a responsive grid", () => {
+    const { container } = render(
+      <MealFichesList
+        eventId="ev1"
+        meals={[ASSIGNED_MEAL, ORPHAN_MEAL]}
+        chefs={CHEFS}
+        unassigned={UNASSIGNED}
+        onChanged={vi.fn()}
+      />
+    );
+    expect(container.querySelector(".grid.md\\:grid-cols-2.lg\\:grid-cols-3")).not.toBeNull();
   });
 });

@@ -22,7 +22,19 @@ export interface KitchenViewData {
   }[];
   coursesMembers?: { id: string; username: string; displayName?: string | null }[];
   unassigned?: { id: string; username: string; displayName?: string | null }[];
-  dashboard?: { chefsCount: number; coursesCount: number; unassignedCount: number };
+  dashboard?: {
+    chefsCount: number;
+    coursesCount: number;
+    unassignedCount: number;
+    chefs: {
+      id: string;
+      username: string;
+      displayName?: string | null;
+      source: "ROLE" | "MANUAL";
+    }[];
+    coursesMembers: { id: string; username: string; displayName?: string | null }[];
+    unassigned: { id: string; username: string; displayName?: string | null }[];
+  };
   capacitySummary?: { allocated: number; poolTotal: number };
 }
 

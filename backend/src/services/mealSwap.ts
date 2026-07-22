@@ -1,7 +1,12 @@
 import prisma from "../util/db";
 import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
-import { getEventOr404, getOrCreateEventKitchen, isKitchenManagerUser, USER_SELECT } from "./kitchen";
+import {
+  getEventOr404,
+  getOrCreateEventKitchen,
+  isKitchenManagerUser,
+  USER_SELECT,
+} from "./kitchen";
 import { getMealDetail } from "./meal";
 import { lockMealRowsSorted, swapRecipesByPk } from "./mealTransfer";
 

@@ -155,7 +155,7 @@ describe("Kitchen API", () => {
     });
 
     it("gives a plain admin (no admin.kitchen) a dashboard only — no gestion, no fiches detail", async () => {
-      const { cookie: managerCookie } = await setupManager();
+      const { user: managerUser, cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie);
 
       await request
@@ -213,6 +213,9 @@ describe("Kitchen API", () => {
         chefsCount: 1,
         coursesCount: 0,
         unassignedCount: 1,
+        chefs: [{ id: chefUser.id, username: "chef2", displayName: null, source: "MANUAL" }],
+        coursesMembers: [],
+        unassigned: [{ id: managerUser.id, username: "manager1", displayName: null }],
       });
     });
 
@@ -460,6 +463,91 @@ describe("Kitchen API", () => {
       expect(coursesRow).toBeNull();
     });
 
+    it("auto-claims an orphan meal for a manually-assigned chef who was assisting on it (point 3, Evolutions.md)", async () => {
+      const { cookie } = await setupManager();
+      const event = await createTestEvent(cookie);
+      const { user } = await addTestParticipant(event.id, {
+        email: "chef10@example.com",
+        username: "chef10",
+      });
+      const eventKitchen = await prisma.eventKitchen.create({ data: { eventId: event.id } });
+      const orphanMeal = await prisma.meal.create({
+        data: {
+          eventKitchenId: eventKitchen.id,
+          chefUserId: null,
+          name: "",
+          service: "DINNER",
+          startDateTime: new Date("2026-06-01T18:00:00Z"),
+          endDateTime: new Date("2026-06-01T20:00:00Z"),
+          maxAssistants: 5,
+        },
+      });
+      await prisma.mealAssistant.create({
+        data: { mealId: orphanMeal.id, eventKitchenId: eventKitchen.id, userId: user.id },
+      });
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/chefs`)
+        .set("Cookie", cookie)
+        .send({ userId: user.id });
+
+      expect(res.status).toBe(201);
+      const updatedMeal = await prisma.meal.findUniqueOrThrow({ where: { id: orphanMeal.id } });
+      expect(updatedMeal.chefUserId).toBe(user.id);
+      const assistantRow = await prisma.mealAssistant.findUnique({
+        where: { mealId_userId: { mealId: orphanMeal.id, userId: user.id } },
+      });
+      expect(assistantRow).toBeNull();
+    });
+
+    it("does NOT auto-claim when the assisted meal already has a chef (point 3, Evolutions.md)", async () => {
+      const { cookie } = await setupManager();
+      const event = await createTestEvent(cookie);
+      const { user: otherChef } = await addTestParticipant(event.id, {
+        email: "chef11@example.com",
+        username: "chef11",
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/chefs`)
+        .set("Cookie", cookie)
+        .send({ userId: otherChef.id });
+
+      const { user } = await addTestParticipant(event.id, {
+        email: "chef12@example.com",
+        username: "chef12",
+      });
+      const eventKitchen = await prisma.eventKitchen.findUniqueOrThrow({
+        where: { eventId: event.id },
+      });
+      const claimedMeal = await prisma.meal.create({
+        data: {
+          eventKitchenId: eventKitchen.id,
+          chefUserId: otherChef.id,
+          name: "Tartiflette",
+          service: "DINNER",
+          startDateTime: new Date("2026-06-01T18:00:00Z"),
+          endDateTime: new Date("2026-06-01T20:00:00Z"),
+          maxAssistants: 5,
+        },
+      });
+      await prisma.mealAssistant.create({
+        data: { mealId: claimedMeal.id, eventKitchenId: eventKitchen.id, userId: user.id },
+      });
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/chefs`)
+        .set("Cookie", cookie)
+        .send({ userId: user.id });
+
+      expect(res.status).toBe(201);
+      const updatedMeal = await prisma.meal.findUniqueOrThrow({ where: { id: claimedMeal.id } });
+      expect(updatedMeal.chefUserId).toBe(otherChef.id);
+      const assistantRow = await prisma.mealAssistant.findUnique({
+        where: { mealId_userId: { mealId: claimedMeal.id, userId: user.id } },
+      });
+      expect(assistantRow).toBeNull();
+    });
+
     it("removing a chef with a meal orphans the meal but keeps the sheet (2.4/2.5)", async () => {
       const { cookie } = await setupManager();
       const event = await createTestEvent(cookie);
@@ -556,7 +644,7 @@ describe("Kitchen API", () => {
       expect(res.body.error.code).toBe("ROLE_EXCLUSIVITY");
     });
 
-    it("blocks adding an already-assisting equipier to the courses team (exclusivity)", async () => {
+    it("auto-unassigns an already-assisting equipier when added to the courses team (point 3, Evolutions.md)", async () => {
       const { cookie } = await setupManager();
       const event = await createTestEvent(cookie);
       const { user: chefUser } = await addTestParticipant(event.id, {
@@ -595,8 +683,17 @@ describe("Kitchen API", () => {
         .set("Cookie", cookie)
         .send({ userId: assistantUser.id });
 
-      expect(res.status).toBe(409);
-      expect(res.body.error.code).toBe("ROLE_EXCLUSIVITY");
+      expect(res.status).toBe(201);
+      const coursesRow = await prisma.kitchenCoursesMember.findUnique({
+        where: {
+          eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId: assistantUser.id },
+        },
+      });
+      expect(coursesRow).not.toBeNull();
+      const assistantRow = await prisma.mealAssistant.findUnique({
+        where: { mealId_userId: { mealId: meal.id, userId: assistantUser.id } },
+      });
+      expect(assistantRow).toBeNull();
     });
 
     it("rejects adding a non-participant to the courses team", async () => {

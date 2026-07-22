@@ -69,6 +69,9 @@ export default function KitchenTab({
         unassignedCount={data.dashboard?.unassignedCount ?? 0}
         equipierPlanningEnabled={data.equipierPlanningEnabled}
         meals={data.meals}
+        chefs={data.dashboard?.chefs ?? []}
+        coursesMembers={data.dashboard?.coursesMembers ?? []}
+        unassigned={data.dashboard?.unassigned ?? []}
       />
     );
   }
@@ -122,11 +125,11 @@ export default function KitchenTab({
             </div>
           )}
 
-          {!myMeal && <MealClaimSelect eventId={eventId} meals={data.meals} onClaimed={fetchKitchen} />}
-
-          {myMeal && (
-            <MealFicheEditor eventId={eventId} meal={myMeal} onChanged={fetchKitchen} />
+          {!myMeal && (
+            <MealClaimSelect eventId={eventId} meals={data.meals} onClaimed={fetchKitchen} />
           )}
+
+          {myMeal && <MealFicheEditor eventId={eventId} meal={myMeal} onChanged={fetchKitchen} />}
 
           {myMeal && user && (
             <MealSwapPanel

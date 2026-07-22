@@ -130,7 +130,14 @@ describe("KitchenTab — visibility matrix", () => {
       isChef: false,
       equipierPlanningEnabled: false,
       chefRoleId: null,
-      dashboard: { chefsCount: 2, coursesCount: 1, unassignedCount: 3 },
+      dashboard: {
+        chefsCount: 2,
+        coursesCount: 1,
+        unassignedCount: 3,
+        chefs: [],
+        coursesMembers: [],
+        unassigned: [],
+      },
       meals: [
         {
           id: "meal1",

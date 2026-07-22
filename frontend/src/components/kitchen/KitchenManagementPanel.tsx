@@ -257,40 +257,93 @@ export default function KitchenManagementPanel({
         </div>
       </div>
 
-      <div className="card bg-base-200 shadow-none">
-        <div className="card-body p-3">
-          <h4 className="font-semibold text-sm mb-2">
-            Chefs {isRoleMode && <span className="badge badge-ghost badge-sm">rôle Discord</span>}
-          </h4>
-          {chefs.length === 0 ? (
-            <p className="text-xs opacity-60">Aucun chef pour l'instant.</p>
-          ) : (
-            <ul className="divide-y divide-base-300">
-              {chefs.map((chef) => (
-                <li key={chef.id} className="py-1.5 flex items-center justify-between gap-2">
-                  <span className="text-sm">{displayedName(chef)}</span>
-                  {!isRoleMode && (
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="card bg-base-200 shadow-none">
+          <div className="card-body p-3">
+            <h4 className="font-semibold text-sm mb-2">
+              Chefs {isRoleMode && <span className="badge badge-ghost badge-sm">rôle Discord</span>}
+            </h4>
+            {chefs.length === 0 ? (
+              <p className="text-xs opacity-60">Aucun chef pour l'instant.</p>
+            ) : (
+              <ul className="divide-y divide-base-300">
+                {chefs.map((chef) => (
+                  <li key={chef.id} className="py-1.5 flex items-center justify-between gap-2">
+                    <span className="text-sm">{displayedName(chef)}</span>
+                    {!isRoleMode && (
+                      <button
+                        className="btn btn-ghost btn-xs text-error"
+                        disabled={!!pendingAction}
+                        onClick={() => handleRemoveChef(chef)}
+                      >
+                        {pendingAction === `remove-chef:${chef.id}` && (
+                          <span className="loading loading-spinner loading-xs" />
+                        )}
+                        Retirer
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!isRoleMode && (
+              <div className="flex gap-2 mt-3">
+                <select
+                  className="select select-bordered select-sm flex-1"
+                  value={selectedNewChef}
+                  onChange={(e) => setSelectedNewChef(e.target.value)}
+                >
+                  <option value="">Choisir un participant...</option>
+                  {unassigned.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {displayedName(p)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="btn btn-sm"
+                  disabled={!selectedNewChef || !!pendingAction}
+                  onClick={handleAddChef}
+                >
+                  {pendingAction === "add-chef" && (
+                    <span className="loading loading-spinner loading-xs" />
+                  )}
+                  Ajouter
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="card bg-base-200 shadow-none">
+          <div className="card-body p-3">
+            <h4 className="font-semibold text-sm mb-2">Équipe courses ({coursesMembers.length})</h4>
+            {coursesMembers.length === 0 ? (
+              <p className="text-xs opacity-60">Aucun membre pour l'instant.</p>
+            ) : (
+              <ul className="divide-y divide-base-300">
+                {coursesMembers.map((p) => (
+                  <li key={p.id} className="py-1.5 flex items-center justify-between gap-2">
+                    <span className="text-sm">{displayedName(p)}</span>
                     <button
                       className="btn btn-ghost btn-xs text-error"
                       disabled={!!pendingAction}
-                      onClick={() => handleRemoveChef(chef)}
+                      onClick={() => handleRemoveCoursesMember(p)}
                     >
-                      {pendingAction === `remove-chef:${chef.id}` && (
+                      {pendingAction === `remove-courses:${p.id}` && (
                         <span className="loading loading-spinner loading-xs" />
                       )}
                       Retirer
                     </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-          {!isRoleMode && (
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="flex gap-2 mt-3">
               <select
                 className="select select-bordered select-sm flex-1"
-                value={selectedNewChef}
-                onChange={(e) => setSelectedNewChef(e.target.value)}
+                value={selectedNewCoursesMember}
+                onChange={(e) => setSelectedNewCoursesMember(e.target.value)}
               >
                 <option value="">Choisir un participant...</option>
                 {unassigned.map((p) => (
@@ -301,78 +354,27 @@ export default function KitchenManagementPanel({
               </select>
               <button
                 className="btn btn-sm"
-                disabled={!selectedNewChef || !!pendingAction}
-                onClick={handleAddChef}
+                disabled={!selectedNewCoursesMember || !!pendingAction}
+                onClick={handleAddCoursesMember}
               >
-                {pendingAction === "add-chef" && (
+                {pendingAction === "add-courses" && (
                   <span className="loading loading-spinner loading-xs" />
                 )}
                 Ajouter
               </button>
             </div>
-          )}
-        </div>
-      </div>
-
-      <div className="card bg-base-200 shadow-none">
-        <div className="card-body p-3">
-          <h4 className="font-semibold text-sm mb-2">Équipe courses ({coursesMembers.length})</h4>
-          {coursesMembers.length === 0 ? (
-            <p className="text-xs opacity-60">Aucun membre pour l'instant.</p>
-          ) : (
-            <ul className="divide-y divide-base-300">
-              {coursesMembers.map((p) => (
-                <li key={p.id} className="py-1.5 flex items-center justify-between gap-2">
-                  <span className="text-sm">{displayedName(p)}</span>
-                  <button
-                    className="btn btn-ghost btn-xs text-error"
-                    disabled={!!pendingAction}
-                    onClick={() => handleRemoveCoursesMember(p)}
-                  >
-                    {pendingAction === `remove-courses:${p.id}` && (
-                      <span className="loading loading-spinner loading-xs" />
-                    )}
-                    Retirer
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="flex gap-2 mt-3">
-            <select
-              className="select select-bordered select-sm flex-1"
-              value={selectedNewCoursesMember}
-              onChange={(e) => setSelectedNewCoursesMember(e.target.value)}
-            >
-              <option value="">Choisir un participant...</option>
-              {unassigned.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {displayedName(p)}
-                </option>
-              ))}
-            </select>
-            <button
-              className="btn btn-sm"
-              disabled={!selectedNewCoursesMember || !!pendingAction}
-              onClick={handleAddCoursesMember}
-            >
-              {pendingAction === "add-courses" && (
-                <span className="loading loading-spinner loading-xs" />
-              )}
-              Ajouter
-            </button>
           </div>
         </div>
-      </div>
 
-      <div className="card bg-base-200 shadow-none">
-        <div className="card-body p-3">
-          <h4 className="font-semibold text-sm mb-2">Sans affectation ({unassigned.length})</h4>
-          {unassigned.length === 0 ? (
-            <p className="text-xs opacity-60">Tout le monde a un rôle cuisine.</p>
-          ) : (
-            <p className="text-xs opacity-80">{unassigned.map(displayedName).join(", ")}</p>
-          )}
+        <div className="card bg-base-200 shadow-none">
+          <div className="card-body p-3">
+            <h4 className="font-semibold text-sm mb-2">Sans affectation ({unassigned.length})</h4>
+            {unassigned.length === 0 ? (
+              <p className="text-xs opacity-60">Tout le monde a un rôle cuisine.</p>
+            ) : (
+              <p className="text-xs opacity-80">{unassigned.map(displayedName).join(", ")}</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -385,9 +387,24 @@ export default function KitchenManagementPanel({
             ensuite depuis les fiches ci-dessous.
           </p>
           {capacitySummary && (
-            <p className="text-xs opacity-70 mb-2">
-              Équipiers répartis : {capacitySummary.allocated}/{capacitySummary.poolTotal}
-            </p>
+            <div
+              className={`flex flex-wrap items-center gap-2 mb-2 p-2 rounded-lg ${
+                capacitySummary.allocated > capacitySummary.poolTotal
+                  ? "bg-error/10"
+                  : "bg-base-100"
+              }`}
+            >
+              <span
+                className={`text-lg font-semibold ${
+                  capacitySummary.allocated > capacitySummary.poolTotal ? "text-error" : ""
+                }`}
+              >
+                Équipiers répartis : {capacitySummary.allocated}/{capacitySummary.poolTotal}
+              </span>
+              {capacitySummary.allocated > capacitySummary.poolTotal && (
+                <span className="badge badge-error badge-sm">⚠ sur-allocation</span>
+              )}
+            </div>
           )}
           <div className="flex flex-wrap gap-2">
             {meals.length === 0 ? (
