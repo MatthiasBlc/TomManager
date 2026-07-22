@@ -323,6 +323,28 @@ Index: (eventKitchenId, status), (targetMealId, status). Une seule PENDING par r
 FK ingredients/ustensiles ; MealAssistant + horaires + service inchanges (equipiers
 restent sur le creneau). Migration `20260722080827_kitchen_matrix_swap` (additive).
 
+### AssistantSwapRequest (echange entre equipiers, Evolutions.md point 4)
+
+| Field           | Type       | Notes                                                              |
+| --------------- | ---------- | ------------------------------------------------------------------- |
+| id              | String     | UUID PK                                                             |
+| eventKitchenId  | String     | FK -> EventKitchen.id, onDelete Cascade                             |
+| requesterMealId | String     | FK -> Meal.id (relation AssistantSwapRequesterMeal), onDelete Cascade |
+| targetMealId    | String     | FK -> Meal.id (relation AssistantSwapTargetMeal), onDelete Cascade  |
+| requesterUserId | String     | FK -> User.id                                                       |
+| accepterUserId  | String?    | FK -> User.id, renseigne uniquement a l'acceptation (inconnu a la creation) |
+| status          | SwapStatus | default PENDING (enum reutilise, pas de nouveau CREATE TYPE)        |
+| createdAt       | DateTime   |                                                                     |
+| respondedAt     | DateTime?  |                                                                     |
+
+Index: (eventKitchenId, status), (targetMealId, status), (requesterUserId, status).
+Difference cle avec MealSwapRequest : la cible est un REPAS, pas une personne fixee a
+la creation — n'importe quel MealAssistant courant du repas cible peut accepter (premier
+arrive, premier servi), d'ou l'absence de `targetUserId` et la revalidation "stale" des
+DEUX cotes a l'acceptation. Echange 1-pour-1 de `MealAssistant.mealId` (capacite-neutre,
+aucun controle de capacite necessaire). Migration `20260722175747_add_assistant_swap_request`
+(additive — CREATE TABLE seul, reutilise l'enum SwapStatus existant).
+
 ### Enum SwapStatus
 
 PENDING | ACCEPTED | REJECTED | CANCELLED
