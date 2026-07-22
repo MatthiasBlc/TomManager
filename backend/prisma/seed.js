@@ -120,6 +120,18 @@ async function seedKitchenDemo(event, fillerParticipants) {
     update: {},
   });
 
+  // Reset local uniquement (SEED_RESET_KITCHEN=true, pose dans docker-compose.yml
+  // dev exclusivement — jamais en preprod/prod) : purge les repas/rosters de cet
+  // event avant de reseeder, pour eviter toute derive accumulee au fil des
+  // redemarrages avec un code de generation different (creneaux orphelins d'un
+  // ancien /generate manuel, horaires obsoletes, etc). Jamais destructif ailleurs.
+  if (process.env.SEED_RESET_KITCHEN === "true") {
+    await prisma.meal.deleteMany({ where: { eventKitchenId: eventKitchen.id } });
+    await prisma.kitchenChef.deleteMany({ where: { eventKitchenId: eventKitchen.id } });
+    await prisma.kitchenCoursesMember.deleteMany({ where: { eventKitchenId: eventKitchen.id } });
+    console.log("SEED_RESET_KITCHEN=true : donnees cuisine de l'event demo reinitialisees");
+  }
+
   // Roster chef en mode manuel (pas de chefRoleId : aucune guilde Discord reelle en
   // local). adminChef n'a volontairement PAS de repas encore, pour tester le bouton
   // "Generer le planning" (grille) puis "Choisir mon creneau" sous "Mon repas".

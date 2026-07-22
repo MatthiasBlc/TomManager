@@ -49,6 +49,10 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:-dev_session_secret_change_me}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
       - ENABLE_TEST_ROUTES=true
+      # Nettoie les donnees cuisine de l'event demo avant reseed a chaque
+      # demarrage (evite la derive accumulee au fil du dev) — LOCAL UNIQUEMENT,
+      # ne jamais poser cette variable dans docker-compose.preprod.yml/.prod.yml.
+      - SEED_RESET_KITCHEN=true
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID:-}
       - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET:-}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID:-}
