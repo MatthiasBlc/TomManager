@@ -8,6 +8,11 @@ import { useConfirm } from "../../contexts/ConfirmContext";
 import NumberStepper from "../common/NumberStepper";
 import BoardGameSelector, { SelectedGame } from "./BoardGameSelector";
 import { getErrorMessage } from "../../config/apiErrors";
+import {
+  parisDateInputValue,
+  parisTimeInputValue,
+  dateAndTimeToParisUtcIso,
+} from "../../utils/dateTime";
 
 const DURATION_OPTIONS = [
   { label: "30 min", value: 30 },
@@ -27,20 +32,6 @@ function snapDuration(ms: number): number {
   return values.reduce((prev, curr) =>
     Math.abs(curr - minutes) < Math.abs(prev - minutes) ? curr : prev
   );
-}
-
-function toLocalDate(iso: string): string {
-  const d = new Date(iso);
-  const offset = d.getTimezoneOffset();
-  const local = new Date(d.getTime() - offset * 60000);
-  return local.toISOString().slice(0, 10);
-}
-
-function toLocalTime(iso: string): string {
-  const d = new Date(iso);
-  const offset = d.getTimezoneOffset();
-  const local = new Date(d.getTime() - offset * 60000);
-  return local.toISOString().slice(11, 16);
 }
 
 interface EditTableForm {
@@ -148,8 +139,8 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
         comments: table.comments || "",
         maxPlayers: table.maxPlayers,
         reservedSeats: table.reservedSeats,
-        date: toLocalDate(table.startDateTime),
-        startTime: toLocalTime(table.startDateTime),
+        date: parisDateInputValue(table.startDateTime),
+        startTime: parisTimeInputValue(table.startDateTime),
         durationMinutes: snapDuration(durationMs),
       });
       setTags(table.tags.map((t) => t.name));
@@ -217,7 +208,7 @@ export default function EditTableModal({ open, onClose, onUpdated, eventId, tabl
       if (!ok) return;
     }
     try {
-      const startDateTime = new Date(`${data.date}T${data.startTime}`);
+      const startDateTime = new Date(dateAndTimeToParisUtcIso(data.date, data.startTime));
       const endDateTime = new Date(startDateTime.getTime() + Number(data.durationMinutes) * 60000);
 
       await api.patch(`/api/events/${eventId}/tables/${table.id}`, {

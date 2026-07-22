@@ -32,6 +32,11 @@ FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
+# Fuseau explicite (defense en profondeur, cf docs/features/ParisTimezone) :
+# node:22-alpine est deja UTC par defaut, mais on le fixe explicitement pour
+# ne jamais masquer un code qui redependrait par erreur du fuseau serveur.
+ENV TZ=UTC
+
 # Install runtime dependencies
 RUN apk add --no-cache openssl wget
 

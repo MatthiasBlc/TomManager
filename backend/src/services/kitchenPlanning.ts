@@ -1,12 +1,7 @@
 import prisma from "../util/db";
 import { emitToEvent } from "../socket/emitter";
+import { TZ, zonedWallClockToUtc, zonedYMD } from "../util/timezone";
 import { computeAvailablePool, getEventOr404, getOrCreateEventKitchen } from "./kitchen";
-
-// Fuseau de reference pour la matrice de repas. L'app est franco-centree et les
-// heures des creneaux sont exprimees en heure murale locale (10h30, 18h30) : on
-// derive les jours et les horaires en Europe/Paris, independamment du fuseau du
-// serveur, via l'API Intl (gestion DST correcte).
-const TZ = "Europe/Paris";
 
 // Heures murales (Europe/Paris) par defaut des creneaux generes.
 const LUNCH_HOURS = { startH: 10, startM: 30, endH: 13, endM: 0 };
@@ -19,53 +14,6 @@ export interface ExpectedSlot {
   name: string;
   startDateTime: Date;
   endDateTime: Date;
-}
-
-// Decalage (ms) entre `timeZone` et UTC a l'instant `date`.
-function getZoneOffsetMs(date: Date, timeZone: string): number {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const parts = dtf.formatToParts(date);
-  const m: Record<string, number> = {};
-  for (const p of parts) if (p.type !== "literal") m[p.type] = Number(p.value);
-  const asUTC = Date.UTC(m.year, m.month - 1, m.day, m.hour, m.minute, m.second);
-  return asUTC - date.getTime();
-}
-
-// Convertit une heure murale (y, m, d, h, min) exprimee dans `timeZone` en instant UTC.
-// Les heures des repas (10h30 / 18h30) ne tombent jamais dans la fenetre de bascule
-// DST (02h-03h), donc l'approximation d'offset a l'instant devine est exacte ici.
-function zonedWallClockToUtc(
-  y: number,
-  mo: number,
-  d: number,
-  h: number,
-  min: number,
-  timeZone: string
-): Date {
-  const utcGuess = Date.UTC(y, mo - 1, d, h, min, 0);
-  const offset = getZoneOffsetMs(new Date(utcGuess), timeZone);
-  return new Date(utcGuess - offset);
-}
-
-// Annee/mois/jour calendaires de `date` dans `timeZone`.
-function zonedYMD(date: Date, timeZone: string): { y: number; mo: number; d: number } {
-  const dtf = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const [y, mo, d] = dtf.format(date).split("-").map(Number);
-  return { y, mo, d };
 }
 
 function slotName(service: Service, startDateTime: Date): string {

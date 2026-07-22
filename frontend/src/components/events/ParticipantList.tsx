@@ -6,6 +6,7 @@ import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import EmptyState from "../common/EmptyState";
 import { getErrorMessage } from "../../config/apiErrors";
+import { formatParisDate } from "../../utils/dateTime";
 
 interface Participant {
   userId: string;
@@ -126,9 +127,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                     >
                       {p.role}
                     </span>
-                    <span className="text-xs opacity-60">
-                      {new Date(p.joinedAt).toLocaleDateString("fr-FR")}
-                    </span>
+                    <span className="text-xs opacity-60">{formatParisDate(p.joinedAt)}</span>
                   </div>
                 </div>
                 {canManage && p.userId !== createdBy && (
@@ -166,7 +165,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                       {p.role}
                     </span>
                   </td>
-                  <td>{new Date(p.joinedAt).toLocaleDateString("fr-FR")}</td>
+                  <td>{formatParisDate(p.joinedAt)}</td>
                   {canManage && (
                     <td>
                       {p.userId !== createdBy && (

@@ -16,6 +16,7 @@ import { useAdminRights } from "../hooks/useAdminRights";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { useKitchenData } from "../hooks/useKitchenData";
 import { SkeletonEventDetail } from "../components/common/Skeleton";
+import { formatParisDateTime } from "../utils/dateTime";
 
 interface EventDetail {
   id: string;
@@ -97,8 +98,8 @@ export default function EventDetailPage() {
     }
   };
 
-  const formatDate = (iso: string) => {
-    return new Date(iso).toLocaleDateString("fr-FR", {
+  const formatDate = (iso: string) =>
+    formatParisDateTime(iso, {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -106,7 +107,6 @@ export default function EventDetailPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
   if (loading) {
     return <SkeletonEventDetail />;

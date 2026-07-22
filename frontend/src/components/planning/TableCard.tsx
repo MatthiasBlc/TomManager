@@ -1,4 +1,5 @@
 import { type TableSummary, formatSeatSummary } from "./computeLayout";
+import { formatParisTime } from "../../utils/dateTime";
 
 interface TableCardTableSummary extends TableSummary {
   boardGame?: { id: string; name: string } | null;
@@ -11,11 +12,6 @@ interface Props {
 
 export default function TableCard({ table, onClick }: Props) {
   const typeLabel = table.type === "JDR" ? "JDR" : "JDS";
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
 
   const hasGmPlayerConflict =
     table.isGM && !table.currentUserConflict && table.conflictingPlayerCount > 0;
@@ -59,7 +55,7 @@ export default function TableCard({ table, onClick }: Props) {
         </div>
 
         <p className="text-sm opacity-70">
-          {formatTime(table.startDateTime)} - {formatTime(table.endDateTime)}
+          {formatParisTime(table.startDateTime)} - {formatParisTime(table.endDateTime)}
         </p>
 
         <p className="text-sm opacity-60 truncate">

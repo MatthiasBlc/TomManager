@@ -45,6 +45,10 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3001
+      # Defense en profondeur (cf docs/features/ParisTimezone) : UTC explicite,
+      # jamais Paris, pour ne jamais masquer un code qui redependrait par erreur
+      # du fuseau ambiant du serveur.
+      - TZ=UTC
       - DATABASE_URL=postgresql://${POSTGRES_USER:-tommanager}:${POSTGRES_PASSWORD:-tommanager_dev}@postgres:5432/${POSTGRES_DB:-tommanager_db}?schema=public
       - SESSION_SECRET=${SESSION_SECRET:-dev_session_secret_change_me}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
@@ -114,6 +118,7 @@ services:
     hostname: discord-bot
     restart: unless-stopped
     environment:
+      - TZ=UTC
       - DATABASE_URL=postgresql://${POSTGRES_USER:-tommanager}:${POSTGRES_PASSWORD:-tommanager_dev}@postgres:5432/${POSTGRES_DB:-tommanager_db}?schema=public
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID:-}

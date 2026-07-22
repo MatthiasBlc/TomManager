@@ -8,6 +8,7 @@ import { useConfirm } from "../../contexts/ConfirmContext";
 import NumberStepper from "../common/NumberStepper";
 import BoardGameSelector, { SelectedGame } from "./BoardGameSelector";
 import { getErrorMessage } from "../../config/apiErrors";
+import { dateAndTimeToParisUtcIso } from "../../utils/dateTime";
 
 const DURATION_OPTIONS = [
   { label: "30 min", value: 30 },
@@ -146,7 +147,7 @@ export default function CreateTableModal({
 
   const onSubmit = async (data: CreateTableForm) => {
     try {
-      const startDateTime = new Date(`${data.date}T${data.startTime}`);
+      const startDateTime = new Date(dateAndTimeToParisUtcIso(data.date, data.startTime));
       const endDateTime = new Date(startDateTime.getTime() + Number(data.durationMinutes) * 60000);
 
       await api.post(`/api/events/${eventId}/tables`, {
