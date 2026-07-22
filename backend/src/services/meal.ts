@@ -10,8 +10,7 @@ import {
 } from "./kitchen";
 import { findOrCreateProducts } from "./product";
 import { findOrCreateUtensils } from "./utensil";
-
-type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+import { lockMealRow, type TxClient } from "./mealTransfer";
 
 interface IngredientInput {
   name: string;
@@ -249,10 +248,6 @@ export async function deleteMeal(eventId: string, mealId: string) {
   await prisma.meal.delete({ where: { id: mealId } });
 
   emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId });
-}
-
-async function lockMealRow(tx: TxClient, mealId: string) {
-  await tx.$queryRaw`SELECT id FROM "Meal" WHERE id = ${mealId} FOR UPDATE`;
 }
 
 // Un chef du roster reclame un creneau orphelin de la grille generee. Le verrou de

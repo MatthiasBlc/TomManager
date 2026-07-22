@@ -3,8 +3,7 @@ import createError from "http-errors";
 import { emitToEvent } from "../socket/emitter";
 import { getEventOr404, getOrCreateEventKitchen, isKitchenManagerUser, USER_SELECT } from "./kitchen";
 import { getMealDetail } from "./meal";
-
-type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+import { lockMealRowsSorted, swapRecipesByPk } from "./mealTransfer";
 
 const SWAP_INCLUDE = {
   requesterMeal: { select: { id: true, name: true, service: true, startDateTime: true } },
@@ -12,10 +11,6 @@ const SWAP_INCLUDE = {
   requester: { select: USER_SELECT },
   target: { select: USER_SELECT },
 } as const;
-
-async function lockMealRow(tx: TxClient, mealId: string) {
-  await tx.$queryRaw`SELECT id FROM "Meal" WHERE id = ${mealId} FOR UPDATE`;
-}
 
 async function serializeSwapRequest(id: string) {
   const req = await prisma.mealSwapRequest.findUnique({ where: { id }, include: SWAP_INCLUDE });
@@ -151,9 +146,7 @@ export async function acceptSwapRequest(
 
   await prisma.$transaction(async (tx) => {
     // Verrous dans un ordre deterministe pour eviter les deadlocks croises.
-    const [firstId, secondId] = [req.requesterMealId, req.targetMealId].sort();
-    await lockMealRow(tx, firstId);
-    await lockMealRow(tx, secondId);
+    await lockMealRowsSorted(tx, req.requesterMealId, req.targetMealId);
 
     const requesterMeal = await tx.meal.findUnique({ where: { id: req.requesterMealId } });
     const targetMeal = await tx.meal.findUnique({ where: { id: req.targetMealId } });
@@ -176,15 +169,6 @@ export async function acceptSwapRequest(
     const requesterName = requesterMeal.name;
     const targetName = targetMeal.name;
 
-    // Capture des ids de recette AVANT tout deplacement (filtrage par PK, jamais par
-    // mealId, pour eviter que le 2e deplacement ne re-attrape les lignes du 1er).
-    const [reqIngredients, tgtIngredients, reqUtensils, tgtUtensils] = await Promise.all([
-      tx.mealIngredient.findMany({ where: { mealId: requesterMeal.id }, select: { id: true } }),
-      tx.mealIngredient.findMany({ where: { mealId: targetMeal.id }, select: { id: true } }),
-      tx.mealUtensil.findMany({ where: { mealId: requesterMeal.id }, select: { id: true } }),
-      tx.mealUtensil.findMany({ where: { mealId: targetMeal.id }, select: { id: true } }),
-    ]);
-
     // 1. Libere les deux chefUserId (etat null intermediaire) : la contrainte unique
     //    [eventKitchenId, chefUserId] interdit que deux lignes portent le meme chef,
     //    meme transitoirement, dans la transaction.
@@ -201,23 +185,9 @@ export async function acceptSwapRequest(
       data: { chefUserId: req.requesterUserId, name: requesterName },
     });
 
-    // 3. Deplace ingredients & ustensiles par reassignation du FK, filtre par PK.
-    await tx.mealIngredient.updateMany({
-      where: { id: { in: reqIngredients.map((r) => r.id) } },
-      data: { mealId: targetMeal.id },
-    });
-    await tx.mealIngredient.updateMany({
-      where: { id: { in: tgtIngredients.map((r) => r.id) } },
-      data: { mealId: requesterMeal.id },
-    });
-    await tx.mealUtensil.updateMany({
-      where: { id: { in: reqUtensils.map((r) => r.id) } },
-      data: { mealId: targetMeal.id },
-    });
-    await tx.mealUtensil.updateMany({
-      where: { id: { in: tgtUtensils.map((r) => r.id) } },
-      data: { mealId: requesterMeal.id },
-    });
+    // 3. Deplace ingredients & ustensiles (echange croise, capture des PK AVANT tout
+    //    mouvement, cf commentaire de swapRecipesByPk).
+    await swapRecipesByPk(tx, requesterMeal.id, targetMeal.id);
 
     await tx.mealSwapRequest.update({
       where: { id: req.id },
