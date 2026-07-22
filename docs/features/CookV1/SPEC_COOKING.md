@@ -202,13 +202,21 @@ Regle metier : un equipier est inscrit sur AU PLUS UN repas par event ; l'unique
 
 ### Matrice de visibilite
 
-| Vue                       | Equipier      | Chef               | Admin simple | Responsable |
-| ------------------------- | ------------- | ------------------ | ------------ | ----------- |
-| Onglet Info - board repas | oui si active | oui                | oui          | oui         |
-| S'inscrire / se deplacer  | oui           | non                | non          | non         |
-| Onglet Cuisine - fiches   | non           | oui (RW la sienne) | oui (R)      | oui (RW)    |
-| Onglet Cuisine - gestion  | non           | non                | oui (R)      | oui (RW)    |
-| Allergies (contenu)       | non           | oui (R)            | oui (R)      | oui (RW)    |
+| Vue                        | Equipier      | Chef               | Admin simple                                 | Responsable |
+| -------------------------- | ------------- | ------------------ | -------------------------------------------- | ----------- |
+| Onglet Info - board repas  | oui si active | oui                | oui si participant + active                  | oui         |
+| S'inscrire / se deplacer   | oui           | non                | non                                          | non         |
+| Onglet Cuisine - dashboard | non           | non                | oui (compteurs + liste repas, lecture seule) | non         |
+| Onglet Cuisine - fiches    | non           | oui (RW la sienne) | non                                          | oui (RW)    |
+| Onglet Cuisine - gestion   | non           | non                | non                                          | oui (RW)    |
+| Allergies (contenu)        | non           | oui (R)            | non                                          | oui (RW)    |
+
+**Admin simple** (role ADMIN, preference `admin.kitchen` non cochee, pas dans le roster
+chef) : traite comme un equipier lambda partout (board Info conditionne a la
+participation + au toggle, aucune fiche, aucune allergie/ingredient), **sauf** l'onglet
+Cuisine qui reste accessible sous forme d'un dashboard en lecture seule (compteurs
+chefs/equipe courses/sans-affectation + liste des repas sans detail sensible). Cocher
+`admin.kitchen` bascule immediatement vers l'experience Responsable complete.
 
 ### Onglet Info (board repas)
 
@@ -216,14 +224,21 @@ Regle metier : un equipier est inscrit sur AU PLUS UN repas par event ; l'unique
   s'affiche avec la mention "sans chef" (il reste inscriptible tant que capacite > 0).
 - Par repas : equipiers inscrits + places restantes (`maxAssistants` - inscrits).
 - Actions equipier : s'inscrire (si place), se deplacer, se desinscrire.
-- Equipiers : le board n'apparait que si `equipierPlanningEnabled`. Chef/admin/
-  responsable le voient toujours.
+- Equipiers (et admin simple, cf ci-dessus) : le board n'apparait que si
+  `equipierPlanningEnabled` ET participation a l'event. Chef/responsable le voient
+  toujours.
 
 ### Onglet Cuisine
 
-Visible si l'utilisateur est chef, admin, ou responsable (jamais un equipier pur).
+Visible si l'utilisateur est chef, admin (au moins simple), ou responsable (jamais un
+equipier pur).
 
-Section gestion (RW responsable, R admin simple ; masquee aux chefs) :
+Un utilisateur qui cumule responsable ET chef (roster) voit une sous-navigation locale
+"Gestion" / "Mon repas" (chaque section = le contenu decrit ci-dessous) ; un utilisateur
+qui n'a qu'un seul role applicable (responsable seul, ou chef seul) ne voit pas de
+sous-menu, juste la section correspondante.
+
+Section gestion (RW responsable uniquement ; masquee aux chefs et a l'admin simple) :
 
 - Definir / effacer `chefRoleId` (modale de confirmation si ecrase des chefs manuels).
 - Liste des chefs (+ boutons ajouter/retirer si mode manuel uniquement).
@@ -234,12 +249,21 @@ Section gestion (RW responsable, R admin simple ; masquee aux chefs) :
 - Toggle `equipierPlanningEnabled`.
 - Bouton "Generer le planning" (warning + modale, destructif).
 
-Section fiches repas (chef edite la sienne, lecture sur les autres) :
+Section fiches repas (chef edite la sienne, lecture sur les autres ; responsable RW sur
+toutes ; invisible a l'admin simple) :
 
 - Nom, service, heures debut/fin.
 - Rappel des allergies (lecture).
 - Ingredients (nom + quantite + unite, autocomplete produit).
 - Ustensiles specifiques.
+
+Section dashboard (admin simple uniquement, lecture seule) :
+
+- Compteurs : nombre de chefs, taille de l'equipe courses, nombre de participants sans
+  affectation.
+- Liste des repas (nom, service, horaires, chef, places restantes) — sans ingredients,
+  ustensiles ni allergies.
+- Aucun bouton d'action.
 
 ### Onglet Planning (existant)
 
@@ -305,6 +329,21 @@ Reutilise l'infra existante (`discord-bot/src/handlers/guildMemberUpdate.ts`,
   (guildMemberUpdate/startup) vit dans le discord-bot.
 - Contrainte : un chef `ROLE` doit aussi etre participant de l'event ; un membre qui a
   le role chef mais ne participe pas a l'event n'est pas ajoute.
+- **Reconciliation bidirectionnelle (guildMemberUpdate)** : le gain/la perte du role
+  chef et le gain/la perte de la participation (role Discord lie a l'event) sont deux
+  evenements independants qui peuvent arriver dans n'importe quel ordre. En plus du
+  traitement du role qui vient de changer (`handleChefRoleAdded`/`handleChefRoleRemoved`),
+  `guildMemberUpdate` reconcilie aussi l'autre sens :
+  - gain de participation alors que le role chef Discord est deja detenu →
+    `reconcileChefEligibility` materialise le `KitchenChef ROLE` immediatement (sinon il
+    fallait attendre un redemarrage du bot, cf `startupSync`, pour que le chef apparaisse) ;
+  - perte de participation alors qu'un `KitchenChef(source=ROLE)` existe →
+    `reconcileChefOnParticipationLost` le retire (repas orpheline, 2.4) pour ne jamais
+    laisser un chef `ROLE` non-participant (invariant ci-dessus). Les chefs `MANUAL` ne
+    sont pas concernes (geres explicitement par le responsable).
+  - `startupSync` reste la reconciliation de reference (boucle complete, deja
+    bidirectionnelle par construction) ; ces deux fonctions ne font que combler l'ecart
+    entre deux redemarrages.
 
 ---
 
@@ -346,9 +385,19 @@ Les changements impactant les conflits declenchent aussi le recalcul/rendu Plann
   liste des inscrits). AUCUNE allergie, AUCUN ingredient/ustensile, aucune donnee de
   gestion (roster, courses, sans-affectation).
 - Chef : board + fiches completes (allergies, ingredients, ustensiles) ; pas la gestion.
-- Admin simple : tout en lecture. Responsable : tout en lecture/ecriture.
-- La reponse inclut `currentUserKitchenRole` (manager | chef | equipier | none) pour que
-  le front gate les onglets/actions. Le backend reste l'autorite (middlewares 12).
+- Admin simple (ADMIN sans `admin.kitchen`, pas dans le roster chef) : meme niveau que
+  l'equipier (board conditionne a la participation + au toggle, aucune fiche/allergie),
+  plus un bloc `dashboard` (compteurs `chefsCount`/`coursesCount`/`unassignedCount`,
+  jamais de liste nominative) toujours present et une liste `meals` (forme "board",
+  sans ingredients/ustensiles) renvoyee independamment du toggle pour alimenter le
+  dashboard de l'onglet Cuisine.
+- Responsable : tout en lecture/ecriture.
+- La reponse inclut `currentUserKitchenRole` (manager | chef | equipier | none) —
+  calcule par priorite manager > chef > equipier > none, donc un responsable qui est
+  aussi chef recoit `"manager"` — et un champ **independant** `isChef` (booleen, roster
+  brut) pour que le front puisse quand meme distinguer ce cumul et afficher les deux
+  interfaces (sous-menu "Gestion"/"Mon repas", cf 4). Le front gate les onglets/actions
+  sur ces champs ; le backend reste l'autorite (middlewares 12).
 - Si aucun `EventKitchen` n'existe encore : renvoyer un etat par defaut (pas de 404) —
   config vide, rosters vides, pas de repas. La 1re ecriture (PATCH /) cree la ligne.
 

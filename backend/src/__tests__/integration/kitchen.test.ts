@@ -153,6 +153,68 @@ describe("Kitchen API", () => {
       expect(res.body.data.currentUserKitchenRole).toBe("equipier");
       expect(res.body.data.meals).toEqual([]);
     });
+
+    it("gives a plain admin (no admin.kitchen) a dashboard only — no gestion, no fiches detail", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie);
+
+      await request
+        .patch(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", managerCookie)
+        .send({ allergiesNotes: "Allergie noix" });
+
+      const { user: chefUser } = await addTestParticipant(event.id, {
+        email: "chef2@example.com",
+        username: "chef2",
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/chefs`)
+        .set("Cookie", managerCookie)
+        .send({ userId: chefUser.id });
+
+      const meal = await prisma.meal.create({
+        data: {
+          eventKitchenId: (
+            await prisma.eventKitchen.findUniqueOrThrow({ where: { eventId: event.id } })
+          ).id,
+          chefUserId: chefUser.id,
+          name: "Couscous",
+          service: "DINNER",
+          startDateTime: new Date("2026-06-01T11:00:00Z"),
+          endDateTime: new Date("2026-06-01T13:00:00Z"),
+          maxAssistants: 2,
+        },
+      });
+      await prisma.mealIngredient.create({
+        data: { mealId: meal.id, name: "Semoule", quantity: 1, unit: "KG" },
+      });
+
+      const { cookie: plainAdminCookie } = await setupAdmin({
+        email: "plainadmin@example.com",
+        username: "plainadmin",
+      });
+
+      const res = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", plainAdminCookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.currentUserKitchenRole).toBe("none");
+      expect(res.body.data.isChef).toBe(false);
+      expect(res.body.data.allergiesNotes).toBeUndefined();
+      expect(res.body.data.chefs).toBeUndefined();
+      expect(res.body.data.coursesMembers).toBeUndefined();
+      expect(res.body.data.unassigned).toBeUndefined();
+      expect(res.body.data.meals).toHaveLength(1);
+      expect(res.body.data.meals[0].name).toBe("Couscous");
+      expect(res.body.data.meals[0].ingredients).toBeUndefined();
+      expect(res.body.data.meals[0].utensils).toBeUndefined();
+      expect(res.body.data.dashboard).toEqual({
+        chefsCount: 1,
+        coursesCount: 0,
+        unassignedCount: 1,
+      });
+    });
   });
 
   describe("PATCH /api/events/:eventId/kitchen", () => {

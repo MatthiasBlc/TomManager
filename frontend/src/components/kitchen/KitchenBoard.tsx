@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
-import { useAdminRights } from "../../hooks/useAdminRights";
 import { useEventSocket } from "../../hooks/useEventSocket";
 import EmptyState from "../common/EmptyState";
 import { SkeletonCardGrid } from "../common/Skeleton";
@@ -46,7 +45,6 @@ const formatDateTime = (iso: string) =>
 
 export default function KitchenBoard({ eventId }: { eventId: string }) {
   const { user } = useAuth();
-  const { isAdmin, isKitchenManager } = useAdminRights();
   const [data, setData] = useState<KitchenView | null>(null);
   const [loading, setLoading] = useState(true);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -78,8 +76,7 @@ export default function KitchenBoard({ eventId }: { eventId: string }) {
   if (!data) return null;
 
   const canSeeBoard =
-    isAdmin ||
-    isKitchenManager ||
+    data.currentUserKitchenRole === "manager" ||
     data.currentUserKitchenRole === "chef" ||
     (data.currentUserKitchenRole === "equipier" && data.equipierPlanningEnabled);
 

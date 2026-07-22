@@ -309,19 +309,24 @@ export async function getKitchenView(eventId: string, userId: string | undefined
   else if (isChef) currentUserKitchenRole = "chef";
   else if (participant) currentUserKitchenRole = "equipier";
 
-  // Fiches (allergies, ingredients, ustensiles) : chef + admin + responsable
-  const isFullReader = manager || isAdmin || isChef;
-  // Gestion (roster, courses, sans-affectation) : admin + responsable uniquement
-  const isGestionReader = manager || isAdmin;
-  // Board (planning repas) : chef/admin/responsable toujours, equipier si active
+  // Fiches (allergies, ingredients, ustensiles) : chef + responsable (PAS l'admin simple)
+  const isFullReader = manager || isChef;
+  // Gestion (roster, courses, sans-affectation) : responsable uniquement
+  const isGestionReader = manager;
+  // Board (planning repas) : chef/responsable toujours, equipier si active, et
+  // l'admin simple qui garde un acces "dashboard" au tableau meme sans droit particulier
   const canSeeBoard =
-    isFullReader || (participant && (eventKitchen?.equipierPlanningEnabled ?? false));
+    isFullReader || isAdmin || (participant && (eventKitchen?.equipierPlanningEnabled ?? false));
+  // Admin simple (role ADMIN sans preference admin.kitchen, ni chef) : dashboard
+  // en lecture seule (compteurs), jamais les listes nominatives ni les fiches
+  const isPlainAdmin = isAdmin && !manager && !isChef;
 
   const base = {
     eventKitchenId: eventKitchen?.id ?? null,
     chefRoleId: eventKitchen?.chefRoleId ?? null,
     equipierPlanningEnabled: eventKitchen?.equipierPlanningEnabled ?? false,
     currentUserKitchenRole,
+    isChef,
     meals: [] as unknown[],
   };
 
@@ -411,6 +416,37 @@ export async function getKitchenView(eventId: string, userId: string | undefined
       )
       .map((p) => p.user);
     result.orphanMeals = mealsView.filter((m) => m.chef === null);
+  }
+
+  if (isPlainAdmin) {
+    // Admin sans preference admin.kitchen : compteurs seulement (dashboard), jamais
+    // les listes nominatives (roster, courses, sans-affectation) ni les fiches.
+    const [chefUserIds, coursesUserIds, assistantUserIds, participantCount] = await Promise.all([
+      prisma.kitchenChef.findMany({
+        where: { eventKitchenId: eventKitchen.id },
+        select: { userId: true },
+      }),
+      prisma.kitchenCoursesMember.findMany({
+        where: { eventKitchenId: eventKitchen.id },
+        select: { userId: true },
+      }),
+      prisma.mealAssistant.findMany({
+        where: { eventKitchenId: eventKitchen.id },
+        select: { userId: true },
+      }),
+      prisma.eventParticipation.count({ where: { eventId } }),
+    ]);
+    const assignedUserIds = new Set([
+      ...chefUserIds.map((c) => c.userId),
+      ...coursesUserIds.map((c) => c.userId),
+      ...assistantUserIds.map((a) => a.userId),
+    ]);
+
+    result.dashboard = {
+      chefsCount: chefUserIds.length,
+      coursesCount: coursesUserIds.length,
+      unassignedCount: Math.max(0, participantCount - assignedUserIds.size),
+    };
   }
 
   return result;

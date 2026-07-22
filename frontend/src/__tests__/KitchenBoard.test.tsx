@@ -73,6 +73,22 @@ describe("KitchenBoard", () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it("renders nothing for a plain admin (no admin.kitchen) when the toggle is off", async () => {
+    // Un admin sans admin.kitchen doit avoir la meme experience qu'un participant
+    // lambda sur ce board (onglet Infos) : role backend "equipier"/"none", jamais un
+    // bypass sur le simple fait d'etre ADMIN.
+    mockAuth({ id: "admin1", role: "ADMIN" }, {});
+    apiGetMock.mockResolvedValue({
+      data: {
+        data: { currentUserKitchenRole: "none", equipierPlanningEnabled: false, meals: [] },
+      },
+    });
+    const { container } = render(<KitchenBoard eventId="ev1" />);
+    await waitFor(() => expect(apiGetMock).toHaveBeenCalled());
+    await waitFor(() => expect(container.querySelector(".skeleton")).not.toBeInTheDocument());
+    expect(container.firstChild).toBeNull();
+  });
+
   it("shows the board for an equipier when equipierPlanningEnabled is true", async () => {
     mockAuth({ id: "u3", role: "USER" });
     apiGetMock.mockResolvedValue({

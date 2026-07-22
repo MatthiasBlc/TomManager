@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import KitchenTab from "../components/kitchen/KitchenTab";
 
 const apiGetMock = vi.fn();
@@ -49,7 +49,12 @@ describe("KitchenTab — visibility matrix", () => {
     mockAuth({ id: "u1", role: "USER" });
     apiGetMock.mockResolvedValue({
       data: {
-        data: { currentUserKitchenRole: "equipier", equipierPlanningEnabled: true, meals: [] },
+        data: {
+          currentUserKitchenRole: "equipier",
+          isChef: false,
+          equipierPlanningEnabled: true,
+          meals: [],
+        },
       },
     });
     render(<KitchenTab eventId="ev1" />);
@@ -65,6 +70,7 @@ describe("KitchenTab — visibility matrix", () => {
       data: {
         data: {
           currentUserKitchenRole: "chef",
+          isChef: true,
           equipierPlanningEnabled: false,
           meals: [],
           chefRoleId: null,
@@ -83,6 +89,7 @@ describe("KitchenTab — visibility matrix", () => {
       data: {
         data: {
           currentUserKitchenRole: "chef",
+          isChef: true,
           equipierPlanningEnabled: false,
           chefRoleId: null,
           meals: [
@@ -114,6 +121,7 @@ describe("KitchenTab — visibility matrix", () => {
       data: {
         data: {
           currentUserKitchenRole: "manager",
+          isChef: false,
           equipierPlanningEnabled: false,
           chefRoleId: null,
           allergiesNotes: null,
@@ -129,15 +137,45 @@ describe("KitchenTab — visibility matrix", () => {
     expect(screen.getByText("Fiches repas")).toBeInTheDocument();
   });
 
-  it("shows the management panel in read context for a plain admin (not kitchen manager)", async () => {
-    // Un admin sans admin.kitchen n'est pas "manager" cote backend (currentUserKitchenRole
-    // reste equipier/none) mais garde acces via isAdmin cote front (lecture) — la gestion
-    // reste visible car useAdminRights().isAdmin est vrai.
+  it("shows a read-only dashboard (counts + meals, no management panel) for a plain admin", async () => {
     mockAuth({ id: "admin2", role: "ADMIN" }, {});
     apiGetMock.mockResolvedValue({
       data: {
         data: {
           currentUserKitchenRole: "none",
+          isChef: false,
+          equipierPlanningEnabled: false,
+          chefRoleId: null,
+          dashboard: { chefsCount: 2, coursesCount: 1, unassignedCount: 3 },
+          meals: [
+            {
+              id: "meal1",
+              name: "Tartiflette",
+              service: "DINNER",
+              startDateTime: "2026-06-01T18:00:00.000Z",
+              endDateTime: "2026-06-01T20:00:00.000Z",
+              maxAssistants: 2,
+              remainingSeats: 2,
+              chef: { id: "chef1", username: "Alice" },
+            },
+          ],
+        },
+      },
+    });
+    render(<KitchenTab eventId="ev1" />);
+    await waitFor(() => expect(screen.getByText("Tartiflette")).toBeInTheDocument());
+    expect(screen.queryByText("Configuration")).not.toBeInTheDocument();
+    expect(screen.queryByText("Fiches repas")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows a sub-menu (Gestion / Mon repas) for an admin-manager who is also a chef", async () => {
+    mockAuth({ id: "chefadmin1", role: "ADMIN" }, { "admin.kitchen": true });
+    apiGetMock.mockResolvedValue({
+      data: {
+        data: {
+          currentUserKitchenRole: "manager",
+          isChef: true,
           equipierPlanningEnabled: false,
           chefRoleId: null,
           allergiesNotes: null,
@@ -150,5 +188,14 @@ describe("KitchenTab — visibility matrix", () => {
     });
     render(<KitchenTab eventId="ev1" />);
     await waitFor(() => expect(screen.getByText("Configuration")).toBeInTheDocument());
+
+    // La gestion est visible par defaut, mais pas encore le CTA "Creer mon repas"
+    expect(screen.queryByRole("button", { name: "Créer mon repas" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Mon repas" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Créer mon repas" })).toBeInTheDocument()
+    );
+    expect(screen.queryByText("Configuration")).not.toBeInTheDocument();
   });
 });
