@@ -10,3 +10,5 @@ Un équipier doit pouvoir changer de place sur une place vide. Un équipier doit
 
 6/La vue / page Cuisine (gestion) par un Admin responsable cuisine (option cochée) devrait être un peu plus travaillée (en desktop en tout cas).
 Suivant la résolution proposer des blocs Chefs Equipe course Sans affectation côte à côte (jusqu'à 3 blocs sur grand écrans, 2 puis 1 en dessous si ça dépasse puis en réduisant on va jusqu'à 1 seul bloc de front l'un en dessous de l'autre). Pour lesfiches repas, propose une présentation responsive esthétique (plusieurs cartes de front ? 3 max et on diminue à 2 puis 1 suivant la résolution en desktop ? )
+
+6/ admin classique : la phrase "Planning équipier désactivé par le responsable." Doit être plus visible et en rouge si "désactivé", en vert si "activée"
