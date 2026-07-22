@@ -1,6 +1,7 @@
 import { type MealSlot } from "./kitchenSlots";
 import { serviceLabel } from "../kitchen/units";
 import { useAuth } from "../../contexts/AuthContext";
+import { formatParisTime } from "../../utils/dateTime";
 
 interface Props {
   meal: MealSlot;
@@ -15,9 +16,6 @@ export default function MealSlotCard({ meal }: Props) {
   // Le chef voit le nombre de personnes en conflit sur son repas, sauf s'il est
   // lui-meme en conflit (dans ce cas c'est sa propre alerte qui prime)
   const showChefConflict = isChef && !meal.currentUserConflict && meal.conflictingCount > 0;
-
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div
@@ -42,7 +40,7 @@ export default function MealSlotCard({ meal }: Props) {
         </div>
 
         <p className="text-sm opacity-70">
-          {formatTime(meal.startDateTime)} - {formatTime(meal.endDateTime)}
+          {formatParisTime(meal.startDateTime)} - {formatParisTime(meal.endDateTime)}
         </p>
 
         <p className="text-sm opacity-60 truncate">

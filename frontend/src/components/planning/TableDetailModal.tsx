@@ -13,6 +13,7 @@ import { SkeletonTableDetail } from "../common/Skeleton";
 import BoardGameDetailModal from "../boardgames/BoardGameDetailModal";
 import { formatSeatSummary } from "./computeLayout";
 import { getErrorMessage } from "../../config/apiErrors";
+import { formatParisDateTime } from "../../utils/dateTime";
 
 interface BoardGameSummary {
   id: string;
@@ -361,7 +362,7 @@ export default function TableDetailModal({
     p.displayName ?? p.username;
 
   const formatDateTime = (iso: string) =>
-    new Date(iso).toLocaleString("fr-FR", {
+    formatParisDateTime(iso, {
       weekday: "short",
       day: "numeric",
       month: "short",

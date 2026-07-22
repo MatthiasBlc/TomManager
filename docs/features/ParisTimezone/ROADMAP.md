@@ -27,83 +27,83 @@ en heure de Paris.
 
 ## Lot A - Utilitaires partages + tests DST
 
-- [ ] Extraire `getZoneOffsetMs`, `zonedWallClockToUtc`, `zonedYMD`, `TZ` de
+- [x] Extraire `getZoneOffsetMs`, `zonedWallClockToUtc`, `zonedYMD`, `TZ` de
       `backend/src/services/kitchenPlanning.ts` vers `backend/src/util/timezone.ts`.
       `kitchenPlanning.ts` importe depuis ce module ; corps de fonctions inchange.
-- [ ] Verifier que `kitchenPlanning.test.ts` (unit + integration) passent sans
+- [x] Verifier que `kitchenPlanning.test.ts` (unit + integration) passent sans
       modification apres l'extraction.
-- [ ] Ajouter `backend/src/__tests__/unit/timezone.test.ts` (cas aux bornes DST
+- [x] Ajouter `backend/src/__tests__/unit/timezone.test.ts` (cas aux bornes DST
       2026-03-29 02h->03h et 2026-10-25 03h->02h).
-- [ ] Ajouter dans `frontend/src/utils/dateTime.ts` : `getZoneOffsetMs`,
+- [x] Ajouter dans `frontend/src/utils/dateTime.ts` : `getZoneOffsetMs`,
       `zonedWallClockToUtc`, `parisWallClockParts`, `parisDateInputValue`,
       `parisTimeInputValue`, `parisDateTimeInputValue`, `parisWallClockToUtcIso`,
       `dateTimeLocalToParisUtcIso`, `dateAndTimeToParisUtcIso`, `toParisFakeUtc`,
       `fromParisFakeUtc`, `parisFakeUtcNow`, `formatFakeUtcDate`.
-- [ ] Ajouter `frontend/src/__tests__/dateTime.test.ts` : toutes les fonctions
+- [x] Ajouter `frontend/src/__tests__/dateTime.test.ts` : toutes les fonctions
       ci-dessus, memes cas DST, + round-trip `fromParisFakeUtc(toParisFakeUtc(iso)) === iso`.
 
 Modele : **Opus 4.8** | Effort : ~1-2h
 
 ## Lot B - Affichage (remplacement mecanique des helpers naifs)
 
-- [ ] `TableCard.tsx` (`formatTime` local -> `formatParisTime`).
-- [ ] `MealSlotCard.tsx` (idem).
-- [ ] `TableDetailModal.tsx` (`formatDateTime` local -> `formatParisDateTime`).
-- [ ] `EventDetailPage.tsx` (`formatDate` local -> `formatParisDateTime`).
-- [ ] `EventListPage.tsx` (idem).
-- [ ] `ParticipantList.tsx` (`toLocaleDateString("fr-FR")` -> `formatParisDate`).
-- [ ] `TimelineView.tsx` : `dayLabel` -> `formatParisDate` ; supprimer `dayStartTs`,
+- [x] `TableCard.tsx` (`formatTime` local -> `formatParisTime`).
+- [x] `MealSlotCard.tsx` (idem).
+- [x] `TableDetailModal.tsx` (`formatDateTime` local -> `formatParisDateTime`).
+- [x] `EventDetailPage.tsx` (`formatDate` local -> `formatParisDateTime`).
+- [x] `EventListPage.tsx` (idem).
+- [x] `ParticipantList.tsx` (`toLocaleDateString("fr-FR")` -> `formatParisDate`).
+- [x] `TimelineView.tsx` : `dayLabel` -> `formatParisDate` ; supprimer `dayStartTs`,
       regrouper/trier par `parisDayKey(iso)` au lieu du bucketing par jour local.
 
 Modele : **Sonnet 5** | Effort : ~1h
 
 ## Lot C - Saisie (inputs date/heure)
 
-- [ ] `CreateEventModal.tsx` : submit -> `dateTimeLocalToParisUtcIso`.
-- [ ] `EditEventModal.tsx` : prefill -> `parisDateTimeInputValue` (supprime
+- [x] `CreateEventModal.tsx` : submit -> `dateTimeLocalToParisUtcIso`.
+- [x] `EditEventModal.tsx` : prefill -> `parisDateTimeInputValue` (supprime
       `toLocalDatetime`) ; submit -> `dateTimeLocalToParisUtcIso` ; validateur
       "fin apres debut" compare apres conversion Paris (CreateEventModal aussi).
-- [ ] `CreateTableModal.tsx` : submit -> `dateAndTimeToParisUtcIso`.
-- [ ] `EditTableModal.tsx` : prefill -> `parisDateInputValue`/`parisTimeInputValue`
+- [x] `CreateTableModal.tsx` : submit -> `dateAndTimeToParisUtcIso`.
+- [x] `EditTableModal.tsx` : prefill -> `parisDateInputValue`/`parisTimeInputValue`
       (supprime `toLocalDate`/`toLocalTime`) ; submit -> `dateAndTimeToParisUtcIso`.
-- [ ] `PlanningTab.tsx` : bornes min/max du date-picker (`eventBounds.*.slice(0, 10)`)
+- [x] `PlanningTab.tsx` : bornes min/max du date-picker (`eventBounds.*.slice(0, 10)`)
       -> `parisDayKey(...)`.
 
 Modele : **Sonnet 5** | Effort : ~1-2h
 
 ## Lot D - CalendarView (FullCalendar, fake-UTC)
 
-- [ ] `<FullCalendar>` : ajouter `timeZone="UTC"` + `now={() => parisFakeUtcNow()}`.
-- [ ] `calEvents` : `start`/`end` (tables + repas) -> `toParisFakeUtc(...)`.
-- [ ] `initialDate` et `validRange` -> `toParisFakeUtc(...)`.
-- [ ] `firstTableScrollTime` : `.getHours()/.getMinutes()` locaux ->
+- [x] `<FullCalendar>` : ajouter `timeZone="UTC"` + `now={() => parisFakeUtcNow()}`.
+- [x] `calEvents` : `start`/`end` (tables + repas) -> `toParisFakeUtc(...)`.
+- [x] `initialDate` et `validRange` -> `toParisFakeUtc(...)`.
+- [x] `firstTableScrollTime` : `.getHours()/.getMinutes()` locaux ->
       `parisWallClockParts(...)`.
-- [ ] `handleSelect`/`handleDateClick` : getters locaux -> getters **UTC**
+- [x] `handleSelect`/`handleDateClick` : getters locaux -> getters **UTC**
       (`getUTCFullYear` etc.) sur les `Date` fake-UTC renvoyes par FullCalendar.
-- [ ] `patchTableDates` (drag/resize) : convertir `newStart`/`newEnd` via
+- [x] `patchTableDates` (drag/resize) : convertir `newStart`/`newEnd` via
       `fromParisFakeUtc` **avant** le payload API et **avant** `findGmOverlap`
       (sinon comparaison fake-UTC vs reel = bug).
-- [ ] `formatMobileHeader`/`currentDate` : `formatFakeUtcDate(...)`, jamais
+- [x] `formatMobileHeader`/`currentDate` : `formatFakeUtcDate(...)`, jamais
       `formatParisDate` directement dessus.
-- [ ] Verifier `calcNbDays` (aucun changement, ms-only) et `CalendarEventBlock.tsx`
+- [x] Verifier `calcNbDays` (aucun changement, ms-only) et `CalendarEventBlock.tsx`
       (aucun changement, `arg.timeText` derive par FullCalendar).
 
 Modele : **Opus 4.8** | Effort : ~2-3h
 
 ## Lot E - Docker (defense en profondeur)
 
-- [ ] `ENV TZ=UTC` dans `backend/Dockerfile` et `discord-bot/Dockerfile`.
-- [ ] `TZ=UTC` dans les blocs `environment:` de `docker-compose.yml`,
+- [x] `ENV TZ=UTC` dans `backend/Dockerfile` et `discord-bot/Dockerfile`.
+- [x] `TZ=UTC` dans les blocs `environment:` de `docker-compose.yml`,
       `docker-compose.preprod.yml`, `docker-compose.prod.yml`.
 
 Modele : **Haiku 4.5** | Effort : ~15-30min
 
 ## Lot F - Tests e2e (regression forte)
 
-- [ ] Playwright : projet/test avec `contextOptions: { timezoneId: "America/New_York" }`
+- [x] Playwright : projet/test avec `contextOptions: { timezoneId: "America/New_York" }`
       (ou `Pacific/Auckland`) qui cree une table a une heure connue via l'UI, verifie
       via l'API l'instant UTC stocke, puis verifie le meme affichage cote UI.
-- [ ] Drag/resize d'une table dans `CalendarView` sous ce meme fuseau non-Paris :
+- [x] Drag/resize d'une table dans `CalendarView` sous ce meme fuseau non-Paris :
       verifier que le resultat persiste est correct en heure de Paris.
 
 Modele : **Sonnet 5** | Effort : ~1h
@@ -112,12 +112,18 @@ Modele : **Sonnet 5** | Effort : ~1h
 
 ## Definition of done
 
-1. `npm run test:frontend` + `npm run test:backend` passent (Lot A/B/C/D + tests
-   existants ajustes si besoin : `CreateEventModal.test.tsx`, `EditEventModal.test.tsx`,
-   `CreateTableModal.test.tsx`, `EditTableModal.test.tsx`, `TableCard.test.tsx`,
-   `TableDetailModal.test.tsx`, `EventDetailPage.test.tsx`, `EventListPage.test.tsx`,
-   `TimelineView.test.tsx`, `ParticipantList.test.tsx`).
-2. `npx playwright test --project=chromium` + nouveau test `timezoneId` non-Paris (Lot F).
-3. Test manuel apres `npm run docker:up:build` : creer event + table a heure precise,
+1. [x] `npm run test:frontend` (386 tests) + `npm run test:backend` (402 tests) passent
+   (Lot A/B/C/D + tests existants, aucun ajustement necessaire).
+2. [x] `npx playwright test --project=chromium` (13/14, seul echec = `cuisine.spec.ts`,
+   preexistant et sans rapport, cf note ci-dessous) + nouveau projet
+   `chromium-non-paris` (`timezoneId: America/New_York`, Lot F, 2/2).
+3. [ ] Test manuel apres `npm run docker:up:build` : creer event + table a heure precise,
    verifier partout (carte, modale, timeline, calendrier drag/resize, pages event) —
-   invisible pour un navigateur deja en heure de Paris.
+   invisible pour un navigateur deja en heure de Paris. **Reste a faire par
+   l'utilisateur** (pas de session navigateur interactive disponible cote agent).
+
+Note : `e2e/cuisine.spec.ts` echoue (attend un bouton "Créer mon repas" retire par le
+commit `bb50591` sur `Developement`, anterieur a cette feature) — regression
+preexistante sans rapport avec le fuseau horaire, non corrigee ici (hors perimetre).
+`e2e/auth.spec.ts` echoue egalement sous le projet `mobile-chrome` (username/logout non
+trouves en vue mobile) — meme constat, aucun fichier touche par cette feature.

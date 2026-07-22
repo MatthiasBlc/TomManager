@@ -18,6 +18,13 @@ import { type TableSummary } from "./computeLayout";
 import { type MealSlot } from "./kitchenSlots";
 import { serviceLabel } from "../kitchen/units";
 import { getErrorMessage } from "../../config/apiErrors";
+import {
+  toParisFakeUtc,
+  fromParisFakeUtc,
+  parisFakeUtcNow,
+  parisWallClockParts,
+  formatFakeUtcDate,
+} from "../../utils/dateTime";
 
 interface EventBounds {
   startDateTime: string;
@@ -47,15 +54,14 @@ function calcNbDays(start: string, end: string): number {
 
 function firstTableScrollTime(tables: TableSummary[], eventStart: string): string {
   if (tables.length === 0) {
-    const h = new Date(eventStart).getHours();
+    const { h } = parisWallClockParts(eventStart);
     return `${String(Math.max(0, h - 1)).padStart(2, "0")}:00:00`;
   }
   const earliest = tables.reduce((min, t) =>
     new Date(t.startDateTime) < new Date(min.startDateTime) ? t : min
   );
-  const d = new Date(earliest.startDateTime);
-  const h = Math.max(0, d.getHours() - 1);
-  return `${String(h).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:00`;
+  const { h, min } = parisWallClockParts(earliest.startDateTime);
+  return `${String(Math.max(0, h - 1)).padStart(2, "0")}:${String(min).padStart(2, "0")}:00`;
 }
 
 // Verifie si la table deplacee chevauche une autre table du meme GM
@@ -110,7 +116,7 @@ export default function CalendarView({
   // scrollTime calcule une seule fois au montage
   const scrollTime = useRef(firstTableScrollTime(tables, eventBounds.startDateTime)).current;
 
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(eventBounds.startDateTime));
+  const [currentDate, setCurrentDate] = useState<Date>(toParisFakeUtc(eventBounds.startDateTime));
 
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
     setCurrentDate(arg.start);
@@ -119,9 +125,16 @@ export default function CalendarView({
   const goNext = () => calendarRef.current?.getApi().next();
   const goPrev = () => calendarRef.current?.getApi().prev();
 
-  // Appel API commun pour drag et resize
+  // Appel API commun pour drag et resize. `fakeStart`/`fakeEnd` sont les Date
+  // "fake UTC" renvoyees par FullCalendar (timeZone="UTC") : on les reconvertit en
+  // instants reels avant tout usage (payload API, comparaison avec les tables
+  // reelles de `tablesRef.current` dans findGmOverlap) — sinon on comparerait un
+  // Date fake-UTC a des Date reels.
   const patchTableDates = useCallback(
-    async (tableId: string, newStart: Date, newEnd: Date, revertFunc: () => void) => {
+    async (tableId: string, fakeStart: Date, fakeEnd: Date, revertFunc: () => void) => {
+      const newStart = new Date(fromParisFakeUtc(fakeStart));
+      const newEnd = new Date(fromParisFakeUtc(fakeEnd));
+
       // Warning si chevauchement avec une autre table du meme GM
       const overlap = findGmOverlap(tableId, newStart, newEnd, tablesRef.current);
       if (overlap) {
@@ -164,13 +177,15 @@ export default function CalendarView({
     [patchTableDates]
   );
 
+  // `info.start`/`info.date` sont des Date "fake UTC" (timeZone="UTC") : les
+  // getters UTC (jamais locaux) donnent directement l'heure murale de Paris.
   const handleSelect = useCallback(
     (info: DateSelectArg) => {
       if (!onSlotSelect) return;
       const start = info.start;
       const end = info.end;
-      const date = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
-      const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+      const date = `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, "0")}-${String(start.getUTCDate()).padStart(2, "0")}`;
+      const startTime = `${String(start.getUTCHours()).padStart(2, "0")}:${String(start.getUTCMinutes()).padStart(2, "0")}`;
       const durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
       onSlotSelect({ date, startTime, durationMinutes });
     },
@@ -182,8 +197,8 @@ export default function CalendarView({
     (info: DateClickArg) => {
       if (!onSlotSelect) return;
       const start = info.date;
-      const date = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
-      const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+      const date = `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, "0")}-${String(start.getUTCDate()).padStart(2, "0")}`;
+      const startTime = `${String(start.getUTCHours()).padStart(2, "0")}:${String(start.getUTCMinutes()).padStart(2, "0")}`;
       onSlotSelect({ date, startTime, durationMinutes: 60 });
     },
     [onSlotSelect]
@@ -193,8 +208,8 @@ export default function CalendarView({
     const tableEvents = tables.map((t) => ({
       id: t.id,
       title: t.title,
-      start: t.startDateTime,
-      end: t.endDateTime,
+      start: toParisFakeUtc(t.startDateTime),
+      end: toParisFakeUtc(t.endDateTime),
       editable: t.isGM || canModerateTables,
       extendedProps: {
         kind: "table" as const,
@@ -222,8 +237,8 @@ export default function CalendarView({
       return {
         id: `meal:${m.id}`,
         title: m.name,
-        start: m.startDateTime,
-        end: m.endDateTime,
+        start: toParisFakeUtc(m.startDateTime),
+        end: toParisFakeUtc(m.endDateTime),
         editable: false,
         extendedProps: {
           kind: "meal" as const,
@@ -245,8 +260,8 @@ export default function CalendarView({
 
   const validRange = useMemo(
     () => ({
-      start: eventBounds.startDateTime,
-      end: eventBounds.endDateTime,
+      start: toParisFakeUtc(eventBounds.startDateTime),
+      end: toParisFakeUtc(eventBounds.endDateTime),
     }),
     [eventBounds.startDateTime, eventBounds.endDateTime]
   );
@@ -258,8 +273,11 @@ export default function CalendarView({
 
   const initialView = isMobile ? "timeGridDay" : "timeGridEventRange";
 
+  // `d` est une Date "fake UTC" (currentDate, alimente par arg.start de datesSet) :
+  // formatFakeUtcDate force timeZone: "UTC", jamais formatParisDate qui
+  // reappliquerait un decalage en trop.
   const formatMobileHeader = (d: Date) =>
-    d.toLocaleDateString("fr-FR", {
+    formatFakeUtcDate(d, {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -311,7 +329,8 @@ export default function CalendarView({
         plugins={FC_PLUGINS}
         initialView={initialView}
         views={fcViews}
-        initialDate={eventBounds.startDateTime}
+        timeZone="UTC"
+        initialDate={toParisFakeUtc(eventBounds.startDateTime)}
         validRange={validRange}
         headerToolbar={false}
         allDaySlot={false}
@@ -331,6 +350,7 @@ export default function CalendarView({
         locale="fr"
         firstDay={1}
         nowIndicator
+        now={() => parisFakeUtcNow()}
         // Drag & drop
         editable
         eventStartEditable

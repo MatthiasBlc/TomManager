@@ -41,6 +41,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
+      # Defense en profondeur (cf docs/features/ParisTimezone) : UTC explicite,
+      # jamais Paris, pour ne jamais masquer un code qui redependrait par erreur
+      # du fuseau ambiant du serveur.
+      - TZ=UTC
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@tommanager-postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=20&pool_timeout=30
       - SESSION_SECRET=${SESSION_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN}
@@ -96,6 +100,7 @@ services:
     hostname: tommanager-discord-bot
     restart: unless-stopped
     environment:
+      - TZ=UTC
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@tommanager-postgres:5432/${POSTGRES_DB}?schema=public
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}

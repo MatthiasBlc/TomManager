@@ -83,7 +83,8 @@ src/
 ├── util/
 │   ├── db.ts              # PrismaClient singleton
 │   ├── logger.ts          # Pino logger
-│   └── sentry.ts          # Sentry init
+│   ├── sentry.ts          # Sentry init
+│   └── timezone.ts        # getZoneOffsetMs/zonedWallClockToUtc (double passe DST)/zonedYMD/TZ — extrait de kitchenPlanning.ts (ParisTimezone), partage backend
 └── __tests__/
     ├── setup/             # globalSetup (DB cleanup), testHelpers (supertest)
     └── integration/
@@ -95,7 +96,7 @@ src/
         └── kitchenConflicts.test.ts (conflits cross-domaine tables<->cuisine), kitchenPurge.test.ts (purge etendue, sync ROLE mockee)
 ```
 
-Unitaires purs (`src/__tests__/unit/`) : `kitchenPlanning.test.ts` (computeMealCapacities + computeExpectedSlots), `conflicts.test.ts` (computeConflicts).
+Unitaires purs (`src/__tests__/unit/`) : `kitchenPlanning.test.ts` (computeMealCapacities + computeExpectedSlots), `conflicts.test.ts` (computeConflicts), `timezone.test.ts` (cas aux bornes DST 2026, ParisTimezone).
 
 ## Discord Bot (discord-bot/src/)
 
@@ -207,7 +208,7 @@ src/
 │   ├── useKitchenData.ts        # GET /kitchen + /kitchen/swaps + wiring socket kitchen:*, partage entre EventDetailPage (visibilite onglet) / KitchenBoard / KitchenTab (evite les doubles fetch, CookV1)
 │   └── useDebouncedSave.ts      # Sauvegarde a la volee generique (debounce + statut idle/saving/saved/error), utilise par MealFicheEditor (CookV1)
 ├── utils/
-│   └── dateTime.ts              # formatParisDate/Time/DateTime + parisDayKey : formatage heure de Paris explicite (timeZone fixe), partage par le module cuisine — toute l'app raisonne en heure de Paris
+│   └── dateTime.ts              # formatParisDate/Time/DateTime + parisDayKey (affichage) + parisDateInputValue/parisTimeInputValue/parisDateTimeInputValue/dateTimeLocalToParisUtcIso/dateAndTimeToParisUtcIso (inputs) + toParisFakeUtc/fromParisFakeUtc/parisFakeUtcNow/formatFakeUtcDate (fake-UTC FullCalendar) — toute l'app raisonne en heure de Paris (ParisTimezone)
 ├── contexts/
 │   ├── AuthContext.tsx     # AuthProvider, useAuth hook (login, logout, Discord link/unlink, preferences + updatePreferences optimiste)
 │   ├── ConfirmContext.tsx  # ConfirmProvider + useConfirm : confirmDialog(options) -> Promise<boolean>

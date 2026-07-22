@@ -88,21 +88,33 @@ export async function seedAdmin(): Promise<AdminContext> {
   return { cookie, userId: data.userId, username, email, password };
 }
 
-export async function seedEvent(adminCookie: string): Promise<EventContext> {
-  const start = new Date();
-  start.setDate(start.getDate() + 1);
-  start.setHours(10, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  end.setHours(22, 0, 0, 0);
+export async function seedEvent(
+  adminCookie: string,
+  bounds?: { startDateTime: string; endDateTime: string }
+): Promise<EventContext> {
+  let startIso: string;
+  let endIso: string;
+  if (bounds) {
+    startIso = bounds.startDateTime;
+    endIso = bounds.endDateTime;
+  } else {
+    const start = new Date();
+    start.setDate(start.getDate() + 1);
+    start.setHours(10, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    end.setHours(22, 0, 0, 0);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+  }
 
   const res = await fetch(`${API}/api/events`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: adminCookie },
     body: JSON.stringify({
       name: `E2E Event ${Date.now()}`,
-      startDateTime: start.toISOString(),
-      endDateTime: end.toISOString(),
+      startDateTime: startIso,
+      endDateTime: endIso,
     }),
   });
 

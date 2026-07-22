@@ -5,6 +5,7 @@ import ResponsiveModal from "../common/ResponsiveModal";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { getErrorMessage } from "../../config/apiErrors";
+import { dateTimeLocalToParisUtcIso } from "../../utils/dateTime";
 
 interface CreateEventForm {
   name: string;
@@ -50,8 +51,8 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
     try {
       await api.post("/api/events", {
         name: data.name,
-        startDateTime: new Date(data.startDateTime).toISOString(),
-        endDateTime: new Date(data.endDateTime).toISOString(),
+        startDateTime: dateTimeLocalToParisUtcIso(data.startDateTime),
+        endDateTime: dateTimeLocalToParisUtcIso(data.endDateTime),
         discordRoleId: data.discordRoleId?.trim() || null,
       });
       toast.success("Événement créé !");
@@ -114,7 +115,8 @@ export default function CreateEventModal({ open, onClose, onCreated }: Props) {
             {...register("endDateTime", {
               required: "La date de fin est obligatoire",
               validate: (value) =>
-                new Date(value) > new Date(getValues("startDateTime")) ||
+                new Date(dateTimeLocalToParisUtcIso(value)) >
+                  new Date(dateTimeLocalToParisUtcIso(getValues("startDateTime"))) ||
                 "La fin doit être après le début",
             })}
           />

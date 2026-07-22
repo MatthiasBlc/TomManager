@@ -4,6 +4,7 @@ import EmptyState from "../common/EmptyState";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { computeLayout, type TableSummary } from "./computeLayout";
 import { type MealSlot } from "./kitchenSlots";
+import { formatParisDate, parisDayKey } from "../../utils/dateTime";
 
 interface Props {
   tables: TableSummary[];
@@ -12,20 +13,14 @@ interface Props {
 }
 
 interface DayGroup {
+  key: string;
   label: string;
-  sortTs: number;
   tables: TableSummary[];
   meals: MealSlot[];
 }
 
 const dayLabel = (iso: string) =>
-  new Date(iso).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-
-// Debut de journee locale, cle de tri stable (le label localise n'est pas triable)
-const dayStartTs = (iso: string) => {
-  const d = new Date(iso);
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-};
+  formatParisDate(iso, { weekday: "long", day: "numeric", month: "long" });
 
 export default function TimelineView({ tables, mealSlots = [], onTableClick }: Props) {
   const isMobile = useIsMobile();
@@ -40,19 +35,20 @@ export default function TimelineView({ tables, mealSlots = [], onTableClick }: P
     );
   }
 
-  // Groupement par jour, tables et repas fusionnes sous la meme cle de journee
+  // Groupement par jour calendaire Paris (cle triable lexicalement), tables et
+  // repas fusionnes sous la meme cle de journee
   const days = new Map<string, DayGroup>();
   const ensureDay = (iso: string): DayGroup => {
-    const label = dayLabel(iso);
-    if (!days.has(label)) {
-      days.set(label, { label, sortTs: dayStartTs(iso), tables: [], meals: [] });
+    const key = parisDayKey(iso);
+    if (!days.has(key)) {
+      days.set(key, { key, label: dayLabel(iso), tables: [], meals: [] });
     }
-    return days.get(label)!;
+    return days.get(key)!;
   };
   tables.forEach((t) => ensureDay(t.startDateTime).tables.push(t));
   mealSlots.forEach((m) => ensureDay(m.startDateTime).meals.push(m));
 
-  const orderedDays = [...days.values()].sort((a, b) => a.sortTs - b.sortTs);
+  const orderedDays = [...days.values()].sort((a, b) => a.key.localeCompare(b.key));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -65,7 +61,7 @@ export default function TimelineView({ tables, mealSlots = [], onTableClick }: P
         );
 
         return (
-          <div key={day.label}>
+          <div key={day.key}>
             <h3 className="text-base font-semibold mb-3 capitalize sticky top-0 bg-base-200 py-2 z-10 md:text-lg md:static md:bg-transparent md:py-0">
               {day.label}
             </h3>

@@ -32,7 +32,8 @@ npx playwright test --grep "nom"         # Un test specifique
 - Les tests seedent leurs propres donnees via l'API (`e2e/fixtures/seed.ts`)
 - Le login se fait par injection du cookie de session obtenu via l'API (`e2e/fixtures/session.ts` — `loginAs(page, cookie)`), pas par le formulaire (masque de l'UI, Discord uniquement)
 - En CI : le backend/frontend sont lances directement sur le runner (pas via Docker), Chromium installe via `--with-deps`
-- Specs : `auth`, `planning`, `waitlist`, `mobile`, `notifications` (temps reel : notif MJ live via socket, clic -> modale table + fermeture panneau + badge lu, sync du badge entre deux onglets via read-all), `cuisine` (CookV1 Lot G : responsable configure -> chef cree un repas -> genere le planning -> equipier s'inscrit + rejoint une table chevauchante -> conflit visible dans Planning -> purge efface le contenu cuisine)
+- Specs : `auth`, `planning`, `waitlist`, `mobile`, `notifications` (temps reel : notif MJ live via socket, clic -> modale table + fermeture panneau + badge lu, sync du badge entre deux onglets via read-all), `cuisine` (CookV1 Lot G : responsable configure -> chef cree un repas -> genere le planning -> equipier s'inscrit + rejoint une table chevauchante -> conflit visible dans Planning -> purge efface le contenu cuisine), `timezone` (ParisTimezone Lot F : cree une table a une heure de Paris connue + resize CalendarView, sous le projet `chromium-non-paris` uniquement)
+- Projet Playwright `chromium-non-paris` (`timezoneId: "America/New_York"`, cf `playwright.config.ts`) : reserve a `e2e/timezone.spec.ts` (`testMatch`), exclu des autres projets (`testIgnore`) — regression fuseau navigateur non-Paris (ParisTimezone)
 
 ## Configuration
 
@@ -57,7 +58,7 @@ npx playwright test --grep "nom"         # Un test specifique
 
 ## Inventaire des tests
 
-### Backend (384 tests)
+### Backend (402 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me, error format consistency)
@@ -76,6 +77,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/mealSwap.test.ts` - Echange de creneau chefs (CookV1) : swap recette+chef avec equipiers/horaires inchanges, doublon PENDING refuse, accept reserve a la cible, reject/cancel, refus contre un creneau orphelin
 - `integration/kitchenPlanning.test.ts` + `unit/kitchenPlanning.test.ts` - Generation/reset planning (grille depuis dates `computeExpectedSlots` Paris multi-jours/1 jour/2 jours, repartition sur nouveaux creneaux, exclusion chefs/courses, idempotence double-generate, coexistence d'un repas seede hors-grille, overCapacity ; `POST /reset` supprime tous les repas en gardant les rosters, `/generate` reconstruit la grille apres reset ; `computeMealCapacities` floor/reste/clamps)
 - `unit/conflicts.test.ts` - Moteur de conflits unifie (CookV1 Lot F) : computeConflicts pur (chevauchement/adjacence, garde-fou meme source, isolation par personne, 3 engagements simultanes, comptage multi-personnes sur une source)
+- `unit/timezone.test.ts` - `util/timezone.ts` (ParisTimezone) : `getZoneOffsetMs` CET/CEST, `zonedWallClockToUtc` (double passe DST, cas aux bornes 2026-03-29/2026-10-25), `zonedYMD` (jour calendaire Paris pres de minuit UTC)
 - `integration/kitchenConflicts.test.ts` - Conflit cross-domaine (CookV1 Lot F) : chef occupe par son repas + inscrit a une table (visible chef ET MJ), pas de conflit si disjoint, equipier inscrit a un repas + une table chevauchante (visibilite personne/chef)
 - `integration/kitchenPurge.test.ts` - Extension purge (CookV1 Lot G) : EventKitchen+chefRoleId+config conserves, repas (cascade ingredients/assistants)/courses/chefs MANUAL purges, chefs ROLE preserves par la suppression ; reconstitution ROLE au re-import (adminSync mocke : le container dev a un vrai token/guild Discord, jamais solliciter le reseau reel en test) ; no-op si pas d'EventKitchen
 
@@ -126,6 +128,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `IngredientListInput.test.tsx` - Quantite virgule ET point acceptees (point 8), pas de commit sur saisie non-parsable
 - `UtensilListInput.test.tsx` - Badges, ajout (Enter), autocomplete `/api/kitchen/utensils` (point 7)
 - `useEventSocket.test.tsx` (CookV1) - Reaction aux evenements `kitchen:*` (config-updated, meal-changed, assistant-changed, planning-generated, swap-request-changed)
+- `dateTime.test.ts` (ParisTimezone) - Toutes les fonctions de `utils/dateTime.ts` : conversions heure murale Paris <-> UTC (cas aux bornes DST 2026), inputs (`parisDateInputValue`/`parisTimeInputValue`/`parisDateTimeInputValue`), "fake UTC" FullCalendar (`toParisFakeUtc`/`fromParisFakeUtc` round-trip, `formatFakeUtcDate`)
 
 Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phase 8 - pages)
 

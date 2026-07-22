@@ -13,6 +13,7 @@ import { useEventSocket } from "../../hooks/useEventSocket";
 import { SkeletonCardGrid } from "../common/Skeleton";
 import { type TableSummary } from "./computeLayout";
 import { type MealSlot } from "./kitchenSlots";
+import { parisDayKey } from "../../utils/dateTime";
 
 interface EventBounds {
   startDateTime: string;
@@ -272,9 +273,9 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         eventId={eventId}
         prefilledSlot={createSlot}
         eventStartDate={
-          eventBounds?.startDateTime ? eventBounds.startDateTime.slice(0, 10) : undefined
+          eventBounds?.startDateTime ? parisDayKey(eventBounds.startDateTime) : undefined
         }
-        eventEndDate={eventBounds?.endDateTime ? eventBounds.endDateTime.slice(0, 10) : undefined}
+        eventEndDate={eventBounds?.endDateTime ? parisDayKey(eventBounds.endDateTime) : undefined}
       />
 
       <TableDetailModal
