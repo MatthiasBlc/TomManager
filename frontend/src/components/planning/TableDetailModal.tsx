@@ -738,28 +738,28 @@ export default function TableDetailModal({
               </div>
             )}
 
+            {joiningOnlyReachesWaitlist &&
+              !currentParticipant &&
+              (!isGM || table.type === "JDS" || table.gmIsPlayer) && (
+                <p className="text-xs opacity-70">
+                  Cette table fonctionne sur réservation : les places restantes sont attribuées par
+                  le MJ. Rejoignez la liste d'attente, vous serez validé dès qu'une place se libère.
+                </p>
+              )}
+
             {/* Actions */}
             <div className={`flex flex-wrap gap-2 pt-1 ${isMobile ? "pb-2" : ""}`}>
               {!currentParticipant && (!isGM || table.type === "JDS" || table.gmIsPlayer) && (
-                <div className="flex flex-col gap-1 flex-1 md:flex-none">
-                  {joiningOnlyReachesWaitlist && (
-                    <p className="text-xs opacity-70">
-                      Cette table fonctionne sur réservation : les places restantes sont attribuées
-                      par le MJ. Rejoignez la liste d'attente, vous serez validé dès qu'une place se
-                      libère.
-                    </p>
+                <button
+                  className="btn btn-primary btn-sm flex-1 md:flex-none"
+                  disabled={!!pendingAction}
+                  onClick={handleJoin}
+                >
+                  {pendingAction === "join" && (
+                    <span className="loading loading-spinner loading-xs" />
                   )}
-                  <button
-                    className="btn btn-primary btn-sm w-full"
-                    disabled={!!pendingAction}
-                    onClick={handleJoin}
-                  >
-                    {pendingAction === "join" && (
-                      <span className="loading loading-spinner loading-xs" />
-                    )}
-                    {openNormalSeats <= 0 ? "Rejoindre la liste d'attente" : "Rejoindre"}
-                  </button>
-                </div>
+                  {openNormalSeats <= 0 ? "Rejoindre la liste d'attente" : "Rejoindre"}
+                </button>
               )}
               {currentParticipant && (
                 <button
