@@ -10,6 +10,11 @@ import {
 } from "./kitchen";
 import { getMealDetail } from "./meal";
 import { lockMealRowsSorted } from "./mealTransfer";
+import { createBulkNotifications, createNotification } from "./notification";
+
+function displayNameOf(user: { displayName: string | null; username: string } | null): string {
+  return user?.displayName ?? user?.username ?? "Un équipier";
+}
 
 const ASSISTANT_SWAP_INCLUDE = {
   requesterMeal: { select: { id: true, name: true, service: true, startDateTime: true } },
@@ -73,7 +78,10 @@ export async function createAssistantSwapRequest(
 
   const targetMeal = await prisma.meal.findUnique({
     where: { id: targetMealId },
-    include: { _count: { select: { assistants: true } } },
+    include: {
+      _count: { select: { assistants: true } },
+      assistants: { select: { userId: true } },
+    },
   });
   if (!targetMeal || targetMeal.eventKitchenId !== eventKitchen.id) {
     throw createError(404, "Target meal not found", { code: "MEAL_NOT_FOUND" });
@@ -109,6 +117,16 @@ export async function createAssistantSwapRequest(
   });
 
   emitToEvent(eventId, "kitchen:assistant-swap-changed", { eventId });
+
+  await createBulkNotifications(
+    targetMeal.assistants.map((a) => ({
+      userId: a.userId,
+      type: "KITCHEN_ASSISTANT_SWAP_REQUESTED" as const,
+      title: "Demande d'échange de créneau",
+      message: `${displayNameOf(created.requester)} aimerait échanger son créneau contre une place sur "${created.targetMeal.name}"`,
+      metadata: { eventId, mealId: targetMeal.id, assistantSwapRequestId: created.id },
+    }))
+  );
 
   return serializeAssistantSwapRequest(created);
 }
@@ -212,10 +230,20 @@ export async function acceptAssistantSwapRequest(
   emitToEvent(eventId, "kitchen:assistant-changed", { eventId, mealId: req.targetMealId });
   emitToEvent(eventId, "kitchen:assistant-swap-changed", { eventId });
 
-  const [requesterMeal, targetMeal] = await Promise.all([
+  const [requesterMeal, targetMeal, acceptingUser] = await Promise.all([
     getMealDetail(req.requesterMealId),
     getMealDetail(req.targetMealId),
+    prisma.user.findUnique({ where: { id: actingUserId }, select: USER_SELECT }),
   ]);
+
+  await createNotification({
+    userId: req.requesterUserId,
+    type: "KITCHEN_ASSISTANT_SWAP_ACCEPTED",
+    title: "Échange de créneau accepté",
+    message: `${displayNameOf(acceptingUser)} a accepté d'échanger sa place sur "${targetMeal.name}"`,
+    metadata: { eventId, mealId: req.targetMealId, assistantSwapRequestId: req.id },
+  });
+
   return { requesterMeal, targetMeal };
 }
 

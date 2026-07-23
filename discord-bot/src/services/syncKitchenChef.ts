@@ -1,5 +1,31 @@
 import prisma from "../util/db";
 
+// Pas d'acces a emitToUser ici (sockets in-memory du process backend, cf plan
+// kitchen-notifications) : on se contente d'ecrire la ligne, visible au prochain
+// fetch/reconnexion du destinataire (degradation gracieuse, comportement deja
+// prevu par useNotifications cote frontend).
+async function notifyChefRoleChange(
+  userId: string,
+  type: "KITCHEN_CHEF_ADDED" | "KITCHEN_CHEF_REMOVED",
+  message: string,
+  eventId: string
+): Promise<void> {
+  try {
+    await prisma.notification.create({
+      data: {
+        userId,
+        type,
+        title:
+          type === "KITCHEN_CHEF_ADDED" ? "Nouveau chef cuisine" : "Retrait du rôle de chef cuisine",
+        message,
+        metadata: { eventId },
+      },
+    });
+  } catch (err) {
+    console.error(`[kitchen-chef-sync] Failed to create notification for ${userId}:`, err);
+  }
+}
+
 // Sync du roster chef cuisine (source ROLE) depuis le role Discord chefRoleId
 // d'un EventKitchen. Miroir de handleRoleAdded/handleRoleRemoved (syncParticipation.ts)
 // mais sans creation de compte : un chef doit deja exister via sa participation a l'event
@@ -16,7 +42,11 @@ import prisma from "../util/db";
 //   membre ayant recu le role chef Discord AVANT de rejoindre l'event restait absent du
 //   roster jusqu'au prochain redemarrage du bot (startupSync).
 
-async function materializeRoleChef(eventKitchenId: string, userId: string): Promise<void> {
+async function materializeRoleChef(
+  eventKitchenId: string,
+  eventId: string,
+  userId: string
+): Promise<void> {
   const existing = await prisma.kitchenChef.findUnique({
     where: { eventKitchenId_userId: { eventKitchenId, userId } },
   });
@@ -40,9 +70,20 @@ async function materializeRoleChef(eventKitchenId: string, userId: string): Prom
     where: { eventKitchenId, requesterUserId: userId, status: "PENDING" },
     data: { status: "CANCELLED", respondedAt: new Date() },
   });
+
+  await notifyChefRoleChange(
+    userId,
+    "KITCHEN_CHEF_ADDED",
+    "Vous êtes maintenant chef cuisine pour cet event",
+    eventId
+  );
 }
 
-async function dematerializeRoleChef(eventKitchenId: string, userId: string): Promise<void> {
+async function dematerializeRoleChef(
+  eventKitchenId: string,
+  eventId: string,
+  userId: string
+): Promise<void> {
   const existing = await prisma.kitchenChef.findUnique({
     where: { eventKitchenId_userId: { eventKitchenId, userId } },
   });
@@ -50,10 +91,19 @@ async function dematerializeRoleChef(eventKitchenId: string, userId: string): Pr
 
   await prisma.kitchenChef.delete({ where: { id: existing.id } });
   // Le repas devient orphelin ; la fiche est conservee intacte (spec 2.4)
-  await prisma.meal.updateMany({
+  const updateResult = await prisma.meal.updateMany({
     where: { eventKitchenId, chefUserId: userId },
     data: { chefUserId: null },
   });
+
+  await notifyChefRoleChange(
+    userId,
+    "KITCHEN_CHEF_REMOVED",
+    (updateResult?.count ?? 0) > 0
+      ? "Vous n'êtes plus chef cuisine pour cet event, votre repas est désormais sans chef"
+      : "Vous n'êtes plus chef cuisine pour cet event",
+    eventId
+  );
 }
 
 // Appele quand un role chefRoleId est ajoute a un membre Discord
@@ -70,7 +120,7 @@ export async function handleChefRoleAdded(discordId: string, roleId: string): Pr
     });
     if (!participation) continue;
 
-    await materializeRoleChef(eventKitchen.id, user.id);
+    await materializeRoleChef(eventKitchen.id, eventKitchen.eventId, user.id);
   }
 }
 
@@ -83,7 +133,7 @@ export async function handleChefRoleRemoved(discordId: string, roleId: string): 
   if (!user) return;
 
   for (const eventKitchen of eventKitchens) {
-    await dematerializeRoleChef(eventKitchen.id, user.id);
+    await dematerializeRoleChef(eventKitchen.id, eventKitchen.eventId, user.id);
   }
 }
 
@@ -100,7 +150,7 @@ export async function reconcileChefEligibility(
   if (!eventKitchen?.chefRoleId) return;
   if (!currentRoleIds.includes(eventKitchen.chefRoleId)) return;
 
-  await materializeRoleChef(eventKitchen.id, userId);
+  await materializeRoleChef(eventKitchen.id, eventId, userId);
 }
 
 // Appele apres qu'un utilisateur ait perdu la participation a un event (role Discord lie
@@ -114,5 +164,5 @@ export async function reconcileChefOnParticipationLost(
   const eventKitchen = await prisma.eventKitchen.findUnique({ where: { eventId } });
   if (!eventKitchen) return;
 
-  await dematerializeRoleChef(eventKitchen.id, userId);
+  await dematerializeRoleChef(eventKitchen.id, eventId, userId);
 }

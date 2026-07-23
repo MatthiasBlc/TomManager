@@ -9,6 +9,11 @@ import {
 } from "./kitchen";
 import { getMealDetail } from "./meal";
 import { lockMealRowsSorted, moveRecipeByPk, swapRecipesByPk } from "./mealTransfer";
+import { createNotification } from "./notification";
+
+function displayNameOf(user: { displayName: string | null; username: string } | null): string {
+  return user?.displayName ?? user?.username ?? "Un chef";
+}
 
 const SWAP_INCLUDE = {
   requesterMeal: { select: { id: true, name: true, service: true, startDateTime: true } },
@@ -91,7 +96,17 @@ export async function createSwapRequest(
 
   emitToEvent(eventId, "kitchen:swap-request-changed", { eventId });
 
-  return serializeSwapRequest(created.id);
+  const serialized = await serializeSwapRequest(created.id);
+
+  await createNotification({
+    userId: serialized.target.id,
+    type: "KITCHEN_SWAP_REQUESTED",
+    title: "Demande d'échange de créneau",
+    message: `${displayNameOf(serialized.requester)} vous propose d'échanger son créneau "${serialized.requesterMeal.name}" contre le vôtre "${serialized.targetMeal.name}"`,
+    metadata: { eventId, mealId: serialized.targetMeal.id, swapRequestId: serialized.id },
+  });
+
+  return serialized;
 }
 
 // Un chef proprietaire d'un repas se deplace instantanement vers un creneau
@@ -298,10 +313,20 @@ export async function acceptSwapRequest(
   emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: req.targetMealId });
   emitToEvent(eventId, "kitchen:swap-request-changed", { eventId });
 
-  const [requesterMeal, targetMeal] = await Promise.all([
+  const [requesterMeal, targetMeal, acceptingUser] = await Promise.all([
     getMealDetail(req.requesterMealId),
     getMealDetail(req.targetMealId),
+    prisma.user.findUnique({ where: { id: actingUserId }, select: USER_SELECT }),
   ]);
+
+  await createNotification({
+    userId: req.requesterUserId,
+    type: "KITCHEN_SWAP_ACCEPTED",
+    title: "Échange de créneau accepté",
+    message: `${displayNameOf(acceptingUser)} a accepté votre demande d'échange de créneau`,
+    metadata: { eventId, mealId: req.targetMealId, swapRequestId: req.id },
+  });
+
   return { requesterMeal, targetMeal };
 }
 
@@ -325,7 +350,17 @@ export async function rejectSwapRequest(
 
   emitToEvent(eventId, "kitchen:swap-request-changed", { eventId });
 
-  return serializeSwapRequest(req.id);
+  const serialized = await serializeSwapRequest(req.id);
+
+  await createNotification({
+    userId: serialized.requester.id,
+    type: "KITCHEN_SWAP_REJECTED",
+    title: "Échange de créneau refusé",
+    message: `${displayNameOf(serialized.target)} a refusé votre demande d'échange de créneau`,
+    metadata: { eventId, mealId: serialized.requesterMeal.id, swapRequestId: serialized.id },
+  });
+
+  return serialized;
 }
 
 export async function cancelSwapRequest(

@@ -12,6 +12,11 @@ import {
 import { findOrCreateProducts } from "./product";
 import { findOrCreateUtensils } from "./utensil";
 import { lockMealRow, type TxClient } from "./mealTransfer";
+import { createBulkNotifications } from "./notification";
+
+function displayNameOf(user: { displayName: string | null; username: string } | null): string {
+  return user?.displayName ?? user?.username ?? "Un chef";
+}
 
 interface IngredientInput {
   name: string;
@@ -287,7 +292,26 @@ export async function claimMeal(eventId: string, mealId: string, chefUserId: str
 
   emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId });
 
-  return getMealDetail(mealId);
+  const detail = await getMealDetail(mealId);
+
+  const existingAssistants = await prisma.mealAssistant.findMany({
+    where: { mealId },
+    select: { userId: true },
+  });
+  if (existingAssistants.length > 0) {
+    const chef = await prisma.user.findUnique({ where: { id: chefUserId }, select: USER_SELECT });
+    await createBulkNotifications(
+      existingAssistants.map((a) => ({
+        userId: a.userId,
+        type: "KITCHEN_MEAL_CLAIMED" as const,
+        title: "Un chef a rejoint votre repas",
+        message: `${displayNameOf(chef)} est désormais le chef du repas "${detail.name}" auquel vous participez`,
+        metadata: { eventId, mealId },
+      }))
+    );
+  }
+
+  return detail;
 }
 
 export async function joinOrMoveMeal(eventId: string, mealId: string, userId: string) {

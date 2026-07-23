@@ -36,6 +36,9 @@ vi.mock("../../util/db", () => ({
     assistantSwapRequest: {
       updateMany: vi.fn(),
     },
+    notification: {
+      create: vi.fn(),
+    },
   },
 }));
 
@@ -54,6 +57,7 @@ const db = prisma as unknown as {
   mealAssistant: { deleteMany: ReturnType<typeof vi.fn> };
   meal: { updateMany: ReturnType<typeof vi.fn> };
   assistantSwapRequest: { updateMany: ReturnType<typeof vi.fn> };
+  notification: { create: ReturnType<typeof vi.fn> };
 };
 
 const KITCHEN = { id: "kitchen-1", eventId: "event-1", chefRoleId: "role-chef-1" };
@@ -115,6 +119,13 @@ describe("handleChefRoleAdded", () => {
     expect(db.mealAssistant.deleteMany).toHaveBeenCalledWith({
       where: { eventKitchenId: "kitchen-1", userId: "user-1" },
     });
+    expect(db.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        type: "KITCHEN_CHEF_ADDED",
+        metadata: { eventId: "event-1" },
+      }),
+    });
   });
 
   it("annule toute demande d'echange equipier en attente du nouveau chef (point 4, Evolutions.md)", async () => {
@@ -165,6 +176,7 @@ describe("handleChefRoleRemoved", () => {
     db.eventKitchen.findMany.mockResolvedValue([KITCHEN]);
     db.user.findFirst.mockResolvedValue(USER);
     db.kitchenChef.findUnique.mockResolvedValue({ id: "chef-1", source: "ROLE" });
+    db.meal.updateMany.mockResolvedValue({ count: 1 });
 
     await handleChefRoleRemoved("discord-123", "role-chef-1");
 
@@ -172,6 +184,13 @@ describe("handleChefRoleRemoved", () => {
     expect(db.meal.updateMany).toHaveBeenCalledWith({
       where: { eventKitchenId: "kitchen-1", chefUserId: "user-1" },
       data: { chefUserId: null },
+    });
+    expect(db.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        type: "KITCHEN_CHEF_REMOVED",
+        metadata: { eventId: "event-1" },
+      }),
     });
   });
 });
@@ -213,6 +232,13 @@ describe("reconcileChefEligibility", () => {
 
     expect(db.kitchenChef.create).toHaveBeenCalledWith({
       data: { eventKitchenId: "kitchen-1", userId: "user-1", source: "ROLE" },
+    });
+    expect(db.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        type: "KITCHEN_CHEF_ADDED",
+        metadata: { eventId: "event-1" },
+      }),
     });
   });
 
@@ -256,6 +282,7 @@ describe("reconcileChefOnParticipationLost", () => {
   it("retire le chef ROLE et orpheline son repas quand la participation est perdue (spec 7)", async () => {
     db.eventKitchen.findUnique.mockResolvedValue(KITCHEN);
     db.kitchenChef.findUnique.mockResolvedValue({ id: "chef-1", source: "ROLE" });
+    db.meal.updateMany.mockResolvedValue({ count: 1 });
 
     await reconcileChefOnParticipationLost("event-1", "user-1");
 
@@ -263,6 +290,13 @@ describe("reconcileChefOnParticipationLost", () => {
     expect(db.meal.updateMany).toHaveBeenCalledWith({
       where: { eventKitchenId: "kitchen-1", chefUserId: "user-1" },
       data: { chefUserId: null },
+    });
+    expect(db.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        type: "KITCHEN_CHEF_REMOVED",
+        metadata: { eventId: "event-1" },
+      }),
     });
   });
 });

@@ -159,10 +159,23 @@ describe("Meal swap API", () => {
     expect(proposeRes.status).toBe(201);
     const swapId = proposeRes.body.data.id;
 
+    // Le chef cible recoit une notification de la demande d'echange.
+    const requestedNotif = await prisma.notification.findFirst({
+      where: { userId: chef2.user.id, type: "KITCHEN_SWAP_REQUESTED" },
+    });
+    expect(requestedNotif).not.toBeNull();
+    expect(requestedNotif?.metadata).toMatchObject({ eventId: event.id, swapRequestId: swapId });
+
     const acceptRes = await request
       .post(`/api/events/${event.id}/kitchen/swaps/${swapId}/accept`)
       .set("Cookie", chef2.cookie);
     expect(acceptRes.status).toBe(200);
+
+    // Le demandeur est notifie de l'acceptation.
+    const acceptedNotif = await prisma.notification.findFirst({
+      where: { userId: chef1.user.id, type: "KITCHEN_SWAP_ACCEPTED" },
+    });
+    expect(acceptedNotif).not.toBeNull();
 
     const meal1After = await getMeal(event.id, managerCookie, meal1.id);
     const meal2After = await getMeal(event.id, managerCookie, meal2.id);
@@ -248,6 +261,12 @@ describe("Meal swap API", () => {
 
     const swap = await prisma.mealSwapRequest.findUnique({ where: { id: swapId } });
     expect(swap?.status).toBe("REJECTED");
+
+    // Le demandeur est notifie du refus.
+    const rejectedNotif = await prisma.notification.findFirst({
+      where: { userId: chef1.user.id, type: "KITCHEN_SWAP_REJECTED" },
+    });
+    expect(rejectedNotif).not.toBeNull();
   });
 
   it("lets the requester cancel their own pending request", async () => {

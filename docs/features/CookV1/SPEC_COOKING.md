@@ -543,9 +543,27 @@ reassigner.
 
 ## 13. Notifications
 
-**Aucune notification cuisine en V1** (garde le scope serre). Les resolutions
-automatiques d'exclusivite (2.4) et les sur-occupations post-regen sont donc
-silencieuses. Notifications prevues en V2.
+Livre (Lot H). Reutilise le systeme de notifications existant (`Notification` model,
+`createNotification`/`createBulkNotifications`, in-app uniquement, pas de canal Discord
+DM). Pas de preference d'opt-in/out (aucun type de notification existant n'en a une).
+
+| Type                               | Declencheur                                | Destinataire(s)                             |
+| ----------------------------------- | -------------------------------------------- | ---------------------------------------------- |
+| `KITCHEN_SWAP_REQUESTED`           | Un chef propose un echange a un autre chef  | Chef cible                                     |
+| `KITCHEN_SWAP_ACCEPTED`            | La cible accepte l'echange                  | Chef demandeur                                 |
+| `KITCHEN_SWAP_REJECTED`            | La cible refuse l'echange                   | Chef demandeur                                 |
+| `KITCHEN_ASSISTANT_SWAP_REQUESTED` | Un equipier demande un echange sur un repas complet | Equipiers actuellement inscrits sur le repas cible |
+| `KITCHEN_ASSISTANT_SWAP_ACCEPTED`  | Un equipier du repas cible accepte          | Equipier demandeur                             |
+| `KITCHEN_CHEF_ADDED`               | Ajout manuel ou sync role Discord           | Nouveau chef                                   |
+| `KITCHEN_CHEF_REMOVED`             | Retrait manuel ou sync role Discord (repas orphelin) | Ancien chef                            |
+| `KITCHEN_MEAL_CLAIMED`             | Un chef reclame un creneau ayant deja des equipiers inscrits | Equipiers inscrits             |
+| `KITCHEN_OVERCAPACITY`             | Sur-occupation detectee a la (re)generation du planning | Chef du repas concerne (si non orphelin) |
+
+Annulation d'une demande d'echange (chef ou equipier) : pas de notification (le
+demandeur est seul acteur, aucun mecanisme de "retraction" ailleurs dans l'app). Sync
+continue du roster chef via le bot Discord (process separe, pas d'acces au socket
+backend) : ecrit directement la ligne `Notification`, sans push temps reel (visible au
+prochain fetch/reconnexion).
 
 ---
 
@@ -553,7 +571,6 @@ silencieuses. Notifications prevues en V2.
 
 - Chaque participant saisit ses propres allergies (persistees inter-events), en
   remplacement du champ texte global du responsable.
-- Notifications cuisine.
 - Module courses : agregation des ingredients par `Product` avec conversion d'unites au
   sein d'une dimension, calcul des quantites totales, liste de courses.
 
@@ -573,7 +590,8 @@ Le modele (Product + Decimal + Unit par dimension) absorbe la V2 sans migration 
   rien le dernier jour) ; floor + reste sur les nouveaux creneaux ; idempotente.
 - Le chef reclame un creneau de la grille (pas de creation libre) ; echange de creneau
   entre chefs par confirmation mutuelle (recette suit, equipiers restent).
-- Temps reel via sockets sur la room event. Pas de notifications en V1.
+- Temps reel via sockets sur la room event. Notifications cuisine livrees (Lot H,
+  section 13), en plus du temps reel socket (pas en remplacement).
 - Unites : G, KG, ML, CL, L, CAS, CAC, PIECE.
 - **(Evolutions.md)** Le chef ne voit plus jamais les fiches des autres chefs (ecart
   au V1 gele ci-dessus, section 4) : "Mon repas" = sa seule fiche, parcourir toutes

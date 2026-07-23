@@ -374,6 +374,11 @@ describe("Kitchen API", () => {
 
       expect(res.status).toBe(201);
       expect(res.body.data.chefs.map((c: { id: string }) => c.id)).toContain(user.id);
+
+      const notif = await prisma.notification.findFirst({
+        where: { userId: user.id, type: "KITCHEN_CHEF_ADDED" },
+      });
+      expect(notif).not.toBeNull();
     });
 
     it("rejects adding a non-participant as chef", async () => {
@@ -582,6 +587,12 @@ describe("Kitchen API", () => {
       const orphaned = await prisma.meal.findUniqueOrThrow({ where: { id: meal.id } });
       expect(orphaned.chefUserId).toBeNull();
       expect(orphaned.name).toBe("Ratatouille");
+
+      const notif = await prisma.notification.findFirst({
+        where: { userId: user.id, type: "KITCHEN_CHEF_REMOVED" },
+      });
+      expect(notif).not.toBeNull();
+      expect(notif?.message).toContain("sans chef");
     });
 
     it("returns NOT_IN_CHEF_ROSTER when removing a chef not in the roster", async () => {

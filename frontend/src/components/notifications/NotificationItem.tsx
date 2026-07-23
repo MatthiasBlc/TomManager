@@ -36,6 +36,21 @@ function getIcon(type: string): string {
       return "👋";
     case "GM_TABLE_FULL":
       return "🎉";
+    case "KITCHEN_SWAP_REQUESTED":
+    case "KITCHEN_ASSISTANT_SWAP_REQUESTED":
+      return "🔄";
+    case "KITCHEN_SWAP_ACCEPTED":
+    case "KITCHEN_ASSISTANT_SWAP_ACCEPTED":
+      return "✅";
+    case "KITCHEN_SWAP_REJECTED":
+      return "❌";
+    case "KITCHEN_CHEF_ADDED":
+    case "KITCHEN_MEAL_CLAIMED":
+      return "👨‍🍳";
+    case "KITCHEN_CHEF_REMOVED":
+      return "👋";
+    case "KITCHEN_OVERCAPACITY":
+      return "⚠";
     default:
       return "🔔";
   }
@@ -68,6 +83,16 @@ function getDestination(notification: Notification): string | null {
     case "PLAYER_KICKED":
     case "EVENT_UPDATED":
       return eventId ? `/events/${eventId}/planning` : null;
+    case "KITCHEN_SWAP_REQUESTED":
+    case "KITCHEN_SWAP_ACCEPTED":
+    case "KITCHEN_SWAP_REJECTED":
+    case "KITCHEN_ASSISTANT_SWAP_REQUESTED":
+    case "KITCHEN_ASSISTANT_SWAP_ACCEPTED":
+    case "KITCHEN_CHEF_ADDED":
+    case "KITCHEN_CHEF_REMOVED":
+    case "KITCHEN_MEAL_CLAIMED":
+    case "KITCHEN_OVERCAPACITY":
+      return eventId ? `/events/${eventId}?tab=kitchen` : null;
     default: {
       // TABLE_UPDATED, WAITLIST_*, RESERVED_SEAT_ASSIGNED et tout type futur :
       // deep-link vers la modale de la table si connue

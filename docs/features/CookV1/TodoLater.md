@@ -1,8 +1,3 @@
-1/système de notif cuisine
-
-- lister toutes les notifs à mettre en place
-- mettre en place ces notifs
-
 9/ info sur les repas nb végé / carné
 Proposition : ajouter un champ carné ou végé à cocher sur
 
