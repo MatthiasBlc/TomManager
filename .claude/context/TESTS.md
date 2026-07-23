@@ -25,6 +25,16 @@ npm run test:e2e                         # Tous les projets
 npx playwright test --grep "nom"         # Un test specifique
 ```
 
+**ATTENTION - `npm test` / `npm run test:backend` (variante docker) efface les donnees de dev.**
+Ces commandes font `docker compose exec backend npm test`, qui tourne dans le conteneur
+backend contre la MEME base que le dev (`tommanager_db`). `globalSetup.ts` fait un
+`deleteMany()` sur toutes les tables `beforeEach`/`afterEach` de CHAQUE test pour
+l'isolation — donc la base dev (users, events, tables seedees) est integralement videe
+a la fin de la suite. Si des donnees de dev/demo comptent (seed manuel, tables de test
+UI), reseeder ensuite : `docker exec tommanager-backend node prisma/seed.js`.
+Alternative sans ce risque : `npm run test:db:up` + `npm run test:integration` (DB de
+test isolee sur le port 5433, ne touche jamais `tommanager_db`).
+
 ## E2E — Architecture
 
 - Playwright s'installe localement (`~/.cache/ms-playwright/`), pas dans Docker
