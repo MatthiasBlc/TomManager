@@ -118,6 +118,47 @@ describe("Meal API", () => {
       expect(res.body.data.chef.id).toBe(chefUser.id);
     });
 
+    it("notifies assistants already registered on the slot once it is claimed", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "claimchefD@example.com",
+        username: "claimchefD",
+      });
+      const eventKitchen = await prisma.eventKitchen.findUniqueOrThrow({
+        where: { eventId: event.id },
+      });
+      const orphan = await prisma.meal.create({
+        data: {
+          eventKitchenId: eventKitchen.id,
+          chefUserId: null,
+          name: "",
+          service: "DINNER",
+          startDateTime: new Date("2026-06-01T18:30:00Z"),
+          endDateTime: new Date("2026-06-01T21:00:00Z"),
+          maxAssistants: 1,
+        },
+      });
+      const eq1 = await addTestParticipant(event.id, {
+        email: "claimeq1@example.com",
+        username: "claimeq1",
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphan.id}/assistants`)
+        .set("Cookie", eq1.cookie);
+
+      const res = await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphan.id}/claim`)
+        .set("Cookie", chefCookie);
+      expect(res.status).toBe(200);
+
+      const notif = await prisma.notification.findFirst({
+        where: { userId: eq1.user.id, type: "KITCHEN_MEAL_CLAIMED" },
+      });
+      expect(notif).not.toBeNull();
+      expect(notif?.metadata).toMatchObject({ eventId: event.id, mealId: orphan.id });
+    });
+
     it("rejects claiming a slot that already has a chef", async () => {
       const { cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie);

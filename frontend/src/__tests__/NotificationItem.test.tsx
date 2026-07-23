@@ -137,6 +137,31 @@ describe("NotificationItem", () => {
     expect(screen.getByTestId("location").textContent).not.toContain("table=");
   });
 
+  it("routes kitchen notification types to the kitchen tab", () => {
+    const kitchenTypes = [
+      "KITCHEN_SWAP_REQUESTED",
+      "KITCHEN_SWAP_ACCEPTED",
+      "KITCHEN_SWAP_REJECTED",
+      "KITCHEN_ASSISTANT_SWAP_REQUESTED",
+      "KITCHEN_ASSISTANT_SWAP_ACCEPTED",
+      "KITCHEN_CHEF_ADDED",
+      "KITCHEN_CHEF_REMOVED",
+      "KITCHEN_MEAL_CLAIMED",
+      "KITCHEN_OVERCAPACITY",
+    ];
+    for (const type of kitchenTypes) {
+      const { unmount } = renderItem({
+        ...baseNotification,
+        id: `id-${type}`,
+        type,
+        metadata: { eventId: "ev42" },
+      });
+      fireEvent.click(screen.getByText("Table mise a jour"));
+      expect(screen.getByTestId("location")).toHaveTextContent("/events/ev42?tab=kitchen");
+      unmount();
+    }
+  });
+
   it("calls onNavigate on click (panel close) even without a destination", () => {
     const onNavigate = vi.fn();
     renderItem(baseNotification, { onMarkAsRead: vi.fn(), onDelete: vi.fn(), onNavigate });
@@ -165,6 +190,15 @@ describe("NotificationItem", () => {
       ["GM_PLAYER_JOINED", "🙋"],
       ["GM_PLAYER_WAITLISTED", "⏳"],
       ["GM_TABLE_FULL", "🎉"],
+      ["KITCHEN_SWAP_REQUESTED", "🔄"],
+      ["KITCHEN_ASSISTANT_SWAP_REQUESTED", "🔄"],
+      ["KITCHEN_SWAP_ACCEPTED", "✅"],
+      ["KITCHEN_ASSISTANT_SWAP_ACCEPTED", "✅"],
+      ["KITCHEN_SWAP_REJECTED", "❌"],
+      ["KITCHEN_CHEF_ADDED", "👨‍🍳"],
+      ["KITCHEN_MEAL_CLAIMED", "👨‍🍳"],
+      ["KITCHEN_CHEF_REMOVED", "👋"],
+      ["KITCHEN_OVERCAPACITY", "⚠"],
       ["UNKNOWN_TYPE", "🔔"],
     ];
     for (const [type, icon] of types) {

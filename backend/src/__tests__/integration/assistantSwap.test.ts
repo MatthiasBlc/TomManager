@@ -119,7 +119,7 @@ describe("Assistant swap API (point 4, Evolutions.md)", () => {
     });
 
     it("creates a pending request against a full target meal", async () => {
-      const { event, eq1, meal2 } = await setupTwoMealsWithAssistants("a2");
+      const { event, eq1, eq2, meal2 } = await setupTwoMealsWithAssistants("a2");
 
       const res = await request
         .post(`/api/events/${event.id}/kitchen/assistant-swaps`)
@@ -129,6 +129,13 @@ describe("Assistant swap API (point 4, Evolutions.md)", () => {
       expect(res.body.data.status).toBe("PENDING");
       expect(res.body.data.requester.id).toBe(eq1.user.id);
       expect(res.body.data.targetMeal.id).toBe(meal2.id);
+
+      // Les equipiers actuellement inscrits sur le repas cible (eq2) sont notifies.
+      const notif = await prisma.notification.findFirst({
+        where: { userId: eq2.user.id, type: "KITCHEN_ASSISTANT_SWAP_REQUESTED" },
+      });
+      expect(notif).not.toBeNull();
+      expect(notif?.metadata).toMatchObject({ eventId: event.id, mealId: meal2.id });
     });
 
     it("returns ASSISTANT_SWAP_SAME_MEAL when targeting one's own meal", async () => {
@@ -197,6 +204,12 @@ describe("Assistant swap API (point 4, Evolutions.md)", () => {
       const req = await prisma.assistantSwapRequest.findUnique({ where: { id: requestId } });
       expect(req?.status).toBe("ACCEPTED");
       expect(req?.accepterUserId).toBe(eq2.user.id);
+
+      // Le demandeur (eq1) est notifie de l'acceptation.
+      const notif = await prisma.notification.findFirst({
+        where: { userId: eq1.user.id, type: "KITCHEN_ASSISTANT_SWAP_ACCEPTED" },
+      });
+      expect(notif).not.toBeNull();
     });
 
     it("returns FORBIDDEN when the accepter is not currently on the target meal", async () => {

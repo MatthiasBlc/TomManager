@@ -91,6 +91,15 @@ Evenements socket emis vers la room `user:<userId>` (sync multi-appareils/onglet
 notification est non-bloquante (echec logge, retourne null/[], l'action metier
 n'echoue jamais a cause d'une notification).
 
+Types cuisine (module Kitchen, cf ci-dessous) : `KITCHEN_SWAP_REQUESTED`/`_ACCEPTED`/`_REJECTED`
+(echange entre chefs), `KITCHEN_ASSISTANT_SWAP_REQUESTED`/`_ACCEPTED` (echange entre equipiers),
+`KITCHEN_CHEF_ADDED`/`_REMOVED` (roster chef, manuel ou sync role Discord), `KITCHEN_MEAL_CLAIMED`
+(un chef reclame un creneau ou des equipiers sont deja inscrits), `KITCHEN_OVERCAPACITY`
+(sur-occupation post-generation, notifie le chef du repas). Tous `metadata: { eventId, ... }`,
+deep-link frontend vers `/events/:eventId?tab=kitchen`. La sync continue du roster chef via
+le bot Discord (`discord-bot/src/services/syncKitchenChef.ts`) ecrit directement la ligne
+`Notification` (pas de push socket temps reel depuis ce process separe).
+
 ## Preferences (`/api/me`)
 
 | Method | Path           | Auth        | Description                                                                                      |

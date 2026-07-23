@@ -4,6 +4,7 @@ import logger from "../util/logger";
 import { emitToEvent } from "../socket/emitter";
 import { getLocalUserIdsForDiscordRole } from "./adminSync";
 import { computeEventConflicts } from "./conflicts";
+import { createBulkNotifications, createNotification } from "./notification";
 import type { TxClient } from "./mealTransfer";
 
 export const USER_SELECT = { id: true, username: true, displayName: true } as const;
@@ -90,14 +91,16 @@ export async function syncChefRoleRoster(
 
   const toRemove = currentRoleChefs.filter((c) => !qualifying.has(c.userId));
   const toAdd = [...qualifying].filter((userId) => !currentRoleUserIds.has(userId));
+  const orphanedByUserId = new Map<string, boolean>();
 
   await prisma.$transaction(async (tx) => {
     for (const chef of toRemove) {
       await tx.kitchenChef.delete({ where: { id: chef.id } });
-      await tx.meal.updateMany({
+      const { count } = await tx.meal.updateMany({
         where: { eventKitchenId, chefUserId: chef.userId },
         data: { chefUserId: null },
       });
+      orphanedByUserId.set(chef.userId, count > 0);
     }
     for (const userId of toAdd) {
       await tx.kitchenChef.create({ data: { eventKitchenId, userId, source: "ROLE" } });
@@ -106,6 +109,27 @@ export async function syncChefRoleRoster(
       await cancelStaleAssistantSwapRequests(tx, eventKitchenId, userId);
     }
   });
+
+  await createBulkNotifications(
+    toRemove.map((chef) => ({
+      userId: chef.userId,
+      type: "KITCHEN_CHEF_REMOVED" as const,
+      title: "Retrait du rôle de chef cuisine",
+      message: orphanedByUserId.get(chef.userId)
+        ? "Vous n'êtes plus chef cuisine pour cet event, votre repas est désormais sans chef"
+        : "Vous n'êtes plus chef cuisine pour cet event",
+      metadata: { eventId },
+    }))
+  );
+  await createBulkNotifications(
+    toAdd.map((userId) => ({
+      userId,
+      type: "KITCHEN_CHEF_ADDED" as const,
+      title: "Nouveau chef cuisine",
+      message: "Vous êtes maintenant chef cuisine pour cet event",
+      metadata: { eventId },
+    }))
+  );
 
   return { added: toAdd.length, removed: toRemove.length };
 }
@@ -238,6 +262,16 @@ export async function addManualChef(eventId: string, actingUserId: string, targe
     emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId: claimedMealId });
   }
 
+  await createNotification({
+    userId: targetUserId,
+    type: "KITCHEN_CHEF_ADDED",
+    title: "Nouveau chef cuisine",
+    message: claimedMealId
+      ? "Vous êtes maintenant chef cuisine pour cet event, le repas où vous étiez inscrit vous a été attribué"
+      : "Vous êtes maintenant chef cuisine pour cet event",
+    metadata: { eventId },
+  });
+
   return getKitchenView(eventId, actingUserId);
 }
 
@@ -258,16 +292,27 @@ export async function removeChef(eventId: string, actingUserId: string, targetUs
     throw createError(404, "User is not in the chef roster", { code: "NOT_IN_CHEF_ROSTER" });
   }
 
-  await prisma.$transaction(async (tx) => {
+  const hadMeal = await prisma.$transaction(async (tx) => {
     await tx.kitchenChef.delete({ where: { id: existing.id } });
     // Le repas devient orphelin ; la fiche est conservee intacte (2.4)
-    await tx.meal.updateMany({
+    const { count } = await tx.meal.updateMany({
       where: { eventKitchenId: eventKitchen.id, chefUserId: targetUserId },
       data: { chefUserId: null },
     });
+    return count > 0;
   });
 
   emitToEvent(eventId, "kitchen:config-updated", { eventId });
+
+  await createNotification({
+    userId: targetUserId,
+    type: "KITCHEN_CHEF_REMOVED",
+    title: "Retrait du rôle de chef cuisine",
+    message: hadMeal
+      ? "Vous n'êtes plus chef cuisine pour cet event, votre repas est désormais sans chef"
+      : "Vous n'êtes plus chef cuisine pour cet event",
+    metadata: { eventId },
+  });
 
   return getKitchenView(eventId, actingUserId);
 }

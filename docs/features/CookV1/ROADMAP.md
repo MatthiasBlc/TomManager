@@ -158,11 +158,27 @@ Modele : **Opus 4.8** | Effort : ~3-5h (touche le coeur du planning, subtil)
 
 Modele : **Sonnet 5** | Effort : ~2-3h
 
+## Lot H - Notifications cuisine
+
+- [x] 9 types `NotificationType` additifs (migration Prisma) : swap chef
+      (requested/accepted/rejected), swap equipier (requested/accepted), roster chef
+      (added/removed), reclamation de creneau avec equipiers deja inscrits,
+      sur-occupation post-generation. Voir `SPEC_COOKING.md` section 13 pour le detail
+      declencheur/destinataire.
+- [x] Appels `createNotification`/`createBulkNotifications` dans `mealSwap.ts`,
+      `assistantSwap.ts`, `kitchen.ts`, `meal.ts`, `kitchenPlanning.ts`.
+- [x] Parite sur la sync continue du roster chef via le bot Discord
+      (`discord-bot/src/services/syncKitchenChef.ts`) : ecrit directement la ligne
+      `Notification` (pas d'acces au socket backend depuis ce process).
+- [x] Frontend : `NotificationItem.tsx` (icones + deep-link `?tab=kitchen`).
+- [x] Tests (backend integration, discord-bot, frontend) dans les suites existantes.
+
+Modele : **Sonnet 5** | Effort : ~2-3h
+
 ---
 
 ## V2 (hors scope, ne pas implementer maintenant)
 
 - Allergies self-service par participant (persistees inter-events).
-- Notifications cuisine.
 - Module courses : agregation par `Product`, conversion d'unites par dimension,
   liste de courses generee depuis les ingredients.

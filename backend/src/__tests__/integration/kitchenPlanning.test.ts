@@ -246,6 +246,54 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
     const assistants = await prisma.mealAssistant.findMany({ where: { mealId: slot.id } });
     expect(assistants).toHaveLength(2);
   });
+
+  it("notifies the meal's chef when their claimed slot becomes over-occupied", async () => {
+    const { event, managerCookie } = await setupManagerAndEvent("g8");
+    await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
+    const meals = await getMeals(event.id, managerCookie);
+    const orphanSlot = meals.find((m) => m.chef === null)!;
+
+    const chef = await addTestParticipant(event.id, {
+      email: "gen8chef@example.com",
+      username: "gen8chef",
+    });
+    await request
+      .post(`/api/events/${event.id}/kitchen/chefs`)
+      .set("Cookie", managerCookie)
+      .send({ userId: chef.user.id });
+    await request
+      .post(`/api/events/${event.id}/kitchen/meals/${orphanSlot.id}/claim`)
+      .set("Cookie", chef.cookie);
+
+    await request
+      .patch(`/api/events/${event.id}/kitchen/meals/${orphanSlot.id}`)
+      .set("Cookie", managerCookie)
+      .send({ maxAssistants: 5 });
+    for (let i = 0; i < 2; i++) {
+      const p = await addTestParticipant(event.id, {
+        email: `gen8over${i}@example.com`,
+        username: `gen8over${i}`,
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/meals/${orphanSlot.id}/assistants`)
+        .set("Cookie", p.cookie);
+    }
+    await request
+      .patch(`/api/events/${event.id}/kitchen/meals/${orphanSlot.id}`)
+      .set("Cookie", managerCookie)
+      .send({ maxAssistants: 1 });
+
+    const res = await request
+      .post(`/api/events/${event.id}/kitchen/generate`)
+      .set("Cookie", managerCookie);
+    expect(res.status).toBe(200);
+
+    const notif = await prisma.notification.findFirst({
+      where: { userId: chef.user.id, type: "KITCHEN_OVERCAPACITY" },
+    });
+    expect(notif).not.toBeNull();
+    expect(notif?.metadata).toMatchObject({ eventId: event.id, mealId: orphanSlot.id });
+  });
 });
 
 describe("POST /api/events/:eventId/kitchen/reset", () => {

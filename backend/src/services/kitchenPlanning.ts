@@ -2,6 +2,7 @@ import prisma from "../util/db";
 import { emitToEvent } from "../socket/emitter";
 import { TZ, zonedWallClockToUtc, zonedYMD } from "../util/timezone";
 import { computeAvailablePool, getEventOr404, getOrCreateEventKitchen } from "./kitchen";
+import { createBulkNotifications } from "./notification";
 
 // Heures murales (Europe/Paris) par defaut des creneaux generes.
 const LUNCH_HOURS = { startH: 10, startM: 30, endH: 13, endM: 0 };
@@ -159,6 +160,19 @@ export async function generatePlanning(eventId: string) {
       occupied: m._count.assistants,
       maxAssistants: m.maxAssistants,
     }));
+
+  const overCapacityByChef = allMeals.filter(
+    (m) => m.chefUserId && m._count.assistants > m.maxAssistants
+  );
+  await createBulkNotifications(
+    overCapacityByChef.map((m) => ({
+      userId: m.chefUserId as string,
+      type: "KITCHEN_OVERCAPACITY" as const,
+      title: "Sur-occupation de votre créneau",
+      message: `Votre repas "${m.name}" a ${m._count.assistants} inscrits pour ${m.maxAssistants} places prévues`,
+      metadata: { eventId, mealId: m.id },
+    }))
+  );
 
   return {
     pool,
