@@ -558,6 +558,195 @@ describe("TableDetailModal", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("keeps the 'Participants' heading when the table has no reserved seats", async () => {
+    renderModal({ user: { id: "u1", role: "USER" } });
+    expect(await screen.findByText("Participants (1/5)")).toBeInTheDocument();
+  });
+
+  it("renames the heading to 'Places de la table' as soon as the table has reserved seats", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: { data: { ...baseTable, reservedSeats: 1 } },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    expect(await screen.findByText("Places de la table (1/5 attribuées)")).toBeInTheDocument();
+    expect(screen.queryByText(/^Participants \(/)).not.toBeInTheDocument();
+  });
+
+  it("shows a vacant-reserved-seat notice when a reserved seat has no participant on it (the reported bug)", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          maxPlayers: 4,
+          reservedSeats: 4,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    await screen.findByText("Bob");
+    expect(screen.getByText("3 places réservées — pas encore attribuées")).toBeInTheDocument();
+    expect(
+      screen.getByText("À attribuer depuis la liste d'attente ci-dessous.")
+    ).toBeInTheDocument();
+  });
+
+  it("phrases the vacant-reserved-seat notice for a non-GM visitor without an admin action", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          maxPlayers: 4,
+          reservedSeats: 4,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u3", role: "USER" } });
+    await screen.findByText("Bob");
+    expect(screen.getByText("Le MJ les attribuera depuis la liste d'attente.")).toBeInTheDocument();
+  });
+
+  it("elides correctly ('l'attribuera', not 'la attribuera') when a single reserved seat is vacant", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          maxPlayers: 4,
+          reservedSeats: 4,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+            {
+              userId: "u4",
+              username: "Chloe",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+            {
+              userId: "u5",
+              username: "Dan",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u3", role: "USER" } });
+    await screen.findByText("Bob");
+    expect(screen.getByText("Le MJ l'attribuera depuis la liste d'attente.")).toBeInTheDocument();
+  });
+
+  it("shows the vacant-reserved-seat notice even when no one has joined yet, instead of the empty state", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: { ...baseTable, maxPlayers: 4, reservedSeats: 2, participants: [] },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    expect(
+      await screen.findByText("2 places réservées — pas encore attribuées")
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Aucun participant pour l'instant")).not.toBeInTheDocument();
+  });
+
+  it("does not show any vacant-reserved-seat notice when every reserved seat is filled", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          reservedSeats: 1,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u1", role: "USER" } });
+    await screen.findByText("Bob");
+    expect(screen.queryByText(/pas encore attribuée/)).not.toBeInTheDocument();
+  });
+
+  it("explains the reservation-only situation next to the join button when a reserved seat is vacant", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          maxPlayers: 4,
+          reservedSeats: 4,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: true,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u3", role: "USER" } });
+    expect(
+      await screen.findByRole("button", { name: /^Rejoindre la liste d'attente$/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/fonctionne sur réservation/)).toBeInTheDocument();
+  });
+
+  it("does not show the reservation-only explanation when the table is simply full (no reserved seat involved)", async () => {
+    apiGetMock.mockReset().mockResolvedValue({
+      data: {
+        data: {
+          ...baseTable,
+          maxPlayers: 1,
+          reservedSeats: 0,
+          participants: [
+            {
+              userId: "u2",
+              username: "Bob",
+              status: "CONFIRMED",
+              isOnReservedSeat: false,
+              joinedAt: "2026-04-09T10:00:00.000Z",
+            },
+          ],
+        },
+      },
+    });
+    renderModal({ user: { id: "u3", role: "USER" } });
+    await screen.findByRole("button", { name: /^Rejoindre la liste d'attente$/i });
+    expect(screen.queryByText(/fonctionne sur réservation/)).not.toBeInTheDocument();
+  });
+
   it("hides the convert-to-reserved action for a confirmed player on a free seat when reservedSeats=0", async () => {
     apiGetMock.mockReset().mockResolvedValue({
       data: {

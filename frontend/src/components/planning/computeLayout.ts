@@ -24,34 +24,81 @@ export interface TableSummary {
   conflictingPlayerCount: number;
 }
 
+export interface SeatCounts {
+  confirmedCount: number;
+  maxPlayers: number;
+  reservedSeats: number;
+  confirmedOnReserved: number;
+}
+
 export interface SeatSummary {
   total: string;
   normal: string | null;
   reserved: string | null;
 }
 
+export interface SeatBreakdown {
+  normalSeats: number;
+  confirmedNormal: number;
+  // Places libres restantes (non reservees) : negatif jamais, borne a 0 par construction serveur
+  openNormalSeats: number;
+  // Places reservees par le MJ mais pas encore occupees par un participant confirme
+  openReservedSeats: number;
+}
+
+// Decompose la capacite d'une table en places libres vs reservees, et calcule
+// combien restent ouvertes de chaque cote. Seule source de verite pour ce calcul,
+// partagee par formatSeatSummary, TableCard et TableDetailModal.
+export function computeSeatBreakdown(table: SeatCounts): SeatBreakdown {
+  const { confirmedCount, maxPlayers, reservedSeats, confirmedOnReserved } = table;
+  const normalSeats = maxPlayers - reservedSeats;
+  const confirmedNormal = confirmedCount - confirmedOnReserved;
+  return {
+    normalSeats,
+    confirmedNormal,
+    openNormalSeats: normalSeats - confirmedNormal,
+    openReservedSeats: reservedSeats - confirmedOnReserved,
+  };
+}
+
 // Formate le detail des places (libres vs reservees par le MJ).
-// normal/reserved restent a null quand la table n'a pas de place reservee,
-// pour que l'appelant puisse choisir de ne rien afficher dans ce cas.
-export function formatSeatSummary(table: {
-  confirmedCount: number;
-  maxPlayers: number;
-  reservedSeats: number;
-  confirmedOnReserved: number;
-}): SeatSummary {
+// normal/reserved restent a null quand la table n'a pas de place reservee (rien a
+// distinguer), et normal reste aussi a null quand reservedSeats = maxPlayers : un
+// badge "0/0 libre" ne porte aucune information et n'est que du bruit visuel.
+export function formatSeatSummary(table: SeatCounts): SeatSummary {
   const { confirmedCount, maxPlayers, reservedSeats, confirmedOnReserved } = table;
   const total = `${confirmedCount}/${maxPlayers} joueurs`;
 
   if (reservedSeats <= 0) return { total, normal: null, reserved: null };
 
-  const normalSeats = maxPlayers - reservedSeats;
-  const confirmedNormal = confirmedCount - confirmedOnReserved;
+  const { normalSeats, confirmedNormal } = computeSeatBreakdown(table);
 
   return {
     total,
-    normal: `${confirmedNormal}/${normalSeats} libre${normalSeats > 1 ? "s" : ""}`,
+    normal:
+      normalSeats > 0
+        ? `${confirmedNormal}/${normalSeats} libre${normalSeats > 1 ? "s" : ""}`
+        : null,
     reserved: `${confirmedOnReserved}/${reservedSeats} réservée${reservedSeats > 1 ? "s" : ""}`,
   };
+}
+
+// Titre de la section participants. "Participants" reste tel quel tant qu'aucune
+// reservation n'existe (rien a distinguer) ; des qu'il y a des places reservees, le
+// mot "Participants" est ambigu (il laisse croire que le solde est ouvert a tous),
+// donc on decrit precisement ce que compte le chiffre : des places attribuees.
+export function formatParticipantsHeading(table: SeatCounts): string {
+  return table.reservedSeats > 0
+    ? `Places de la table (${table.confirmedCount}/${table.maxPlayers} attribuées)`
+    : `Participants (${table.confirmedCount}/${table.maxPlayers})`;
+}
+
+// Phrase decrivant les places reservees encore vacantes (aucun participant confirme
+// dessus). Retourne null quand il n'y en a pas, pour que l'appelant n'affiche rien.
+export function formatVacantReservedSeats(openReservedSeats: number): string | null {
+  if (openReservedSeats <= 0) return null;
+  const plural = openReservedSeats > 1;
+  return `${openReservedSeats} place${plural ? "s" : ""} réservée${plural ? "s" : ""} — pas encore attribuée${plural ? "s" : ""}`;
 }
 
 export interface LayoutItem {
