@@ -386,7 +386,7 @@ async function seedDemoData() {
   }
 
   // --- Tags ---
-  const tagNames = ["jdr", "strategie", "coopératif", "familial", "initiation"];
+  const tagNames = ["jdr", "strategie", "coopératif", "familial", "initiation", "demo"];
   const tagMap = {};
   for (const name of tagNames) {
     const tag = await prisma.tag.upsert({
@@ -578,6 +578,113 @@ async function seedDemoData() {
       endDateTime: new Date("2026-08-15T21:00:00.000Z"),
       tags: ["familial"],
     },
+
+    // --- Jour 19, soir : demo UX "places reservees" ---
+    // Sequentielles (pas de chevauchement), rangees apres Dungeon World/Mothership.
+    // Couvre toute la matrice reservedSeats/places-libres pour valider l'affichage
+    // de la fiche table (cf. docs/features/table-reserved-seats-ux) :
+    //   1. Pas de reservation, places encore libres (cas de base)
+    //   2. Pas de reservation, complete (liste d'attente simple)
+    //   3. Reservation partielle + places libres restantes (les deux coexistent)
+    //   4. Reservation entierement pourvue + places libres restantes (pas de ligne fantome)
+    //   5. Places libres epuisees MAIS reserve encore vacante (piege silencieux,
+    //      se produit meme quand reservedSeats < maxPlayers)
+    //   6. Reservation totale (reservedSeats = maxPlayers), non entierement pourvue
+    //      (cas signale par un utilisateur : "3/4 mais je ne peux pas rejoindre")
+    //   7. Reservation totale, entierement pourvue (complete sans ambiguite)
+    {
+      title: "Demo UX 1 - Table ouverte, places disponibles",
+      pitch: "Aucune reservation : les places restantes sont ouvertes a tous.",
+      maxPlayers: 5,
+      reservedSeats: 0,
+      startDateTime: new Date("2026-08-19T16:00:00.000Z"),
+      endDateTime: new Date("2026-08-19T16:50:00.000Z"),
+      tags: ["demo"],
+      participants: (fp) => [
+        { user: fp[0], status: "CONFIRMED" },
+        { user: fp[1], status: "CONFIRMED" },
+      ],
+    },
+    {
+      title: "Demo UX 2 - Table ouverte, complete",
+      pitch: "Aucune reservation, mais toutes les places sont prises : liste d'attente classique.",
+      maxPlayers: 2,
+      reservedSeats: 0,
+      startDateTime: new Date("2026-08-19T16:50:00.000Z"),
+      endDateTime: new Date("2026-08-19T17:40:00.000Z"),
+      tags: ["demo"],
+      participants: (fp) => [
+        { user: fp[2], status: "CONFIRMED" },
+        { user: fp[3], status: "WAITLIST" },
+      ],
+    },
+    {
+      title: "Demo UX 3 - Reservation partielle, places libres restantes",
+      pitch:
+        "1 des 2 places reservees est pourvue, et il reste des places libres a cote : les deux se cotoient sur la meme fiche.",
+      maxPlayers: 5,
+      reservedSeats: 2,
+      startDateTime: new Date("2026-08-19T17:40:00.000Z"),
+      endDateTime: new Date("2026-08-19T18:30:00.000Z"),
+      tags: ["demo"],
+      participants: (fp) => [{ user: fp[4], status: "CONFIRMED", isOnReservedSeat: true }],
+    },
+    {
+      title: "Demo UX 4 - Reservation complete, places libres restantes",
+      pitch:
+        "L'unique place reservee est deja attribuee ; 2 places libres restent ouvertes a l'inscription directe.",
+      maxPlayers: 5,
+      reservedSeats: 1,
+      gmOnReservedSeat: true,
+      startDateTime: new Date("2026-08-19T18:30:00.000Z"),
+      endDateTime: new Date("2026-08-19T19:20:00.000Z"),
+      tags: ["demo"],
+      participants: (fp) => [
+        { user: fp[5], status: "CONFIRMED" },
+        { user: fp[6], status: "CONFIRMED" },
+      ],
+    },
+    {
+      title: "Demo UX 5 - Places libres epuisees, reserve encore vacante",
+      pitch:
+        "Les 2 places libres sont prises, mais les 2 places reservees n'ont encore ete attribuees a personne : rejoindre mene direct a la liste d'attente, meme si la table n'affiche pas complet a premiere vue.",
+      maxPlayers: 4,
+      reservedSeats: 2,
+      startDateTime: new Date("2026-08-19T19:20:00.000Z"),
+      endDateTime: new Date("2026-08-19T20:10:00.000Z"),
+      tags: ["demo"],
+      participants: (fp) => [{ user: fp[7], status: "CONFIRMED" }],
+    },
+    {
+      title: "Demo UX 6 - Reservation totale, non entierement attribuee",
+      pitch:
+        "Cas signale par un joueur en production : la table affiche 3/4 mais la 4e place est deja reservee par le MJ, pas encore attribuee. Rejoindre place en liste d'attente.",
+      maxPlayers: 4,
+      reservedSeats: 4,
+      gmOnReservedSeat: true,
+      startDateTime: new Date("2026-08-19T20:10:00.000Z"),
+      endDateTime: new Date("2026-08-19T21:00:00.000Z"),
+      tags: ["demo"],
+      participants: (fp) => [
+        { user: fp[8], status: "CONFIRMED", isOnReservedSeat: true },
+        { user: fp[9], status: "CONFIRMED", isOnReservedSeat: true },
+        { user: fp[1], status: "WAITLIST" },
+      ],
+    },
+    {
+      title: "Demo UX 7 - Reservation totale, complete",
+      pitch: "Toutes les places reservees sont attribuees : la table est simplement complete.",
+      maxPlayers: 3,
+      reservedSeats: 3,
+      gmOnReservedSeat: true,
+      startDateTime: new Date("2026-08-19T21:00:00.000Z"),
+      endDateTime: new Date("2026-08-19T21:50:00.000Z"),
+      tags: ["demo"],
+      participants: (fp) => [
+        { user: fp[0], status: "CONFIRMED", isOnReservedSeat: true },
+        { user: fp[10], status: "CONFIRMED", isOnReservedSeat: true },
+      ],
+    },
   ];
 
   for (const t of tablesData) {
@@ -598,16 +705,35 @@ async function seedDemoData() {
           triggers: t.triggers || null,
           comments: null,
           maxPlayers: t.maxPlayers,
+          reservedSeats: t.reservedSeats ?? 0,
           startDateTime: t.startDateTime,
           endDateTime: t.endDateTime,
           boardGameId,
         },
       });
 
-      // Ajouter admin comme participant GM
+      // Ajouter admin comme participant GM (eventuellement sur une place reservee,
+      // pour les tables de demo qui en ont besoin)
       await prisma.gameTableParticipant.create({
-        data: { gameTableId: table.id, userId: admin.id, status: "CONFIRMED" },
+        data: {
+          gameTableId: table.id,
+          userId: admin.id,
+          status: "CONFIRMED",
+          isOnReservedSeat: t.gmOnReservedSeat ?? false,
+        },
       });
+
+      // Participants additionnels (tables de demo places reservees)
+      for (const p of t.participants ? t.participants(fillerParticipants) : []) {
+        await prisma.gameTableParticipant.create({
+          data: {
+            gameTableId: table.id,
+            userId: p.user.id,
+            status: p.status,
+            isOnReservedSeat: p.isOnReservedSeat ?? false,
+          },
+        });
+      }
 
       // Tags
       for (const tagName of t.tags) {

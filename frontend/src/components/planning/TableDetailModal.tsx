@@ -11,7 +11,12 @@ import EditTableModal from "./EditTableModal";
 import EmptyState from "../common/EmptyState";
 import { SkeletonTableDetail } from "../common/Skeleton";
 import BoardGameDetailModal from "../boardgames/BoardGameDetailModal";
-import { formatSeatSummary } from "./computeLayout";
+import {
+  formatSeatSummary,
+  formatParticipantsHeading,
+  formatVacantReservedSeats,
+  computeSeatBreakdown,
+} from "./computeLayout";
 import { getErrorMessage } from "../../config/apiErrors";
 import { formatParisDateTime } from "../../utils/dateTime";
 
@@ -93,21 +98,22 @@ export default function TableDetailModal({
   const waitlistCount = table?.participants.filter((p) => p.status === "WAITLIST").length ?? 0;
   const confirmedOnReserved =
     table?.participants.filter((p) => p.status === "CONFIRMED" && p.isOnReservedSeat).length ?? 0;
-  const seatSummary = table
-    ? formatSeatSummary({
-        confirmedCount,
-        maxPlayers: table.maxPlayers,
-        reservedSeats: table.reservedSeats,
-        confirmedOnReserved,
-      })
-    : null;
-  // Places libres = capacite libre (maxPlayers - reservedSeats) moins les confirmes
-  // sur place libre uniquement (les occupants de places reservees ne comptent pas ici)
-  const openNormalSeats = table
-    ? table.maxPlayers - table.reservedSeats - (confirmedCount - confirmedOnReserved)
-    : 0;
+  const seatCounts = {
+    confirmedCount,
+    maxPlayers: table?.maxPlayers ?? 0,
+    reservedSeats: table?.reservedSeats ?? 0,
+    confirmedOnReserved,
+  };
+  const seatSummary = table ? formatSeatSummary(seatCounts) : null;
+  const participantsHeading = formatParticipantsHeading(seatCounts);
+  const { openNormalSeats, openReservedSeats } = computeSeatBreakdown(seatCounts);
+  const vacantReservedSeats = formatVacantReservedSeats(openReservedSeats);
   const canPromoteFree = openNormalSeats > 0;
-  const canPromoteReserved = (table?.reservedSeats ?? 0) - confirmedOnReserved > 0;
+  const canPromoteReserved = openReservedSeats > 0;
+  // La liste d'attente est la seule issue pour un visiteur qui rejoint, alors que la
+  // table n'est pas pleine : sans ce message, "3/4" a cote du bouton "liste d'attente"
+  // ressemble a un bug plutot qu'a une place reservee non encore attribuee par le MJ.
+  const joiningOnlyReachesWaitlist = openNormalSeats <= 0 && openReservedSeats > 0;
 
   const fetchTable = useCallback(async () => {
     if (!tableId) return;
@@ -511,113 +517,143 @@ export default function TableDetailModal({
             {/* Participants confirmes */}
             <div className="card bg-base-200 shadow-none">
               <div className="card-body p-3">
-                <h4 className="font-semibold text-sm mb-2">
-                  Participants ({confirmedCount}/{table.maxPlayers})
-                </h4>
-                {confirmedCount === 0 ? (
+                <h4 className="font-semibold text-sm mb-2">{participantsHeading}</h4>
+                {confirmedCount === 0 && !vacantReservedSeats ? (
                   <EmptyState icon={<span>👥</span>} title="Aucun participant pour l'instant" />
-                ) : isMobile ? (
-                  <div className="divide-y divide-base-300">
-                    {/* Nom sur sa ligne, actions wrappables en dessous : 3 actions
-                        textuelles ne tiennent pas cote a cote sur 390px */}
-                    {table.participants
-                      .filter((p) => p.status === "CONFIRMED")
-                      .map((p) => (
-                        <div key={p.userId} className="py-1.5">
-                          <span className="text-sm flex items-center gap-1.5">
-                            {displayedName(p)}
-                            {p.isOnReservedSeat && (
-                              <span className="badge badge-warning badge-xs">réservée</span>
-                            )}
-                          </span>
-                          {/* Aucune action sur la ligne du MJ : jamais de place reservee,
-                              jamais de waitlist, il quitte via la suppression de table */}
-                          {canEdit && p.userId !== table.createdBy && (
-                            <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                              {renderConvertSeatAction(p, "btn btn-ghost btn-xs min-h-[44px]")}
-                              <button
-                                className="btn btn-ghost btn-xs text-warning min-h-[44px]"
-                                disabled={!!pendingAction}
-                                onClick={() => handleDemote(p.userId)}
-                              >
-                                {pendingAction === `demote:${p.userId}` && (
-                                  <span className="loading loading-spinner loading-xs" />
-                                )}
-                                Mettre sur liste d'attente
-                              </button>
-                              <button
-                                className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                                disabled={!!pendingAction}
-                                onClick={() => handleKick(p.userId, displayedName(p))}
-                              >
-                                {pendingAction === `kick:${p.userId}` && (
-                                  <span className="loading loading-spinner loading-xs" />
-                                )}
-                                Retirer
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                  </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="table table-xs">
-                      <thead>
-                        <tr>
-                          <th>Joueur</th>
-                          {canEdit && <th />}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {table.participants
-                          .filter((p) => p.status === "CONFIRMED")
-                          .map((p) => (
-                            <tr key={p.userId}>
-                              <td>
-                                <span className="flex items-center gap-1.5">
+                  <>
+                    {confirmedCount > 0 &&
+                      (isMobile ? (
+                        <div className="divide-y divide-base-300">
+                          {/* Nom sur sa ligne, actions wrappables en dessous : 3 actions
+                              textuelles ne tiennent pas cote a cote sur 390px */}
+                          {table.participants
+                            .filter((p) => p.status === "CONFIRMED")
+                            .map((p) => (
+                              <div key={p.userId} className="py-1.5">
+                                <span className="text-sm flex items-center gap-1.5">
                                   {displayedName(p)}
                                   {p.isOnReservedSeat && (
                                     <span className="badge badge-warning badge-xs">réservée</span>
                                   )}
                                 </span>
-                              </td>
-                              {canEdit && (
-                                <td className="flex gap-1">
-                                  {/* Aucune action sur la ligne du MJ : jamais de place reservee,
-                                      jamais de waitlist, il quitte via la suppression de table */}
-                                  {p.userId !== table.createdBy && (
-                                    <>
-                                      {renderConvertSeatAction(p, "btn btn-ghost btn-xs")}
-                                      <button
-                                        className="btn btn-ghost btn-xs text-warning"
-                                        disabled={!!pendingAction}
-                                        onClick={() => handleDemote(p.userId)}
-                                      >
-                                        {pendingAction === `demote:${p.userId}` && (
-                                          <span className="loading loading-spinner loading-xs" />
+                                {/* Aucune action sur la ligne du MJ : jamais de place reservee,
+                                    jamais de waitlist, il quitte via la suppression de table */}
+                                {canEdit && p.userId !== table.createdBy && (
+                                  <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                    {renderConvertSeatAction(
+                                      p,
+                                      "btn btn-ghost btn-xs min-h-[44px]"
+                                    )}
+                                    <button
+                                      className="btn btn-ghost btn-xs text-warning min-h-[44px]"
+                                      disabled={!!pendingAction}
+                                      onClick={() => handleDemote(p.userId)}
+                                    >
+                                      {pendingAction === `demote:${p.userId}` && (
+                                        <span className="loading loading-spinner loading-xs" />
+                                      )}
+                                      Mettre sur liste d'attente
+                                    </button>
+                                    <button
+                                      className="btn btn-ghost btn-xs text-error min-h-[44px]"
+                                      disabled={!!pendingAction}
+                                      onClick={() => handleKick(p.userId, displayedName(p))}
+                                    >
+                                      {pendingAction === `kick:${p.userId}` && (
+                                        <span className="loading loading-spinner loading-xs" />
+                                      )}
+                                      Retirer
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="table table-xs">
+                            <thead>
+                              <tr>
+                                <th>Joueur</th>
+                                {canEdit && <th />}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {table.participants
+                                .filter((p) => p.status === "CONFIRMED")
+                                .map((p) => (
+                                  <tr key={p.userId}>
+                                    <td>
+                                      <span className="flex items-center gap-1.5">
+                                        {displayedName(p)}
+                                        {p.isOnReservedSeat && (
+                                          <span className="badge badge-warning badge-xs">
+                                            réservée
+                                          </span>
                                         )}
-                                        Mettre sur liste d'attente
-                                      </button>
-                                      <button
-                                        className="btn btn-ghost btn-xs text-error"
-                                        disabled={!!pendingAction}
-                                        onClick={() => handleKick(p.userId, displayedName(p))}
-                                      >
-                                        {pendingAction === `kick:${p.userId}` && (
-                                          <span className="loading loading-spinner loading-xs" />
+                                      </span>
+                                    </td>
+                                    {canEdit && (
+                                      <td className="flex gap-1">
+                                        {/* Aucune action sur la ligne du MJ : jamais de place
+                                            reservee, jamais de waitlist, il quitte via la
+                                            suppression de table */}
+                                        {p.userId !== table.createdBy && (
+                                          <>
+                                            {renderConvertSeatAction(p, "btn btn-ghost btn-xs")}
+                                            <button
+                                              className="btn btn-ghost btn-xs text-warning"
+                                              disabled={!!pendingAction}
+                                              onClick={() => handleDemote(p.userId)}
+                                            >
+                                              {pendingAction === `demote:${p.userId}` && (
+                                                <span className="loading loading-spinner loading-xs" />
+                                              )}
+                                              Mettre sur liste d'attente
+                                            </button>
+                                            <button
+                                              className="btn btn-ghost btn-xs text-error"
+                                              disabled={!!pendingAction}
+                                              onClick={() => handleKick(p.userId, displayedName(p))}
+                                            >
+                                              {pendingAction === `kick:${p.userId}` && (
+                                                <span className="loading loading-spinner loading-xs" />
+                                              )}
+                                              Retirer
+                                            </button>
+                                          </>
                                         )}
-                                        Retirer
-                                      </button>
-                                    </>
-                                  )}
-                                </td>
-                              )}
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
+                                      </td>
+                                    )}
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ))}
+                    {vacantReservedSeats && (
+                      <div
+                        className={`flex items-start gap-1.5 text-xs text-warning/80 ${
+                          confirmedCount > 0
+                            ? "mt-2 pt-2 border-t border-dashed border-base-300"
+                            : ""
+                        }`}
+                      >
+                        <span aria-hidden="true">⏳</span>
+                        <span>
+                          {vacantReservedSeats}
+                          <span className="block opacity-70">
+                            {canEdit
+                              ? "À attribuer depuis la liste d'attente ci-dessous."
+                              : `Le MJ ${
+                                  openReservedSeats > 1 ? "les attribuera" : "l'attribuera"
+                                } depuis la liste d'attente.`}
+                          </span>
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -705,16 +741,25 @@ export default function TableDetailModal({
             {/* Actions */}
             <div className={`flex flex-wrap gap-2 pt-1 ${isMobile ? "pb-2" : ""}`}>
               {!currentParticipant && (!isGM || table.type === "JDS" || table.gmIsPlayer) && (
-                <button
-                  className="btn btn-primary btn-sm flex-1 md:flex-none"
-                  disabled={!!pendingAction}
-                  onClick={handleJoin}
-                >
-                  {pendingAction === "join" && (
-                    <span className="loading loading-spinner loading-xs" />
+                <div className="flex flex-col gap-1 flex-1 md:flex-none">
+                  {joiningOnlyReachesWaitlist && (
+                    <p className="text-xs opacity-70">
+                      Cette table fonctionne sur réservation : les places restantes sont attribuées
+                      par le MJ. Rejoignez la liste d'attente, vous serez validé dès qu'une place se
+                      libère.
+                    </p>
                   )}
-                  {openNormalSeats <= 0 ? "Rejoindre la liste d'attente" : "Rejoindre"}
-                </button>
+                  <button
+                    className="btn btn-primary btn-sm w-full"
+                    disabled={!!pendingAction}
+                    onClick={handleJoin}
+                  >
+                    {pendingAction === "join" && (
+                      <span className="loading loading-spinner loading-xs" />
+                    )}
+                    {openNormalSeats <= 0 ? "Rejoindre la liste d'attente" : "Rejoindre"}
+                  </button>
+                </div>
               )}
               {currentParticipant && (
                 <button

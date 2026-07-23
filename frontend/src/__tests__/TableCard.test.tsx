@@ -84,6 +84,23 @@ describe("TableCard", () => {
     expect(screen.queryByText(/réservée/)).not.toBeInTheDocument();
   });
 
+  it("hides the '0/0 libre' badge when the whole table is reservation-only (no normal seats)", () => {
+    render(
+      <TableCard
+        table={{
+          ...baseTable,
+          maxPlayers: 4,
+          reservedSeats: 4,
+          confirmedCount: 3,
+          confirmedOnReserved: 3,
+        }}
+        onClick={() => {}}
+      />
+    );
+    expect(screen.queryByText(/libre/)).not.toBeInTheDocument();
+    expect(screen.getByText("3/4 réservées")).toBeInTheDocument();
+  });
+
   it("renders the waitlist badge when waitlistCount > 0", () => {
     render(<TableCard table={{ ...baseTable, waitlistCount: 2 }} onClick={() => {}} />);
     expect(screen.getByText("+2 en liste d'attente")).toBeInTheDocument();
