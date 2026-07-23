@@ -16,7 +16,9 @@ async function notifyChefRoleChange(
         userId,
         type,
         title:
-          type === "KITCHEN_CHEF_ADDED" ? "Nouveau chef cuisine" : "Retrait du rôle de chef cuisine",
+          type === "KITCHEN_CHEF_ADDED"
+            ? "Nouveau chef cuisine"
+            : "Retrait du rôle de chef cuisine",
         message,
         metadata: { eventId },
       },

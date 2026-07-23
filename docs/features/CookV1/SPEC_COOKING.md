@@ -547,17 +547,17 @@ Livre (Lot H). Reutilise le systeme de notifications existant (`Notification` mo
 `createNotification`/`createBulkNotifications`, in-app uniquement, pas de canal Discord
 DM). Pas de preference d'opt-in/out (aucun type de notification existant n'en a une).
 
-| Type                               | Declencheur                                | Destinataire(s)                             |
-| ----------------------------------- | -------------------------------------------- | ---------------------------------------------- |
-| `KITCHEN_SWAP_REQUESTED`           | Un chef propose un echange a un autre chef  | Chef cible                                     |
-| `KITCHEN_SWAP_ACCEPTED`            | La cible accepte l'echange                  | Chef demandeur                                 |
-| `KITCHEN_SWAP_REJECTED`            | La cible refuse l'echange                   | Chef demandeur                                 |
-| `KITCHEN_ASSISTANT_SWAP_REQUESTED` | Un equipier demande un echange sur un repas complet | Equipiers actuellement inscrits sur le repas cible |
-| `KITCHEN_ASSISTANT_SWAP_ACCEPTED`  | Un equipier du repas cible accepte          | Equipier demandeur                             |
-| `KITCHEN_CHEF_ADDED`               | Ajout manuel ou sync role Discord           | Nouveau chef                                   |
-| `KITCHEN_CHEF_REMOVED`             | Retrait manuel ou sync role Discord (repas orphelin) | Ancien chef                            |
-| `KITCHEN_MEAL_CLAIMED`             | Un chef reclame un creneau ayant deja des equipiers inscrits | Equipiers inscrits             |
-| `KITCHEN_OVERCAPACITY`             | Sur-occupation detectee a la (re)generation du planning | Chef du repas concerne (si non orphelin) |
+| Type                               | Declencheur                                                  | Destinataire(s)                                    |
+| ---------------------------------- | ------------------------------------------------------------ | -------------------------------------------------- |
+| `KITCHEN_SWAP_REQUESTED`           | Un chef propose un echange a un autre chef                   | Chef cible                                         |
+| `KITCHEN_SWAP_ACCEPTED`            | La cible accepte l'echange                                   | Chef demandeur                                     |
+| `KITCHEN_SWAP_REJECTED`            | La cible refuse l'echange                                    | Chef demandeur                                     |
+| `KITCHEN_ASSISTANT_SWAP_REQUESTED` | Un equipier demande un echange sur un repas complet          | Equipiers actuellement inscrits sur le repas cible |
+| `KITCHEN_ASSISTANT_SWAP_ACCEPTED`  | Un equipier du repas cible accepte                           | Equipier demandeur                                 |
+| `KITCHEN_CHEF_ADDED`               | Ajout manuel ou sync role Discord                            | Nouveau chef                                       |
+| `KITCHEN_CHEF_REMOVED`             | Retrait manuel ou sync role Discord (repas orphelin)         | Ancien chef                                        |
+| `KITCHEN_MEAL_CLAIMED`             | Un chef reclame un creneau ayant deja des equipiers inscrits | Equipiers inscrits                                 |
+| `KITCHEN_OVERCAPACITY`             | Sur-occupation detectee a la (re)generation du planning      | Chef du repas concerne (si non orphelin)           |
 
 Annulation d'une demande d'echange (chef ou equipier) : pas de notification (le
 demandeur est seul acteur, aucun mecanisme de "retraction" ailleurs dans l'app). Sync
