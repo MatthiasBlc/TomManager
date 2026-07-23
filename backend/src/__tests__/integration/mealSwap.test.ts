@@ -423,8 +423,7 @@ describe("Meal swap API", () => {
     });
 
     it("cancels any pending chef swap request referencing either meal", async () => {
-      const { event, managerCookie, chef1, chef2, meal1, meal2 } =
-        await setupTwoChefsWithMeals("m6");
+      const { event, managerCookie, chef1, chef2, meal1 } = await setupTwoChefsWithMeals("m6");
       // chef2 propose un echange avec chef1 (meal2 -> meal1) : PENDING avant le move.
       const proposeRes = await request
         .post(`/api/events/${event.id}/kitchen/swaps`)

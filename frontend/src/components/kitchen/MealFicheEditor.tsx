@@ -63,7 +63,9 @@ export default function MealFicheEditor({ eventId, meal, onChanged }: Props) {
   const [pendingDelete, setPendingDelete] = useState(false);
 
   const [name, setName] = useState(meal.name);
-  const [ingredients, setIngredients] = useState<IngredientRow[]>(toIngredientRows(meal.ingredients));
+  const [ingredients, setIngredients] = useState<IngredientRow[]>(
+    toIngredientRows(meal.ingredients)
+  );
   const [utensils, setUtensils] = useState<string[]>((meal.utensils ?? []).map((u) => u.name));
 
   // Reinitialise les champs uniquement quand on change de repas (pas a chaque

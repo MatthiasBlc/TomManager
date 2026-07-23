@@ -10,14 +10,14 @@ en heure de Paris.
 
 ## Modele par lot
 
-| Lot                       | Modele       |
-| -------------------------- | ------------ |
+| Lot                         | Modele       |
+| --------------------------- | ------------ |
 | A (utilitaires + tests DST) | **Opus 4.8** |
 | B (affichage)               | **Sonnet 5** |
 | C (inputs)                  | **Sonnet 5** |
 | D (CalendarView)            | **Opus 4.8** |
 | E (Docker, defense)         | Haiku 4.5    |
-| F (tests e2e)                | **Sonnet 5** |
+| F (tests e2e)               | **Sonnet 5** |
 
 > Lots A et D concentrent toute la logique DST/fake-UTC delicate (risque production) :
 > a garder en Opus. B/C sont mecaniques (remplacement de helpers naifs par les
@@ -113,14 +113,14 @@ Modele : **Sonnet 5** | Effort : ~1h
 ## Definition of done
 
 1. [x] `npm run test:frontend` (386 tests) + `npm run test:backend` (402 tests) passent
-   (Lot A/B/C/D + tests existants, aucun ajustement necessaire).
+       (Lot A/B/C/D + tests existants, aucun ajustement necessaire).
 2. [x] `npx playwright test --project=chromium` (13/14, seul echec = `cuisine.spec.ts`,
-   preexistant et sans rapport, cf note ci-dessous) + nouveau projet
-   `chromium-non-paris` (`timezoneId: America/New_York`, Lot F, 2/2).
+       preexistant et sans rapport, cf note ci-dessous) + nouveau projet
+       `chromium-non-paris` (`timezoneId: America/New_York`, Lot F, 2/2).
 3. [ ] Test manuel apres `npm run docker:up:build` : creer event + table a heure precise,
-   verifier partout (carte, modale, timeline, calendrier drag/resize, pages event) —
-   invisible pour un navigateur deja en heure de Paris. **Reste a faire par
-   l'utilisateur** (pas de session navigateur interactive disponible cote agent).
+       verifier partout (carte, modale, timeline, calendrier drag/resize, pages event) —
+       invisible pour un navigateur deja en heure de Paris. **Reste a faire par
+       l'utilisateur** (pas de session navigateur interactive disponible cote agent).
 
 Note : `e2e/cuisine.spec.ts` echoue (attend un bouton "Créer mon repas" retire par le
 commit `bb50591` sur `Developement`, anterieur a cette feature) — regression

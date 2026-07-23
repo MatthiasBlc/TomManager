@@ -14,9 +14,7 @@ describe("UtensilListInput", () => {
   it("renders existing utensils as removable badges", () => {
     render(<UtensilListInput value={["fouet", "plat à gratin"]} onChange={vi.fn()} />);
     expect(screen.getByText("fouet")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Retirer l'ustensile fouet" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retirer l'ustensile fouet" })).toBeInTheDocument();
   });
 
   it("adds a utensil (lowercased, trimmed) when Enter is pressed", () => {

@@ -78,8 +78,8 @@ describe("computeExpectedSlots", () => {
 
   it("returns only the first day's diner for a two-calendar-day event", () => {
     // jour 1 = diner ; jour 2 = dernier jour = rien
-    expect(
-      services(new Date("2026-06-01T18:00:00Z"), new Date("2026-06-02T10:00:00Z"))
-    ).toEqual(["DINNER"]);
+    expect(services(new Date("2026-06-01T18:00:00Z"), new Date("2026-06-02T10:00:00Z"))).toEqual([
+      "DINNER",
+    ]);
   });
 });

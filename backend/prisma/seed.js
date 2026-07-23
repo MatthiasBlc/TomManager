@@ -59,7 +59,10 @@ async function seedAdmins() {
 // Cree (ou retrouve, idempotence) un creneau repas identifie par (eventKitchenId,
 // startDateTime, service) — meme cle que slotKey() cote generatePlanning — pour ne
 // jamais dupliquer un creneau du seed si le script est relance.
-async function findOrCreateMeal(eventKitchenId, { chefUserId, name, service, startDateTime, endDateTime, maxAssistants }) {
+async function findOrCreateMeal(
+  eventKitchenId,
+  { chefUserId, name, service, startDateTime, endDateTime, maxAssistants }
+) {
   const existing = await prisma.meal.findFirst({
     where: { eventKitchenId, startDateTime, service },
   });

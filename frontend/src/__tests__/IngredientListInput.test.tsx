@@ -1,7 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import IngredientListInput, {
-  type IngredientRow,
-} from "../components/kitchen/IngredientListInput";
+import IngredientListInput, { type IngredientRow } from "../components/kitchen/IngredientListInput";
 
 const apiGetMock = vi.fn();
 vi.mock("../config/api", () => ({

@@ -163,7 +163,7 @@ export default function KitchenBoard({
               <table className="table table-sm border border-base-300">
                 <thead>
                   <tr>
-                    <th className="bg-base-200"></th>
+                    <th className="bg-base-200" />
                     {dayKeys.map((k) => (
                       <th key={k} className="bg-base-200 capitalize">
                         {dayLabel(dayIso.get(k)!)}

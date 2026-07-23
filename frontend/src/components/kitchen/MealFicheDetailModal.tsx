@@ -129,7 +129,9 @@ export default function MealFicheDetailModal({ eventId, meal, onClose, onChanged
             <div>
               <h4 className="font-semibold text-sm">Équipiers</h4>
               <p className="text-sm">
-                {meal.assistants.length > 0 ? meal.assistants.map(displayedName).join(", ") : "Aucun"}
+                {meal.assistants.length > 0
+                  ? meal.assistants.map(displayedName).join(", ")
+                  : "Aucun"}
               </p>
             </div>
             <div>

@@ -210,9 +210,7 @@ describe("POST /api/events/:eventId/kitchen/generate", () => {
 
   it("reports over-occupation without modifying the over-occupied slot", async () => {
     const { event, managerCookie } = await setupManagerAndEvent("g7");
-    await request
-      .post(`/api/events/${event.id}/kitchen/generate`)
-      .set("Cookie", managerCookie);
+    await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
     const meals = await getMeals(event.id, managerCookie);
     const slot = meals[0];
 
@@ -275,9 +273,7 @@ describe("POST /api/events/:eventId/kitchen/reset", () => {
       .post(`/api/events/${event.id}/kitchen/courses`)
       .set("Cookie", managerCookie)
       .send({ userId: courses.user.id });
-    await request
-      .post(`/api/events/${event.id}/kitchen/generate`)
-      .set("Cookie", managerCookie);
+    await request.post(`/api/events/${event.id}/kitchen/generate`).set("Cookie", managerCookie);
     const before = await getMeals(event.id, managerCookie);
     expect(before.length).toBeGreaterThan(0);
 

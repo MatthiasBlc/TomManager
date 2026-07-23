@@ -275,12 +275,12 @@ Index: (eventKitchenId, startDateTime)
 
 ### MealUtensil
 
-| Field     | Type    | Notes                                   |
-| --------- | ------- | ---------------------------------------- |
-| id        | String  | UUID PK                                 |
-| mealId    | String  | FK -> Meal.id, onDelete Cascade         |
-| utensilId | String? | FK -> Utensil.id (onDelete SetNull)     |
-| name      | String  | 1-100, denormalise (cache d'affichage)  |
+| Field     | Type    | Notes                                  |
+| --------- | ------- | -------------------------------------- |
+| id        | String  | UUID PK                                |
+| mealId    | String  | FK -> Meal.id, onDelete Cascade        |
+| utensilId | String? | FK -> Utensil.id (onDelete SetNull)    |
+| name      | String  | 1-100, denormalise (cache d'affichage) |
 
 ### Utensil (catalogue, pattern Product/Tag)
 
@@ -306,17 +306,17 @@ Unique: (mealId, userId) ET (eventKitchenId, userId) — au plus un repas par ev
 
 ### MealSwapRequest (echange de creneau entre 2 chefs, confirmation mutuelle)
 
-| Field           | Type       | Notes                                                     |
-| --------------- | ---------- | --------------------------------------------------------- |
-| id              | String     | UUID PK                                                   |
-| eventKitchenId  | String     | FK -> EventKitchen.id, onDelete Cascade                   |
+| Field           | Type       | Notes                                                        |
+| --------------- | ---------- | ------------------------------------------------------------ |
+| id              | String     | UUID PK                                                      |
+| eventKitchenId  | String     | FK -> EventKitchen.id, onDelete Cascade                      |
 | requesterMealId | String     | FK -> Meal.id (relation SwapRequesterMeal), onDelete Cascade |
-| targetMealId    | String     | FK -> Meal.id (relation SwapTargetMeal), onDelete Cascade |
-| requesterUserId | String     | FK -> User.id (denormalise, fige l'identite)              |
-| targetUserId    | String     | FK -> User.id                                             |
-| status          | SwapStatus | default PENDING                                           |
-| createdAt       | DateTime   |                                                           |
-| respondedAt     | DateTime?  |                                                           |
+| targetMealId    | String     | FK -> Meal.id (relation SwapTargetMeal), onDelete Cascade    |
+| requesterUserId | String     | FK -> User.id (denormalise, fige l'identite)                 |
+| targetUserId    | String     | FK -> User.id                                                |
+| status          | SwapStatus | default PENDING                                              |
+| createdAt       | DateTime   |                                                              |
+| respondedAt     | DateTime?  |                                                              |
 
 Index: (eventKitchenId, status), (targetMealId, status). Une seule PENDING par repas
 (verif applicative, pas de contrainte DB). A l'acceptation : swap chefUserId + name +
@@ -325,17 +325,17 @@ restent sur le creneau). Migration `20260722080827_kitchen_matrix_swap` (additiv
 
 ### AssistantSwapRequest (echange entre equipiers, Evolutions.md point 4)
 
-| Field           | Type       | Notes                                                              |
-| --------------- | ---------- | ------------------------------------------------------------------- |
-| id              | String     | UUID PK                                                             |
-| eventKitchenId  | String     | FK -> EventKitchen.id, onDelete Cascade                             |
-| requesterMealId | String     | FK -> Meal.id (relation AssistantSwapRequesterMeal), onDelete Cascade |
-| targetMealId    | String     | FK -> Meal.id (relation AssistantSwapTargetMeal), onDelete Cascade  |
-| requesterUserId | String     | FK -> User.id                                                       |
+| Field           | Type       | Notes                                                                       |
+| --------------- | ---------- | --------------------------------------------------------------------------- |
+| id              | String     | UUID PK                                                                     |
+| eventKitchenId  | String     | FK -> EventKitchen.id, onDelete Cascade                                     |
+| requesterMealId | String     | FK -> Meal.id (relation AssistantSwapRequesterMeal), onDelete Cascade       |
+| targetMealId    | String     | FK -> Meal.id (relation AssistantSwapTargetMeal), onDelete Cascade          |
+| requesterUserId | String     | FK -> User.id                                                               |
 | accepterUserId  | String?    | FK -> User.id, renseigne uniquement a l'acceptation (inconnu a la creation) |
-| status          | SwapStatus | default PENDING (enum reutilise, pas de nouveau CREATE TYPE)        |
-| createdAt       | DateTime   |                                                                     |
-| respondedAt     | DateTime?  |                                                                     |
+| status          | SwapStatus | default PENDING (enum reutilise, pas de nouveau CREATE TYPE)                |
+| createdAt       | DateTime   |                                                                             |
+| respondedAt     | DateTime?  |                                                                             |
 
 Index: (eventKitchenId, status), (targetMealId, status), (requesterUserId, status).
 Difference cle avec MealSwapRequest : la cible est un REPAS, pas une personne fixee a

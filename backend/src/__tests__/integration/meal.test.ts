@@ -593,105 +593,105 @@ describe("Meal API", () => {
     });
 
     describe("Manager assigns/removes a third-party equipier (Admin Chef point 5)", () => {
-    it("allows the manager to assign an equipier directly onto a meal", async () => {
-      const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
-      const { user } = await addTestParticipant(event.id, {
-        email: "eqM1@example.com",
-        username: "eqM1",
+      it("allows the manager to assign an equipier directly onto a meal", async () => {
+        const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
+        const { user } = await addTestParticipant(event.id, {
+          email: "eqM1@example.com",
+          username: "eqM1",
+        });
+
+        const res = await request
+          .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
+          .set("Cookie", managerCookie);
+
+        expect(res.status).toBe(201);
+        expect(res.body.data.assistants.map((a: { id: string }) => a.id)).toContain(user.id);
       });
 
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
-        .set("Cookie", managerCookie);
+      it("rejects a manager assignment when the meal is full", async () => {
+        const { event, managerCookie, mealId } = await setupMealWithCapacity(1);
+        const { user: user1 } = await addTestParticipant(event.id, {
+          email: "eqM2@example.com",
+          username: "eqM2",
+        });
+        const { user: user2 } = await addTestParticipant(event.id, {
+          email: "eqM3@example.com",
+          username: "eqM3",
+        });
+        await request
+          .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user1.id}`)
+          .set("Cookie", managerCookie);
 
-      expect(res.status).toBe(201);
-      expect(res.body.data.assistants.map((a: { id: string }) => a.id)).toContain(user.id);
-    });
+        const res = await request
+          .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user2.id}`)
+          .set("Cookie", managerCookie);
 
-    it("rejects a manager assignment when the meal is full", async () => {
-      const { event, managerCookie, mealId } = await setupMealWithCapacity(1);
-      const { user: user1 } = await addTestParticipant(event.id, {
-        email: "eqM2@example.com",
-        username: "eqM2",
-      });
-      const { user: user2 } = await addTestParticipant(event.id, {
-        email: "eqM3@example.com",
-        username: "eqM3",
-      });
-      await request
-        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user1.id}`)
-        .set("Cookie", managerCookie);
-
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user2.id}`)
-        .set("Cookie", managerCookie);
-
-      expect(res.status).toBe(409);
-      expect(res.body.error.code).toBe("MEAL_FULL");
-    });
-
-    it("rejects assigning a chef (role exclusivity)", async () => {
-      const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
-      const { user: chefUser } = await setupChef(event.id, managerCookie, {
-        email: "eqM4@example.com",
-        username: "eqM4",
+        expect(res.status).toBe(409);
+        expect(res.body.error.code).toBe("MEAL_FULL");
       });
 
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${chefUser.id}`)
-        .set("Cookie", managerCookie);
+      it("rejects assigning a chef (role exclusivity)", async () => {
+        const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
+        const { user: chefUser } = await setupChef(event.id, managerCookie, {
+          email: "eqM4@example.com",
+          username: "eqM4",
+        });
 
-      expect(res.status).toBe(409);
-      expect(res.body.error.code).toBe("ROLE_EXCLUSIVITY");
-    });
+        const res = await request
+          .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${chefUser.id}`)
+          .set("Cookie", managerCookie);
 
-    it("rejects assigning a user who is not an event participant", async () => {
-      const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
-      const { user: outsider } = await setupAdmin({
-        email: "eqM5@example.com",
-        username: "eqM5",
+        expect(res.status).toBe(409);
+        expect(res.body.error.code).toBe("ROLE_EXCLUSIVITY");
       });
 
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${outsider.id}`)
-        .set("Cookie", managerCookie);
+      it("rejects assigning a user who is not an event participant", async () => {
+        const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
+        const { user: outsider } = await setupAdmin({
+          email: "eqM5@example.com",
+          username: "eqM5",
+        });
 
-      expect(res.status).toBe(400);
-      expect(res.body.error.code).toBe("NOT_EVENT_PARTICIPANT");
-    });
+        const res = await request
+          .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${outsider.id}`)
+          .set("Cookie", managerCookie);
 
-    it("rejects a non-manager caller", async () => {
-      const { event, mealId } = await setupMealWithCapacity(2);
-      const { user, cookie } = await addTestParticipant(event.id, {
-        email: "eqM6@example.com",
-        username: "eqM6",
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe("NOT_EVENT_PARTICIPANT");
       });
 
-      const res = await request
-        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
-        .set("Cookie", cookie);
+      it("rejects a non-manager caller", async () => {
+        const { event, mealId } = await setupMealWithCapacity(2);
+        const { user, cookie } = await addTestParticipant(event.id, {
+          email: "eqM6@example.com",
+          username: "eqM6",
+        });
 
-      expect(res.status).toBe(403);
-    });
+        const res = await request
+          .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
+          .set("Cookie", cookie);
 
-    it("allows the manager to remove an assigned equipier", async () => {
-      const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
-      const { user } = await addTestParticipant(event.id, {
-        email: "eqM7@example.com",
-        username: "eqM7",
+        expect(res.status).toBe(403);
       });
-      await request
-        .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
-        .set("Cookie", managerCookie);
 
-      const res = await request
-        .delete(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
-        .set("Cookie", managerCookie);
+      it("allows the manager to remove an assigned equipier", async () => {
+        const { event, managerCookie, mealId } = await setupMealWithCapacity(2);
+        const { user } = await addTestParticipant(event.id, {
+          email: "eqM7@example.com",
+          username: "eqM7",
+        });
+        await request
+          .post(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
+          .set("Cookie", managerCookie);
 
-      expect(res.status).toBe(204);
-      const remaining = await prisma.mealAssistant.findMany({ where: { mealId } });
-      expect(remaining).toHaveLength(0);
-    });
+        const res = await request
+          .delete(`/api/events/${event.id}/kitchen/meals/${mealId}/assistants/${user.id}`)
+          .set("Cookie", managerCookie);
+
+        expect(res.status).toBe(204);
+        const remaining = await prisma.mealAssistant.findMany({ where: { mealId } });
+        expect(remaining).toHaveLength(0);
+      });
     });
   });
 });

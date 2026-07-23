@@ -202,14 +202,14 @@ Regle metier : un equipier est inscrit sur AU PLUS UN repas par event ; l'unique
 
 ### Matrice de visibilite
 
-| Vue                        | Equipier                | Chef                     | Admin simple                                 | Responsable |
-| -------------------------- | ------------------------ | ------------------------ | --------------------------------------------- | ----------- |
-| Onglet Info - board repas  | oui si active             | oui                       | oui si participant + active                  | oui         |
-| S'inscrire / se deplacer   | oui (ni chef, ni courses) | non                       | non                                          | non         |
-| Onglet Cuisine - dashboard | non                       | non                       | oui (compteurs + liste repas, lecture seule) | non         |
-| Onglet Cuisine - fiches    | non                       | RW **sa fiche uniquement** (jamais les autres, Evolutions.md 1/6) | non | oui (RW toutes, Gestion uniquement) |
-| Onglet Cuisine - gestion   | non                       | non                       | non                                          | oui (RW)    |
-| Allergies (contenu)        | non                       | oui (R)                   | non                                          | oui (RW)    |
+| Vue                        | Equipier                  | Chef                                                              | Admin simple                                 | Responsable                         |
+| -------------------------- | ------------------------- | ----------------------------------------------------------------- | -------------------------------------------- | ----------------------------------- |
+| Onglet Info - board repas  | oui si active             | oui                                                               | oui si participant + active                  | oui                                 |
+| S'inscrire / se deplacer   | oui (ni chef, ni courses) | non                                                               | non                                          | non                                 |
+| Onglet Cuisine - dashboard | non                       | non                                                               | oui (compteurs + liste repas, lecture seule) | non                                 |
+| Onglet Cuisine - fiches    | non                       | RW **sa fiche uniquement** (jamais les autres, Evolutions.md 1/6) | non                                          | oui (RW toutes, Gestion uniquement) |
+| Onglet Cuisine - gestion   | non                       | non                                                               | non                                          | oui (RW)                            |
+| Allergies (contenu)        | non                       | oui (R)                                                           | non                                          | oui (RW)                            |
 
 **Ecart au V1 gele (Evolutions.md, point 1/6)** : le chef n'a plus aucun acces, meme
 en lecture, aux fiches des autres chefs, nulle part dans l'onglet Cuisine. La section
@@ -279,8 +279,8 @@ revue Admin Chef (Evolutions.md, tour "Admin Chef" points 1-6) :
   - `meals.length === 0` -> bouton "Generer le planning" (warning + modale).
   - `meals.length > 0` -> bouton "Reinitialiser le planning" (danger + modale ;
     `POST /reset`, supprime tous les repas, garde les rosters intacts) a la place.
-  Plus de creation manuelle hors-grille (point 3, `POST /meals` et son schema retires) :
-  tous les repas naissent desormais de `/generate`.
+    Plus de creation manuelle hors-grille (point 3, `POST /meals` et son schema retires) :
+    tous les repas naissent desormais de `/generate`.
 - **Liste des fiches repas** (`MealFichesList`, point 5) : une ligne par repas, creneau
   identifie mais **non editable/non supprimable** (pas de champ jour/debut/fin, pas de
   bouton supprimer), avec directement sur la ligne :
@@ -290,11 +290,11 @@ revue Admin Chef (Evolutions.md, tour "Admin Chef" points 1-6) :
     peut pas descendre en dessous) ;
   - equipiers assignes (retrait individuel) + selecteur d'ajout parmi les
     "sans affectation" si des places restent (nouveaux `POST/DELETE
-    /meals/:mealId/assistants/:userId`, manager only).
-  Le clic sur la ligne ouvre une **modale "details"** en lecture seule (nom du plat,
-  ingredients, ustensiles) ; bouton "Modifier" -> edition locale -> "Valider" fait un
-  seul PATCH groupe et ferme la modale (pas d'auto-save ici, contrairement a "Mon
-  repas"). Invisible a l'admin simple.
+/meals/:mealId/assistants/:userId`, manager only).
+    Le clic sur la ligne ouvre une **modale "details"** en lecture seule (nom du plat,
+    ingredients, ustensiles) ; bouton "Modifier" -> edition locale -> "Valider" fait un
+    seul PATCH groupe et ferme la modale (pas d'auto-save ici, contrairement a "Mon
+    repas"). Invisible a l'admin simple.
 
 Section dashboard (admin simple uniquement, lecture seule) :
 
@@ -333,8 +333,8 @@ repas : ils **reclament** un creneau de la grille (cf 5bis) et en editent le con
 - Pool = participants event - chefs (roster) - membres courses.
 - A chaque appel, on distingue les repas **existants** (deja en base) des creneaux
   **manquants** crees a cet appel. `poolRestant = max(0, pool - somme(maxAssistants des
-  existants))`, puis `base = floor(poolRestant / nbNouveaux)`, `reste = poolRestant %
-  nbNouveaux` ; les `reste` premiers nouveaux creneaux (tries par startDateTime)
+existants))`, puis `base = floor(poolRestant / nbNouveaux)`, `reste = poolRestant %
+nbNouveaux` ; les `reste` premiers nouveaux creneaux (tries par startDateTime)
   recoivent `base + 1`.
 - Personne n'est affecte automatiquement (les creneaux sont orphelins jusqu'a
   reclamation ; le chef est "affecte" de fait a son creneau une fois reclame).
@@ -378,9 +378,10 @@ Regle d'inscription (join) : refuse si `inscrits >= maxAssistants`.
 ## 6. Integration au moteur de conflits
 
 `backend/src/services/conflicts.ts` (`computeEventConflicts`) unifie deja "tables de jeu
-+ occupations cuisine" en un seul jeu d'intervalles occupes par personne. Les creneaux
-orphelins (sans chef) issus de la grille sont ignores (`if (meal.chefUserId)`), donc ils
-ne generent aucun faux conflit tant qu'ils ne sont pas reclames.
+
+- occupations cuisine" en un seul jeu d'intervalles occupes par personne. Les creneaux
+  orphelins (sans chef) issus de la grille sont ignores (`if (meal.chefUserId)`), donc ils
+  ne generent aucun faux conflit tant qu'ils ne sont pas reclames.
 
 Occupations cuisine injectees :
 
@@ -445,28 +446,28 @@ Les changements impactant les conflits declenchent aussi le recalcul/rendu Plann
 
 ## 9. API (nouveaux endpoints, prefixe `/api/events/:eventId/kitchen`)
 
-| Method | Path                                 | Auth                     | Description                                                                |
-| ------ | ------------------------------------ | ------------------------ | -------------------------------------------------------------------------- |
-| GET    | `/`                                  | lecture cuisine          | Config + roster chef + courses + repas (+ `capacitySummary` pour le manager) |
-| PATCH  | `/`                                  | requireKitchenManager    | Config (chefRoleId, allergies, toggle)                                     |
-| POST   | `/chefs`                             | requireKitchenManager    | Ajout chef manuel (mode manuel)                                            |
-| DELETE | `/chefs/:userId`                     | requireKitchenManager    | Retrait chef manuel (orpheline son repas)                                  |
-| POST   | `/courses`                           | requireKitchenManager    | Ajout membre courses                                                       |
-| DELETE | `/courses/:userId`                   | requireKitchenManager    | Retrait membre courses                                                     |
-| POST   | `/generate`                          | requireKitchenManager    | Genere la grille de repas + repartit le pool (idempotent)                  |
-| POST   | `/reset`                             | requireKitchenManager    | Supprime tous les repas de l'event (rosters conserves) — fait reapparaitre "Generer" |
-| PATCH  | `/meals/:mealId`                     | requireMealChefOrManager | Editer un repas (horaires/service/maxAssistants/chefUserId = manager only) |
-| DELETE | `/meals/:mealId`                     | requireMealChefOrManager | Supprimer un repas (chef sur son propre creneau ; non expose en Gestion)   |
-| POST   | `/meals/:mealId/claim`               | chef du roster (self)    | Reclamer un creneau orphelin de la grille (verrou de ligne)               |
-| POST   | `/meals/:mealId/assistants`          | equipier (self)          | S'inscrire / se deplacer (transaction)                                     |
-| DELETE | `/meals/:mealId/assistants/me`       | equipier (self)          | Se desinscrire                                                             |
-| POST   | `/meals/:mealId/assistants/:userId`  | requireKitchenManager    | Assigner/deplacer un equipier tiers sur un creneau (memes regles que self) |
-| DELETE | `/meals/:mealId/assistants/:userId`  | requireKitchenManager    | Retirer un equipier tiers d'un creneau                                    |
-| GET    | `/swaps`                             | chef/manager (self)      | Demandes d'echange PENDING visibles par l'appelant                        |
-| POST   | `/swaps`                             | chef proprietaire (self) | Proposer un echange (`{ targetMealId }`)                                   |
-| POST   | `/swaps/:swapRequestId/accept`       | chef cible (self)        | Accepter (swap recette+chef, equipiers/horaires inchanges)                |
-| POST   | `/swaps/:swapRequestId/reject`       | chef cible (self)        | Refuser                                                                    |
-| POST   | `/swaps/:swapRequestId/cancel`       | chef demandeur (self)    | Annuler sa propre demande                                                  |
+| Method | Path                                | Auth                     | Description                                                                          |
+| ------ | ----------------------------------- | ------------------------ | ------------------------------------------------------------------------------------ |
+| GET    | `/`                                 | lecture cuisine          | Config + roster chef + courses + repas (+ `capacitySummary` pour le manager)         |
+| PATCH  | `/`                                 | requireKitchenManager    | Config (chefRoleId, allergies, toggle)                                               |
+| POST   | `/chefs`                            | requireKitchenManager    | Ajout chef manuel (mode manuel)                                                      |
+| DELETE | `/chefs/:userId`                    | requireKitchenManager    | Retrait chef manuel (orpheline son repas)                                            |
+| POST   | `/courses`                          | requireKitchenManager    | Ajout membre courses                                                                 |
+| DELETE | `/courses/:userId`                  | requireKitchenManager    | Retrait membre courses                                                               |
+| POST   | `/generate`                         | requireKitchenManager    | Genere la grille de repas + repartit le pool (idempotent)                            |
+| POST   | `/reset`                            | requireKitchenManager    | Supprime tous les repas de l'event (rosters conserves) — fait reapparaitre "Generer" |
+| PATCH  | `/meals/:mealId`                    | requireMealChefOrManager | Editer un repas (horaires/service/maxAssistants/chefUserId = manager only)           |
+| DELETE | `/meals/:mealId`                    | requireMealChefOrManager | Supprimer un repas (chef sur son propre creneau ; non expose en Gestion)             |
+| POST   | `/meals/:mealId/claim`              | chef du roster (self)    | Reclamer un creneau orphelin de la grille (verrou de ligne)                          |
+| POST   | `/meals/:mealId/assistants`         | equipier (self)          | S'inscrire / se deplacer (transaction)                                               |
+| DELETE | `/meals/:mealId/assistants/me`      | equipier (self)          | Se desinscrire                                                                       |
+| POST   | `/meals/:mealId/assistants/:userId` | requireKitchenManager    | Assigner/deplacer un equipier tiers sur un creneau (memes regles que self)           |
+| DELETE | `/meals/:mealId/assistants/:userId` | requireKitchenManager    | Retirer un equipier tiers d'un creneau                                               |
+| GET    | `/swaps`                            | chef/manager (self)      | Demandes d'echange PENDING visibles par l'appelant                                   |
+| POST   | `/swaps`                            | chef proprietaire (self) | Proposer un echange (`{ targetMealId }`)                                             |
+| POST   | `/swaps/:swapRequestId/accept`      | chef cible (self)        | Accepter (swap recette+chef, equipiers/horaires inchanges)                           |
+| POST   | `/swaps/:swapRequestId/reject`      | chef cible (self)        | Refuser                                                                              |
+| POST   | `/swaps/:swapRequestId/cancel`      | chef demandeur (self)    | Annuler sa propre demande                                                            |
 
 **Creation manuelle hors-grille retiree** : `POST /meals` (creneau orphelin
 `{date, service}`) n'existe plus — tous les repas naissent desormais de `/generate`.

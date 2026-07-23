@@ -97,9 +97,7 @@ describe("MealFicheEditor", () => {
   });
 
   it("resets fields when switching to a different meal", () => {
-    const { rerender } = render(
-      <MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />
-    );
+    const { rerender } = render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
     fireEvent.change(screen.getByLabelText("Nom du repas"), {
       target: { value: "Draft non sauvegarde" },
     });

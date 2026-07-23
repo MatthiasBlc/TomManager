@@ -103,7 +103,7 @@ Pattern commun : supprimer le helper local naif, importer `formatParisTime` /
   bug, `new Date(p.joinedAt).toLocaleDateString("fr-FR")`).
 - `frontend/src/components/planning/TimelineView.tsx` : en plus du remplacement
   d'affichage (`dayLabel`, L21-22), corriger le **bucketing par jour** (`dayStartTs`,
-  L25-28) qui groupe actuellement par jour calendaire *local* au lieu de Paris —
+  L25-28) qui groupe actuellement par jour calendaire _local_ au lieu de Paris —
   supprimer `dayStartTs`, utiliser `parisDayKey(iso)` comme cle de regroupement/tri
   (string ISO, triable lexicalement).
 
