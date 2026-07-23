@@ -8,6 +8,7 @@ import EditEventModal from "../components/events/EditEventModal";
 import ParticipantList from "../components/events/ParticipantList";
 import BoardGameTab from "../components/boardgames/BoardGameTab";
 import PlanningTab from "../components/planning/PlanningTab";
+import MyPlanningSection from "../components/planning/MyPlanningSection";
 import KitchenTab from "../components/kitchen/KitchenTab";
 import KitchenBoard from "../components/kitchen/KitchenBoard";
 import ResponsiveModal from "../components/common/ResponsiveModal";
@@ -214,6 +215,7 @@ export default function EventDetailPage() {
               loading={kitchen.loading}
               onChanged={kitchen.refetchAll}
             />
+            <MyPlanningSection eventId={event.id} />
           </div>
         )}
 
