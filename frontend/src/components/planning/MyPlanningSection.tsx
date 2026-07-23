@@ -88,13 +88,20 @@ export default function MyPlanningSection({ eventId }: Props) {
                           className="w-full text-left flex items-center justify-between gap-2 rounded-lg border border-base-300 bg-base-100 p-3 hover:border-primary hover:bg-base-100/70 transition-colors"
                         >
                           <div className="min-w-0">
+                            <span
+                              className={`badge badge-sm mb-1 ${t.type === "JDR" ? "badge-primary" : "badge-accent"}`}
+                            >
+                              {t.type}
+                            </span>
                             <p className="font-semibold text-sm truncate">{t.title}</p>
                             <p className="text-xs opacity-70">
                               {formatParisTime(t.startDateTime)} - {formatParisTime(t.endDateTime)}
                             </p>
                           </div>
                           <div className="flex items-center gap-1 flex-none">
-                            {t.isGM && <span className="badge badge-secondary badge-sm">MJ</span>}
+                            {t.isGM && t.type === "JDR" && (
+                              <span className="badge badge-secondary badge-sm">MJ</span>
+                            )}
                             {t.currentUserStatus && (
                               <span
                                 className={`badge badge-sm ${

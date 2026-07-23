@@ -41,7 +41,9 @@ export default function TableCard({ table, onClick }: Props) {
             >
               {typeLabel}
             </span>
-            {table.isGM && <span className="badge badge-secondary badge-sm">MJ</span>}
+            {table.isGM && table.type === "JDR" && (
+              <span className="badge badge-secondary badge-sm">MJ</span>
+            )}
             {table.currentUserConflict && (
               <span className="badge badge-error badge-sm">⚠ Conflit</span>
             )}
