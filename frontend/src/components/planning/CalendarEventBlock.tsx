@@ -114,7 +114,7 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       <p className="text-xs font-semibold leading-tight break-words">{arg.event.title}</p>
       <span className="badge badge-outline badge-xs opacity-80 max-w-full truncate">{type}</span>
       <p className="text-xs opacity-80 truncate">{arg.timeText}</p>
-      <p className="text-xs opacity-70 truncate">MJ : {gmUsername}</p>
+      {type === "JDR" && <p className="text-xs opacity-70 truncate">MJ : {gmUsername}</p>}
       <p className="text-xs opacity-70">
         <span className="badge badge-warning badge-xs max-w-full truncate">
           {seatSummary.total}

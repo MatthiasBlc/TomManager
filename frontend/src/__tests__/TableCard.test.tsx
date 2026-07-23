@@ -42,6 +42,11 @@ describe("TableCard", () => {
     expect(screen.getByText("JDR")).toBeInTheDocument();
   });
 
+  it("hides the 'MJ :' line for a JDS table (no game master role for board games)", () => {
+    render(<TableCard table={{ ...baseTable, type: "JDS" }} onClick={() => {}} />);
+    expect(screen.queryByText(/^MJ :/)).not.toBeInTheDocument();
+  });
+
   it("renders all tag names as badges", () => {
     render(<TableCard table={baseTable} onClick={() => {}} />);
     expect(screen.getByText("Fantasy")).toBeInTheDocument();

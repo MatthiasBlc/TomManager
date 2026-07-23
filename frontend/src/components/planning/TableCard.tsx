@@ -60,9 +60,11 @@ export default function TableCard({ table, onClick }: Props) {
           {formatParisTime(table.startDateTime)} - {formatParisTime(table.endDateTime)}
         </p>
 
-        <p className="text-sm opacity-60 truncate">
-          MJ : {table.creator.displayName ?? table.creator.username}
-        </p>
+        {table.type === "JDR" && (
+          <p className="text-sm opacity-60 truncate">
+            MJ : {table.creator.displayName ?? table.creator.username}
+          </p>
+        )}
 
         {table.pitch && <p className="text-sm line-clamp-2">{table.pitch}</p>}
 
