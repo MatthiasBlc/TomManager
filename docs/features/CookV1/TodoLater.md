@@ -1,20 +1,28 @@
+1/système de notif cuisine
+
+- lister toutes les notifs à mettre en place
+- mettre en place ces notifs
+
+9/ info sur les repas nb végé / carné
+Proposition : ajouter un champ carné ou végé à cocher sur
+
+---
+
 Revoir l'interface admin + responsablecuisine
 
 ---
 
 7/ est-ce que le bouton de génération des créneaux de repas est vraiment nécessaire( et son pendant de suppression aussi par la même occasion) ? (admin cuisine) Ou n'est-ce pas plus logique que ça soit automatique (puisque les créneaux sont automatique) + purgé du content avec la purge event ?
 
-## 9/ info sur les repas nb végé / carné
-
-système de notif cuisine
-
-- lister toutes les notifs à mettre en place
-- mettre en place ces notifs
-
 V2 ?
--Liste de course ?
 
+- admin rôle responsable courses ?
+- Liste de course ?
+- onglet courses pour la team course et son admin ? le même ? différent ? visible des autres admins (version simplifiée comme la cuisine ? )
 - _Récupère les occurrences d'un même produits et calcules le poids pour chaque produits_
+- extract final ?
+
+ATTENTION au fonctionnement de l'app s'il n'y a pas de réseau VS un drive !!!
 
 Allergies V2 :
 Ajouter un champ directement à l'utilisateur pour indiquer ses allergies.
