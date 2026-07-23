@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import KitchenBoard from "../components/kitchen/KitchenBoard";
 import type { KitchenViewData } from "../hooks/useKitchenData";
 
@@ -52,13 +53,15 @@ function renderBoard(
   assistantSwaps: unknown[] = []
 ) {
   return render(
-    <KitchenBoard
-      eventId="ev1"
-      data={data as unknown as KitchenViewData}
-      assistantSwaps={assistantSwaps as never[]}
-      loading={false}
-      onChanged={() => {}}
-    />
+    <MemoryRouter>
+      <KitchenBoard
+        eventId="ev1"
+        data={data as unknown as KitchenViewData}
+        assistantSwaps={assistantSwaps as never[]}
+        loading={false}
+        onChanged={() => {}}
+      />
+    </MemoryRouter>
   );
 }
 
@@ -105,7 +108,7 @@ describe("KitchenBoard", () => {
       equipierPlanningEnabled: true,
       meals: [MEAL],
     });
-    expect(screen.getAllByText("Couscous").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Couscous/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Alice/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/1\/2/).length).toBeGreaterThan(0);
   });
@@ -113,7 +116,7 @@ describe("KitchenBoard", () => {
   it("always shows the board for a chef, regardless of the toggle", () => {
     mockAuth({ id: "chef1", role: "USER" });
     renderBoard({ currentUserKitchenRole: "chef", equipierPlanningEnabled: false, meals: [MEAL] });
-    expect(screen.getAllByText("Couscous").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Couscous/).length).toBeGreaterThan(0);
   });
 
   it("shows a 'sans chef' label for an orphan meal", () => {
@@ -123,8 +126,8 @@ describe("KitchenBoard", () => {
       equipierPlanningEnabled: true,
       meals: [ORPHAN_MEAL],
     });
-    expect(screen.getAllByText("Raclette").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Sans chef").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Raclette/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Sans chef/).length).toBeGreaterThan(0);
   });
 
   it("joins a meal and shows a success toast", async () => {
@@ -298,9 +301,9 @@ describe("KitchenBoard", () => {
       equipierPlanningEnabled: true,
       meals: [MEAL, otherDayMeal],
     });
-    expect(screen.getAllByText("Midi").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Soir").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Couscous").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Raclette").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Midi/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Soir/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Couscous/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Raclette/).length).toBeGreaterThan(0);
   });
 });

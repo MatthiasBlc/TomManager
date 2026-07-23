@@ -41,6 +41,9 @@ vi.mock("../components/kitchen/KitchenTab", () => ({
 vi.mock("../components/kitchen/KitchenBoard", () => ({
   default: () => <div>KitchenBoard</div>,
 }));
+vi.mock("../components/planning/MyPlanningSection", () => ({
+  default: () => <div>MyPlanningSection</div>,
+}));
 vi.mock("../hooks/useIsMobile", () => ({
   useIsMobile: () => false,
 }));
