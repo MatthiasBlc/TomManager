@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -21,6 +22,7 @@ const displayedName = (u: Person) => u.displayName ?? u.username;
 
 type Service = "LUNCH" | "DINNER";
 const SERVICES: Service[] = ["LUNCH", "DINNER"];
+const SERVICE_ICONS: Record<Service, string> = { LUNCH: "☀️", DINNER: "🌙" };
 
 interface Props {
   eventId: string;
@@ -38,6 +40,7 @@ export default function KitchenBoard({
   onChanged: fetchKitchen,
 }: Props) {
   const { user } = useAuth();
+  const [, setSearchParams] = useSearchParams();
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   if (loading) return <SkeletonCardGrid count={2} />;
@@ -54,6 +57,10 @@ export default function KitchenBoard({
   // Point 4 : le bouton s'inscrire/se deplacer/se desinscrire n'est jamais propose
   // a un chef ni a un membre de l'equipe courses (role-exclusivite backend).
   const canJoin = data.currentUserKitchenRole === "equipier" && !data.isCoursesMember;
+  const isChefWithoutMeal = data.isChef && !data.meals.some((m) => m.chef?.id === user?.id);
+
+  const isMyMeal = (meal: MealFiche) =>
+    meal.chef?.id === user?.id || meal.assistants.some((a) => a.id === user?.id);
 
   const handleJoin = async (mealId: string) => {
     setPendingAction(mealId);
@@ -97,18 +104,43 @@ export default function KitchenBoard({
 
   const renderCell = (meal: MealFiche | undefined) => {
     if (!meal) {
-      return <div className="text-xs opacity-30 italic px-1">—</div>;
+      return <div className="text-xs opacity-30 italic px-1">💤 —</div>;
     }
     const isCurrent = currentMeal?.id === meal.id;
     const isFull = meal.remainingSeats <= 0;
+    const isMine = isMyMeal(meal);
+    const isMyChef = meal.chef?.id === user?.id;
     return (
-      <div className="space-y-1 min-w-[9rem]">
-        <p className="font-semibold text-sm">{meal.name}</p>
-        <p className="text-xs opacity-70">{meal.chef ? displayedName(meal.chef) : "Sans chef"}</p>
+      <div
+        className={
+          isMine
+            ? "space-y-1 min-w-[9rem] rounded-lg border-2 border-primary bg-primary/10 p-2"
+            : "space-y-1 min-w-[9rem]"
+        }
+      >
+        <p className="font-semibold text-sm">🍽️ {meal.name}</p>
+        <p
+          className={
+            isMyChef
+              ? "text-xs font-bold text-primary flex items-center gap-1"
+              : "text-xs opacity-70"
+          }
+        >
+          {meal.chef ? `👨‍🍳 ${displayedName(meal.chef)}` : "🚫 Sans chef"}
+        </p>
         <p className="text-xs opacity-70">
-          Équipiers :{" "}
+          🧑‍🤝‍🧑{" "}
           {meal.assistants.length > 0
-            ? meal.assistants.map(displayedName).join(", ")
+            ? meal.assistants.map((a, i) => (
+                <span key={a.id}>
+                  {i > 0 && ", "}
+                  {a.id === user?.id ? (
+                    <strong className="text-primary">{displayedName(a)}</strong>
+                  ) : (
+                    displayedName(a)
+                  )}
+                </span>
+              ))
             : "aucun équipier"}{" "}
           ({meal.assistants.length}/{meal.maxAssistants})
         </p>
@@ -146,11 +178,27 @@ export default function KitchenBoard({
   return (
     <div className="card bg-base-100 shadow-sm">
       <div className="card-body p-4 md:p-6">
-        <h3 className="card-title text-base md:text-lg">Planning cuisine</h3>
+        <h3 className="card-title text-base md:text-lg">🍳 Planning cuisine</h3>
 
         {canJoin && !currentMeal && (
           <div className="alert alert-info py-2 text-sm">
             <span>🍳 Tu n'as pas encore choisi ton créneau de cuisine !</span>
+          </div>
+        )}
+
+        {isChefWithoutMeal && (
+          <div className="alert alert-info py-2 text-sm">
+            <span>
+              👨‍🍳 Tu n'as pas encore choisi ton créneau de cuisine ! Rends-toi dans l'onglet{" "}
+              <button
+                type="button"
+                className="link link-primary font-semibold"
+                onClick={() => setSearchParams({ tab: "kitchen" }, { replace: true })}
+              >
+                Cuisine
+              </button>{" "}
+              pour en choisir un.
+            </span>
           </div>
         )}
 
@@ -166,7 +214,7 @@ export default function KitchenBoard({
                     <th className="bg-base-200" />
                     {dayKeys.map((k) => (
                       <th key={k} className="bg-base-200 capitalize">
-                        {dayLabel(dayIso.get(k)!)}
+                        📅 {dayLabel(dayIso.get(k)!)}
                       </th>
                     ))}
                   </tr>
@@ -174,7 +222,9 @@ export default function KitchenBoard({
                 <tbody>
                   {SERVICES.map((service) => (
                     <tr key={service}>
-                      <th className="bg-base-200 align-top">{serviceLabel(service)}</th>
+                      <th className="bg-base-200 align-top">
+                        {SERVICE_ICONS[service]} {serviceLabel(service)}
+                      </th>
                       {dayKeys.map((k) => (
                         <td key={k} className="align-top">
                           {renderCell(cellByKey.get(`${k}|${service}`))}
@@ -191,14 +241,16 @@ export default function KitchenBoard({
               {dayKeys.map((k) => (
                 <div key={k} className="card bg-base-200 shadow-none">
                   <div className="card-body p-3 space-y-2">
-                    <h4 className="font-semibold text-sm capitalize">{dayLabel(dayIso.get(k)!)}</h4>
+                    <h4 className="font-semibold text-sm capitalize">
+                      📅 {dayLabel(dayIso.get(k)!)}
+                    </h4>
                     {SERVICES.map((service) => (
                       <div
                         key={service}
                         className="border-t border-base-300 pt-2 first:border-t-0 first:pt-0"
                       >
                         <p className="text-xs font-medium opacity-60 mb-1">
-                          {serviceLabel(service)}
+                          {SERVICE_ICONS[service]} {serviceLabel(service)}
                         </p>
                         {renderCell(cellByKey.get(`${k}|${service}`))}
                       </div>
