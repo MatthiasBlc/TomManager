@@ -167,8 +167,8 @@ export default function AssistantSwapPanel({
           ) : (
             <>
               <p className="text-xs opacity-70 mb-2">
-                Ton créneau est complet ? Propose un échange à un équipier d'un autre créneau lui
-                aussi complet. Le premier qui accepte échange avec toi.
+                Tu veux changer de créneau avec un qui est complet ? Propose un échange à un
+                équipier de ce créneau. Le premier qui accepte échange avec toi.
               </p>
               <div className="flex gap-2">
                 <select
