@@ -21,9 +21,11 @@ test.describe("Cuisine — configuration, repas, conflit planning, purge", () =>
     await page.goto(`/events/${event.id}`);
     await page.getByRole("button", { name: "Cuisine", exact: true }).click();
 
-    await page.getByLabel(/afficher le planning cuisine aux équipiers/i).check();
-    await page.getByRole("button", { name: "Enregistrer", exact: true }).click();
-    await expect(page.getByText(/configuration mise à jour/i)).toBeVisible();
+    // Toggle auto-sauvegarde individuellement (pas de bouton Enregistrer separe) :
+    // .click() plutot que .check(), le "checked" DOM ne bascule qu'apres l'aller-retour
+    // API + refetch (checkbox pilotee par la prop equipierPlanningEnabled).
+    await page.getByLabel(/rendre le planning visible par les équipiers/i).click();
+    await expect(page.getByText(/planning publié aux équipiers/i)).toBeVisible();
 
     const chefsCard = page.locator(".card", { hasText: "Chefs" });
     await chefsCard.locator("select").selectOption({ label: chef.username });
@@ -122,7 +124,7 @@ test.describe("Cuisine — configuration, repas, conflit planning, purge", () =>
     await equipierPage.keyboard.press("Escape");
 
     // Le conflit (moteur unifie tables + cuisine) doit etre visible dans le Planning
-    await expect(equipierPage.getByText("⚠ Conflit").first()).toBeVisible();
+    await expect(equipierPage.getByText("Conflit").first()).toBeVisible();
     await equipierCtx.close();
 
     // --- Purge : contenu cuisine efface, EventKitchen conserve ---
@@ -130,7 +132,7 @@ test.describe("Cuisine — configuration, repas, conflit planning, purge", () =>
     // bouton d'entete de l'event est le premier dans le DOM.
     await page.getByRole("button", { name: "Modifier", exact: true }).first().click();
     await expect(page.getByRole("dialog", { name: "Modifier l'événement" })).toBeVisible();
-    await page.getByRole("button", { name: "Purger l'event", exact: true }).click();
+    await page.getByRole("button", { name: "Purger l'événement", exact: true }).click();
 
     const purgeDialog = page.getByRole("dialog", { name: "Purger l'événement" });
     await expect(purgeDialog).toBeVisible();
