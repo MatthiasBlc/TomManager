@@ -37,6 +37,7 @@ interface Props {
   unassigned: Person[];
   meals: MealFiche[];
   capacitySummary?: { allocated: number; poolTotal: number };
+  eventParticipantsCount?: number;
   onChanged: () => void;
 }
 
@@ -163,6 +164,7 @@ export default function KitchenManagementPanel({
   unassigned,
   meals,
   capacitySummary,
+  eventParticipantsCount,
   onChanged,
 }: Props) {
   const confirmDialog = useConfirm();
@@ -599,6 +601,7 @@ export default function KitchenManagementPanel({
           chefs={chefs}
           unassigned={unassigned}
           capacitySummary={capacitySummary}
+          eventParticipantsCount={eventParticipantsCount}
           onChanged={onChanged}
         />
       </div>

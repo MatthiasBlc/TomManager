@@ -137,6 +137,79 @@ describe("Kitchen API", () => {
       expect(managerRes.body.data.unassigned).toBeDefined();
     });
 
+    it("exposes vegeCount/carneCount and eventParticipantsCount to chef/manager/admin, never to a plain equipier", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie);
+
+      await request
+        .patch(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", managerCookie)
+        .send({ equipierPlanningEnabled: true });
+
+      const { user: chefUser, cookie: chefCookie } = await addTestParticipant(event.id, {
+        email: "dietchef@example.com",
+        username: "dietchef",
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/chefs`)
+        .set("Cookie", managerCookie)
+        .send({ userId: chefUser.id });
+
+      const { cookie: equipierCookie } = await addTestParticipant(event.id, {
+        email: "dietequipier@example.com",
+        username: "dietequipier",
+      });
+
+      // 3 participants confirmes : le manager (createur), le chef, l'equipier.
+      await prisma.meal.create({
+        data: {
+          eventKitchenId: (
+            await prisma.eventKitchen.findUniqueOrThrow({ where: { eventId: event.id } })
+          ).id,
+          chefUserId: chefUser.id,
+          name: "Couscous",
+          service: "DINNER",
+          startDateTime: new Date("2026-06-01T11:00:00Z"),
+          endDateTime: new Date("2026-06-01T13:00:00Z"),
+          maxAssistants: 0,
+          vegeCount: 2,
+          carneCount: 1,
+        },
+      });
+
+      const equipierRes = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", equipierCookie);
+      expect(equipierRes.body.data.meals[0].vegeCount).toBeUndefined();
+      expect(equipierRes.body.data.meals[0].carneCount).toBeUndefined();
+      expect(equipierRes.body.data.eventParticipantsCount).toBeUndefined();
+
+      const chefRes = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", chefCookie);
+      expect(chefRes.body.data.meals[0].vegeCount).toBe(2);
+      expect(chefRes.body.data.meals[0].carneCount).toBe(1);
+      expect(chefRes.body.data.eventParticipantsCount).toBe(3);
+
+      const managerRes = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", managerCookie);
+      expect(managerRes.body.data.meals[0].vegeCount).toBe(2);
+      expect(managerRes.body.data.meals[0].carneCount).toBe(1);
+      expect(managerRes.body.data.eventParticipantsCount).toBe(3);
+
+      const { cookie: plainAdminCookie } = await setupAdmin({
+        email: "dietadmin@example.com",
+        username: "dietadmin",
+      });
+      const adminRes = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", plainAdminCookie);
+      expect(adminRes.body.data.meals[0].vegeCount).toBe(2);
+      expect(adminRes.body.data.meals[0].carneCount).toBe(1);
+      expect(adminRes.body.data.eventParticipantsCount).toBe(3);
+    });
+
     it("hides the board from a plain equipier when equipierPlanningEnabled is false", async () => {
       const { cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie);

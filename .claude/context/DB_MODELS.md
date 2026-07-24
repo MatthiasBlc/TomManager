@@ -180,7 +180,7 @@ CONFIRMED | WAITLIST
 
 ## Enum NotificationType
 
-TABLE_DELETED | TABLE_UPDATED | WAITLIST_PROMOTED | WAITLIST_DEMOTED | RESERVED_SEAT_ASSIGNED | PLAYER_KICKED | PARTICIPANT_REMOVED | EVENT_UPDATED | EVENT_DELETED | GM_PLAYER_JOINED | GM_PLAYER_WAITLISTED | GM_PLAYER_LEFT | GM_TABLE_FULL | KITCHEN_SWAP_REQUESTED | KITCHEN_SWAP_ACCEPTED | KITCHEN_SWAP_REJECTED | KITCHEN_ASSISTANT_SWAP_REQUESTED | KITCHEN_ASSISTANT_SWAP_ACCEPTED | KITCHEN_CHEF_ADDED | KITCHEN_CHEF_REMOVED | KITCHEN_MEAL_CLAIMED | KITCHEN_OVERCAPACITY
+TABLE_DELETED | TABLE_UPDATED | WAITLIST_PROMOTED | WAITLIST_DEMOTED | RESERVED_SEAT_ASSIGNED | PLAYER_KICKED | PARTICIPANT_REMOVED | EVENT_UPDATED | EVENT_DELETED | GM_PLAYER_JOINED | GM_PLAYER_WAITLISTED | GM_PLAYER_LEFT | GM_TABLE_FULL | KITCHEN_SWAP_REQUESTED | KITCHEN_SWAP_ACCEPTED | KITCHEN_SWAP_REJECTED | KITCHEN_ASSISTANT_SWAP_REQUESTED | KITCHEN_ASSISTANT_SWAP_ACCEPTED | KITCHEN_CHEF_ADDED | KITCHEN_CHEF_REMOVED | KITCHEN_MEAL_CLAIMED | KITCHEN_OVERCAPACITY | KITCHEN_DIET_SPLIT_UPDATED
 
 ## Notification
 
@@ -250,10 +250,19 @@ Unique: (eventKitchenId, userId)
 | startDateTime         | DateTime    | >= event.startDateTime, < endDateTime              |
 | endDateTime           | DateTime    | <= event.endDateTime                               |
 | maxAssistants         | Int         | default 0                                          |
+| vegeCount             | Int         | default 0 (KitchenDietSplit)                       |
+| carneCount            | Int         | default 0 (KitchenDietSplit)                       |
 | createdAt / updatedAt | DateTime    |                                                    |
 
 Unique: (eventKitchenId, chefUserId) — NULLs distincts sous PostgreSQL
 Index: (eventKitchenId, startDateTime)
+
+vegeCount/carneCount : repartition agregee vege/carne, editable par le responsable
+uniquement (meme statut que maxAssistants dans updateMeal). Doit sommer au nombre de
+participants confirmes de l'event (`eventParticipantsCount`, expose par GET /kitchen
+a chef/responsable/admin simple, jamais a l'equipier) — coherence non contrainte en
+base, juste un warning cote front. Migration `20260724170207_kitchen_diet_split`
+(additive). Voir `docs/features/KitchenDietSplit/SPEC_KITCHEN_DIET_SPLIT.md`.
 
 ### MealIngredient
 

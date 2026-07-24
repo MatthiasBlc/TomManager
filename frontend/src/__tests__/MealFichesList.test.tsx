@@ -184,6 +184,59 @@ describe("MealFichesList", () => {
     await waitFor(() => expect(screen.queryByLabelText("Nom du plat")).not.toBeInTheDocument());
   });
 
+  it("auto-balances vege/carne against eventParticipantsCount in a single grouped PATCH", async () => {
+    apiPatchMock.mockResolvedValue({});
+    render(
+      <MealFichesList
+        eventId="ev1"
+        meals={[{ ...ASSIGNED_MEAL, vegeCount: 4, carneCount: 6 }]}
+        chefs={CHEFS}
+        unassigned={UNASSIGNED}
+        eventParticipantsCount={10}
+        onChanged={vi.fn()}
+      />
+    );
+    // Steppers dans l'ordre de rendu : Places, puis Vege, puis Carne.
+    const incrementButtons = screen.getAllByRole("button", { name: "Augmenter" });
+    fireEvent.click(incrementButtons[1]);
+
+    await waitFor(() =>
+      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
+        vegeCount: 5,
+        carneCount: 5,
+      })
+    );
+  });
+
+  it("shows a warning when vege+carne does not match eventParticipantsCount", () => {
+    render(
+      <MealFichesList
+        eventId="ev1"
+        meals={[{ ...ASSIGNED_MEAL, vegeCount: 3, carneCount: 7 }]}
+        chefs={CHEFS}
+        unassigned={UNASSIGNED}
+        eventParticipantsCount={6}
+        onChanged={vi.fn()}
+      />
+    );
+    expect(screen.getByText(/Somme = 10, attendu 6 participant/)).toBeInTheDocument();
+  });
+
+  it("shows an up-to-date note when vege+carne matches eventParticipantsCount", () => {
+    render(
+      <MealFichesList
+        eventId="ev1"
+        meals={[{ ...ASSIGNED_MEAL, vegeCount: 4, carneCount: 6 }]}
+        chefs={CHEFS}
+        unassigned={UNASSIGNED}
+        eventParticipantsCount={10}
+        onChanged={vi.fn()}
+      />
+    );
+    expect(screen.getByText("4 végé / 6 carné — à jour")).toBeInTheDocument();
+    expect(screen.queryByText(/À corriger/)).not.toBeInTheDocument();
+  });
+
   it("renders meal cards in a responsive grid", () => {
     const { container } = render(
       <MealFichesList

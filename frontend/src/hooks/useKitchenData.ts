@@ -14,6 +14,9 @@ export interface KitchenViewData {
   isChef: boolean;
   isCoursesMember: boolean;
   meals: MealFiche[];
+  // Cible du total vege+carne (participants confirmes de l'evenement entier) : absent
+  // si l'utilisateur ne voit pas la repartition (equipier).
+  eventParticipantsCount?: number;
   allergiesNotes?: string | null;
   chefs?: {
     id: string;

@@ -84,6 +84,35 @@ test.describe("Cuisine — configuration, repas, conflit planning, purge", () =>
     expect(kitchenRes.ok).toBe(true);
     const kitchenData = await kitchenRes.json();
     const meal = kitchenData.data.meals[0];
+    const participantsTarget = kitchenData.data.eventParticipantsCount as number;
+    expect(participantsTarget).toBeGreaterThan(0);
+
+    // --- Repartition vege/carne (KitchenDietSplit) : le responsable ajuste depuis la
+    // Gestion (auto-equilibrage vege/carne), la fiche du chef doit refleter le
+    // changement et il doit recevoir une notification avec l'ancien/nouveau detail ---
+    const dietCard = page.locator(".card", { hasText: "Couscous E2E" });
+    const dietPatch = page.waitForResponse(
+      (res) =>
+        res.url().includes(`/kitchen/meals/${meal.id}`) &&
+        res.request().method() === "PATCH" &&
+        JSON.stringify(res.request().postDataJSON()).includes("vegeCount")
+    );
+    // Steppers dans l'ordre de rendu de la carte : Places, puis Vege, puis Carne.
+    await dietCard.getByRole("button", { name: "Augmenter" }).nth(1).click();
+    await dietPatch;
+    await expect(
+      dietCard.getByText(`1 végé / ${participantsTarget - 1} carné — à jour`)
+    ).toBeVisible();
+
+    const notifRes = await fetch(`${API}/api/notifications`, { headers: { Cookie: chef.cookie } });
+    expect(notifRes.ok).toBe(true);
+    const notifData = await notifRes.json();
+    const dietNotif = (notifData.data as { type: string; message: string }[]).find(
+      (n) => n.type === "KITCHEN_DIET_SPLIT_UPDATED"
+    );
+    expect(dietNotif).toBeTruthy();
+    expect(dietNotif?.message).toContain("0 végé / 0 carné");
+    expect(dietNotif?.message).toContain(`1 végé / ${participantsTarget - 1} carné`);
 
     // --- Une table de jeu chevauchante (nichee 30min a l'interieur du creneau repas),
     // creee via API comme les autres specs planning ---

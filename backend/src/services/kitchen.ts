@@ -504,6 +504,11 @@ export async function getKitchenView(eventId: string, userId: string | undefined
   //   chef du repas (symetrie avec le MJ cote table).
   const conflictsBySource = await computeEventConflicts(eventId);
 
+  // Repartition vege/carne : chef (sa cuisine) + responsable + admin simple (dashboard),
+  // jamais l'equipier (meme perimetre que les autres infos de gestion, mais l'admin
+  // simple y a acces contrairement aux ingredients/allergies qui restent sensibles).
+  const canSeeDietSplit = isFullReader || hasAdminOverview;
+
   const mealsView = meals.map((meal) => {
     const conflictedUsers = conflictsBySource.get(meal.id) ?? new Set<string>();
     return {
@@ -519,6 +524,7 @@ export async function getKitchenView(eventId: string, userId: string | undefined
       currentUserConflict: userId ? conflictedUsers.has(userId) : false,
       conflictingCount: conflictedUsers.size,
       ...(isFullReader ? { ingredients: meal.ingredients, utensils: meal.utensils } : {}),
+      ...(canSeeDietSplit ? { vegeCount: meal.vegeCount, carneCount: meal.carneCount } : {}),
     };
   });
 
@@ -526,6 +532,15 @@ export async function getKitchenView(eventId: string, userId: string | undefined
 
   if (isFullReader) {
     result.allergiesNotes = eventKitchen.allergiesNotes;
+  }
+
+  if (canSeeDietSplit) {
+    // Cible du total vege+carne (spec section 2) : participants confirmes de
+    // l'evenement entier, identique pour tous les repas (l'app ne trace aucune
+    // presence par repas). Meme requete que computeAvailablePool.
+    result.eventParticipantsCount = await prisma.eventParticipation.count({
+      where: { eventId },
+    });
   }
 
   if (isGestionReader) {

@@ -10,6 +10,7 @@ import {
   EyeOffIcon,
   ShoppingCartIcon,
   InfoCircleIcon,
+  AlertTriangleIcon,
 } from "../common/icons";
 
 interface Person {
@@ -32,6 +33,10 @@ interface DashboardMeal {
   remainingSeats: number;
   chef: Person | null;
   assistants: Person[];
+  // Absents si l'utilisateur courant ne voit pas la repartition (jamais le cas ici,
+  // le dashboard admin simple est dans le perimetre KitchenDietSplit).
+  vegeCount?: number;
+  carneCount?: number;
 }
 
 interface Props {
@@ -43,6 +48,7 @@ interface Props {
   chefs: ChefEntry[];
   coursesMembers: Person[];
   unassigned: Person[];
+  eventParticipantsCount?: number;
 }
 
 const displayedName = (u: Person) => u.displayName ?? u.username;
@@ -64,6 +70,7 @@ export default function KitchenDashboard({
   chefs,
   coursesMembers,
   unassigned,
+  eventParticipantsCount,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -242,6 +249,29 @@ export default function KitchenDashboard({
                         </div>
                       </div>
                     </div>
+
+                    {meal.vegeCount !== undefined && meal.carneCount !== undefined && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[0.68rem] uppercase tracking-wide font-bold opacity-50 w-14 shrink-0">
+                          Repas
+                        </span>
+                        <span className="badge badge-ghost badge-sm gap-1">
+                          🌱 {meal.vegeCount}
+                        </span>
+                        <span className="badge badge-ghost badge-sm gap-1">
+                          🥩 {meal.carneCount}
+                        </span>
+                        {eventParticipantsCount !== undefined &&
+                          meal.vegeCount + meal.carneCount !== eventParticipantsCount && (
+                            <span
+                              className="badge badge-warning badge-sm gap-1"
+                              title={`Attendu ${eventParticipantsCount} participants`}
+                            >
+                              <AlertTriangleIcon className="w-3 h-3" />
+                            </span>
+                          )}
+                      </div>
+                    )}
 
                     <div className="flex items-start gap-2">
                       <span className="text-[0.68rem] uppercase tracking-wide font-bold opacity-50 w-14 shrink-0 mt-0.5">

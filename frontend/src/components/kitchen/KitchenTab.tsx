@@ -155,6 +155,7 @@ export default function KitchenTab({
           unassigned={data.unassigned ?? []}
           meals={data.meals}
           capacitySummary={data.capacitySummary}
+          eventParticipantsCount={data.eventParticipantsCount}
           onChanged={fetchKitchen}
         />
       )}
@@ -169,6 +170,7 @@ export default function KitchenTab({
           chefs={data.dashboard?.chefs ?? []}
           coursesMembers={data.dashboard?.coursesMembers ?? []}
           unassigned={data.dashboard?.unassigned ?? []}
+          eventParticipantsCount={data.eventParticipantsCount}
         />
       )}
 
@@ -185,7 +187,14 @@ export default function KitchenTab({
             <MealClaimSelect eventId={eventId} meals={data.meals} onClaimed={fetchKitchen} />
           )}
 
-          {myMeal && <MealFicheEditor eventId={eventId} meal={myMeal} onChanged={fetchKitchen} />}
+          {myMeal && (
+            <MealFicheEditor
+              eventId={eventId}
+              meal={myMeal}
+              eventParticipantsCount={data.eventParticipantsCount}
+              onChanged={fetchKitchen}
+            />
+          )}
 
           {myMeal && user && (
             <MealSwapPanel

@@ -52,6 +52,8 @@ export const updateMealSchema = z
     startDateTime: isoDatetime.optional(),
     endDateTime: isoDatetime.optional(),
     maxAssistants: z.number().int().min(0).optional(),
+    vegeCount: z.number().int().min(0).optional(),
+    carneCount: z.number().int().min(0).optional(),
     ingredients: z.array(ingredientSchema).max(50).optional(),
     utensils: z.array(utensilSchema).max(50).optional(),
   })

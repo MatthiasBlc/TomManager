@@ -12,6 +12,7 @@ import type { MealFiche } from "./MealFichesList";
 interface Props {
   eventId: string;
   meal: MealFiche;
+  eventParticipantsCount?: number;
   onChanged: () => void;
 }
 
@@ -53,7 +54,12 @@ const toIngredientRows = (ingredients: MealFiche["ingredients"]): IngredientRow[
 // desormais la liste de fiches dediee (MealFichesList) pour chef/capacite/equipiers,
 // y compris la suppression du creneau : un chef ne peut pas supprimer son propre
 // repas depuis "Mon repas" (ca desinscrirait les equipiers deja rejoints).
-export default function MealFicheEditor({ eventId, meal, onChanged }: Props) {
+export default function MealFicheEditor({
+  eventId,
+  meal,
+  eventParticipantsCount,
+  onChanged,
+}: Props) {
   const [name, setName] = useState(meal.name);
   const [ingredients, setIngredients] = useState<IngredientRow[]>(
     toIngredientRows(meal.ingredients)
@@ -129,6 +135,38 @@ export default function MealFicheEditor({ eventId, meal, onChanged }: Props) {
             </span>
           )}
         </div>
+
+        {meal.vegeCount !== undefined && meal.carneCount !== undefined && (
+          <div className="space-y-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wide opacity-60">
+              Répartition des convives
+            </span>
+            <div className="flex gap-3 flex-wrap">
+              <div className="flex items-center gap-2 rounded-lg bg-base-300/50 px-3 py-1.5">
+                <span aria-hidden="true">🌱</span>
+                <span className="font-serif text-lg font-semibold tabular-nums">
+                  {meal.vegeCount}
+                </span>
+                <span className="text-xs opacity-60">végé</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg bg-base-300/50 px-3 py-1.5">
+                <span aria-hidden="true">🥩</span>
+                <span className="font-serif text-lg font-semibold tabular-nums">
+                  {meal.carneCount}
+                </span>
+                <span className="text-xs opacity-60">carné</span>
+              </div>
+            </div>
+            {eventParticipantsCount !== undefined &&
+              meal.vegeCount + meal.carneCount !== eventParticipantsCount && (
+                <p className="text-xs opacity-70">
+                  Ce total ne correspond plus aux {eventParticipantsCount} participants actuels de
+                  l'événement — le responsable cuisine doit mettre à jour cette répartition, tu n'as
+                  rien à faire.
+                </p>
+              )}
+          </div>
+        )}
 
         <div className="form-control max-w-md">
           <label className="label py-1" htmlFor={`mfe-name-${meal.id}`}>

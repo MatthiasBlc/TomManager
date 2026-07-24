@@ -56,7 +56,7 @@ model Meal {
 ```
 
 - Migration `CREATE ... ALTER TABLE "Meal" ADD COLUMN "vegeCount" INTEGER NOT
-  NULL DEFAULT 0, ADD COLUMN "carneCount" INTEGER NOT NULL DEFAULT 0` :
+NULL DEFAULT 0, ADD COLUMN "carneCount" INTEGER NOT NULL DEFAULT 0` :
   additive, aucune donnee existante cassee (defaut 0/0 pour toutes les lignes
   presentes, coherent avec la regle produit "par defaut 0-0").
 - Process migration (rappel projet, prod avec vrais users) : creee dans le

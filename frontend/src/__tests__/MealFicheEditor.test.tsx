@@ -79,6 +79,26 @@ describe("MealFicheEditor", () => {
     expect(screen.queryByRole("button", { name: /supprimer/i })).not.toBeInTheDocument();
   });
 
+  it("shows the vege/carne split read-only, with no note when it matches eventParticipantsCount", () => {
+    const meal: MealFiche = { ...MEAL, vegeCount: 4, carneCount: 6 };
+    render(
+      <MealFicheEditor eventId="ev1" meal={meal} eventParticipantsCount={10} onChanged={vi.fn()} />
+    );
+    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.getByText("6")).toBeInTheDocument();
+    expect(screen.getByText("végé")).toBeInTheDocument();
+    expect(screen.getByText("carné")).toBeInTheDocument();
+    expect(screen.queryByText(/responsable cuisine doit mettre à jour/)).not.toBeInTheDocument();
+  });
+
+  it("shows an informative, non-actionable note when the split no longer matches eventParticipantsCount", () => {
+    const meal: MealFiche = { ...MEAL, vegeCount: 3, carneCount: 7 };
+    render(
+      <MealFicheEditor eventId="ev1" meal={meal} eventParticipantsCount={6} onChanged={vi.fn()} />
+    );
+    expect(screen.getByText(/responsable cuisine doit mettre à jour/)).toBeInTheDocument();
+  });
+
   it("resets fields when switching to a different meal", () => {
     const { rerender } = render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
     fireEvent.change(screen.getByLabelText("Nom du repas"), {

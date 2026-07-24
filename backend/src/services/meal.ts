@@ -12,7 +12,7 @@ import {
 import { findOrCreateProducts } from "./product";
 import { findOrCreateUtensils } from "./utensil";
 import { lockMealRow, type TxClient } from "./mealTransfer";
-import { createBulkNotifications } from "./notification";
+import { createBulkNotifications, createNotification } from "./notification";
 
 function displayNameOf(user: { displayName: string | null; username: string } | null): string {
   return user?.displayName ?? user?.username ?? "Un chef";
@@ -35,6 +35,8 @@ interface UpdateMealInput {
   startDateTime?: string;
   endDateTime?: string;
   maxAssistants?: number;
+  vegeCount?: number;
+  carneCount?: number;
   ingredients?: IngredientInput[];
   utensils?: UtensilInput[];
 }
@@ -53,6 +55,8 @@ function serializeMeal(meal: {
   startDateTime: Date;
   endDateTime: Date;
   maxAssistants: number;
+  vegeCount: number;
+  carneCount: number;
   chef: unknown;
   ingredients: unknown[];
   utensils: unknown[];
@@ -65,6 +69,8 @@ function serializeMeal(meal: {
     startDateTime: meal.startDateTime,
     endDateTime: meal.endDateTime,
     maxAssistants: meal.maxAssistants,
+    vegeCount: meal.vegeCount,
+    carneCount: meal.carneCount,
     chef: meal.chef,
     ingredients: meal.ingredients,
     utensils: meal.utensils,
@@ -166,10 +172,13 @@ export async function updateMeal(
   const isManager = await isKitchenManagerUser(actingUserId);
   const isOwner = meal.chefUserId === actingUserId;
 
-  // Champs structurants (chef, capacite, horaires, service) reserves au manager : ils
-  // definissent la grille generee ; le chef n'edite que name/ingredients/utensils.
+  // Champs structurants (chef, capacite, horaires, service, repartition vege/carne)
+  // reserves au manager : ils definissent la grille generee ; le chef n'edite que
+  // name/ingredients/utensils.
   const touchesManagerOnly =
     data.maxAssistants !== undefined ||
+    data.vegeCount !== undefined ||
+    data.carneCount !== undefined ||
     data.chefUserId !== undefined ||
     data.startDateTime !== undefined ||
     data.endDateTime !== undefined ||
@@ -177,7 +186,7 @@ export async function updateMeal(
   if (touchesManagerOnly && !isManager) {
     throw createError(
       403,
-      "Only a kitchen manager can change the chef, capacity, schedule or service",
+      "Only a kitchen manager can change the chef, capacity, schedule, service or diet split",
       { code: "FORBIDDEN" }
     );
   }
@@ -233,6 +242,8 @@ export async function updateMeal(
         ...(data.startDateTime !== undefined ? { startDateTime: start } : {}),
         ...(data.endDateTime !== undefined ? { endDateTime: end } : {}),
         ...(data.maxAssistants !== undefined ? { maxAssistants: data.maxAssistants } : {}),
+        ...(data.vegeCount !== undefined ? { vegeCount: data.vegeCount } : {}),
+        ...(data.carneCount !== undefined ? { carneCount: data.carneCount } : {}),
         ...(targetChefUserId !== undefined ? { chefUserId: targetChefUserId } : {}),
       },
     });
@@ -240,6 +251,24 @@ export async function updateMeal(
   });
 
   emitToEvent(eventId, "kitchen:meal-changed", { eventId, mealId });
+
+  // Notif au chef du repas quand la repartition vege/carne change reellement (y compris
+  // depuis la valeur par defaut 0/0) : le responsable est seul a pouvoir l'editer, le
+  // chef doit savoir combien preparer. Aucune notif sur un repas orphelin (pas de chef).
+  const newVegeCount = data.vegeCount !== undefined ? data.vegeCount : meal.vegeCount;
+  const newCarneCount = data.carneCount !== undefined ? data.carneCount : meal.carneCount;
+  const dietSplitChanged =
+    (data.vegeCount !== undefined && data.vegeCount !== meal.vegeCount) ||
+    (data.carneCount !== undefined && data.carneCount !== meal.carneCount);
+  if (dietSplitChanged && meal.chefUserId) {
+    await createNotification({
+      userId: meal.chefUserId,
+      type: "KITCHEN_DIET_SPLIT_UPDATED",
+      title: "Répartition végé/carné mise à jour",
+      message: `Ton repas "${meal.name}" passe de ${meal.vegeCount} végé / ${meal.carneCount} carné à ${newVegeCount} végé / ${newCarneCount} carné.`,
+      metadata: { eventId, mealId },
+    });
+  }
 
   return getMealDetail(mealId);
 }

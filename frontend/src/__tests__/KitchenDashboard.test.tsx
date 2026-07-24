@@ -61,4 +61,20 @@ describe("KitchenDashboard", () => {
     render(<KitchenDashboard {...baseProps} meals={[]} />);
     expect(screen.getByText("Aucun repas planifié pour l'instant")).toBeInTheDocument();
   });
+
+  it("shows vege/carne badges read-only, with no warning when it matches eventParticipantsCount", () => {
+    const meals = [{ ...baseProps.meals[0], vegeCount: 4, carneCount: 6 }];
+    render(<KitchenDashboard {...baseProps} meals={meals} eventParticipantsCount={10} />);
+    expect(screen.getByText("🌱 4")).toBeInTheDocument();
+    expect(screen.getByText("🥩 6")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows a warning badge when vege+carne does not match eventParticipantsCount", () => {
+    const meals = [{ ...baseProps.meals[0], vegeCount: 3, carneCount: 7 }];
+    const { container } = render(
+      <KitchenDashboard {...baseProps} meals={meals} eventParticipantsCount={6} />
+    );
+    expect(container.querySelector(".badge-warning")).not.toBeNull();
+  });
 });

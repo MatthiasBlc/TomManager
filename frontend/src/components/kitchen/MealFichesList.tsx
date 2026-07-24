@@ -22,6 +22,10 @@ export interface MealFiche {
   startDateTime: string;
   endDateTime: string;
   maxAssistants: number;
+  // Absents si l'utilisateur courant ne voit pas la repartition (equipier) : chef,
+  // responsable et admin simple uniquement.
+  vegeCount?: number;
+  carneCount?: number;
   chef: { id: string; username: string; displayName?: string | null } | null;
   assistants: { id: string; username: string; displayName?: string | null }[];
   remainingSeats: number;
@@ -45,6 +49,7 @@ interface Props {
   chefs: ChefEntry[];
   unassigned: Person[];
   capacitySummary?: { allocated: number; poolTotal: number };
+  eventParticipantsCount?: number;
   onChanged: () => void;
 }
 
@@ -60,6 +65,7 @@ export default function MealFichesList({
   chefs,
   unassigned,
   capacitySummary,
+  eventParticipantsCount,
   onChanged,
 }: Props) {
   const [detailMeal, setDetailMeal] = useState<MealFiche | null>(null);
@@ -107,6 +113,29 @@ export default function MealFichesList({
       onChanged();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Échec de la mise à jour de la capacité"));
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  // Auto-equilibrage (spec KitchenDietSplit) : editer un des deux champs recalcule
+  // l'autre pour que la somme colle toujours a eventParticipantsCount au moment de
+  // l'edition. Un seul PATCH groupe pour garder les deux valeurs coherentes (et une
+  // seule notification chef avec le bon old/new, cf backend updateMeal).
+  const handleDietSplitChange = async (meal: MealFiche, field: "vege" | "carne", value: number) => {
+    const target = eventParticipantsCount ?? 0;
+    const clamped = Math.max(0, Math.min(target, value));
+    const vegeCount = field === "vege" ? clamped : target - clamped;
+    const carneCount = field === "carne" ? clamped : target - clamped;
+    setPendingAction(`diet:${meal.id}`);
+    try {
+      await api.patch(`/api/events/${eventId}/kitchen/meals/${meal.id}`, {
+        vegeCount,
+        carneCount,
+      });
+      onChanged();
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Échec de la mise à jour de la répartition"));
     } finally {
       setPendingAction(null);
     }
@@ -259,6 +288,57 @@ export default function MealFichesList({
                     onChange={(v) => handleCapacityChange(meal, v)}
                   />
                 </div>
+
+                {(() => {
+                  const vege = meal.vegeCount ?? 0;
+                  const carne = meal.carneCount ?? 0;
+                  const target = eventParticipantsCount ?? 0;
+                  const sum = vege + carne;
+                  const mismatch = sum !== target;
+                  const vegePct = sum > 0 ? (vege / sum) * 100 : 0;
+                  return (
+                    <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[0.71rem] uppercase tracking-wide font-bold opacity-50 w-16 shrink-0">
+                          Repas
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs opacity-70">🌱</span>
+                          <NumberStepper
+                            value={vege}
+                            max={target}
+                            onChange={(v) => handleDietSplitChange(meal, "vege", v)}
+                            disabled={!!pendingAction}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs opacity-70">🥩</span>
+                          <NumberStepper
+                            value={carne}
+                            max={target}
+                            onChange={(v) => handleDietSplitChange(meal, "carne", v)}
+                            disabled={!!pendingAction}
+                          />
+                        </div>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-base-300 overflow-hidden flex">
+                        <div className="h-full bg-success" style={{ width: `${vegePct}%` }} />
+                        <div className="h-full bg-warning" style={{ width: `${100 - vegePct}%` }} />
+                      </div>
+                      {mismatch ? (
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-warning">
+                          <AlertTriangleIcon className="w-3 h-3 shrink-0" />
+                          Somme = {sum}, attendu {target} participant{target > 1 ? "s" : ""}. À
+                          corriger.
+                        </p>
+                      ) : (
+                        <p className="text-xs opacity-50 tabular-nums">
+                          {vege} végé / {carne} carné — à jour
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
                   <span className="text-[0.71rem] uppercase tracking-wide font-bold opacity-50">

@@ -370,6 +370,125 @@ describe("Meal API", () => {
       expect(res.body.data.maxAssistants).toBe(3);
     });
 
+    it("rejects a chef trying to set vegeCount/carneCount (manager only)", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "chefDietA@example.com",
+        username: "chefDietA",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({ vegeCount: 2, carneCount: 8 });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe("FORBIDDEN");
+    });
+
+    it("allows the manager to set vegeCount/carneCount", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "chefDietB@example.com",
+        username: "chefDietB",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", managerCookie)
+        .send({ vegeCount: 4, carneCount: 6 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.vegeCount).toBe(4);
+      expect(res.body.data.carneCount).toBe(6);
+    });
+
+    it("notifies the chef when the diet split changes, with old/new values in the message", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie, user: chefUser } = await setupChef(event.id, managerCookie, {
+        email: "chefDietC@example.com",
+        username: "chefDietC",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", managerCookie)
+        .send({ vegeCount: 2, carneCount: 8 });
+      expect(res.status).toBe(200);
+
+      const notif = await prisma.notification.findFirst({
+        where: { userId: chefUser.id, type: "KITCHEN_DIET_SPLIT_UPDATED" },
+      });
+      expect(notif).not.toBeNull();
+      expect(notif?.metadata).toMatchObject({ eventId: event.id, mealId: meal.id });
+      // Premiere saisie depuis la valeur par defaut 0/0 compte comme une mise a jour.
+      expect(notif?.message).toContain("0 végé / 0 carné");
+      expect(notif?.message).toContain("2 végé / 8 carné");
+    });
+
+    it("does not notify the chef when vegeCount/carneCount are sent unchanged", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie, user: chefUser } = await setupChef(event.id, managerCookie, {
+        email: "chefDietD@example.com",
+        username: "chefDietD",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", managerCookie)
+        .send({ vegeCount: 0, carneCount: 0 });
+      expect(res.status).toBe(200);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: chefUser.id, type: "KITCHEN_DIET_SPLIT_UPDATED" },
+      });
+      expect(notifs.some((n) => (n.metadata as { mealId?: string })?.mealId === meal.id)).toBe(
+        false
+      );
+    });
+
+    it("does not notify anyone when the diet split is edited on an orphan meal", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const eventKitchen = await prisma.eventKitchen.upsert({
+        where: { eventId: event.id },
+        create: { eventId: event.id },
+        update: {},
+      });
+      const orphan = await prisma.meal.create({
+        data: {
+          eventKitchenId: eventKitchen.id,
+          chefUserId: null,
+          name: "Repas orphelin",
+          service: "DINNER",
+          startDateTime: new Date("2026-06-01T18:30:00Z"),
+          endDateTime: new Date("2026-06-01T21:00:00Z"),
+          maxAssistants: 0,
+        },
+      });
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${orphan.id}`)
+        .set("Cookie", managerCookie)
+        .send({ vegeCount: 3, carneCount: 7 });
+      expect(res.status).toBe(200);
+
+      const notifs = await prisma.notification.findMany({
+        where: { type: "KITCHEN_DIET_SPLIT_UPDATED" },
+      });
+      expect(notifs.some((n) => (n.metadata as { mealId?: string })?.mealId === orphan.id)).toBe(
+        false
+      );
+    });
+
     it("allows the manager to reassign an orphan meal to a free roster chef", async () => {
       const { cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
