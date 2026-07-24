@@ -274,7 +274,9 @@ describe("Kitchen API", () => {
         chefsCount: 1,
         coursesCount: 0,
         unassignedCount: 1,
-        chefs: [{ id: adminChefUser.id, username: "adminchef", displayName: null, source: "MANUAL" }],
+        chefs: [
+          { id: adminChefUser.id, username: "adminchef", displayName: null, source: "MANUAL" },
+        ],
         coursesMembers: [],
         unassigned: [{ id: managerUser.id, username: "manager1", displayName: null }],
       });
