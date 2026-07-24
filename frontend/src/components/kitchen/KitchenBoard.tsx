@@ -166,7 +166,7 @@ export default function KitchenBoard({
                 {pendingAction === meal.id && (
                   <span className="loading loading-spinner loading-xs" />
                 )}
-                {isFull ? "Complet" : currentMeal ? "Se déplacer ici" : "S'inscrire"}
+                {isFull ? "Complet" : currentMeal ? "Se déplacer ici" : "Je cuisine ici"}
               </button>
             )}
           </div>
@@ -178,7 +178,7 @@ export default function KitchenBoard({
   return (
     <div className="card bg-base-100 shadow-sm">
       <div className="card-body p-4 md:p-6">
-        <h3 className="card-title text-base md:text-lg">🍳 Planning cuisine</h3>
+        <h3 className="card-title text-base md:text-lg">🍳 Équipe de cuisine</h3>
 
         {canJoin && !currentMeal && (
           <div className="alert alert-info py-2 text-sm">

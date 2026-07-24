@@ -139,7 +139,7 @@ describe("KitchenBoard", () => {
       meals: [MEAL],
     });
 
-    fireEvent.click(firstOf(screen.getAllByRole("button", { name: "S'inscrire" })));
+    fireEvent.click(firstOf(screen.getAllByRole("button", { name: "Je cuisine ici" })));
     await waitFor(() =>
       expect(apiPostMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1/assistants")
     );

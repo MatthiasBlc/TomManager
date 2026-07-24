@@ -111,7 +111,7 @@ test.describe("Cuisine — configuration, repas, conflit planning, purge", () =>
     // est presente dans le DOM mais masquee au viewport desktop par defaut de Playwright.
     const mealCell = equipierPage.locator("td", { hasText: "Couscous E2E" });
     await expect(mealCell).toBeVisible();
-    await mealCell.getByRole("button", { name: "S'inscrire", exact: true }).click();
+    await mealCell.getByRole("button", { name: "Je cuisine ici", exact: true }).click();
     await expect(equipierPage.getByText(/inscrit au repas/i)).toBeVisible();
 
     // Onglet Planning : rejoindre la table qui chevauche le repas

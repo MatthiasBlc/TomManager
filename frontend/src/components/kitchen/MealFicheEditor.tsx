@@ -125,6 +125,12 @@ export default function MealFicheEditor({ eventId, meal, onChanged }: Props) {
   return (
     <div className="card bg-base-200 shadow-none">
       <div className="card-body p-3 space-y-3">
+        <p className="text-xs opacity-60">
+          {serviceLabel(meal.service)} · {formatDateTime(meal.startDateTime)} →{" "}
+          {formatDateTime(meal.endDateTime)} · {meal.assistants.length}/{meal.maxAssistants}{" "}
+          équipier(s)
+        </p>
+
         <div className="flex items-start justify-between gap-2 flex-wrap">
           <div className="form-control flex-1 min-w-[200px]">
             <label className="label py-1" htmlFor={`mfe-name-${meal.id}`}>
@@ -148,12 +154,6 @@ export default function MealFicheEditor({ eventId, meal, onChanged }: Props) {
             Supprimer
           </button>
         </div>
-
-        <p className="text-xs opacity-60">
-          {serviceLabel(meal.service)} · {formatDateTime(meal.startDateTime)} →{" "}
-          {formatDateTime(meal.endDateTime)} · {meal.assistants.length}/{meal.maxAssistants}{" "}
-          équipier(s)
-        </p>
 
         <div className="form-control">
           <label className="label py-1">
