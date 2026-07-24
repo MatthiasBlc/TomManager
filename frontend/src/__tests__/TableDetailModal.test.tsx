@@ -127,7 +127,8 @@ describe("TableDetailModal", () => {
       expect(apiGetMock).toHaveBeenCalledWith("/api/events/ev1/tables/t1");
     });
     expect(await screen.findByText("Une aventure")).toBeInTheDocument();
-    expect(screen.getByText(/MJ : Alice/)).toBeInTheDocument();
+    expect(screen.getByText("MJ")).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("horreur")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });

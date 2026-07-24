@@ -7,8 +7,8 @@ import NumberStepper from "../common/NumberStepper";
 import { serviceLabel } from "./units";
 import { formatParisDate } from "../../utils/dateTime";
 import MealFicheDetailModal from "./MealFicheDetailModal";
-import PersonAvatar from "./PersonAvatar";
-import { AlertTriangleIcon, CheckIcon, CloseIcon } from "./icons";
+import PersonAvatar from "../common/PersonAvatar";
+import { AlertTriangleIcon, CheckIcon, CloseIcon } from "../common/icons";
 
 // Label court "jour . service" (ex: "vendredi . Soir"), affiche en petites
 // majuscules au-dessus du nom du plat (cf. maquette Cuisine).

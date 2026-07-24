@@ -5,8 +5,8 @@ import { useConfirm } from "../../contexts/ConfirmContext";
 import EmptyState from "../common/EmptyState";
 import { getErrorMessage } from "../../config/apiErrors";
 import MealFichesList, { type MealFiche } from "./MealFichesList";
-import PersonAvatar from "./PersonAvatar";
-import { CARD, SectionEyebrow } from "./ui";
+import PersonAvatar from "../common/PersonAvatar";
+import { CARD, SectionEyebrow } from "../common/ui";
 import {
   AlertTriangleIcon,
   PencilIcon,
@@ -15,7 +15,7 @@ import {
   UtensilsIcon,
   EyeIcon,
   EyeOffIcon,
-} from "./icons";
+} from "../common/icons";
 
 interface Person {
   id: string;

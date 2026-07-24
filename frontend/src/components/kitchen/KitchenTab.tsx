@@ -10,7 +10,7 @@ import MealFicheEditor from "./MealFicheEditor";
 import MealClaimSelect from "./MealClaimSelect";
 import MealSwapPanel, { type SwapRequest } from "./MealSwapPanel";
 import ChefRoleSettings from "./ChefRoleSettings";
-import { EyeIcon } from "./icons";
+import { EyeIcon } from "../common/icons";
 
 interface Props {
   eventId: string;

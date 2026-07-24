@@ -151,7 +151,10 @@ src/
 │   │   ├── ScrollToTop.tsx        # window.scrollTo(0,0) au changement de pathname
 │   │   ├── ConfirmModal.tsx       # Dialogue de confirmation themable (variant danger/warning/neutral)
 │   │   ├── NumberStepper.tsx      # +/- numeric input (min/max/step)
-│   │   └── ChipAutocompleteInput.tsx # Chips + autocomplete generique (extrait de TagInput) : searchEndpoint/labels parametres, reutilise par TagInput et UtensilListInput (CookV1)
+│   │   ├── ChipAutocompleteInput.tsx # Chips + autocomplete generique (extrait de TagInput) : searchEndpoint/labels parametres, reutilise par TagInput et UtensilListInput (CookV1)
+│   │   ├── ui.tsx                 # CARD (bordure+ombre carte) + SectionEyebrow — extrait de kitchen/, partage par tout l'app (tour UX ecrans restants)
+│   │   ├── icons.tsx              # Pictos trait SVG — extrait de kitchen/icons.tsx et etendu (nav, planning, profil, jeux, admin) ; Notifications garde l'emoji
+│   │   └── PersonAvatar.tsx       # Pastille d'initiales — extrait de kitchen/, partage (roster cuisine, MJ de table, etc.)
 │   ├── notifications/
 │   │   ├── NotificationBell.tsx   # Bell icon + badge + dropdown
 │   │   └── NotificationItem.tsx   # Single notification item with icon, nav, delete
@@ -187,14 +190,11 @@ src/
 │       ├── AddBoardGameModal.tsx      # Modal: search + add or create manually
 │       ├── ManualBoardGameForm.tsx    # Manual creation form
 │       └── PoweredByBGG.tsx           # Attribution BGG
-│   └── kitchen/                       # Module cuisine (CookV1) — onglet "Cuisine" + board dans "Infos" ; refonte UI/UX Gestion+Dashboard (theme "TomUpdate" en reserve, cf styles/index.css)
+│   └── kitchen/                       # Module cuisine (CookV1) — onglet "Cuisine" + board dans "Infos" ; refonte UI/UX Gestion+Dashboard (theme "TomUpdate" en reserve, cf styles/index.css) ; CARD/SectionEyebrow/icons/PersonAvatar deplaces dans common/ (tour UX)
 │       ├── KitchenTab.tsx             # Racine onglet Cuisine (donnees en props via useKitchenData) : titre "Cuisine" serif + ChefRoleSettings (manager) ; selecteur Gestion/Vue d'ensemble (selon role) + Mon repas des que l'utilisateur cumule un role chef — admin+chef cumule desormais acces dashboard ET fiche perso (avant : exclusifs) ; landing auto sur "Mon repas" pour manager+chef ou admin+chef (point 5 etendu)
 │       ├── KitchenManagementPanel.tsx # Gestion (responsable RW / admin R) : bloc allergies editable inline (etat vide distinct), etat du planning (badge Publie/Non publie + toggle live + jauge capacite), roster equipe cuisine (avatars, Sans affectation en liste scrollable), + liste des fiches (MealFichesList, manager only) ; reglage chefRoleId deplace dans ChefRoleSettings (plus dans ce panneau)
 │       ├── KitchenDashboard.tsx       # Vue d'ensemble admin (lecture seule, meme habillage visuel que Gestion) : tuiles KPI (chefs/courses/sans-affectation), statut de publication en lecture seule, roster en chips avatar, fiches repas en cartes bordure coloree par statut (Evolutions.md point 5, cumulatif avec le role chef desormais)
 │       ├── ChefRoleSettings.tsx       # Popover reglage "ID du role Discord des chefs" (gear en en-tete de KitchenTab, manager only), extrait de KitchenManagementPanel
-│       ├── PersonAvatar.tsx           # Pastille d'initiales partagee (roster + chef d'une fiche repas)
-│       ├── icons.tsx                  # Pictos trait SVG (maquette Cuisine, ecrans Gestion/Dashboard uniquement — le reste de l'appli reste en emoji)
-│       ├── ui.tsx                     # CARD (bordure+ombre carte) + SectionEyebrow partages entre KitchenManagementPanel/KitchenDashboard
 │       ├── KitchenBoard.tsx           # Board (onglet Infos, donnees en props) : matrice jour x service (desktop table / cartes mobiles), inscription/deplacement/desinscription equipier (jamais propose a un chef/membre courses), banniere "choisis ton creneau", + AssistantSwapPanel si l'equipier a un creneau
 │       ├── MealClaimSelect.tsx        # Chef sans repas : liste deroulante des creneaux (groupes par jour, pris grises) -> claim
 │       ├── MealSwapPanel.tsx          # Chef avec repas : proposer un echange (repas d'un autre chef) OU prendre un creneau libre instantanement (tag "libre", Evolutions.md point 1) + accepter/refuser/annuler (demandes PENDING)

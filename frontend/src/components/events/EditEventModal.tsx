@@ -7,6 +7,7 @@ import { useAdminRights } from "../../hooks/useAdminRights";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { getErrorMessage } from "../../config/apiErrors";
 import { parisDateTimeInputValue, dateTimeLocalToParisUtcIso } from "../../utils/dateTime";
+import { AlertTriangleIcon } from "../common/icons";
 
 interface EditEventForm {
   name: string;
@@ -198,8 +199,16 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
             )}
           </div>
         )}
-        <div className="flex items-center justify-between pt-2">
-          {canManageEvents && (
+        {canManageEvents && (
+          <div className="rounded-lg border border-error bg-error/10 p-3">
+            <div className="flex items-center gap-1.5 text-error font-semibold text-sm">
+              <AlertTriangleIcon className="w-3.5 h-3.5" />
+              Zone dangereuse
+            </div>
+            <p className="text-xs opacity-70 mt-1 mb-2">
+              Supprime tables, jeux, repas et inscriptions. L'événement et ses participants sont
+              conservés.
+            </p>
             <button
               type="button"
               className="btn btn-error btn-outline btn-sm"
@@ -207,18 +216,18 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
               disabled={busy}
             >
               {purging && <span className="loading loading-spinner loading-xs" />}
-              Purger l'event
-            </button>
-          )}
-          <div className="flex gap-2 ml-auto">
-            <button type="button" className="btn" onClick={handleClose} disabled={busy}>
-              Annuler
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={busy}>
-              {isSubmitting && <span className="loading loading-spinner loading-xs" />}
-              Enregistrer
+              Purger l'événement
             </button>
           </div>
+        )}
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" className="btn" onClick={handleClose} disabled={busy}>
+            Annuler
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>
+            {isSubmitting && <span className="loading loading-spinner loading-xs" />}
+            Enregistrer
+          </button>
         </div>
       </form>
     </ResponsiveModal>

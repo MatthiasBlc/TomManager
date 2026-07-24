@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { getErrorMessage } from "../../config/apiErrors";
-import { GearIcon } from "./icons";
+import { GearIcon } from "../common/icons";
 
 interface Props {
   eventId: string;

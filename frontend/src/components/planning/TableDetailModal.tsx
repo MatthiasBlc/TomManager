@@ -19,6 +19,15 @@ import {
 } from "./computeLayout";
 import { getErrorMessage } from "../../config/apiErrors";
 import { formatParisDateTime } from "../../utils/dateTime";
+import { SectionEyebrow } from "../common/ui";
+import PersonAvatar from "../common/PersonAvatar";
+import {
+  FileTextIcon,
+  AlertTriangleIcon,
+  MessageSquareIcon,
+  UsersIcon,
+  ClockIcon,
+} from "../common/icons";
 
 interface BoardGameSummary {
   id: string;
@@ -394,9 +403,13 @@ export default function TableDetailModal({
                 <span className="badge badge-ghost badge-sm">MJ joueur</span>
               )}
             </div>
-            <div className="text-sm opacity-70 space-y-0.5">
-              <p>
-                {table.type === "JDR" ? "MJ" : "Créateur"} : {displayedName(table.creator)}
+            <div className="text-sm opacity-70 space-y-1.5">
+              <p className="flex items-center gap-2">
+                <span className="text-xs uppercase tracking-wide font-bold opacity-70 w-16 shrink-0">
+                  {table.type === "JDR" ? "MJ" : "Créateur"}
+                </span>
+                <PersonAvatar name={displayedName(table.creator)} />
+                {displayedName(table.creator)}
               </p>
               <p>
                 {formatDateTime(table.startDateTime)} → {formatDateTime(table.endDateTime)}
@@ -486,197 +499,73 @@ export default function TableDetailModal({
 
             {/* Pitch */}
             {table.pitch && (
-              <div className="card bg-base-200 shadow-none">
-                <div className="card-body p-3">
-                  <h4 className="font-semibold text-sm">Pitch</h4>
-                  <p className="whitespace-pre-wrap text-sm">{table.pitch}</p>
-                </div>
+              <div>
+                <SectionEyebrow icon={<FileTextIcon className="w-3.5 h-3.5" />}>
+                  Pitch
+                </SectionEyebrow>
+                <p className="whitespace-pre-wrap text-sm">{table.pitch}</p>
               </div>
             )}
 
             {/* Triggers */}
             {table.triggers && (
-              <div className="card bg-base-200 border-l-4 border-warning shadow-none">
-                <div className="card-body p-3">
-                  <h4 className="font-semibold text-sm">Triggers</h4>
-                  <p className="whitespace-pre-wrap text-sm">{table.triggers}</p>
-                </div>
+              <div>
+                <SectionEyebrow icon={<AlertTriangleIcon className="w-3.5 h-3.5 text-warning" />}>
+                  Triggers
+                </SectionEyebrow>
+                <p className="whitespace-pre-wrap text-sm">{table.triggers}</p>
               </div>
             )}
 
             {/* Comments */}
             {table.comments && (
-              <div className="card bg-base-200 shadow-none">
-                <div className="card-body p-3">
-                  <h4 className="font-semibold text-sm">Commentaires</h4>
-                  <p className="whitespace-pre-wrap text-sm">{table.comments}</p>
-                </div>
+              <div>
+                <SectionEyebrow icon={<MessageSquareIcon className="w-3.5 h-3.5" />}>
+                  Commentaires
+                </SectionEyebrow>
+                <p className="whitespace-pre-wrap text-sm">{table.comments}</p>
               </div>
             )}
 
             {/* Participants confirmes */}
-            <div className="card bg-base-200 shadow-none">
-              <div className="card-body p-3">
-                <h4 className="font-semibold text-sm mb-2">{participantsHeading}</h4>
-                {confirmedCount === 0 && !vacantReservedSeats ? (
-                  <EmptyState icon={<span>👥</span>} title="Aucun participant pour l'instant" />
-                ) : (
-                  <>
-                    {confirmedCount > 0 &&
-                      (isMobile ? (
-                        <div className="divide-y divide-base-300">
-                          {/* Nom sur sa ligne, actions wrappables en dessous : 3 actions
+            <div>
+              <SectionEyebrow icon={<UsersIcon className="w-3.5 h-3.5" />}>
+                {participantsHeading}
+              </SectionEyebrow>
+              {confirmedCount === 0 && !vacantReservedSeats ? (
+                <EmptyState icon={<span>👥</span>} title="Aucun participant pour l'instant" />
+              ) : (
+                <>
+                  {confirmedCount > 0 &&
+                    (isMobile ? (
+                      <div className="divide-y divide-base-300">
+                        {/* Nom sur sa ligne, actions wrappables en dessous : 3 actions
                               textuelles ne tiennent pas cote a cote sur 390px */}
-                          {table.participants
-                            .filter((p) => p.status === "CONFIRMED")
-                            .map((p) => (
-                              <div key={p.userId} className="py-1.5">
-                                <span className="text-sm flex items-center gap-1.5">
-                                  {displayedName(p)}
-                                  {p.isOnReservedSeat && (
-                                    <span className="badge badge-warning badge-xs">réservée</span>
-                                  )}
-                                </span>
-                                {/* Aucune action sur la ligne du MJ : jamais de place reservee,
+                        {table.participants
+                          .filter((p) => p.status === "CONFIRMED")
+                          .map((p) => (
+                            <div key={p.userId} className="py-1.5">
+                              <span className="text-sm flex items-center gap-1.5">
+                                {displayedName(p)}
+                                {p.isOnReservedSeat && (
+                                  <span className="badge badge-warning badge-xs">réservée</span>
+                                )}
+                              </span>
+                              {/* Aucune action sur la ligne du MJ : jamais de place reservee,
                                     jamais de waitlist, il quitte via la suppression de table */}
-                                {canEdit && p.userId !== table.createdBy && (
-                                  <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                                    {renderConvertSeatAction(
-                                      p,
-                                      "btn btn-ghost btn-xs min-h-[44px]"
+                              {canEdit && p.userId !== table.createdBy && (
+                                <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                  {renderConvertSeatAction(p, "btn btn-ghost btn-xs min-h-[44px]")}
+                                  <button
+                                    className="btn btn-ghost btn-xs text-warning min-h-[44px]"
+                                    disabled={!!pendingAction}
+                                    onClick={() => handleDemote(p.userId)}
+                                  >
+                                    {pendingAction === `demote:${p.userId}` && (
+                                      <span className="loading loading-spinner loading-xs" />
                                     )}
-                                    <button
-                                      className="btn btn-ghost btn-xs text-warning min-h-[44px]"
-                                      disabled={!!pendingAction}
-                                      onClick={() => handleDemote(p.userId)}
-                                    >
-                                      {pendingAction === `demote:${p.userId}` && (
-                                        <span className="loading loading-spinner loading-xs" />
-                                      )}
-                                      Mettre sur liste d'attente
-                                    </button>
-                                    <button
-                                      className="btn btn-ghost btn-xs text-error min-h-[44px]"
-                                      disabled={!!pendingAction}
-                                      onClick={() => handleKick(p.userId, displayedName(p))}
-                                    >
-                                      {pendingAction === `kick:${p.userId}` && (
-                                        <span className="loading loading-spinner loading-xs" />
-                                      )}
-                                      Retirer
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                        </div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <table className="table table-xs">
-                            <thead>
-                              <tr>
-                                <th>Joueur</th>
-                                {canEdit && <th />}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {table.participants
-                                .filter((p) => p.status === "CONFIRMED")
-                                .map((p) => (
-                                  <tr key={p.userId}>
-                                    <td>
-                                      <span className="flex items-center gap-1.5">
-                                        {displayedName(p)}
-                                        {p.isOnReservedSeat && (
-                                          <span className="badge badge-warning badge-xs">
-                                            réservée
-                                          </span>
-                                        )}
-                                      </span>
-                                    </td>
-                                    {canEdit && (
-                                      <td className="flex gap-1">
-                                        {/* Aucune action sur la ligne du MJ : jamais de place
-                                            reservee, jamais de waitlist, il quitte via la
-                                            suppression de table */}
-                                        {p.userId !== table.createdBy && (
-                                          <>
-                                            {renderConvertSeatAction(p, "btn btn-ghost btn-xs")}
-                                            <button
-                                              className="btn btn-ghost btn-xs text-warning"
-                                              disabled={!!pendingAction}
-                                              onClick={() => handleDemote(p.userId)}
-                                            >
-                                              {pendingAction === `demote:${p.userId}` && (
-                                                <span className="loading loading-spinner loading-xs" />
-                                              )}
-                                              Mettre sur liste d'attente
-                                            </button>
-                                            <button
-                                              className="btn btn-ghost btn-xs text-error"
-                                              disabled={!!pendingAction}
-                                              onClick={() => handleKick(p.userId, displayedName(p))}
-                                            >
-                                              {pendingAction === `kick:${p.userId}` && (
-                                                <span className="loading loading-spinner loading-xs" />
-                                              )}
-                                              Retirer
-                                            </button>
-                                          </>
-                                        )}
-                                      </td>
-                                    )}
-                                  </tr>
-                                ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ))}
-                    {vacantReservedSeats && (
-                      <div
-                        className={`flex items-start gap-1.5 text-xs text-warning/80 ${
-                          confirmedCount > 0
-                            ? "mt-2 pt-2 border-t border-dashed border-base-300"
-                            : ""
-                        }`}
-                      >
-                        <span aria-hidden="true">⏳</span>
-                        <span>
-                          {vacantReservedSeats}
-                          <span className="block opacity-70">
-                            {canEdit
-                              ? "À attribuer depuis la liste d'attente ci-dessous."
-                              : `Le MJ ${
-                                  openReservedSeats > 1 ? "les attribuera" : "l'attribuera"
-                                } depuis la liste d'attente.`}
-                          </span>
-                        </span>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Waitlist */}
-            {waitlistCount > 0 && (
-              <div className="card bg-base-200 border-l-4 border-warning shadow-none">
-                <div className="card-body p-3">
-                  <h4 className="font-semibold text-sm mb-2">Liste d'attente ({waitlistCount})</h4>
-                  {isMobile ? (
-                    <div className="divide-y divide-base-300">
-                      {table.participants
-                        .filter((p) => p.status === "WAITLIST")
-                        .map((p) => (
-                          <div key={p.userId} className="py-1.5">
-                            <span className="text-sm">{displayedName(p)}</span>
-                            {canEdit && (
-                              <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                                {renderPromoteActions(
-                                  p.userId,
-                                  "btn btn-ghost btn-xs text-success min-h-[44px]"
-                                )}
-                                {p.userId !== table.createdBy && (
+                                    Mettre sur liste d'attente
+                                  </button>
                                   <button
                                     className="btn btn-ghost btn-xs text-error min-h-[44px]"
                                     disabled={!!pendingAction}
@@ -687,54 +576,173 @@ export default function TableDetailModal({
                                     )}
                                     Retirer
                                   </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="table table-xs">
-                        <thead>
-                          <tr>
-                            <th>Joueur</th>
-                            {canEdit && <th />}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {table.participants
-                            .filter((p) => p.status === "WAITLIST")
-                            .map((p) => (
-                              <tr key={p.userId}>
-                                <td>{displayedName(p)}</td>
-                                {canEdit && (
-                                  <td className="flex gap-1">
-                                    {renderPromoteActions(
-                                      p.userId,
-                                      "btn btn-ghost btn-xs text-success"
-                                    )}
-                                    {p.userId !== table.createdBy && (
-                                      <button
-                                        className="btn btn-ghost btn-xs text-error"
-                                        disabled={!!pendingAction}
-                                        onClick={() => handleKick(p.userId, displayedName(p))}
-                                      >
-                                        {pendingAction === `kick:${p.userId}` && (
-                                          <span className="loading loading-spinner loading-xs" />
-                                        )}
-                                        Retirer
-                                      </button>
-                                    )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="table table-xs">
+                          <thead>
+                            <tr>
+                              <th>Joueur</th>
+                              {canEdit && <th />}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {table.participants
+                              .filter((p) => p.status === "CONFIRMED")
+                              .map((p) => (
+                                <tr key={p.userId}>
+                                  <td>
+                                    <span className="flex items-center gap-1.5">
+                                      {displayedName(p)}
+                                      {p.isOnReservedSeat && (
+                                        <span className="badge badge-warning badge-xs">
+                                          réservée
+                                        </span>
+                                      )}
+                                    </span>
                                   </td>
-                                )}
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
+                                  {canEdit && (
+                                    <td className="flex gap-1">
+                                      {/* Aucune action sur la ligne du MJ : jamais de place
+                                            reservee, jamais de waitlist, il quitte via la
+                                            suppression de table */}
+                                      {p.userId !== table.createdBy && (
+                                        <>
+                                          {renderConvertSeatAction(p, "btn btn-ghost btn-xs")}
+                                          <button
+                                            className="btn btn-ghost btn-xs text-warning"
+                                            disabled={!!pendingAction}
+                                            onClick={() => handleDemote(p.userId)}
+                                          >
+                                            {pendingAction === `demote:${p.userId}` && (
+                                              <span className="loading loading-spinner loading-xs" />
+                                            )}
+                                            Mettre sur liste d'attente
+                                          </button>
+                                          <button
+                                            className="btn btn-ghost btn-xs text-error"
+                                            disabled={!!pendingAction}
+                                            onClick={() => handleKick(p.userId, displayedName(p))}
+                                          >
+                                            {pendingAction === `kick:${p.userId}` && (
+                                              <span className="loading loading-spinner loading-xs" />
+                                            )}
+                                            Retirer
+                                          </button>
+                                        </>
+                                      )}
+                                    </td>
+                                  )}
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                  {vacantReservedSeats && (
+                    <div
+                      className={`flex items-start gap-1.5 text-xs text-warning/80 ${
+                        confirmedCount > 0 ? "mt-2 pt-2 border-t border-dashed border-base-300" : ""
+                      }`}
+                    >
+                      <span aria-hidden="true">⏳</span>
+                      <span>
+                        {vacantReservedSeats}
+                        <span className="block opacity-70">
+                          {canEdit
+                            ? "À attribuer depuis la liste d'attente ci-dessous."
+                            : `Le MJ ${
+                                openReservedSeats > 1 ? "les attribuera" : "l'attribuera"
+                              } depuis la liste d'attente.`}
+                        </span>
+                      </span>
                     </div>
                   )}
-                </div>
+                </>
+              )}
+            </div>
+
+            {/* Waitlist */}
+            {waitlistCount > 0 && (
+              <div>
+                <SectionEyebrow icon={<ClockIcon className="w-3.5 h-3.5" />}>
+                  Liste d'attente ({waitlistCount})
+                </SectionEyebrow>
+                {isMobile ? (
+                  <div className="divide-y divide-base-300">
+                    {table.participants
+                      .filter((p) => p.status === "WAITLIST")
+                      .map((p) => (
+                        <div key={p.userId} className="py-1.5">
+                          <span className="text-sm">{displayedName(p)}</span>
+                          {canEdit && (
+                            <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                              {renderPromoteActions(
+                                p.userId,
+                                "btn btn-ghost btn-xs text-success min-h-[44px]"
+                              )}
+                              {p.userId !== table.createdBy && (
+                                <button
+                                  className="btn btn-ghost btn-xs text-error min-h-[44px]"
+                                  disabled={!!pendingAction}
+                                  onClick={() => handleKick(p.userId, displayedName(p))}
+                                >
+                                  {pendingAction === `kick:${p.userId}` && (
+                                    <span className="loading loading-spinner loading-xs" />
+                                  )}
+                                  Retirer
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="table table-xs">
+                      <thead>
+                        <tr>
+                          <th>Joueur</th>
+                          {canEdit && <th />}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {table.participants
+                          .filter((p) => p.status === "WAITLIST")
+                          .map((p) => (
+                            <tr key={p.userId}>
+                              <td>{displayedName(p)}</td>
+                              {canEdit && (
+                                <td className="flex gap-1">
+                                  {renderPromoteActions(
+                                    p.userId,
+                                    "btn btn-ghost btn-xs text-success"
+                                  )}
+                                  {p.userId !== table.createdBy && (
+                                    <button
+                                      className="btn btn-ghost btn-xs text-error"
+                                      disabled={!!pendingAction}
+                                      onClick={() => handleKick(p.userId, displayedName(p))}
+                                    >
+                                      {pendingAction === `kick:${p.userId}` && (
+                                        <span className="loading loading-spinner loading-xs" />
+                                      )}
+                                      Retirer
+                                    </button>
+                                  )}
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 

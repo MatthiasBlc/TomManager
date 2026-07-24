@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-// Habillage carte partage entre les ecrans Cuisine (bordure + ombre douce de la
-// maquette) : un seul endroit a ajuster si la maquette evolue.
+// Habillage carte partage dans toute l'appli (bordure + ombre douce de la
+// maquette Cuisine) : un seul endroit a ajuster si la maquette evolue.
 export const CARD =
   "card bg-base-200 border border-base-300 shadow-[0_1px_2px_rgba(0,0,0,.3),0_10px_24px_-12px_rgba(0,0,0,.5)]";
 

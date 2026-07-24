@@ -1,3 +1,5 @@
+import { CARD } from "../common/ui";
+
 interface BoardGame {
   id: string;
   name: string;
@@ -39,8 +41,8 @@ export default function BoardGameCard({
 
   return (
     <div
-      className={`card bg-base-100 shadow-sm border transition-all ${
-        onClick ? "cursor-pointer hover:shadow-md active:scale-[0.99]" : ""
+      className={`${CARD} transition-all ${
+        onClick ? "cursor-pointer hover:bg-base-300 active:scale-[0.99]" : ""
       }`}
       onClick={onClick}
     >
@@ -52,10 +54,10 @@ export default function BoardGameCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className="font-semibold truncate">
+                <h3 className="font-serif font-semibold truncate">
                   {game.name}
                   {game.yearPublished && (
-                    <span className="font-normal opacity-50 text-sm ml-1">
+                    <span className="font-sans font-normal opacity-50 text-sm ml-1">
                       ({game.yearPublished})
                     </span>
                   )}
@@ -73,17 +75,21 @@ export default function BoardGameCard({
                 )}
                 <div className="mt-1 flex flex-wrap gap-1">
                   {broughtBy.map((user) => (
-                    <span key={user.id} className="badge badge-outline badge-sm">
+                    <span key={user.id} className="badge badge-ghost badge-sm">
                       {user.displayName ?? user.username}
                     </span>
                   ))}
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                {linkedTables && linkedTables.length > 0 && (
+                {linkedTables && linkedTables.length > 0 ? (
                   <span className="badge badge-info badge-sm">
                     {linkedTables.length} table
                     {linkedTables.length > 1 ? "s" : ""}
+                  </span>
+                ) : (
+                  <span className="badge badge-ghost badge-sm border-dashed opacity-60">
+                    Aucune table
                   </span>
                 )}
                 {canRemove && entryToRemove && (

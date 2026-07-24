@@ -1,8 +1,8 @@
 import EmptyState from "../common/EmptyState";
 import { serviceLabel } from "./units";
 import { formatParisDate } from "../../utils/dateTime";
-import { CARD, SectionEyebrow } from "./ui";
-import PersonAvatar from "./PersonAvatar";
+import { CARD, SectionEyebrow } from "../common/ui";
+import PersonAvatar from "../common/PersonAvatar";
 import {
   UsersIcon,
   UtensilsIcon,
@@ -10,7 +10,7 @@ import {
   EyeOffIcon,
   ShoppingCartIcon,
   InfoCircleIcon,
-} from "./icons";
+} from "../common/icons";
 
 interface Person {
   id: string;

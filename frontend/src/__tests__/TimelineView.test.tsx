@@ -247,7 +247,7 @@ describe("TimelineView", () => {
         onTableClick={vi.fn()}
       />
     );
-    expect(screen.getByText("⚠ Conflit")).toBeInTheDocument();
+    expect(screen.getByText(/Conflit/)).toBeInTheDocument();
   });
 
   it("shows the conflicting count to the chef of the meal", () => {
@@ -259,7 +259,7 @@ describe("TimelineView", () => {
         onTableClick={vi.fn()}
       />
     );
-    expect(screen.getByText("⚠ 2 conflits")).toBeInTheDocument();
+    expect(screen.getByText(/2 conflits/)).toBeInTheDocument();
   });
 
   it("does not show the conflicting count to a non-chef viewer", () => {

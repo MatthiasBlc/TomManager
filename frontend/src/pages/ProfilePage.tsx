@@ -8,6 +8,9 @@ import { useTheme } from "../contexts/ThemeContext";
 import InfoTooltip from "../components/common/InfoTooltip";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { getErrorMessage } from "../config/apiErrors";
+import { CARD, SectionEyebrow } from "../components/common/ui";
+import DiscordIcon from "../components/common/DiscordIcon";
+import { UserIcon, MoonIcon, SunIcon, ShieldIcon } from "../components/common/icons";
 
 const ADMIN_RIGHT_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
   {
@@ -143,178 +146,152 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-lg p-4 space-y-6">
-      <h1 className="text-2xl font-bold">Profil</h1>
+      <h1 className="font-serif text-2xl font-bold">Profil</h1>
 
-      <div className="card bg-base-100 shadow">
-        <div className="card-body space-y-2">
-          <h2 className="card-title text-base">Compte</h2>
-          <div className="flex items-center gap-3">
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt="avatar" className="w-10 h-10 rounded-full" />
-            ) : (
-              <div className="avatar placeholder">
-                <div className="bg-neutral text-neutral-content rounded-full w-10 h-10 flex items-center justify-center">
-                  <span className="text-sm">
-                    {(user.displayName ?? user.username).slice(0, 2).toUpperCase()}
-                  </span>
-                </div>
+      <div>
+        <SectionEyebrow icon={<UserIcon className="w-3.5 h-3.5" />}>Compte</SectionEyebrow>
+        <div className={CARD}>
+          <div className="card-body p-4">
+            <div className="flex items-center gap-3">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt="avatar" className="w-10 h-10 rounded-full" />
+              ) : (
+                <span className="w-10 h-10 rounded-full bg-primary/15 text-primary text-sm font-bold flex items-center justify-center shrink-0">
+                  {(user.displayName ?? user.username).slice(0, 2).toUpperCase()}
+                </span>
+              )}
+              <div>
+                <p className="font-medium">{user.displayName ?? user.username}</p>
+                {user.email && <p className="text-sm opacity-60">{user.email}</p>}
+                <span className="badge badge-sm mt-1">{user.role}</span>
               </div>
-            )}
-            <div>
-              <p className="font-medium">{user.displayName ?? user.username}</p>
-              {user.email && <p className="text-sm opacity-60">{user.email}</p>}
-              <span className="badge badge-sm">{user.role}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="card bg-base-100 shadow">
-        <div className="card-body">
-          <h2 className="card-title text-base">Apparence</h2>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {theme === "dark" ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"
-                  />
-                </svg>
-              )}
-              <span className="text-sm">{theme === "dark" ? "Mode sombre" : "Mode clair"}</span>
+      <div>
+        <SectionEyebrow icon={<SunIcon className="w-3.5 h-3.5" />}>Apparence</SectionEyebrow>
+        <div className={CARD}>
+          <div className="card-body p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {theme === "dark" ? (
+                  <MoonIcon className="h-5 w-5" />
+                ) : (
+                  <SunIcon className="h-5 w-5" />
+                )}
+                <span className="text-sm">{theme === "dark" ? "Mode sombre" : "Mode clair"}</span>
+              </div>
+              <input
+                type="checkbox"
+                className="toggle toggle-sm"
+                checked={theme === "dark"}
+                onChange={toggleTheme}
+                aria-label="Activer le mode sombre"
+              />
             </div>
-            <input
-              type="checkbox"
-              className="toggle toggle-sm"
-              checked={theme === "dark"}
-              onChange={toggleTheme}
-              aria-label="Activer le mode sombre"
-            />
           </div>
         </div>
       </div>
 
       {user.role === "ADMIN" && (
-        <div className="card bg-base-100 shadow">
-          <div className="card-body space-y-3">
-            <h2 className="card-title text-base">Droits d'administration</h2>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-medium">Activer tous les droits</span>
-                <InfoTooltip text="Active ou désactive d'un coup tous les droits d'administration ci-dessous. Les options Beta ne sont pas concernées." />
+        <div>
+          <SectionEyebrow icon={<ShieldIcon className="w-3.5 h-3.5" />}>
+            Droits d'administration
+          </SectionEyebrow>
+          <div className={CARD}>
+            <div className="card-body p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-medium">Activer tous les droits</span>
+                  <InfoTooltip text="Active ou désactive d'un coup tous les droits d'administration ci-dessous. Les options Beta ne sont pas concernées." />
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-sm toggle-primary"
+                  checked={allRightsEnabled}
+                  onChange={handleMasterToggle}
+                  aria-label="Activer tous les droits"
+                />
               </div>
-              <input
-                type="checkbox"
-                className="toggle toggle-sm toggle-primary"
-                checked={allRightsEnabled}
-                onChange={handleMasterToggle}
-                aria-label="Activer tous les droits"
-              />
+              <div className="h-px bg-base-300" />
+              {ADMIN_RIGHT_ROWS.map((row) => (
+                <div key={row.key} className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm">{row.label}</span>
+                    <InfoTooltip text={row.tip} />
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-sm"
+                    checked={preferences[row.key]}
+                    onChange={(e) => handlePreferenceToggle(row.key, e.target.checked)}
+                    aria-label={row.label}
+                  />
+                </div>
+              ))}
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-[0.68rem] uppercase tracking-wider font-bold opacity-50">
+                  Beta
+                </span>
+                <div className="h-px flex-1 bg-base-300" />
+              </div>
+              {BETA_ROWS.map((row) => (
+                <div key={row.key} className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm">{row.label}</span>
+                    <span className="badge badge-warning badge-xs">Beta</span>
+                    <InfoTooltip text={row.tip} />
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-sm"
+                    checked={preferences[row.key]}
+                    onChange={(e) => handlePreferenceToggle(row.key, e.target.checked)}
+                    aria-label={row.label}
+                  />
+                </div>
+              ))}
             </div>
-            <div className="divider my-0" />
-            {ADMIN_RIGHT_ROWS.map((row) => (
-              <div key={row.key} className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <span className="text-sm">{row.label}</span>
-                  <InfoTooltip text={row.tip} />
-                </div>
-                <input
-                  type="checkbox"
-                  className="toggle toggle-sm"
-                  checked={preferences[row.key]}
-                  onChange={(e) => handlePreferenceToggle(row.key, e.target.checked)}
-                  aria-label={row.label}
-                />
-              </div>
-            ))}
-            <div className="divider my-0">Beta</div>
-            {BETA_ROWS.map((row) => (
-              <div key={row.key} className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <span className="text-sm">{row.label}</span>
-                  <span className="badge badge-warning badge-xs">Beta</span>
-                  <InfoTooltip text={row.tip} />
-                </div>
-                <input
-                  type="checkbox"
-                  className="toggle toggle-sm"
-                  checked={preferences[row.key]}
-                  onChange={(e) => handlePreferenceToggle(row.key, e.target.checked)}
-                  aria-label={row.label}
-                />
-              </div>
-            ))}
           </div>
         </div>
       )}
 
-      <div className="card bg-base-100 shadow">
-        <div className="card-body space-y-3">
-          <h2 className="card-title text-base">Discord</h2>
-
-          {user.discordId ? (
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 127.14 96.36"
-                  fill="currentColor"
-                  className="opacity-70"
+      <div>
+        <SectionEyebrow icon={<DiscordIcon size={14} />}>Discord</SectionEyebrow>
+        <div className={CARD}>
+          <div className="card-body p-4 space-y-3">
+            {user.discordId ? (
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <DiscordIcon size={20} />
+                  <span className="text-sm font-medium">{user.discordUsername}</span>
+                </div>
+                <button
+                  className="btn btn-sm btn-outline btn-error"
+                  onClick={handleUnlink}
+                  disabled={!user.email || unlinking}
+                  title={!user.email ? "Impossible de délier : aucun compte local" : undefined}
                 >
-                  <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
-                </svg>
-                <span className="text-sm font-medium">{user.discordUsername}</span>
+                  {unlinking && <span className="loading loading-spinner loading-xs" />}
+                  Délier
+                </button>
               </div>
-              <button
-                className="btn btn-sm btn-outline btn-error"
-                onClick={handleUnlink}
-                disabled={!user.email || unlinking}
-                title={!user.email ? "Impossible de délier : aucun compte local" : undefined}
-              >
-                {unlinking && <span className="loading loading-spinner loading-xs" />}
-                Délier
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm opacity-60">Aucun compte Discord lié</p>
-              <button
-                className="btn btn-sm btn-outline gap-2"
-                onClick={handleLink}
-                disabled={linking}
-              >
-                <svg width="16" height="16" viewBox="0 0 127.14 96.36" fill="currentColor">
-                  <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
-                </svg>
-                Lier un compte Discord
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm opacity-60">Aucun compte Discord lié</p>
+                <button
+                  className="btn btn-sm btn-outline gap-2"
+                  onClick={handleLink}
+                  disabled={linking}
+                >
+                  <DiscordIcon size={16} />
+                  Lier un compte Discord
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="md:hidden">

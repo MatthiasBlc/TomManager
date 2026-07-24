@@ -4,7 +4,8 @@ interface Props {
 }
 
 // Pastille d'initiales (maquette Cuisine) : reprise partout ou une personne est
-// listee (roster chefs/courses/sans affectation, chef d'une fiche repas).
+// listee (roster chefs/courses/sans affectation, chef d'une fiche repas, MJ de
+// table, etc.).
 export default function PersonAvatar({ name, className = "" }: Props) {
   const initials = name.trim().slice(0, 2).toUpperCase();
   return (

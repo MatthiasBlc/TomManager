@@ -11,8 +11,9 @@ export default function MobileHeader({ isOnline }: { isOnline: boolean }) {
       className={`fixed left-0 right-0 z-50 bg-base-100 border-b border-base-300 ${isOnline ? "top-0" : "top-10"}`}
     >
       <div className="flex items-center justify-between h-12 px-3">
-        <Link to="/" className="font-bold text-lg">
-          TM
+        <Link to="/" className="flex items-center gap-1.5 font-serif text-lg font-bold">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+          ToM
         </Link>
         {user && (
           <div className="flex items-center gap-1">
