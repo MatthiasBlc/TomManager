@@ -24,6 +24,10 @@ export default defineConfig({
         test: {
           name: "unit",
           include: ["src/__tests__/unit/**/*.test.ts"],
+          // Les options de la config racine (testTimeout, hookTimeout...) ne sont pas
+          // heritees par les projets (workspace Vitest) : elles doivent etre repetees ici.
+          testTimeout: 30000,
+          hookTimeout: 30000,
         },
       },
       {
@@ -31,6 +35,10 @@ export default defineConfig({
           name: "integration",
           include: ["src/__tests__/integration/**/*.test.ts"],
           setupFiles: ["./src/__tests__/setup/globalSetup.ts"],
+          // Les options de la config racine (testTimeout, hookTimeout...) ne sont pas
+          // heritees par les projets (workspace Vitest) : elles doivent etre repetees ici.
+          testTimeout: 30000,
+          hookTimeout: 30000,
           pool: "forks",
           // beforeEach/afterEach truncate the whole DB (globalSetup.ts) : les fichiers de
           // test doivent s'executer sequentiellement, sinon leurs hooks se marchent dessus
