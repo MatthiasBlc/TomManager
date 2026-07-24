@@ -10,6 +10,7 @@ import MealFicheEditor from "./MealFicheEditor";
 import MealClaimSelect from "./MealClaimSelect";
 import MealSwapPanel, { type SwapRequest } from "./MealSwapPanel";
 import ChefRoleSettings from "./ChefRoleSettings";
+import { EyeIcon } from "./icons";
 
 interface Props {
   eventId: string;
@@ -19,7 +20,10 @@ interface Props {
   onChanged: () => void;
 }
 
-type Section = "gestion" | "mon-repas";
+// "gestion" (responsable) et "vue-ensemble" (admin sans droit de gestion) sont
+// mutuellement exclusifs (cf isManager/hasVueEnsemble ci-dessous) : au plus une
+// des deux est disponible en meme temps que "mon-repas".
+type Section = "gestion" | "vue-ensemble" | "mon-repas";
 
 export default function KitchenTab({
   eventId,
@@ -30,27 +34,37 @@ export default function KitchenTab({
 }: Props) {
   const { user } = useAuth();
   const { isAdmin } = useAdminRights();
-  const [section, setSection] = useState<Section>("gestion");
+  // null = pas encore de choix explicite (clic ou auto-selection point 5) :
+  // activeSection retombe alors sur primarySection, jamais sur une valeur figee
+  // qui pourrait ne pas correspondre au role reel de l'utilisateur (evite un
+  // flash de "Gestion" pour un admin+chef qui n'est pas responsable).
+  const [section, setSection] = useState<Section | null>(null);
   const hasAutoSelected = useRef(false);
 
-  // Point 5 : un utilisateur qui cumule responsable ET chef atterrit sur "Mon
-  // repas" en premier. Ne s'execute qu'une fois (des que les donnees sont
-  // chargees) pour ne pas ecraser un changement d'onglet manuel ulterieur.
+  // Point 5 : un utilisateur qui cumule un acces admin/responsable ET chef
+  // atterrit sur "Mon repas" en premier (c'est probablement pourquoi il vient).
+  // Ne s'execute qu'une fois (des que les donnees sont chargees) pour ne pas
+  // ecraser un changement d'onglet manuel ulterieur.
   useEffect(() => {
     if (hasAutoSelected.current || !data) return;
     hasAutoSelected.current = true;
-    if (data.currentUserKitchenRole === "manager" && data.isChef) {
+    const managerRole = data.currentUserKitchenRole === "manager";
+    if (data.isChef && (managerRole || isAdmin)) {
       setSection("mon-repas");
     }
-  }, [data]);
+  }, [data, isAdmin]);
 
   if (loading) return <SkeletonCardGrid count={2} />;
   if (!data) return null;
 
   const isManager = data.currentUserKitchenRole === "manager";
   const isChefUser = data.isChef;
-  const isPlainAdmin = isAdmin && !isManager && !isChefUser;
-  const canSeeTab = isAdmin || isManager || isChefUser;
+  // Un admin garde son acces "vue d'ensemble" meme s'il est par ailleurs chef :
+  // les deux roles se cumulent, ne s'excluent plus (cf KitchenDashboard).
+  // Redondant si responsable (Gestion couvre deja tout ce que montre la vue
+  // d'ensemble, et plus), d'ou le !isManager.
+  const hasVueEnsemble = isAdmin && !isManager;
+  const canSeeTab = isManager || hasVueEnsemble || isChefUser;
 
   if (!canSeeTab) {
     return (
@@ -62,35 +76,35 @@ export default function KitchenTab({
     );
   }
 
-  if (isPlainAdmin) {
-    return (
-      <div className="space-y-4">
-        <h1 className="font-serif text-2xl font-semibold">Cuisine</h1>
-        <KitchenDashboard
-          chefsCount={data.dashboard?.chefsCount ?? 0}
-          coursesCount={data.dashboard?.coursesCount ?? 0}
-          unassignedCount={data.dashboard?.unassignedCount ?? 0}
-          equipierPlanningEnabled={data.equipierPlanningEnabled}
-          meals={data.meals}
-          chefs={data.dashboard?.chefs ?? []}
-          coursesMembers={data.dashboard?.coursesMembers ?? []}
-          unassigned={data.dashboard?.unassigned ?? []}
-        />
-      </div>
-    );
-  }
+  const primarySection: "gestion" | "vue-ensemble" | null = isManager
+    ? "gestion"
+    : hasVueEnsemble
+      ? "vue-ensemble"
+      : null;
+  const showSelector = primarySection !== null && isChefUser;
+  const activeSection: Section = section ?? primarySection ?? "mon-repas";
+  const primaryLabel = primarySection === "gestion" ? "Gestion" : "Vue d'ensemble";
 
   const myMeal = data.meals.find((m) => m.chef?.id === user?.id) ?? null;
-  const showManagement = isManager && (!isChefUser || section === "gestion");
+  const showManagement = activeSection === "gestion";
+  const showVueEnsemble = activeSection === "vue-ensemble";
   // Parcours chef : choisir un creneau de la grille tant qu'il n'a pas de repas,
   // puis proposer/recevoir un echange une fois son creneau reclame.
-  const showChefTools = isChefUser && (!isManager || section === "mon-repas");
+  const showChefTools = activeSection === "mon-repas";
 
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="font-serif text-2xl font-semibold">Cuisine</h1>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="font-serif text-2xl font-semibold">Cuisine</h1>
+            {showVueEnsemble && (
+              <span className="badge badge-ghost gap-1 text-xs font-bold uppercase tracking-wide">
+                <EyeIcon />
+                Vue d'ensemble
+              </span>
+            )}
+          </div>
           {isManager && (
             <ChefRoleSettings
               eventId={eventId}
@@ -99,21 +113,26 @@ export default function KitchenTab({
             />
           )}
         </div>
-        {isManager && isChefUser && (
+        {showVueEnsemble && (
+          <p className="text-sm opacity-60">
+            Vous n'êtes pas responsable cuisine sur cet événement : lecture seule.
+          </p>
+        )}
+        {showSelector && (
           <div className="inline-flex gap-0.5 rounded-lg border border-base-300 bg-base-200 p-1">
             <button
               className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-                section === "gestion"
+                activeSection === primarySection
                   ? "bg-base-100 font-semibold shadow-sm"
                   : "text-base-content/60 hover:text-base-content"
               }`}
-              onClick={() => setSection("gestion")}
+              onClick={() => setSection(primarySection as Section)}
             >
-              Gestion
+              {primaryLabel}
             </button>
             <button
               className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-                section === "mon-repas"
+                activeSection === "mon-repas"
                   ? "bg-base-100 font-semibold shadow-sm"
                   : "text-base-content/60 hover:text-base-content"
               }`}
@@ -137,6 +156,19 @@ export default function KitchenTab({
           meals={data.meals}
           capacitySummary={data.capacitySummary}
           onChanged={fetchKitchen}
+        />
+      )}
+
+      {showVueEnsemble && (
+        <KitchenDashboard
+          chefsCount={data.dashboard?.chefsCount ?? 0}
+          coursesCount={data.dashboard?.coursesCount ?? 0}
+          unassignedCount={data.dashboard?.unassignedCount ?? 0}
+          equipierPlanningEnabled={data.equipierPlanningEnabled}
+          meals={data.meals}
+          chefs={data.dashboard?.chefs ?? []}
+          coursesMembers={data.dashboard?.coursesMembers ?? []}
+          unassigned={data.dashboard?.unassigned ?? []}
         />
       )}
 

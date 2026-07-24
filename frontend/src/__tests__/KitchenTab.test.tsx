@@ -180,4 +180,34 @@ describe("KitchenTab — visibility matrix", () => {
     await waitFor(() => expect(screen.getByText("État du planning")).toBeInTheDocument());
     expect(screen.queryByText("Choisir mon créneau")).not.toBeInTheDocument();
   });
+
+  it("gives an admin who is also chef both 'Vue d'ensemble' and 'Mon repas' (cumulative, not exclusive)", async () => {
+    mockAuth({ id: "adminchef1", role: "ADMIN" }, {});
+    renderTab({
+      currentUserKitchenRole: "chef",
+      isChef: true,
+      equipierPlanningEnabled: false,
+      chefRoleId: null,
+      allergiesNotes: null,
+      dashboard: {
+        chefsCount: 1,
+        coursesCount: 0,
+        unassignedCount: 1,
+        chefs: [],
+        coursesMembers: [],
+        unassigned: [],
+      },
+      meals: [],
+    });
+
+    // Point 5 etendu : admin+chef atterrit sur "Mon repas" en premier, pas la vue d'ensemble.
+    await waitFor(() => expect(screen.getByText("Choisir mon créneau")).toBeInTheDocument());
+    expect(screen.queryByText("Équipe cuisine")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Vue d'ensemble" }));
+    await waitFor(() => expect(screen.getByText("Équipe cuisine")).toBeInTheDocument());
+    expect(screen.queryByText("Choisir mon créneau")).not.toBeInTheDocument();
+    // Pas la gestion complete (pas responsable) : pas d'"État du planning".
+    expect(screen.queryByText("État du planning")).not.toBeInTheDocument();
+  });
 });

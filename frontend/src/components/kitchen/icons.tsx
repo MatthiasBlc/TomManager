@@ -102,6 +102,26 @@ export function CheckIcon({ className = "w-3 h-3" }: IconProps) {
   );
 }
 
+export function ShoppingCartIcon({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+    </svg>
+  );
+}
+
+export function InfoCircleIcon({ className = "w-4 h-4" }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  );
+}
+
 export function CloseIcon({ className = "w-2.5 h-2.5" }: IconProps) {
   return (
     <svg {...base} strokeWidth={3} className={className} aria-hidden="true">

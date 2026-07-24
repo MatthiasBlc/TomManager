@@ -219,6 +219,70 @@ describe("Kitchen API", () => {
       });
     });
 
+    it("gives an admin who is also chef both the dashboard AND their own fiche (cumulative, not exclusive)", async () => {
+      const { user: managerUser, cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie);
+
+      await request
+        .patch(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", managerCookie)
+        .send({ allergiesNotes: "Allergie noix" });
+
+      const { user: adminChefUser, cookie: adminChefCookie } = await setupAdmin({
+        email: "adminchef@example.com",
+        username: "adminchef",
+      });
+      await prisma.eventParticipation.create({
+        data: { eventId: event.id, userId: adminChefUser.id },
+      });
+      await request
+        .post(`/api/events/${event.id}/kitchen/chefs`)
+        .set("Cookie", managerCookie)
+        .send({ userId: adminChefUser.id });
+
+      const meal = await prisma.meal.create({
+        data: {
+          eventKitchenId: (
+            await prisma.eventKitchen.findUniqueOrThrow({ where: { eventId: event.id } })
+          ).id,
+          chefUserId: adminChefUser.id,
+          name: "Couscous",
+          service: "DINNER",
+          startDateTime: new Date("2026-06-01T11:00:00Z"),
+          endDateTime: new Date("2026-06-01T13:00:00Z"),
+          maxAssistants: 2,
+        },
+      });
+      await prisma.mealIngredient.create({
+        data: { mealId: meal.id, name: "Semoule", quantity: 1, unit: "KG" },
+      });
+
+      const res = await request
+        .get(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", adminChefCookie);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.currentUserKitchenRole).toBe("chef");
+      expect(res.body.data.isChef).toBe(true);
+      // Toujours ses propres fiches (chef => isFullReader), meme en cumulant admin
+      expect(res.body.data.allergiesNotes).toBe("Allergie noix");
+      expect(res.body.data.meals[0].ingredients).toEqual([
+        expect.objectContaining({ name: "Semoule" }),
+      ]);
+      // Et desormais aussi le dashboard admin (avant : exclusif avec le role chef)
+      expect(res.body.data.dashboard).toEqual({
+        chefsCount: 1,
+        coursesCount: 0,
+        unassignedCount: 1,
+        chefs: [{ id: adminChefUser.id, username: "adminchef", displayName: null, source: "MANUAL" }],
+        coursesMembers: [],
+        unassigned: [{ id: managerUser.id, username: "manager1", displayName: null }],
+      });
+      // Toujours pas la gestion complete (pas responsable)
+      expect(res.body.data.chefs).toBeUndefined();
+      expect(res.body.data.capacitySummary).toBeUndefined();
+    });
+
     it("exposes isCoursesMember as a self flag, never a nominative leak", async () => {
       const { cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie);

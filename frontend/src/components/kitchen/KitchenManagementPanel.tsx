@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useConfirm } from "../../contexts/ConfirmContext";
@@ -6,6 +6,7 @@ import EmptyState from "../common/EmptyState";
 import { getErrorMessage } from "../../config/apiErrors";
 import MealFichesList, { type MealFiche } from "./MealFichesList";
 import PersonAvatar from "./PersonAvatar";
+import { CARD, SectionEyebrow } from "./ui";
 import {
   AlertTriangleIcon,
   PencilIcon,
@@ -15,25 +16,6 @@ import {
   EyeIcon,
   EyeOffIcon,
 } from "./icons";
-
-// Habillage carte partage par tout le panneau (bordure + ombre douce de la
-// maquette Cuisine) : un seul endroit a ajuster si la maquette evolue.
-const CARD =
-  "card bg-base-200 border border-base-300 shadow-[0_1px_2px_rgba(0,0,0,.3),0_10px_24px_-12px_rgba(0,0,0,.5)]";
-
-// Label de section "eyebrow" (petites majuscules + filet) de la maquette,
-// pour distinguer les titres de section des titres de carte.
-function SectionEyebrow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-2 mb-2">
-      <span className="text-base-content/50 shrink-0">{icon}</span>
-      <h4 className="text-xs uppercase tracking-wider font-bold text-base-content/60 shrink-0">
-        {children}
-      </h4>
-      <div className="h-px flex-1 bg-base-300" />
-    </div>
-  );
-}
 
 interface Person {
   id: string;

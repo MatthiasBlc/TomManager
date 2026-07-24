@@ -465,9 +465,10 @@ export async function getKitchenView(eventId: string, userId: string | undefined
   // l'admin simple qui garde un acces "dashboard" au tableau meme sans droit particulier
   const canSeeBoard =
     isFullReader || isAdmin || (participant && (eventKitchen?.equipierPlanningEnabled ?? false));
-  // Admin simple (role ADMIN sans preference admin.kitchen, ni chef) : dashboard
-  // en lecture seule (compteurs), jamais les listes nominatives ni les fiches
-  const isPlainAdmin = isAdmin && !manager && !isChef;
+  // Admin sans droit de gestion cuisine (pas responsable) : dashboard en lecture
+  // seule (compteurs + listes nominatives), qu'il soit par ailleurs chef ou non
+  // (un admin garde son acces dashboard meme s'il cumule aussi un role chef).
+  const hasAdminOverview = isAdmin && !manager;
 
   const base = {
     eventKitchenId: eventKitchen?.id ?? null,
@@ -542,12 +543,13 @@ export async function getKitchenView(eventId: string, userId: string | undefined
     result.capacitySummary = { allocated, poolTotal: Math.max(0, poolTotal) };
   }
 
-  if (isPlainAdmin) {
-    // Admin sans preference admin.kitchen : dashboard en lecture seule. Depuis le
-    // point 5 (Evolutions.md), il recoit aussi les listes nominatives (chefs,
-    // equipe courses, sans-affectation) et les equipiers par repas (deja presents
-    // dans mealsView via canSeeBoard) — jamais les allergies/ingredients/ustensiles,
-    // qui restent chef/responsable uniquement (isFullReader).
+  if (hasAdminOverview) {
+    // Admin sans droit de gestion cuisine : dashboard en lecture seule, meme s'il
+    // est par ailleurs chef (il garde alors aussi ses fiches via isFullReader).
+    // Depuis le point 5 (Evolutions.md), il recoit aussi les listes nominatives
+    // (chefs, equipe courses, sans-affectation) et les equipiers par repas (deja
+    // presents dans mealsView via canSeeBoard) — jamais les ingredients/ustensiles
+    // des fiches, qui restent chef/responsable uniquement (isFullReader).
     const roster = await computeRosterLists(eventId, eventKitchen.id);
 
     result.dashboard = {

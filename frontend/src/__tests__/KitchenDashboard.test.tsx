@@ -27,7 +27,8 @@ const baseProps = {
 describe("KitchenDashboard", () => {
   it("shows nominative chefs/courses/unassigned lists (point 5, Evolutions.md)", () => {
     render(<KitchenDashboard {...baseProps} />);
-    expect(screen.getByText("Alice")).toBeInTheDocument();
+    // Alice apparait deux fois (roster Chefs + chef assigne sur la fiche repas)
+    expect(screen.getAllByText("Alice").length).toBeGreaterThan(0);
     expect(screen.getByText("Charlie")).toBeInTheDocument();
     expect(screen.getByText("Dan")).toBeInTheDocument();
   });
@@ -38,16 +39,16 @@ describe("KitchenDashboard", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("shows a green 'Activé' badge when the equipier planning is enabled", () => {
+  it("shows a green 'Publié' badge when the equipier planning is enabled", () => {
     render(<KitchenDashboard {...baseProps} equipierPlanningEnabled={true} />);
-    const badge = screen.getByText("Activé");
+    const badge = screen.getByText("Publié");
     expect(badge).toHaveClass("badge-success");
   });
 
-  it("shows a red 'Désactivé' badge when the equipier planning is disabled", () => {
+  it("shows a warning 'Non publié' badge when the equipier planning is disabled", () => {
     render(<KitchenDashboard {...baseProps} equipierPlanningEnabled={false} />);
-    const badge = screen.getByText("Désactivé");
-    expect(badge).toHaveClass("badge-error");
+    const badge = screen.getByText("Non publié");
+    expect(badge).toHaveClass("badge-warning");
   });
 
   it("renders roster blocks and meal cards in a responsive grid", () => {
