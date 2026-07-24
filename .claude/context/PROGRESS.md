@@ -1,13 +1,13 @@
 # Avancement du projet
 
-## Phase actuelle : CookV1 evolutions (module cuisine v1.1)
+## Phase actuelle : Repartition vege/carne par repas (evolution CookV1)
 
-CookV1 (lots A a G) est entierement livre, voir `docs/features/CookV1/ROADMAP.md`. Les 7
-points d'evolution post-V1 sont implementes : echange chef instantane vers un creneau
-libre (point 1), visibilite capacite (point 2), exclusivite des roles auto-unassign/
-auto-claim (point 3), nouvel echange entre equipiers (point 4), dashboard admin simple
-nominatif (point 5), grille responsive Gestion (point 6), badge planning equipier
-(point 7). Lot H (notifications cuisine) livre sur `feature/kitchen-notifications`.
+En cours sur `feature/kitchen-diet-split`, voir
+`docs/features/KitchenDietSplit/ROADMAP.md` (spec :
+`docs/features/KitchenDietSplit/SPEC_KITCHEN_DIET_SPLIT.md`).
+
+CookV1 (lots A a G) + les 7 points d'evolution post-V1 sont entierement livres, voir
+`docs/features/CookV1/ROADMAP.md`.
 
 Prochaines etapes : `docs/NEXT_STEPS.md`
 Test manuel complet : `docs/MANUAL_TESTING.md`
