@@ -7,6 +7,7 @@ import {
   KITCHEN_WIDE_EVENT_BOUNDS,
 } from "../setup/testHelpers";
 import prisma from "../../util/db";
+import { slotName } from "../../services/kitchenPlanning";
 
 async function enableKitchenManager(userId: string) {
   await prisma.userPreference.upsert({
@@ -379,9 +380,13 @@ describe("Meal swap API", () => {
       const claimed = await getMeal(event.id, managerCookie, orphan.id);
 
       // Le creneau d'origine devient orphelin ; ses equipiers/horaires/service/
-      // capacite restent inchanges.
+      // capacite restent inchanges. Sa recette (nom) doit repartir du nom par
+      // defaut du creneau, pas rester sur "Tartiflette" (sinon la recette semble
+      // dupliquee entre l'ancien et le nouveau creneau, cf regression signalee).
       expect(vacated.chef).toBeNull();
       expect(vacated.service).toBe("LUNCH");
+      expect(vacated.name).toBe(slotName("LUNCH", new Date(vacated.startDateTime)));
+      expect(vacated.name).not.toBe("Tartiflette");
       expect(vacated.assistants.map((a: { id: string }) => a.id)).toEqual([eq1.user.id]);
 
       // Le nouveau creneau recoit le chef + la recette.

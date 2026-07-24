@@ -26,6 +26,8 @@ export function serviceLabel(service: string): string {
   return SERVICE_OPTIONS.find((s) => s.value === service)?.label ?? service;
 }
 
+export const SERVICE_ICONS: Record<string, string> = { LUNCH: "☀️", DINNER: "🌙" };
+
 // Libelle de jour pour regrouper les creneaux repas (ex: "samedi 1 aout"), toujours
 // en heure de Paris (cf frontend/src/utils/dateTime.ts).
 export function dayLabel(iso: string): string {

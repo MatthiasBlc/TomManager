@@ -9,6 +9,7 @@ import {
 } from "./kitchen";
 import { getMealDetail } from "./meal";
 import { lockMealRowsSorted, moveRecipeByPk, swapRecipesByPk } from "./mealTransfer";
+import { slotName } from "./kitchenPlanning";
 import { createNotification } from "./notification";
 
 function displayNameOf(user: { displayName: string | null; username: string } | null): string {
@@ -158,7 +159,14 @@ export async function moveToOrphanMeal(
     }
 
     const movedName = freshRequesterMeal.name;
-    await tx.meal.update({ where: { id: freshRequesterMeal.id }, data: { chefUserId: null } });
+    // Le creneau quitte redevient orphelin : sa recette (nom) doit repartir du nom
+    // par defaut du creneau, sinon elle resterait affichee sans chef ni ingredients
+    // (le reste de la recette, lui, part bien via moveRecipeByPk ci-dessous).
+    const resetName = slotName(freshRequesterMeal.service, freshRequesterMeal.startDateTime);
+    await tx.meal.update({
+      where: { id: freshRequesterMeal.id },
+      data: { chefUserId: null, name: resetName },
+    });
     await tx.meal.update({
       where: { id: freshTargetMeal.id },
       data: { chefUserId: actingUserId, name: movedName },

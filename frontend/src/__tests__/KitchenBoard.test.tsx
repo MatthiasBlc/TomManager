@@ -88,17 +88,18 @@ describe("KitchenBoard", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders nothing for a plain admin (no admin.kitchen) when the toggle is off", () => {
-    // Un admin sans admin.kitchen doit avoir la meme experience qu'un participant
-    // lambda sur ce board (onglet Infos) : role backend "equipier"/"none", jamais un
-    // bypass sur le simple fait d'etre ADMIN.
+  it("shows the board read-only to a plain admin (no admin.kitchen), with the unpublished banner", () => {
+    // Un admin voit desormais le board en lecture seule meme sans admin.kitchen
+    // (meme habillage que Gestion/Dashboard) ; le bandeau rappelle que les
+    // equipiers ne le voient pas encore tant que le planning n'est pas publie.
     mockAuth({ id: "admin1", role: "ADMIN" }, {});
-    const { container } = renderBoard({
+    renderBoard({
       currentUserKitchenRole: "none",
       equipierPlanningEnabled: false,
       meals: [],
     });
-    expect(container.firstChild).toBeNull();
+    expect(screen.getByText(/n'est pas encore visible par les équipiers/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("shows the board for an equipier when equipierPlanningEnabled is true", () => {

@@ -3,12 +3,13 @@ import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAdminRights } from "../../hooks/useAdminRights";
 import type { KitchenViewData } from "../../hooks/useKitchenData";
 import type { MealFiche } from "./MealFichesList";
 import EmptyState from "../common/EmptyState";
 import { SkeletonCardGrid } from "../common/Skeleton";
 import { getErrorMessage } from "../../config/apiErrors";
-import { serviceLabel, dayLabel } from "./units";
+import { serviceLabel, dayLabel, SERVICE_ICONS } from "./units";
 import { parisDayKey } from "../../utils/dateTime";
 import AssistantSwapPanel, { type AssistantSwapRequest } from "./AssistantSwapPanel";
 
@@ -22,7 +23,6 @@ const displayedName = (u: Person) => u.displayName ?? u.username;
 
 type Service = "LUNCH" | "DINNER";
 const SERVICES: Service[] = ["LUNCH", "DINNER"];
-const SERVICE_ICONS: Record<Service, string> = { LUNCH: "☀️", DINNER: "🌙" };
 
 interface Props {
   eventId: string;
@@ -40,18 +40,26 @@ export default function KitchenBoard({
   onChanged: fetchKitchen,
 }: Props) {
   const { user } = useAuth();
+  const { isAdmin } = useAdminRights();
   const [, setSearchParams] = useSearchParams();
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   if (loading) return <SkeletonCardGrid count={2} />;
   if (!data) return null;
 
+  const isFullReader =
+    data.currentUserKitchenRole === "manager" || data.currentUserKitchenRole === "chef";
   const canSeeBoard =
-    data.currentUserKitchenRole === "manager" ||
-    data.currentUserKitchenRole === "chef" ||
+    isFullReader ||
+    isAdmin ||
     (data.currentUserKitchenRole === "equipier" && data.equipierPlanningEnabled);
 
   if (!canSeeBoard) return null;
+
+  // Si on arrive ici avec le flag desactive, c'est qu'on le voit uniquement via
+  // un role privilegie (manager/chef/admin) : les equipiers simples ne verraient
+  // rien (cf. canSeeBoard ci-dessus), d'ou le rappel qu'eux ne le voient pas.
+  const showDisabledForOthersBanner = !data.equipierPlanningEnabled;
 
   const currentMeal = data.meals.find((m) => m.assistants.some((a) => a.id === user?.id));
   // Point 4 : le bouton s'inscrire/se deplacer/se desinscrire n'est jamais propose
@@ -179,6 +187,15 @@ export default function KitchenBoard({
     <div className="card bg-base-100 shadow-sm">
       <div className="card-body p-4 md:p-6">
         <h3 className="card-title text-base md:text-lg">🍳 Équipe de cuisine</h3>
+
+        {showDisabledForOthersBanner && (
+          <div className="alert alert-error py-2 text-sm">
+            <span>
+              ⚠️ Ce planning n'est pas encore visible par les équipiers, seuls les responsables et
+              chefs le voient pour le moment.
+            </span>
+          </div>
+        )}
 
         {canJoin && !currentMeal && (
           <div className="alert alert-info py-2 text-sm">

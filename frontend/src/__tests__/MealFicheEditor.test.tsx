@@ -1,21 +1,15 @@
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import MealFicheEditor from "../components/kitchen/MealFicheEditor";
 import type { MealFiche } from "../components/kitchen/MealFichesList";
 
 const apiPatchMock = vi.fn();
-const apiDeleteMock = vi.fn();
-const confirmDialogMock = vi.fn();
 const toastSuccess = vi.fn();
 const toastError = vi.fn();
 
 vi.mock("../config/api", () => ({
   default: {
     patch: (...args: unknown[]) => apiPatchMock(...args),
-    delete: (...args: unknown[]) => apiDeleteMock(...args),
   },
-}));
-vi.mock("../contexts/ConfirmContext", () => ({
-  useConfirm: () => confirmDialogMock,
 }));
 vi.mock("react-hot-toast", () => ({
   default: {
@@ -40,8 +34,6 @@ const MEAL: MealFiche = {
 
 beforeEach(() => {
   apiPatchMock.mockReset();
-  apiDeleteMock.mockReset();
-  confirmDialogMock.mockReset();
   toastSuccess.mockReset();
   toastError.mockReset();
   vi.useRealTimers();
@@ -81,19 +73,10 @@ describe("MealFicheEditor", () => {
     expect(screen.getByText(/1\/3/)).toBeInTheDocument();
   });
 
-  it("warns about the number of registered assistants before deleting", async () => {
-    confirmDialogMock.mockResolvedValue(true);
-    apiDeleteMock.mockResolvedValue({});
-    const onChanged = vi.fn();
-    render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={onChanged} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
-    await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
-    expect(confirmDialogMock.mock.calls[0][0].message).toMatch(/1 équipier/);
-    await waitFor(() =>
-      expect(apiDeleteMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1")
-    );
-    expect(onChanged).toHaveBeenCalled();
+  it("shows registered assistants by name and has no way to delete the meal", () => {
+    render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /supprimer/i })).not.toBeInTheDocument();
   });
 
   it("resets fields when switching to a different meal", () => {

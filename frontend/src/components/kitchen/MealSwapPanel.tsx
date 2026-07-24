@@ -125,11 +125,17 @@ export default function MealSwapPanel({ eventId, meals, currentUserId, swaps, on
     }
   };
 
-  return (
-    <div className="card bg-base-200 shadow-none">
-      <div className="card-body p-3">
-        <h4 className="font-semibold text-sm mb-1">Échanger mon créneau</h4>
+  // Replie par defaut : action occasionnelle, ne doit pas prendre autant de
+  // place que la fiche repas a chaque visite. S'ouvre automatiquement des
+  // qu'une demande d'echange (recue ou envoyee) attend une reponse.
+  const hasPending = received.length > 0 || sent.length > 0;
 
+  return (
+    <details className="collapse collapse-arrow bg-base-200" open={hasPending || undefined}>
+      <summary className="collapse-title font-semibold text-sm min-h-0 py-3">
+        Échanger mon créneau
+      </summary>
+      <div className="collapse-content">
         {received.length > 0 && (
           <div className="mb-3">
             <p className="text-xs font-medium opacity-70 mb-1">Demandes reçues</p>
@@ -239,6 +245,6 @@ export default function MealSwapPanel({ eventId, meals, currentUserId, swaps, on
           </>
         )}
       </div>
-    </div>
+    </details>
   );
 }

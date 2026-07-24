@@ -17,7 +17,7 @@ export interface ExpectedSlot {
   endDateTime: Date;
 }
 
-function slotName(service: Service, startDateTime: Date): string {
+export function slotName(service: Service, startDateTime: Date): string {
   // Nom affiche a l'utilisateur : accents francais corrects (convention projet).
   const weekday = new Intl.DateTimeFormat("fr-FR", { timeZone: TZ, weekday: "long" }).format(
     startDateTime
