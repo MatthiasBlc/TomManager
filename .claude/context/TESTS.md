@@ -25,6 +25,16 @@ npm run test:e2e                         # Tous les projets
 npx playwright test --grep "nom"         # Un test specifique
 ```
 
+**ATTENTION - `npm test` / `npm run test:backend` (variante docker) efface les donnees de dev.**
+Ces commandes font `docker compose exec backend npm test`, qui tourne dans le conteneur
+backend contre la MEME base que le dev (`tommanager_db`). `globalSetup.ts` fait un
+`deleteMany()` sur toutes les tables `beforeEach`/`afterEach` de CHAQUE test pour
+l'isolation — donc la base dev (users, events, tables seedees) est integralement videe
+a la fin de la suite. Si des donnees de dev/demo comptent (seed manuel, tables de test
+UI), reseeder ensuite : `docker exec tommanager-backend node prisma/seed.js`.
+Alternative sans ce risque : `npm run test:db:up` + `npm run test:integration` (DB de
+test isolee sur le port 5433, ne touche jamais `tommanager_db`).
+
 ## E2E — Architecture
 
 - Playwright s'installe localement (`~/.cache/ms-playwright/`), pas dans Docker
@@ -32,6 +42,8 @@ npx playwright test --grep "nom"         # Un test specifique
 - Les tests seedent leurs propres donnees via l'API (`e2e/fixtures/seed.ts`)
 - Le login se fait par injection du cookie de session obtenu via l'API (`e2e/fixtures/session.ts` — `loginAs(page, cookie)`), pas par le formulaire (masque de l'UI, Discord uniquement)
 - En CI : le backend/frontend sont lances directement sur le runner (pas via Docker), Chromium installe via `--with-deps`
+- Specs : `auth`, `planning`, `waitlist`, `mobile`, `notifications` (temps reel : notif MJ live via socket, clic -> modale table + fermeture panneau + badge lu, sync du badge entre deux onglets via read-all), `cuisine` (CookV1 Lot G : responsable configure -> chef cree un repas -> genere le planning -> responsable ajuste vege/carne (auto-equilibrage, notif chef avec detail ancien/nouveau, KitchenDietSplit) -> equipier s'inscrit + rejoint une table chevauchante -> conflit visible dans Planning -> purge efface le contenu cuisine), `timezone` (ParisTimezone Lot F : cree une table a une heure de Paris connue + resize CalendarView, sous le projet `chromium-non-paris` uniquement)
+- Projet Playwright `chromium-non-paris` (`timezoneId: "America/New_York"`, cf `playwright.config.ts`) : reserve a `e2e/timezone.spec.ts` (`testMatch`), exclu des autres projets (`testIgnore`) — regression fuseau navigateur non-Paris (ParisTimezone)
 
 ## Configuration
 
@@ -56,7 +68,7 @@ npx playwright test --grep "nom"         # Un test specifique
 
 ## Inventaire des tests
 
-### Backend (272 tests)
+### Backend (422 tests)
 
 - `integration/health.test.ts` - Health check endpoint
 - `integration/auth.test.ts` - Auth API (signup with token, login by email/username, login with token, me, error format consistency)
@@ -67,8 +79,18 @@ npx playwright test --grep "nom"         # Un test specifique
 - `integration/boardGame.test.ts` - BoardGame API (CRUD, search local + BGG fallback, lazy fetch, from-bgg, error format) + BGG XML parsing
 - `integration/eventBoardGame.test.ts` - EventBoardGame API (add, list, remove, duplicate, non-participant, cascade)
 - `integration/socket.test.ts` - Socket.io (auth, reject without session, rooms, broadcast)
-- `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions)
+- `integration/notification.test.ts` - Notification service (create, bulk, pagination, mark read, delete) + API endpoints + triggers (table delete/update/kick, participant remove, promotions/demotions) + emissions socket de sync multi-appareils (notification:new/read/read-all/deleted, pas d'emission si ownership KO) + creation non-bloquante (null/[] si insert KO) + notifications MJ (GM_PLAYER_JOINED/WAITLISTED/LEFT, GM_TABLE_FULL, pas d'auto-notif JDS, MJ prevenu d'un update/delete admin, pas de notif sur ses propres updates) + notifications event (EVENT_UPDATED si nom/dates changent, pas de notif si rien de significatif, EVENT_DELETED, auteur exclu) + retention (purge lues >30j / non lues >90j)
 - `integration/preference.test.ts` - Preferences API (defaults false dans /me, PATCH bulk + upsert, 403 cles admin/beta pour non-admin, 400 cle inconnue/valeur non bool/body vide)
+- `integration/kitchen.test.ts` - Kitchen API CookV1 (GET modele par role + anti-fuite allergies/ingredients equipier, dashboard admin nominatif chefs/courses/sans-affectation desormais cumulatif avec le role chef (admin+chef recoit dashboard ET sa propre fiche, plus exclusif), PATCH config + ecrasement MANUAL->ROLE, chefs/courses manuels + exclusivite (2.4), orphelinage retrait chef, liste sans affectation, auto-unassign courses (equipier deja inscrit -> desinscription silencieuse au lieu de bloquer) + auto-claim chef manuel d'un creneau orphelin (Evolutions.md point 3, synchro role Discord inchangee)) ; notifications `KITCHEN_CHEF_ADDED`/`_REMOVED` (Lot H) ; `vegeCount`/`carneCount` + `eventParticipantsCount` exposes a chef/manager/admin simple, jamais a l'equipier (KitchenDietSplit)
+- `integration/meal.test.ts` - Meal API CookV1 (plus de creation manuelle : `createMealForChef` seede un repas directement via Prisma ; reclamation `claim` d'un creneau orphelin + concurrence/roster/deja-un-repas, edition champs structurants manager-only, unique 1 chef/repas, orphelinage/reassignation, ingredients/ustensiles find-or-create Product/Utensil + quantite coercee, inscription/deplacement/desinscription equipier transactionnels, capacite, exclusivite, assignation/retrait manager d'un equipier tiers `POST/DELETE .../assistants/:userId`) ; notification `KITCHEN_MEAL_CLAIMED` aux equipiers deja inscrits sur un creneau reclame (Lot H) ; `vegeCount`/`carneCount` manager-only (403 pour un chef), notification `KITCHEN_DIET_SPLIT_UPDATED` avec detail ancien/nouveau, silencieuse si valeurs inchangees ou repas orphelin (KitchenDietSplit)
+- `integration/utensil.test.ts` - Autocomplete ustensiles CookV1 (auth requise, prefix match normalise lowercase, query vide, pattern Product/Tag) (Evolutions.md point 7)
+- `integration/mealSwap.test.ts` - Echange de creneau chefs (CookV1) : swap recette+chef avec equipiers/horaires inchanges, doublon PENDING refuse, accept reserve a la cible, reject/cancel, refus contre un creneau orphelin ; `POST /meals/:mealId/move` (Evolutions.md point 1) : deplacement instantane vers un creneau libre (recette suit, creneau quitte orphelin avec equipiers inchanges), NOT_A_CHEF_WITH_MEAL, SWAP_SAME_MEAL, MEAL_NOT_ORPHAN, MEAL_NOT_FOUND, annulation des demandes d'echange PENDING referencant les repas concernes ; notifications `KITCHEN_SWAP_REQUESTED`/`_ACCEPTED`/`_REJECTED` (Lot H)
+- `integration/assistantSwap.test.ts` - Echange entre equipiers (Evolutions.md point 4) : creation bloquee si le repas cible a une place libre (TARGET_MEAL_HAS_SEATS), ASSISTANT_SWAP_SAME_MEAL, ASSISTANT_SWAP_ALREADY_PENDING, NOT_MEAL_ASSISTANT ; acceptation par n'importe quel assistant du repas cible (swap 1-pour-1 capacite-neutre), FORBIDDEN si pas sur le repas cible, ASSISTANT_SWAP_STALE (defense en profondeur) ; annulation par le demandeur seul ; auto-annulation en cascade quand la fiche du demandeur change (leave direct, devient chef, rejoint l'equipe courses) ; notifications `KITCHEN_ASSISTANT_SWAP_REQUESTED`/`_ACCEPTED` (Lot H)
+- `integration/kitchenPlanning.test.ts` + `unit/kitchenPlanning.test.ts` - Generation/reset planning (grille depuis dates `computeExpectedSlots` Paris multi-jours/1 jour/2 jours, repartition sur nouveaux creneaux, exclusion chefs/courses, idempotence double-generate, coexistence d'un repas seede hors-grille, overCapacity ; `POST /reset` supprime tous les repas en gardant les rosters, `/generate` reconstruit la grille apres reset ; `computeMealCapacities` floor/reste/clamps) ; notification `KITCHEN_OVERCAPACITY` au chef d'un repas sur-occupe (Lot H)
+- `unit/conflicts.test.ts` - Moteur de conflits unifie (CookV1 Lot F) : computeConflicts pur (chevauchement/adjacence, garde-fou meme source, isolation par personne, 3 engagements simultanes, comptage multi-personnes sur une source)
+- `unit/timezone.test.ts` - `util/timezone.ts` (ParisTimezone) : `getZoneOffsetMs` CET/CEST, `zonedWallClockToUtc` (double passe DST, cas aux bornes 2026-03-29/2026-10-25), `zonedYMD` (jour calendaire Paris pres de minuit UTC)
+- `integration/kitchenConflicts.test.ts` - Conflit cross-domaine (CookV1 Lot F) : chef occupe par son repas + inscrit a une table (visible chef ET MJ), pas de conflit si disjoint, equipier inscrit a un repas + une table chevauchante (visibilite personne/chef)
+- `integration/kitchenPurge.test.ts` - Extension purge (CookV1 Lot G) : EventKitchen+chefRoleId+config conserves, repas (cascade ingredients/assistants/AssistantSwapRequest)/courses/chefs MANUAL purges, chefs ROLE preserves par la suppression ; reconstitution ROLE au re-import (adminSync mocke : le container dev a un vrai token/guild Discord, jamais solliciter le reseau reel en test) ; no-op si pas d'EventKitchen
 
 ### Frontend (ROADMAP COMPLETE)
 
@@ -76,12 +98,13 @@ npx playwright test --grep "nom"         # Un test specifique
 - `useIsMobile.test.tsx` - Hook : valeur initiale matchMedia, mise a jour sur change, cleanup listener
 - `useOnlineStatus.test.tsx` - Hook : valeur initiale navigator.onLine, evenements online/offline, cleanup listeners
 - `useEventSocket.test.tsx` - Join immediat, re-join + onReconnected apres une reconnexion (pas au premier connect), cleanup listener
-- `useNotifications.test.tsx` - Fetch initial + unread count, toast d'erreur sur chaque catch (fetch/markAsRead/delete), refetch au reconnect socket
+- `useNotifications.test.tsx` - Fetch initial + unread count, toast d'erreur sur chaque catch (fetch/markAsRead/delete), refetch au reconnect socket, sync multi-appareils (read/read-all/deleted idempotents, echo local sans double decrement, item hors page charge, dedoublonnage notification:new)
 - `EmptyState.test.tsx` - Rendu titre, description optionnelle, icone, action
 - `FAB.test.tsx` - Rendu bouton, aria-label, click handler
 - `Skeleton.test.tsx` - Variantes (Text, Card, CardGrid, BoardGame, Notification, TableDetail, EventDetail)
-- `TableCard.test.tsx` - Rendu titre/GM/pitch/tags, badges (GM, conflit, waitlist, joined, joueur reserve), click
-- `NotificationItem.test.tsx` - Rendu contenu, lu/non-lu, navigation eventId, mark as read, delete, icones par type
+- `computeLayout.test.ts` - computeSeatBreakdown/formatSeatSummary/formatParticipantsHeading/formatVacantReservedSeats sur toute la matrice reservedSeats (sans reservation, partielle+places libres, complete+places libres, places libres epuisees mais reserve vacante, reservation totale pourvue/non pourvue), singulier/pluriel
+- `TableCard.test.tsx` - Rendu titre/GM/pitch/tags, badges (GM, conflit, waitlist, joined, joueur reserve), badge "libre" masque quand reservedSeats=maxPlayers, click
+- `NotificationItem.test.tsx` - Rendu contenu, lu/non-lu, navigation eventId, mark as read, delete, icones par type, routage par type (PARTICIPANT_REMOVED/EVENT_DELETED -> /events, TABLE_DELETED/PLAYER_KICKED sans ?table), onNavigate (fermeture panneau) ; types cuisine (Lot H) -> `/events/:eventId?tab=kitchen`
 - `PrivateRoute.test.tsx` - Spinner pendant loading, redirection /login si non auth, rendu enfant si auth
 - `ErrorBoundary.test.tsx` - Rendu enfant sans erreur, fallback par defaut, fallback custom
 - `ConnectionStatus.test.tsx` - Pas de rendu sans socket, badge selon etat initial, mise a jour sur connect/disconnect, toast disconnect/reconnect (jamais au premier connect)
@@ -93,7 +116,7 @@ npx playwright test --grep "nom"         # Un test specifique
 - `MobileSheet.test.tsx` - Verrou/deverrou du scroll body, compte-reference avec sheets imbriquees
 - `BoardGameList.test.tsx` - Empty state, liste, regroupement par jeu
 - `ParticipantList.test.tsx` - Empty state, table desktop / cards mobile, remove/leave selon role, troncature nom long, disabled pendant l'appel
-- `TimelineView.test.tsx` - Empty state, cartes, regroupement par date, click handler, mono-colonne chronologique sur mobile
+- `TimelineView.test.tsx` - Empty state, cartes, regroupement par date, click handler, mono-colonne chronologique sur mobile, creneaux cuisine (CookV1 Lot F : rendu a cote/sans tables, badge conflit personne, compte conflits visible au chef uniquement)
 - `NotificationBell.test.tsx` - Bell badge, cap 99+, dropdown desktop, sheet mobile, mark all read, cible tactile 44px mobile
 - `NumberStepper.test.tsx` - Increment/decrement, disable aux bornes min/max, prop step
 - `ManualBoardGameForm.test.tsx` - Champs requis, validation Name, soumission valeurs numeriques (stepper), cancel
@@ -102,13 +125,26 @@ npx playwright test --grep "nom"         # Un test specifique
 - `AddBoardGameModal.test.tsx` - Modes search/manual, ajout local, import BGG, close
 - `AdminBoardGamePanel.test.tsx` - Liste, total, edit/delete/merge modals, empty state recherche sans resultat
 - `EventListPage.test.tsx` - Fetch/affichage, empty state, etat d'erreur distinct + retry, FAB/bouton creation selon droit admin.events (admin sans droit = pas de bouton)
-- `EventDetailPage.test.tsx` - Skeleton pendant le chargement puis contenu, params non definis
+- `EventDetailPage.test.tsx` - Skeleton pendant le chargement puis contenu, params non definis, onglet Cuisine masque a un USER classique / visible admin ou chef (point 10)
 - `CreateEventModal.test.tsx` - Submit succes, validation croisee endDateTime > startDateTime
 - `EditEventModal.test.tsx` - Submit succes, validation croisee endDateTime > startDateTime
 - `ProfilePage.test.tsx` - Link/unlink Discord, confirmation avant unlink, disabled selon email, section droits admin (toggles, master toggle + confirmation, appels updatePreferences)
 - `CreateTableModal.test.tsx` - Render, JDR/JDS conditional, validation, submit, cancel, stepper reservedSeats plafonne a maxPlayers
 - `EditTableModal.test.tsx` - Encart occupation actuelle, avertissement + confirm avant demotion (maxPlayers/reservedSeats), submit sans confirm si pas d'impact
-- `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, boutons de promotion waitlist (simple ou double libre+reservee selon disponibilite, payload `seat`), bouton disabled si table pleine, conversion en place d'un joueur confirme (libre<->reservee), Modifier/Supprimer admin conditionnes au droit admin.tables
+- `TableDetailModal.test.tsx` - Fetch, render, boutons selon role (Rejoindre/Quitter/Modifier/Supprimer), join/delete API, badge "reservee" par joueur, boutons de promotion waitlist (simple ou double libre+reservee selon disponibilite, payload `seat`), bouton disabled si table pleine, conversion en place d'un joueur confirme (libre<->reservee), Modifier/Supprimer admin conditionnes au droit admin.tables, titre "Places de la table" des que reservedSeats>0 (sinon "Participants"), notice place(s) reservee(s) vacante(s) (singulier/pluriel + elision "l'attribuera"/"les attribuera", phrasing canEdit vs visiteur), notice absente si tout est pourvu ou visible meme sans participant confirme, encart explicatif pres du bouton Rejoindre quand rejoindre ne mene qu'a la liste d'attente a cause d'une reservation (absent si table simplement pleine)
+- `KitchenTab.test.tsx` - Matrice de visibilite CookV1 (equipier masque, chef = claim picker sans panneau gestion, panneau gestion visible manager/admin, redirection auto sur "Mon repas" pour un chef+manager) ; admin+chef (pas responsable) recoit un selecteur Vue d'ensemble/Mon repas (au lieu de perdre l'acces dashboard), landing auto sur "Mon repas" (point 5 etendu)
+- `KitchenBoard.test.tsx` - Masquage si equipier + toggle off, visible toujours pour chef, matrice jour x service, badge "Sans chef", join/move/leave jamais propose a un chef/membre courses (point 4), banniere "choisis ton creneau" (point 11), disabled si complet, panneau AssistantSwapPanel monte pour un equipier avec un creneau uniquement (Evolutions.md point 4)
+- `KitchenManagementPanel.test.tsx` - Modales de confirmation (retrait chef, generation planning, reinitialisation planning) + annulation, mode role (roster lecture seule), toggle Generer/Reinitialiser selon `meals.length`, affichage `capacitySummary` + jauge/note sur-allocation (Evolutions.md point 2), grille responsive des blocs roster (point 6) ; tests du reglage chefRoleId deplaces dans `ChefRoleSettings.test.tsx`
+- `ChefRoleSettings.test.tsx` - Popover reglage chefRoleId (extrait de KitchenManagementPanel) : confirmation avant ecrasement des chefs MANUAL au set d'un chefRoleId + annulation, pas de confirmation si inchange
+- `KitchenDashboard.test.tsx` - Vue d'ensemble admin (Evolutions.md point 5, refonte UI meme habillage que Gestion) : listes nominatives chefs/courses/sans-affectation + equipiers par repas en lecture seule (aucun bouton), grille responsive, badge Publie (vert) / Non publie (orange) du planning equipier (point 7) ; badges vege/carne lecture seule + badge warning si la somme ne correspond plus a `eventParticipantsCount` (KitchenDietSplit)
+- `MealFichesList.test.tsx` - Liste Gestion (Admin Chef) : empty state, pas de champ jour/debut/fin ni bouton supprimer, chef picker sur un creneau orphelin (PATCH), ajout/retrait equipier (POST/DELETE `.../assistants/:userId`), clic ligne -> modale details lecture seule -> "Modifier" -> "Valider" (un seul PATCH, fermeture), grille responsive des cartes (point 6) ; ligne "Repas" vege/carne : auto-equilibrage (edit un champ recalcule l'autre contre `eventParticipantsCount`, un seul PATCH groupe), warning si la somme ne correspond plus, note "a jour" sinon (KitchenDietSplit)
+- `MealFicheEditor.test.tsx` - "Mon repas" (chef, inchange) : autosave par champ sans bouton (debounce nom), resume horaires/capacite en lecture seule, warning nombre d'equipiers avant suppression, reset des champs au changement de repas ; bloc lecture seule vege/carne + note informative non-actionnable si la somme ne correspond plus a `eventParticipantsCount` (KitchenDietSplit)
+- `MealSwapPanel.test.tsx` - Dropdown liste les creneaux d'autres chefs ET les creneaux libres (tag "libre"), propose un echange (POST /swaps) sans confirmation vs prend un creneau libre (POST /meals/:id/move) avec confirmation modale (Evolutions.md point 1)
+- `AssistantSwapPanel.test.tsx` - Filtre les creneaux complets uniquement comme candidats, empty state, propose/annule/accepte une demande (Evolutions.md point 4)
+- `IngredientListInput.test.tsx` - Quantite virgule ET point acceptees (point 8), pas de commit sur saisie non-parsable
+- `UtensilListInput.test.tsx` - Badges, ajout (Enter), autocomplete `/api/kitchen/utensils` (point 7)
+- `useEventSocket.test.tsx` (CookV1) - Reaction aux evenements `kitchen:*` (config-updated, meal-changed, assistant-changed, planning-generated, swap-request-changed, assistant-swap-changed)
+- `dateTime.test.ts` (ParisTimezone) - Toutes les fonctions de `utils/dateTime.ts` : conversions heure murale Paris <-> UTC (cas aux bornes DST 2026), inputs (`parisDateInputValue`/`parisTimeInputValue`/`parisDateTimeInputValue`), "fake UTC" FullCalendar (`toParisFakeUtc`/`fromParisFakeUtc` round-trip, `formatFakeUtcDate`)
 
 Roadmap tests a venir : `docs/features/frontend-tests/ROADMAP.md` (phase 8 - pages)
 

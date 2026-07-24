@@ -18,6 +18,7 @@ const defaultPreferences = {
   "admin.events": false,
   "admin.tables": false,
   "admin.games": false,
+  "admin.kitchen": false,
   "beta.pdfExport": false,
   "beta.gameDb": false,
 };
@@ -292,6 +293,7 @@ describe("ProfilePage", () => {
       expect(screen.getByLabelText("Gestion des événements")).toBeInTheDocument();
       expect(screen.getByLabelText("Modération des tables")).toBeInTheDocument();
       expect(screen.getByLabelText("Modération des jeux")).toBeInTheDocument();
+      expect(screen.getByLabelText("Gestion cuisine")).toBeInTheDocument();
       expect(screen.getByLabelText("Export PDF")).toBeInTheDocument();
       expect(screen.getByLabelText("Gestion de la base de jeux")).toBeInTheDocument();
     });
@@ -313,6 +315,7 @@ describe("ProfilePage", () => {
           "admin.events": true,
           "admin.tables": true,
           "admin.games": true,
+          "admin.kitchen": true,
         })
       );
     });
@@ -328,7 +331,12 @@ describe("ProfilePage", () => {
 
     it("disabling the master toggle does not ask for confirmation", () => {
       useAuthMock.mockReturnValue(
-        adminAuth({ "admin.events": true, "admin.tables": true, "admin.games": true })
+        adminAuth({
+          "admin.events": true,
+          "admin.tables": true,
+          "admin.games": true,
+          "admin.kitchen": true,
+        })
       );
       renderWithRouter(<ProfilePage />);
       fireEvent.click(screen.getByLabelText("Activer tous les droits"));
@@ -337,6 +345,7 @@ describe("ProfilePage", () => {
         "admin.events": false,
         "admin.tables": false,
         "admin.games": false,
+        "admin.kitchen": false,
       });
     });
   });

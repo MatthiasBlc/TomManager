@@ -23,15 +23,22 @@ export function buildAvatarUrl(id: string, avatar: string | null): string {
   return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
 }
 
-// Appele quand un role lie a un event est ajoute a un membre Discord
+export interface ParticipationChange {
+  eventId: string;
+  userId: string;
+}
+
+// Appele quand un role lie a un event est ajoute a un membre Discord.
+// Renvoie l'event/user concernes (ou null si le role n'est pas lie a un event) pour
+// permettre a l'appelant de reconcilier d'autres etats derives (ex : roster chef cuisine).
 export async function handleRoleAdded(
   discordId: string,
   discordUsername: string,
   avatarUrl: string,
   roleId: string
-): Promise<void> {
+): Promise<ParticipationChange | null> {
   const event = await prisma.event.findFirst({ where: { discordRoleId: roleId } });
-  if (!event) return;
+  if (!event) return null;
 
   let user = await prisma.user.findFirst({ where: { discordId, deletedAt: null } });
   if (!user) {
@@ -51,20 +58,25 @@ export async function handleRoleAdded(
     create: { eventId: event.id, userId: user.id },
     update: {},
   });
+
+  return { eventId: event.id, userId: user.id };
 }
 
 // Appele quand un role lie a un event est retire a un membre Discord
-export async function handleRoleRemoved(discordId: string, roleId: string): Promise<void> {
+export async function handleRoleRemoved(
+  discordId: string,
+  roleId: string
+): Promise<ParticipationChange | null> {
   const event = await prisma.event.findFirst({ where: { discordRoleId: roleId } });
-  if (!event) return;
+  if (!event) return null;
 
   const user = await prisma.user.findFirst({ where: { discordId, deletedAt: null } });
-  if (!user) return;
+  if (!user) return null;
 
   const participation = await prisma.eventParticipation.findUnique({
     where: { eventId_userId: { eventId: event.id, userId: user.id } },
   });
-  if (!participation) return;
+  if (!participation) return null;
 
   await prisma.gameTableParticipant.deleteMany({
     where: { userId: user.id, gameTable: { eventId: event.id } },
@@ -72,6 +84,8 @@ export async function handleRoleRemoved(discordId: string, roleId: string): Prom
   await prisma.eventParticipation.delete({
     where: { eventId_userId: { eventId: event.id, userId: user.id } },
   });
+
+  return { eventId: event.id, userId: user.id };
 }
 
 // Gestion du role admin Discord

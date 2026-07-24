@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { GridIcon, CalendarIcon, DiceIcon, UserIcon } from "../common/icons";
 
 interface TabItem {
   to: string;
@@ -11,20 +12,10 @@ interface TabItem {
   active?: boolean;
 }
 
-function TabIcon({ d }: { d: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-6 w-6"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d={d} />
-    </svg>
-  );
-}
+const tabClass = (active: boolean) =>
+  `flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[44px] px-3 py-1 rounded-xl text-[0.68rem] font-semibold transition-colors ${
+    active ? "bg-primary/15 text-primary" : "text-base-content/60"
+  }`;
 
 export default function BottomTabBar() {
   const { user } = useAuth();
@@ -36,22 +27,18 @@ export default function BottomTabBar() {
   const tabs: TabItem[] = [
     {
       to: "/events",
-      icon: (
-        <TabIcon d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" />
-      ),
+      icon: <GridIcon className="h-5 w-5" />,
       label: "Événements",
     },
     {
       to: `/events/${eventId}/planning`,
-      icon: (
-        <TabIcon d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      ),
+      icon: <CalendarIcon className="h-5 w-5" />,
       label: "Planning",
       show: !!eventId,
     },
     {
       to: `/events/${eventId}?tab=games`,
-      icon: <TabIcon d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />,
+      icon: <DiceIcon className="h-5 w-5" />,
       label: "Jeux de société",
       show: !!eventId,
       active:
@@ -64,32 +51,20 @@ export default function BottomTabBar() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-base-100 border-t border-base-300 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex justify-around items-center h-16">
+      <div className="flex justify-around items-center h-16 px-2">
         {visibleTabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[44px] text-xs transition-colors ${
-                (tab.active ?? isActive) ? "text-primary" : "text-base-content/60"
-              }`
-            }
+            className={({ isActive }) => tabClass(tab.active ?? isActive)}
           >
             {tab.icon}
             <span>{tab.label}</span>
           </NavLink>
         ))}
-        <NavLink
-          to="/profile"
-          end
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center gap-0.5 min-w-[64px] min-h-[44px] text-xs transition-colors ${
-              isActive ? "text-primary" : "text-base-content/60"
-            }`
-          }
-        >
-          <TabIcon d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        <NavLink to="/profile" end className={({ isActive }) => tabClass(isActive)}>
+          <UserIcon className="h-5 w-5" />
           <span>Profil</span>
         </NavLink>
       </div>

@@ -2,18 +2,32 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../config/api";
-import { useAuth } from "../contexts/AuthContext";
 import { useConfirm } from "../contexts/ConfirmContext";
 import { useIsMobile } from "../hooks/useIsMobile";
 import EditEventModal from "../components/events/EditEventModal";
 import ParticipantList from "../components/events/ParticipantList";
 import BoardGameTab from "../components/boardgames/BoardGameTab";
 import PlanningTab from "../components/planning/PlanningTab";
+import MyPlanningSection from "../components/planning/MyPlanningSection";
+import KitchenTab from "../components/kitchen/KitchenTab";
+import KitchenBoard from "../components/kitchen/KitchenBoard";
 import ResponsiveModal from "../components/common/ResponsiveModal";
 import AdminBoardGamePanel from "../components/admin/AdminBoardGamePanel";
 import { useAdminRights } from "../hooks/useAdminRights";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { useKitchenData } from "../hooks/useKitchenData";
 import { SkeletonEventDetail } from "../components/common/Skeleton";
+import { formatParisDateTime } from "../utils/dateTime";
+import {
+  PencilIcon,
+  TrashIcon,
+  GridIcon,
+  InfoCircleIcon,
+  CalendarIcon,
+  DiceIcon,
+  UsersIcon,
+  UtensilsIcon,
+} from "../components/common/icons";
 
 interface EventDetail {
   id: string;
@@ -30,14 +44,22 @@ interface EventDetail {
   }[];
 }
 
-type Tab = "info" | "participants" | "planning" | "games";
+type Tab = "info" | "participants" | "planning" | "games" | "kitchen";
 
-const VALID_TABS: Tab[] = ["info", "participants", "planning", "games"];
+const VALID_TABS: Tab[] = ["info", "participants", "planning", "games", "kitchen"];
+
+// Onglets d'evenement en trait souligne (maquette) : filet actif en accent,
+// -mb-px pour que ce trait fusionne avec la bordure du conteneur.
+const eventTabClass = (active: boolean) =>
+  `flex items-center gap-1.5 px-3 pb-2.5 pt-1 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
+    active
+      ? "border-primary font-semibold text-base-content"
+      : "border-transparent text-base-content/60 hover:text-base-content"
+  }`;
 
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const confirmDialog = useConfirm();
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,9 +75,15 @@ export default function EventDetailPage() {
   usePageTitle(event?.name);
 
   const isMobile = useIsMobile();
-  const isCreator = user?.id === event?.createdBy;
-  const { canManageEvents, gameDbEnabled } = useAdminRights();
-  const canManageEvent = isCreator || canManageEvents;
+  const { isAdmin, canManageEvents, gameDbEnabled } = useAdminRights();
+
+  // Fetch + temps reel cuisine partages entre l'onglet Infos et l'onglet Cuisine
+  // (evite un double GET /kitchen) ; sert aussi a decider si l'onglet "Cuisine"
+  // doit apparaitre dans la nav (point 10 : un USER classique ne doit jamais le
+  // voir).
+  const kitchen = useKitchenData(eventId);
+  const canSeeKitchenTab =
+    isAdmin || kitchen.data?.currentUserKitchenRole === "manager" || !!kitchen.data?.isChef;
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -90,8 +118,8 @@ export default function EventDetailPage() {
     }
   };
 
-  const formatDate = (iso: string) => {
-    return new Date(iso).toLocaleDateString("fr-FR", {
+  const formatDate = (iso: string) =>
+    formatParisDateTime(iso, {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -99,7 +127,6 @@ export default function EventDetailPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
   if (loading) {
     return <SkeletonEventDetail />;
@@ -109,7 +136,7 @@ export default function EventDetailPage() {
 
   return (
     <div
-      className={`container mx-auto px-4 ${
+      className={`mx-auto w-full px-4 2xl:max-w-[1400px] ${
         tab === "planning" && !isMobile
           ? "pt-4 md:pt-6 h-[calc(100dvh-4rem)] flex flex-col"
           : "py-4 md:py-8"
@@ -123,50 +150,63 @@ export default function EventDetailPage() {
             {formatDate(event.startDateTime)} - {formatDate(event.endDateTime)}
           </p>
         </div>
-        {canManageEvent && (
+        {canManageEvents && (
           <div className="flex flex-wrap gap-2 md:ml-2 md:shrink-0 md:justify-end">
-            <button className="btn btn-outline btn-sm" onClick={() => setShowEdit(true)}>
-              Modifier
-            </button>
-            <button className="btn btn-outline btn-error btn-sm" onClick={handleDelete}>
-              Supprimer
-            </button>
             {gameDbEnabled && (
-              <button className="btn btn-outline btn-sm" onClick={() => setShowGameDb(true)}>
-                Gérer la base de jeux
+              <button
+                className="btn btn-outline btn-sm gap-1.5"
+                onClick={() => setShowGameDb(true)}
+              >
+                <GridIcon className="w-3.5 h-3.5" />
+                Banque de jeux
               </button>
             )}
+            <button className="btn btn-outline btn-sm gap-1.5" onClick={() => setShowEdit(true)}>
+              <PencilIcon className="w-3.5 h-3.5" />
+              Modifier
+            </button>
+            <button className="btn btn-outline btn-error btn-sm gap-1.5" onClick={handleDelete}>
+              <TrashIcon className="w-3.5 h-3.5" />
+              Supprimer
+            </button>
           </div>
         )}
       </div>
 
       <div className="relative mb-4 md:mb-6 flex-none">
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-          <div className="tabs tabs-boxed inline-flex min-w-max">
-            <button
-              className={`tab ${tab === "info" ? "tab-active" : ""}`}
-              onClick={() => setTab("info")}
-            >
+          <div className="flex gap-1 border-b border-base-300 min-w-max">
+            <button className={eventTabClass(tab === "info")} onClick={() => setTab("info")}>
+              <InfoCircleIcon className="w-3.5 h-3.5" />
               Infos
             </button>
             <button
-              className={`tab ${tab === "planning" ? "tab-active" : ""}`}
+              className={eventTabClass(tab === "planning")}
               onClick={() => setTab("planning")}
             >
+              <CalendarIcon className="w-3.5 h-3.5" />
               Planning
             </button>
-            <button
-              className={`tab ${tab === "games" ? "tab-active" : ""}`}
-              onClick={() => setTab("games")}
-            >
+            <button className={eventTabClass(tab === "games")} onClick={() => setTab("games")}>
+              <DiceIcon className="w-3.5 h-3.5" />
               Jeux de société
             </button>
             <button
-              className={`tab ${tab === "participants" ? "tab-active" : ""}`}
+              className={eventTabClass(tab === "participants")}
               onClick={() => setTab("participants")}
             >
+              <UsersIcon className="w-3.5 h-3.5" />
               Participants ({event.participants.length})
             </button>
+            {canSeeKitchenTab && (
+              <button
+                className={eventTabClass(tab === "kitchen")}
+                onClick={() => setTab("kitchen")}
+              >
+                <UtensilsIcon className="w-3.5 h-3.5" />
+                Cuisine
+              </button>
+            )}
           </div>
         </div>
         {/* Affordance de scroll : degrade sur le bord droit, mobile uniquement */}
@@ -175,21 +215,15 @@ export default function EventDetailPage() {
 
       <div className={tab === "planning" && !isMobile ? "flex-1 min-h-0" : ""}>
         {tab === "info" && (
-          <div className="card bg-base-100 shadow-sm">
-            <div className="card-body p-4 md:p-6">
-              <h2 className="card-title text-base md:text-lg">{event.name}</h2>
-              <div className="space-y-2 text-sm">
-                <p>
-                  <span className="font-medium">Début :</span> {formatDate(event.startDateTime)}
-                </p>
-                <p>
-                  <span className="font-medium">Fin :</span> {formatDate(event.endDateTime)}
-                </p>
-                <p>
-                  <span className="font-medium">Participants :</span> {event.participants.length}
-                </p>
-              </div>
-            </div>
+          <div className="space-y-4 md:space-y-6">
+            <KitchenBoard
+              eventId={event.id}
+              data={kitchen.data}
+              assistantSwaps={kitchen.assistantSwaps}
+              loading={kitchen.loading}
+              onChanged={kitchen.refetchAll}
+            />
+            <MyPlanningSection eventId={event.id} />
           </div>
         )}
 
@@ -207,6 +241,16 @@ export default function EventDetailPage() {
         {tab === "planning" && <PlanningTab eventId={event.id} />}
 
         {tab === "games" && <BoardGameTab eventId={event.id} />}
+
+        {tab === "kitchen" && (
+          <KitchenTab
+            eventId={event.id}
+            data={kitchen.data}
+            swaps={kitchen.swaps}
+            loading={kitchen.loading}
+            onChanged={kitchen.refetchAll}
+          />
+        )}
       </div>
 
       <EditEventModal

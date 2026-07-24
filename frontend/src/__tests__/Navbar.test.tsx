@@ -113,7 +113,7 @@ describe("Navbar (mobile)", () => {
     setAuth({ id: "u1", username: "Alice", avatarUrl: null });
     renderNavbar();
     // MobileHeader logo
-    expect(screen.getByText("TM")).toBeInTheDocument();
+    expect(screen.getByText("ToM")).toBeInTheDocument();
     // BottomTabBar Events link
     expect(screen.getByRole("link", { name: /Événements/ })).toBeInTheDocument();
   });
@@ -121,7 +121,7 @@ describe("Navbar (mobile)", () => {
   it("renders MobileHeader without BottomTabBar when not authenticated", () => {
     setAuth(null);
     renderNavbar();
-    expect(screen.getByText("TM")).toBeInTheDocument();
+    expect(screen.getByText("ToM")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Événements/ })).not.toBeInTheDocument();
   });
 });

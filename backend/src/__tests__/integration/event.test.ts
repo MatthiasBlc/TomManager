@@ -5,6 +5,7 @@ import {
   createTestEvent,
   createTestUserDirectly,
   loginTestUser,
+  enableEventManager,
 } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
@@ -228,8 +229,22 @@ describe("Event API", () => {
   });
 
   describe("PATCH /api/events/:eventId", () => {
-    it("should update event as creator", async () => {
+    it("rejects the creator alone, without admin.events", async () => {
+      // Etre le createur ne donne plus de droit particulier : il faut admin.events.
       const { cookie: adminCookie } = await setupAdmin();
+      const event = await createTestEvent(adminCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}`)
+        .set("Cookie", adminCookie)
+        .send({ name: "Updated Name" });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("allows update by the creator once admin.events is enabled", async () => {
+      const { cookie: adminCookie, user: admin } = await setupAdmin();
+      await enableEventManager(admin.id);
       const event = await createTestEvent(adminCookie);
 
       const res = await request
@@ -241,15 +256,15 @@ describe("Event API", () => {
       expect(res.body.data.name).toBe("Updated Name");
     });
 
-    it("should allow update by any admin", async () => {
+    it("allows update by any admin.events-enabled admin, even if not the creator", async () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      // Any admin can update any event
-      const { cookie: otherCookie } = await setupAdmin({
+      const { cookie: otherCookie, user: other } = await setupAdmin({
         email: "other@admin.com",
         username: "otheradmin",
       });
+      await enableEventManager(other.id);
 
       const res = await request
         .patch(`/api/events/${event.id}`)
@@ -259,8 +274,9 @@ describe("Event API", () => {
       expect(res.status).toBe(200);
     });
 
-    it("should reject invalid date update", async () => {
-      const { cookie: adminCookie } = await setupAdmin();
+    it("rejects an admin.events-enabled admin update that fails validation", async () => {
+      const { cookie: adminCookie, user: admin } = await setupAdmin();
+      await enableEventManager(admin.id);
       const event = await createTestEvent(adminCookie);
 
       const res = await request.patch(`/api/events/${event.id}`).set("Cookie", adminCookie).send({
@@ -273,28 +289,37 @@ describe("Event API", () => {
   });
 
   describe("DELETE /api/events/:eventId", () => {
-    it("should delete event as creator", async () => {
+    it("rejects the creator alone, without admin.events", async () => {
       const { cookie: adminCookie } = await setupAdmin();
+      const event = await createTestEvent(adminCookie);
+
+      const res = await request.delete(`/api/events/${event.id}`).set("Cookie", adminCookie);
+
+      expect(res.status).toBe(403);
+    });
+
+    it("allows delete by the creator once admin.events is enabled", async () => {
+      const { cookie: adminCookie, user: admin } = await setupAdmin();
+      await enableEventManager(admin.id);
       const event = await createTestEvent(adminCookie);
 
       const res = await request.delete(`/api/events/${event.id}`).set("Cookie", adminCookie);
 
       expect(res.status).toBe(204);
 
-      // Verify event is gone
       const found = await prisma.event.findUnique({ where: { id: event.id } });
       expect(found).toBeNull();
     });
 
-    it("should allow delete by any admin", async () => {
+    it("allows delete by any admin.events-enabled admin, even if not the creator", async () => {
       const { cookie: adminCookie } = await setupAdmin();
       const event = await createTestEvent(adminCookie);
 
-      // Any admin can delete any event
-      const { cookie: otherCookie } = await setupAdmin({
+      const { cookie: otherCookie, user: other } = await setupAdmin({
         email: "other@admin.com",
         username: "otheradmin",
       });
+      await enableEventManager(other.id);
 
       const res = await request.delete(`/api/events/${event.id}`).set("Cookie", otherCookie);
 
@@ -304,7 +329,8 @@ describe("Event API", () => {
 
   describe("discordRoleId persistence", () => {
     it("GET detail returns discordRoleId and PATCH without the field keeps it", async () => {
-      const { cookie } = await setupAdmin();
+      const { cookie, user: admin } = await setupAdmin();
+      await enableEventManager(admin.id);
       const createRes = await request.post("/api/events").set("Cookie", cookie).send({
         name: "Event avec role",
         startDateTime: "2026-06-01T10:00:00Z",
@@ -316,10 +342,11 @@ describe("Event API", () => {
       const detail = await request.get(`/api/events/${eventId}`).set("Cookie", cookie);
       expect(detail.body.data.discordRoleId).toBe("123456789012345678");
 
-      // Un PATCH sans le champ (ex. edition par un createur non admin) ne doit pas l'effacer
-      await request.patch(`/api/events/${eventId}`).set("Cookie", cookie).send({
+      // Un PATCH sans le champ ne doit pas l'effacer
+      const patchRes = await request.patch(`/api/events/${eventId}`).set("Cookie", cookie).send({
         name: "Event renomme",
       });
+      expect(patchRes.status).toBe(200);
       const after = await prisma.event.findUnique({ where: { id: eventId } });
       expect(after?.discordRoleId).toBe("123456789012345678");
     });

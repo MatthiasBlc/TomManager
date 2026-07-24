@@ -27,7 +27,11 @@ function LocationProbe() {
 
 function renderItem(
   notification: Notification,
-  handlers = { onMarkAsRead: vi.fn(), onDelete: vi.fn() }
+  handlers: {
+    onMarkAsRead: ReturnType<typeof vi.fn>;
+    onDelete: ReturnType<typeof vi.fn>;
+    onNavigate?: ReturnType<typeof vi.fn>;
+  } = { onMarkAsRead: vi.fn(), onDelete: vi.fn() }
 ) {
   return {
     ...handlers,
@@ -95,6 +99,76 @@ describe("NotificationItem", () => {
     expect(screen.getByTestId("location")).toHaveTextContent("/events/ev42/planning?table=t7");
   });
 
+  it("routes PARTICIPANT_REMOVED to the events list (no access to the event anymore)", () => {
+    renderItem({
+      ...baseNotification,
+      type: "PARTICIPANT_REMOVED",
+      metadata: { eventId: "ev42" },
+    });
+    fireEvent.click(screen.getByText("Table mise a jour"));
+    expect(screen.getByTestId("location")).toHaveTextContent(/^\/events$/);
+  });
+
+  it("routes EVENT_DELETED to the events list", () => {
+    renderItem({ ...baseNotification, type: "EVENT_DELETED", metadata: { eventId: "ev42" } });
+    fireEvent.click(screen.getByText("Table mise a jour"));
+    expect(screen.getByTestId("location")).toHaveTextContent(/^\/events$/);
+  });
+
+  it("routes TABLE_DELETED to the planning without a ?table deep-link", () => {
+    renderItem({
+      ...baseNotification,
+      type: "TABLE_DELETED",
+      metadata: { eventId: "ev42", tableId: "t7" },
+    });
+    fireEvent.click(screen.getByText("Table mise a jour"));
+    const location = screen.getByTestId("location");
+    expect(location).toHaveTextContent("/events/ev42/planning");
+    expect(location.textContent).not.toContain("table=");
+  });
+
+  it("routes PLAYER_KICKED to the planning without a ?table deep-link", () => {
+    renderItem({
+      ...baseNotification,
+      type: "PLAYER_KICKED",
+      metadata: { eventId: "ev42", tableId: "t7" },
+    });
+    fireEvent.click(screen.getByText("Table mise a jour"));
+    expect(screen.getByTestId("location").textContent).not.toContain("table=");
+  });
+
+  it("routes kitchen notification types to the kitchen tab", () => {
+    const kitchenTypes = [
+      "KITCHEN_SWAP_REQUESTED",
+      "KITCHEN_SWAP_ACCEPTED",
+      "KITCHEN_SWAP_REJECTED",
+      "KITCHEN_ASSISTANT_SWAP_REQUESTED",
+      "KITCHEN_ASSISTANT_SWAP_ACCEPTED",
+      "KITCHEN_CHEF_ADDED",
+      "KITCHEN_CHEF_REMOVED",
+      "KITCHEN_MEAL_CLAIMED",
+      "KITCHEN_OVERCAPACITY",
+    ];
+    for (const type of kitchenTypes) {
+      const { unmount } = renderItem({
+        ...baseNotification,
+        id: `id-${type}`,
+        type,
+        metadata: { eventId: "ev42" },
+      });
+      fireEvent.click(screen.getByText("Table mise a jour"));
+      expect(screen.getByTestId("location")).toHaveTextContent("/events/ev42?tab=kitchen");
+      unmount();
+    }
+  });
+
+  it("calls onNavigate on click (panel close) even without a destination", () => {
+    const onNavigate = vi.fn();
+    renderItem(baseNotification, { onMarkAsRead: vi.fn(), onDelete: vi.fn(), onNavigate });
+    fireEvent.click(screen.getByText("Table mise a jour"));
+    expect(onNavigate).toHaveBeenCalled();
+  });
+
   it("calls onDelete and stops propagation when the delete button is clicked", () => {
     const onMarkAsRead = vi.fn();
     const onDelete = vi.fn();
@@ -113,6 +187,18 @@ describe("NotificationItem", () => {
       ["PLAYER_KICKED", "🚫"],
       ["PARTICIPANT_REMOVED", "👋"],
       ["EVENT_UPDATED", "📅"],
+      ["GM_PLAYER_JOINED", "🙋"],
+      ["GM_PLAYER_WAITLISTED", "⏳"],
+      ["GM_TABLE_FULL", "🎉"],
+      ["KITCHEN_SWAP_REQUESTED", "🔄"],
+      ["KITCHEN_ASSISTANT_SWAP_REQUESTED", "🔄"],
+      ["KITCHEN_SWAP_ACCEPTED", "✅"],
+      ["KITCHEN_ASSISTANT_SWAP_ACCEPTED", "✅"],
+      ["KITCHEN_SWAP_REJECTED", "❌"],
+      ["KITCHEN_CHEF_ADDED", "👨‍🍳"],
+      ["KITCHEN_MEAL_CLAIMED", "👨‍🍳"],
+      ["KITCHEN_CHEF_REMOVED", "👋"],
+      ["KITCHEN_OVERCAPACITY", "⚠"],
       ["UNKNOWN_TYPE", "🔔"],
     ];
     for (const [type, icon] of types) {

@@ -5,6 +5,7 @@ import { startupSync } from "../../services/startupSync";
 vi.mock("../../util/db", () => ({
   default: {
     event: { findMany: vi.fn() },
+    eventKitchen: { findMany: vi.fn() },
   },
 }));
 
@@ -21,6 +22,11 @@ vi.mock("../../services/syncParticipation", () => ({
   buildAvatarUrl: vi.fn().mockReturnValue("https://default-avatar.png"),
 }));
 
+vi.mock("../../services/syncKitchenChef", () => ({
+  handleChefRoleAdded: vi.fn(),
+  handleChefRoleRemoved: vi.fn(),
+}));
+
 // ------------------------------------------------------------------ helpers
 import prisma from "../../util/db";
 import {
@@ -28,8 +34,12 @@ import {
   handleRoleRemoved,
   handleAdminRoleChange,
 } from "../../services/syncParticipation";
+import { handleChefRoleAdded, handleChefRoleRemoved } from "../../services/syncKitchenChef";
 
-const db = prisma as unknown as { event: { findMany: ReturnType<typeof vi.fn> } };
+const db = prisma as unknown as {
+  event: { findMany: ReturnType<typeof vi.fn> };
+  eventKitchen: { findMany: ReturnType<typeof vi.fn> };
+};
 
 const ROLE_ID = "role-event-1";
 const EVENT = { id: "event-1", discordRoleId: ROLE_ID };
@@ -48,6 +58,7 @@ function makeGuild(members: object[]) {
 
 beforeEach(() => {
   mockEnv.DISCORD_ADMIN_ROLE_ID = "admin-role-id";
+  db.eventKitchen.findMany.mockResolvedValue([]);
 });
 
 // ================================================================
@@ -147,5 +158,32 @@ describe("startupSync", () => {
 
     // Les deux membres ont ete tentes
     expect(handleRoleAdded).toHaveBeenCalledTimes(2);
+  });
+
+  it("reconcilie le roster chef ROLE meme sans event avec discordRoleId", async () => {
+    const KITCHEN_ROLE_ID = "role-chef-1";
+    db.event.findMany.mockResolvedValue([]);
+    db.eventKitchen.findMany.mockResolvedValue([{ id: "kitchen-1", chefRoleId: KITCHEN_ROLE_ID }]);
+    const member = makeMember([KITCHEN_ROLE_ID]);
+    const guild = makeGuild([member]);
+
+    await startupSync(guild as never);
+
+    expect(guild.members.fetch).toHaveBeenCalled();
+    expect(handleChefRoleAdded).toHaveBeenCalledWith("user-1", KITCHEN_ROLE_ID);
+    expect(handleChefRoleRemoved).not.toHaveBeenCalledWith("user-1", KITCHEN_ROLE_ID);
+  });
+
+  it("appelle handleChefRoleRemoved pour un membre qui n a pas le role chef", async () => {
+    const KITCHEN_ROLE_ID = "role-chef-1";
+    db.event.findMany.mockResolvedValue([]);
+    db.eventKitchen.findMany.mockResolvedValue([{ id: "kitchen-1", chefRoleId: KITCHEN_ROLE_ID }]);
+    const member = makeMember(["other-role"]);
+    const guild = makeGuild([member]);
+
+    await startupSync(guild as never);
+
+    expect(handleChefRoleRemoved).toHaveBeenCalledWith("user-1", KITCHEN_ROLE_ID);
+    expect(handleChefRoleAdded).not.toHaveBeenCalled();
   });
 });

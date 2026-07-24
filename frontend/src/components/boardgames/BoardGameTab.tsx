@@ -131,20 +131,19 @@ export default function BoardGameTab({ eventId }: Props) {
     .filter((e) => visibleGameIds.has(e.boardGame.id))
     .sort((a, b) => (rankByGameId[a.boardGame.id] ?? 0) - (rankByGameId[b.boardGame.id] ?? 0));
 
+  const segBtn = (active: boolean) =>
+    `px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+      active ? "bg-primary text-primary-content" : "text-base-content/60 hover:text-base-content"
+    }`;
+
   return (
     <div>
       <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
-        <div className="tabs tabs-boxed">
-          <button
-            className={`tab tab-sm ${tab === "all" ? "tab-active" : ""}`}
-            onClick={() => setTab("all")}
-          >
+        <div className="flex gap-1 bg-base-200 border border-base-300 rounded-lg p-1">
+          <button className={segBtn(tab === "all")} onClick={() => setTab("all")}>
             Tous les jeux {!loading && `(${entries.length})`}
           </button>
-          <button
-            className={`tab tab-sm ${tab === "mine" ? "tab-active" : ""}`}
-            onClick={() => setTab("mine")}
-          >
+          <button className={segBtn(tab === "mine")} onClick={() => setTab("mine")}>
             Mes jeux {!loading && `(${entries.filter((e) => e.broughtBy.id === user?.id).length})`}
           </button>
         </div>
@@ -156,43 +155,41 @@ export default function BoardGameTab({ eventId }: Props) {
         </button>
       </div>
 
-      {/* Sort / filter controls */}
-      <div className="flex flex-wrap gap-2 mb-3 text-sm">
-        <div className="flex items-center gap-1">
-          <span className="opacity-60">Trier:</span>
-          <button
-            className={`btn btn-xs ${sort === "name" ? "btn-neutral" : "btn-ghost"}`}
-            onClick={() => setSort("name")}
-          >
-            A-Z
-          </button>
-          <button
-            className={`btn btn-xs ${sort === "tables" ? "btn-neutral" : "btn-ghost"}`}
-            onClick={() => setSort("tables")}
-          >
-            Tables
-          </button>
+      {/* Sort / filter controls : deux groupes exclusifs distincts (pas de melange
+          d'idiomes visuels), chacun un segmented control */}
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[0.68rem] uppercase tracking-wide font-bold opacity-50">Trier</span>
+          <div className="flex gap-0.5 bg-base-200 border border-base-300 rounded-md p-0.5">
+            <button className={segBtn(sort === "name")} onClick={() => setSort("name")}>
+              A-Z
+            </button>
+            <button className={segBtn(sort === "tables")} onClick={() => setSort("tables")}>
+              Tables
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="opacity-60">Filtrer:</span>
-          <button
-            className={`btn btn-xs ${filter === "all" ? "btn-neutral" : "btn-ghost"}`}
-            onClick={() => setFilter("all")}
-          >
-            Tous
-          </button>
-          <button
-            className={`btn btn-xs ${filter === "withTable" ? "btn-neutral" : "btn-ghost"}`}
-            onClick={() => setFilter("withTable")}
-          >
-            Avec table
-          </button>
-          <button
-            className={`btn btn-xs ${filter === "withoutTable" ? "btn-neutral" : "btn-ghost"}`}
-            onClick={() => setFilter("withoutTable")}
-          >
-            Sans table
-          </button>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[0.68rem] uppercase tracking-wide font-bold opacity-50">
+            Filtrer
+          </span>
+          <div className="flex gap-0.5 bg-base-200 border border-base-300 rounded-md p-0.5">
+            <button className={segBtn(filter === "all")} onClick={() => setFilter("all")}>
+              Tous
+            </button>
+            <button
+              className={segBtn(filter === "withTable")}
+              onClick={() => setFilter("withTable")}
+            >
+              Avec table
+            </button>
+            <button
+              className={segBtn(filter === "withoutTable")}
+              onClick={() => setFilter("withoutTable")}
+            >
+              Sans table
+            </button>
+          </div>
         </div>
       </div>
 

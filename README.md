@@ -20,8 +20,9 @@ Application web de gestion d'evenements JDR (jeux de role et jeux de societe) av
 - **Inventaire de jeux** : recherche et import depuis BoardGameGeek, fiches completes (image, description, stats), jeux apportes par evenement
 - **Auth Discord** : connexion via Discord (mode de connexion unique dans l'interface), surnom serveur affiche, acces automatique par role de serveur
 - **Droits d'administration a la carte** : chaque admin active/desactive individuellement ses droits (evenements, tables, jeux) depuis son profil
+- **Cuisine** : organisation des repas par evenement (responsable cuisine, planning des courses/services, ingredients, ustensiles, gestion des conflits et allergies)
 - **Notifications temps reel** : via Socket.io
-- **Bot Discord** : sync automatique des participations lors des changements de role
+- **Bot Discord** : sync automatique des participations et des creneaux cuisine lors des changements de role
 - **Participants** : liste avec tri (nom, date, role) et filtre (admins / membres)
 
 ## Architecture
@@ -117,22 +118,24 @@ npm run format:check        # Verifier le formatage
 
 ```
 TomManager/
-├── backend/          # API Express + TypeScript
+├── backend/          # API Express + TypeScript (voir backend/README.MD)
 │   ├── prisma/       # Schema et migrations
 │   └── src/
 │       ├── controllers/
 │       ├── services/
 │       ├── routes/
 │       ├── middleware/
+│       ├── schemas/
+│       ├── socket/
 │       └── __tests__/
-├── frontend/         # React + TypeScript + Vite
+├── frontend/         # React + TypeScript + Vite (voir frontend/README.MD)
 │   └── src/
 │       ├── components/
 │       ├── pages/
 │       ├── hooks/
 │       ├── contexts/
 │       └── __tests__/
-├── discord-bot/      # Bot Discord (sync roles en temps reel)
+├── discord-bot/      # Bot Discord, sync roles en temps reel (voir discord-bot/README.md)
 ├── e2e/              # Tests Playwright
 └── docs/             # Specifications et documentation
 ```

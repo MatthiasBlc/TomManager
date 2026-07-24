@@ -2,6 +2,9 @@ import prisma from "../util/db";
 import createError from "http-errors";
 import logger from "../util/logger";
 import { syncEventParticipantsFromDiscord } from "./adminSync";
+import { syncChefRoleRoster } from "./kitchen";
+import { emitToEvent } from "../socket/emitter";
+import { createBulkNotifications } from "./notification";
 
 export async function createEvent(
   name: string,
@@ -142,7 +145,8 @@ export async function updateEvent(
     startDateTime?: string;
     endDateTime?: string;
     discordRoleId?: string | null;
-  }
+  },
+  updatedByUserId: string
 ) {
   if (data.discordRoleId !== undefined && data.discordRoleId !== null) {
     const conflict = await prisma.event.findFirst({
@@ -217,6 +221,28 @@ export async function updateEvent(
     return updated;
   });
 
+  emitToEvent(eventId, "event:updated", { event });
+
+  // Seuls les changements visibles par les participants declenchent une
+  // notification (nom, dates) — pas les champs techniques (discordRoleId)
+  const nameChanged = name !== existing.name;
+  if (nameChanged || datesChanged) {
+    const participations = await prisma.eventParticipation.findMany({
+      where: { eventId },
+      select: { userId: true },
+    });
+    const recipients = participations.map((p) => p.userId).filter((id) => id !== updatedByUserId);
+    await createBulkNotifications(
+      recipients.map((userId) => ({
+        userId,
+        type: "EVENT_UPDATED" as const,
+        title: "Événement modifié",
+        message: `L'événement "${name}" a été modifié`,
+        metadata: { eventId },
+      }))
+    );
+  }
+
   return event;
 }
 
@@ -229,10 +255,24 @@ export async function purgeEvent(eventId: string) {
     throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
 
+  // Cuisine (CookV1, spec 10) : EventKitchen + chefRoleId sont CONSERVES, seul le
+  // contenu est purge. Repas (cascade ingredients/ustensiles/inscriptions), equipe
+  // courses, et chefs MANUAL uniquement (les chefs ROLE se reconstituent plus bas
+  // via syncChefRoleRoster, une fois les participants re-importes).
+  const eventKitchen = await prisma.eventKitchen.findUnique({ where: { eventId } });
+
   await prisma.$transaction(async (tx) => {
     await tx.gameTable.deleteMany({ where: { eventId } });
     await tx.eventParticipation.deleteMany({ where: { eventId } });
     await tx.eventBoardGame.deleteMany({ where: { eventId } });
+
+    if (eventKitchen) {
+      await tx.meal.deleteMany({ where: { eventKitchenId: eventKitchen.id } });
+      await tx.kitchenCoursesMember.deleteMany({ where: { eventKitchenId: eventKitchen.id } });
+      await tx.kitchenChef.deleteMany({
+        where: { eventKitchenId: eventKitchen.id, source: "MANUAL" },
+      });
+    }
   });
 
   // L'event conserve son discordRoleId : re-importer immediatement les
@@ -248,14 +288,31 @@ export async function purgeEvent(eventId: string) {
     }
   }
 
+  // Reconstitue le roster ROLE une fois les participants re-importes (le sync
+  // filtre les detenteurs du role contre eventParticipation, cf. syncChefRoleRoster).
+  // Best-effort, meme logique que le re-import participants.
+  if (eventKitchen?.chefRoleId) {
+    try {
+      await syncChefRoleRoster(eventKitchen.id, eventId, eventKitchen.chefRoleId);
+    } catch (err) {
+      logger.warn({ err, eventId }, "Purge: re-sync du roster chef par role impossible");
+    }
+  }
+
   return { resyncedParticipants };
 }
 
-export async function deleteEvent(eventId: string) {
+export async function deleteEvent(eventId: string, deletedByUserId: string) {
   const existing = await prisma.event.findUnique({ where: { id: eventId } });
   if (!existing) {
     throw createError(404, "Event not found", { code: "EVENT_NOT_FOUND" });
   }
+
+  // Les participants sont recuperes AVANT le delete cascade
+  const participations = await prisma.eventParticipation.findMany({
+    where: { eventId },
+    select: { userId: true },
+  });
 
   await prisma.$transaction(async (tx) => {
     // Delete GameTables (cascade handles GameTableTag + GameTableParticipant)
@@ -263,4 +320,17 @@ export async function deleteEvent(eventId: string) {
     await tx.eventParticipation.deleteMany({ where: { eventId } });
     await tx.event.delete({ where: { id: eventId } });
   });
+
+  emitToEvent(eventId, "event:deleted", { eventId });
+
+  const recipients = participations.map((p) => p.userId).filter((id) => id !== deletedByUserId);
+  await createBulkNotifications(
+    recipients.map((userId) => ({
+      userId,
+      type: "EVENT_DELETED" as const,
+      title: "Événement supprimé",
+      message: `L'événement "${existing.name}" a été supprimé`,
+      metadata: { eventId },
+    }))
+  );
 }

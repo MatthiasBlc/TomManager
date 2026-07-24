@@ -6,6 +6,8 @@ import ResponsiveModal from "../common/ResponsiveModal";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { getErrorMessage } from "../../config/apiErrors";
+import { parisDateTimeInputValue, dateTimeLocalToParisUtcIso } from "../../utils/dateTime";
+import { AlertTriangleIcon } from "../common/icons";
 
 interface EditEventForm {
   name: string;
@@ -25,12 +27,6 @@ interface Props {
     endDateTime: string;
     discordRoleId?: string | null;
   } | null;
-}
-
-function toLocalDatetime(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default function EditEventModal({ open, onClose, onUpdated, event }: Props) {
@@ -65,8 +61,8 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     if (event && open) {
       reset({
         name: event.name,
-        startDateTime: toLocalDatetime(event.startDateTime),
-        endDateTime: toLocalDatetime(event.endDateTime),
+        startDateTime: parisDateTimeInputValue(event.startDateTime),
+        endDateTime: parisDateTimeInputValue(event.endDateTime),
         discordRoleId: event.discordRoleId ?? "",
       });
     }
@@ -77,7 +73,7 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     const ok = await confirmDialog({
       title: "Purger l'événement",
       message:
-        "Purger cet event ?\n\nCela supprimera définitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n\nL'event lui-même sera conservé. Si un rôle Discord est lié, la liste des participants sera réimportée automatiquement depuis Discord.",
+        "Purger cet event ?\n\nCela supprimera définitivement :\n- Toutes les tables de jeu\n- Toutes les participations\n- Tous les jeux\n- Les repas, l'équipe courses et les chefs ajoutés manuellement\n\nL'event lui-même sera conservé (config cuisine et rôle chef Discord compris). Si un rôle Discord est lié, la liste des participants (et les chefs par rôle) sera réimportée automatiquement depuis Discord.",
       confirmLabel: "Purger",
       variant: "danger",
     });
@@ -105,8 +101,8 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
     try {
       await api.patch(`/api/events/${event.id}`, {
         name: data.name,
-        startDateTime: new Date(data.startDateTime).toISOString(),
-        endDateTime: new Date(data.endDateTime).toISOString(),
+        startDateTime: dateTimeLocalToParisUtcIso(data.startDateTime),
+        endDateTime: dateTimeLocalToParisUtcIso(data.endDateTime),
         // Champ visible uniquement avec le droit gestion des events : ne pas
         // l'envoyer sinon, pour ne pas effacer le role lie a l'event
         ...(canManageEvents ? { discordRoleId: data.discordRoleId.trim() || null } : {}),
@@ -167,7 +163,8 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
             {...register("endDateTime", {
               required: "La date de fin est obligatoire",
               validate: (value) =>
-                new Date(value) > new Date(getValues("startDateTime")) ||
+                new Date(dateTimeLocalToParisUtcIso(value)) >
+                  new Date(dateTimeLocalToParisUtcIso(getValues("startDateTime"))) ||
                 "La fin doit être après le début",
             })}
           />
@@ -202,8 +199,16 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
             )}
           </div>
         )}
-        <div className="flex items-center justify-between pt-2">
-          {canManageEvents && (
+        {canManageEvents && (
+          <div className="rounded-lg border border-error bg-error/10 p-3">
+            <div className="flex items-center gap-1.5 text-error font-semibold text-sm">
+              <AlertTriangleIcon className="w-3.5 h-3.5" />
+              Zone dangereuse
+            </div>
+            <p className="text-xs opacity-70 mt-1 mb-2">
+              Supprime tables, jeux, repas et inscriptions. L'événement et ses participants sont
+              conservés.
+            </p>
             <button
               type="button"
               className="btn btn-error btn-outline btn-sm"
@@ -211,18 +216,18 @@ export default function EditEventModal({ open, onClose, onUpdated, event }: Prop
               disabled={busy}
             >
               {purging && <span className="loading loading-spinner loading-xs" />}
-              Purger l'event
-            </button>
-          )}
-          <div className="flex gap-2 ml-auto">
-            <button type="button" className="btn" onClick={handleClose} disabled={busy}>
-              Annuler
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={busy}>
-              {isSubmitting && <span className="loading loading-spinner loading-xs" />}
-              Enregistrer
+              Purger l'événement
             </button>
           </div>
+        )}
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" className="btn" onClick={handleClose} disabled={busy}>
+            Annuler
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>
+            {isSubmitting && <span className="loading loading-spinner loading-xs" />}
+            Enregistrer
+          </button>
         </div>
       </form>
     </ResponsiveModal>

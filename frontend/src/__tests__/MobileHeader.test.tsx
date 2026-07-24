@@ -27,10 +27,10 @@ describe("MobileHeader", () => {
     useAuthMock.mockReset();
   });
 
-  it("renders the TM logo as a link to home", () => {
+  it("renders the ToM logo as a link to home", () => {
     useAuthMock.mockReturnValue({ user: null });
     renderHeader();
-    const logo = screen.getByRole("link", { name: "TM" });
+    const logo = screen.getByRole("link", { name: "ToM" });
     expect(logo).toHaveAttribute("href", "/");
   });
 

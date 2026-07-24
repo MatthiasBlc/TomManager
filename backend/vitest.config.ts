@@ -32,6 +32,10 @@ export default defineConfig({
           include: ["src/__tests__/integration/**/*.test.ts"],
           setupFiles: ["./src/__tests__/setup/globalSetup.ts"],
           pool: "forks",
+          // beforeEach/afterEach truncate the whole DB (globalSetup.ts) : les fichiers de
+          // test doivent s'executer sequentiellement, sinon leurs hooks se marchent dessus
+          // (FK violations quand un fichier truncate pendant qu'un autre est en cours).
+          fileParallelism: false,
           poolOptions: {
             forks: {
               singleFork: true,

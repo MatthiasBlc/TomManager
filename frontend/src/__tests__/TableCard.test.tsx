@@ -32,7 +32,7 @@ describe("TableCard", () => {
   it("renders title, GM, pitch and counts", () => {
     render(<TableCard table={baseTable} onClick={() => {}} />);
     expect(screen.getByText("Donjon des morts")).toBeInTheDocument();
-    expect(screen.getByText("MJ : Alice")).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Une aventure mortelle")).toBeInTheDocument();
     expect(screen.getByText("3/5 joueurs")).toBeInTheDocument();
   });
@@ -40,6 +40,11 @@ describe("TableCard", () => {
   it("renders the type badge (JDR or JDS)", () => {
     render(<TableCard table={baseTable} onClick={() => {}} />);
     expect(screen.getByText("JDR")).toBeInTheDocument();
+  });
+
+  it("hides the MJ row for a JDS table (no game master role for board games)", () => {
+    render(<TableCard table={{ ...baseTable, type: "JDS" }} onClick={() => {}} />);
+    expect(screen.queryByText("Alice")).not.toBeInTheDocument();
   });
 
   it("renders all tag names as badges", () => {
@@ -73,9 +78,7 @@ describe("TableCard", () => {
         onClick={() => {}}
       />
     );
-    expect(screen.getByText("0/4 joueurs")).toBeInTheDocument();
-    expect(screen.getByText("0/1 libre")).toBeInTheDocument();
-    expect(screen.getByText("0/3 réservées")).toBeInTheDocument();
+    expect(screen.getByText("0/4 joueurs · 0/1 libre · 0/3 réservées")).toBeInTheDocument();
   });
 
   it("does not render the seat split when reservedSeats is 0", () => {
@@ -84,9 +87,26 @@ describe("TableCard", () => {
     expect(screen.queryByText(/réservée/)).not.toBeInTheDocument();
   });
 
+  it("hides the '0/0 libre' badge when the whole table is reservation-only (no normal seats)", () => {
+    render(
+      <TableCard
+        table={{
+          ...baseTable,
+          maxPlayers: 4,
+          reservedSeats: 4,
+          confirmedCount: 3,
+          confirmedOnReserved: 3,
+        }}
+        onClick={() => {}}
+      />
+    );
+    expect(screen.queryByText(/libre/)).not.toBeInTheDocument();
+    expect(screen.getByText(/3\/4 réservées/)).toBeInTheDocument();
+  });
+
   it("renders the waitlist badge when waitlistCount > 0", () => {
     render(<TableCard table={{ ...baseTable, waitlistCount: 2 }} onClick={() => {}} />);
-    expect(screen.getByText("+2 en liste d'attente")).toBeInTheDocument();
+    expect(screen.getByText(/\+2 en liste d'attente/)).toBeInTheDocument();
   });
 
   it("renders the Joined badge when currentUserStatus is CONFIRMED", () => {

@@ -4,6 +4,7 @@ import { useIsMobile } from "../../hooks/useIsMobile";
 import MobileSheet from "../common/MobileSheet";
 import NotificationItem from "./NotificationItem";
 import { SkeletonNotificationList } from "../common/Skeleton";
+import { BellIcon } from "../common/icons";
 
 function NotificationList({
   notifications,
@@ -15,7 +16,8 @@ function NotificationList({
   deleteNotification,
   unreadCount,
   isMobile,
-}: ReturnType<typeof useNotifications> & { isMobile: boolean }) {
+  onNavigate,
+}: ReturnType<typeof useNotifications> & { isMobile: boolean; onNavigate: () => void }) {
   const touchTarget = isMobile ? "min-h-[44px]" : "";
   return (
     <>
@@ -51,6 +53,7 @@ function NotificationList({
             notification={notif}
             onMarkAsRead={markAsRead}
             onDelete={deleteNotification}
+            onNavigate={onNavigate}
           />
         ))}
         {hasMore && (
@@ -94,20 +97,7 @@ export default function NotificationBell() {
           onClick={() => setOpen(!open)}
           aria-label="Notifications"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            />
-          </svg>
+          <BellIcon className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="badge badge-xs badge-primary absolute -top-1 -right-1">
               {unreadCount > 99 ? "99+" : unreadCount}
@@ -118,7 +108,7 @@ export default function NotificationBell() {
         {/* Desktop dropdown */}
         {open && !isMobile && (
           <div className="absolute right-0 mt-2 w-80 bg-base-100 rounded-lg shadow-lg border border-base-300 z-50 max-h-96 flex flex-col">
-            <NotificationList {...notifData} isMobile={false} />
+            <NotificationList {...notifData} isMobile={false} onNavigate={() => setOpen(false)} />
           </div>
         )}
       </div>
@@ -126,7 +116,7 @@ export default function NotificationBell() {
       {/* Mobile bottom sheet */}
       {isMobile && (
         <MobileSheet open={open} onClose={() => setOpen(false)} title="Notifications">
-          <NotificationList {...notifData} isMobile={true} />
+          <NotificationList {...notifData} isMobile={true} onNavigate={() => setOpen(false)} />
         </MobileSheet>
       )}
     </>

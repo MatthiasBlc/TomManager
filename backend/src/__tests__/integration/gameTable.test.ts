@@ -5,12 +5,14 @@ import {
   createTestEvent,
   addTestParticipant,
   createTestUserDirectly,
+  enableEventManager,
 } from "../setup/testHelpers";
 import prisma from "../../util/db";
 
 // Helper: setup admin + event + participant user with cookie
 async function setupEventWithParticipant() {
   const admin = await setupAdmin();
+  await enableEventManager(admin.user.id);
   const event = await createTestEvent(admin.cookie);
   const { user, cookie: playerCookie } = await addTestParticipant(event.id, {
     email: "player@example.com",
@@ -1491,7 +1493,8 @@ describe("GameTable API", () => {
       // p5 et p6 (les plus recents du lot en trop) partent en liste d'attente
       expect(byId(players[4].id).status).toBe("WAITLIST");
       expect(byId(players[5].id).status).toBe("WAITLIST");
-    });
+      // 6 joueurs a creer + 6 promotions : depasse regulierement les 5s par defaut
+    }, 15000);
 
     it("updateTable reducing maxPlayers caps reservedSeats and demotes confirmed", async () => {
       // maxPlayers=6, reservedSeats=2 → openSeats=4

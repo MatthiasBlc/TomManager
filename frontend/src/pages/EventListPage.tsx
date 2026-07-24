@@ -9,6 +9,7 @@ import FAB from "../components/common/FAB";
 import { SkeletonCardGrid } from "../components/common/Skeleton";
 import EmptyState from "../components/common/EmptyState";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { formatParisDateTime } from "../utils/dateTime";
 
 interface EventSummary {
   id: string;
@@ -44,15 +45,14 @@ export default function EventListPage() {
     fetchEvents();
   }, [fetchEvents]);
 
-  const formatDate = (iso: string) => {
-    return new Date(iso).toLocaleDateString("fr-FR", {
+  const formatDate = (iso: string) =>
+    formatParisDateTime(iso, {
       day: "numeric",
       month: "short",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
   return (
     <div className="container mx-auto px-4 py-4 md:py-8">

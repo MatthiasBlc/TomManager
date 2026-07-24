@@ -62,4 +62,21 @@ describe("useEventSocket", () => {
     unmount();
     expect(socket.off).toHaveBeenCalledWith("connect", expect.any(Function));
   });
+
+  it.each([
+    ["kitchen:config-updated", "onKitchenConfigUpdated"],
+    ["kitchen:meal-changed", "onKitchenMealChanged"],
+    ["kitchen:assistant-changed", "onKitchenAssistantChanged"],
+    ["kitchen:planning-generated", "onKitchenPlanningGenerated"],
+    ["kitchen:swap-request-changed", "onKitchenSwapRequestChanged"],
+    ["kitchen:assistant-swap-changed", "onKitchenAssistantSwapChanged"],
+  ] as const)("reacts to the %s server event via %s", (event, callbackName) => {
+    const socket = makeFakeSocket(true);
+    useSocketMock.mockReturnValue(socket);
+    const callback = vi.fn();
+    renderHook(() => useEventSocket("ev1", { [callbackName]: callback }));
+
+    socket.trigger(event);
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
 });

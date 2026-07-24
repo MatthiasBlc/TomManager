@@ -88,27 +88,53 @@ export async function seedAdmin(): Promise<AdminContext> {
   return { cookie, userId: data.userId, username, email, password };
 }
 
-export async function seedEvent(adminCookie: string): Promise<EventContext> {
-  const start = new Date();
-  start.setDate(start.getDate() + 1);
-  start.setHours(10, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  end.setHours(22, 0, 0, 0);
+export async function seedEvent(
+  adminCookie: string,
+  bounds?: { startDateTime: string; endDateTime: string }
+): Promise<EventContext> {
+  let startIso: string;
+  let endIso: string;
+  if (bounds) {
+    startIso = bounds.startDateTime;
+    endIso = bounds.endDateTime;
+  } else {
+    const start = new Date();
+    start.setDate(start.getDate() + 1);
+    start.setHours(10, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    end.setHours(22, 0, 0, 0);
+    startIso = start.toISOString();
+    endIso = end.toISOString();
+  }
 
   const res = await fetch(`${API}/api/events`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: adminCookie },
     body: JSON.stringify({
       name: `E2E Event ${Date.now()}`,
-      startDateTime: start.toISOString(),
-      endDateTime: end.toISOString(),
+      startDateTime: startIso,
+      endDateTime: endIso,
     }),
   });
 
   if (!res.ok) throw new Error(`seedEvent failed: ${res.status}`);
   const data = await res.json();
   return data.data;
+}
+
+/**
+ * Active la preference `admin.kitchen` (responsable cuisine, opt-in) pour un admin
+ * deja seede. Necessaire pour que les mutations cuisine (PATCH /kitchen, ajout
+ * chef/courses, generation planning) passent le middleware requireKitchenManager.
+ */
+export async function enableKitchenManager(adminCookie: string): Promise<void> {
+  const res = await fetch(`${API}/api/me/preferences`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Cookie: adminCookie },
+    body: JSON.stringify({ "admin.kitchen": true }),
+  });
+  if (!res.ok) throw new Error(`enableKitchenManager failed: ${res.status} ${await res.text()}`);
 }
 
 /**

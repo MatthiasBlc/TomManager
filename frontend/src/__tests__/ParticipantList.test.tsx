@@ -77,8 +77,13 @@ describe("ParticipantList", () => {
     expect(screen.getByRole("table")).toBeInTheDocument();
   });
 
-  it("shows the Remove button for non-creator participants when current user is creator", () => {
-    useAuthMock.mockReturnValue({ user: { id: "u1" } });
+  it("shows the Remove button for non-creator participants when current user has admin.events", () => {
+    // Etre le createur ne donne plus de droit particulier : seule la preference
+    // admin.events (via le role ADMIN) gate l'action de retrait.
+    useAuthMock.mockReturnValue({
+      user: { id: "u1", role: "ADMIN" },
+      preferences: { "admin.events": true },
+    });
     render(
       <ParticipantList
         eventId="ev1"
@@ -91,7 +96,20 @@ describe("ParticipantList", () => {
     expect(removes).toHaveLength(1);
   });
 
-  it("does not show Remove buttons when current user is not the creator", () => {
+  it("does not show Remove buttons for a plain creator without admin.events", () => {
+    useAuthMock.mockReturnValue({ user: { id: "u1", role: "ADMIN" } });
+    render(
+      <ParticipantList
+        eventId="ev1"
+        createdBy="u1"
+        participants={baseParticipants}
+        onChanged={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("button", { name: "Retirer" })).not.toBeInTheDocument();
+  });
+
+  it("does not show Remove buttons for a non-admin, non-creator participant", () => {
     useAuthMock.mockReturnValue({ user: { id: "u2" } });
     render(
       <ParticipantList
@@ -120,7 +138,10 @@ describe("ParticipantList", () => {
   it("calls api.delete and onChanged when Remove is clicked", async () => {
     apiDeleteMock.mockResolvedValue({});
     const onChanged = vi.fn();
-    useAuthMock.mockReturnValue({ user: { id: "u1" } });
+    useAuthMock.mockReturnValue({
+      user: { id: "u1", role: "ADMIN" },
+      preferences: { "admin.events": true },
+    });
     render(
       <ParticipantList
         eventId="ev1"

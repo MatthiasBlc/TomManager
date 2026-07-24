@@ -12,6 +12,8 @@ import FAB from "../common/FAB";
 import { useEventSocket } from "../../hooks/useEventSocket";
 import { SkeletonCardGrid } from "../common/Skeleton";
 import { type TableSummary } from "./computeLayout";
+import { type MealSlot } from "./kitchenSlots";
+import { parisDayKey } from "../../utils/dateTime";
 
 interface EventBounds {
   startDateTime: string;
@@ -34,6 +36,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
   const isMobile = useIsMobile();
   const { pdfExportEnabled } = useAdminRights();
   const [tables, setTables] = useState<TableSummary[]>([]);
+  const [mealSlots, setMealSlots] = useState<MealSlot[]>([]);
   const [eventBounds, setEventBounds] = useState<EventBounds | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -72,6 +75,18 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
     }
   }, [eventId]);
 
+  // Creneaux cuisine : memes donnees que le board (GET /kitchen), visibilite geree
+  // cote serveur (l'endpoint ne renvoie des repas que si l'utilisateur peut voir le
+  // board). Un equipier sans planning active recoit une liste vide -> aucun creneau.
+  const fetchMealSlots = useCallback(async () => {
+    try {
+      const res = await api.get(`/api/events/${eventId}/kitchen`);
+      setMealSlots(res.data.data.meals ?? []);
+    } catch {
+      // Silencieux : la cuisine ne bloque pas l'affichage du planning des tables
+    }
+  }, [eventId]);
+
   const fetchEventBounds = useCallback(async () => {
     try {
       const res = await api.get(`/api/events/${eventId}`);
@@ -86,19 +101,31 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
 
   useEffect(() => {
     fetchTables();
+    fetchMealSlots();
     fetchEventBounds();
-  }, [fetchTables, fetchEventBounds]);
+  }, [fetchTables, fetchMealSlots, fetchEventBounds]);
+
+  // Les conflits sont croises (une inscription cuisine peut creer un conflit sur une
+  // table et inversement) : tout evenement d'un domaine invalide les deux vues.
+  const refetchAll = useCallback(() => {
+    fetchTables();
+    fetchMealSlots();
+  }, [fetchTables, fetchMealSlots]);
 
   useEventSocket(eventId, {
-    onTableCreated: fetchTables,
-    onTableUpdated: fetchTables,
-    onTableDeleted: fetchTables,
-    onPlayerJoined: fetchTables,
-    onPlayerLeft: fetchTables,
-    onPlayerKicked: fetchTables,
-    onPlayerPromoted: fetchTables,
-    onPlayerDemoted: fetchTables,
-    onReconnected: fetchTables,
+    onTableCreated: refetchAll,
+    onTableUpdated: refetchAll,
+    onTableDeleted: refetchAll,
+    onPlayerJoined: refetchAll,
+    onPlayerLeft: refetchAll,
+    onPlayerKicked: refetchAll,
+    onPlayerPromoted: refetchAll,
+    onPlayerDemoted: refetchAll,
+    onKitchenMealChanged: refetchAll,
+    onKitchenAssistantChanged: refetchAll,
+    onKitchenPlanningGenerated: refetchAll,
+    onKitchenConfigUpdated: refetchAll,
+    onReconnected: refetchAll,
   });
 
   const handleTableClick = (tableId: string) => {
@@ -208,10 +235,11 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         {loading ? (
           <SkeletonCardGrid count={4} />
         ) : viewMode === "list" ? (
-          <TimelineView tables={tables} onTableClick={handleTableClick} />
+          <TimelineView tables={tables} mealSlots={mealSlots} onTableClick={handleTableClick} />
         ) : eventBounds ? (
           <CalendarView
             tables={tables}
+            mealSlots={mealSlots}
             eventBounds={eventBounds}
             eventId={eventId}
             onTableClick={handleTableClick}
@@ -219,7 +247,7 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
             onSlotSelect={handleSlotSelect}
           />
         ) : (
-          <TimelineView tables={tables} onTableClick={handleTableClick} />
+          <TimelineView tables={tables} mealSlots={mealSlots} onTableClick={handleTableClick} />
         )}
       </div>
 
@@ -245,9 +273,9 @@ export default function PlanningTab({ eventId }: { eventId: string }) {
         eventId={eventId}
         prefilledSlot={createSlot}
         eventStartDate={
-          eventBounds?.startDateTime ? eventBounds.startDateTime.slice(0, 10) : undefined
+          eventBounds?.startDateTime ? parisDayKey(eventBounds.startDateTime) : undefined
         }
-        eventEndDate={eventBounds?.endDateTime ? eventBounds.endDateTime.slice(0, 10) : undefined}
+        eventEndDate={eventBounds?.endDateTime ? parisDayKey(eventBounds.endDateTime) : undefined}
       />
 
       <TableDetailModal

@@ -91,10 +91,10 @@ describe("AdminBoardGamePanel", () => {
     expect(screen.getByText("Modifier le jeu")).toBeInTheDocument();
   });
 
-  it("opens delete confirmation modal on Sup. click", async () => {
+  it("opens delete confirmation modal on Supprimer click", async () => {
     render(<AdminBoardGamePanel />);
     await waitFor(() => screen.getByText("Wingspan"));
-    const delBtns = screen.getAllByText("Sup.");
+    const delBtns = screen.getAllByText("Supprimer");
     fireEvent.click(delBtns[0]);
     expect(screen.getByText("Supprimer le jeu")).toBeInTheDocument();
   });
@@ -112,7 +112,7 @@ describe("AdminBoardGamePanel", () => {
     });
     render(<AdminBoardGamePanel />);
     await waitFor(() => screen.getByText("Wingspan"));
-    fireEvent.click(screen.getByText("Sup."));
+    fireEvent.click(screen.getByText("Supprimer"));
     await waitFor(() => expect(screen.getByText(/3 entrée/)).toBeInTheDocument());
   });
 
@@ -120,16 +120,17 @@ describe("AdminBoardGamePanel", () => {
     apiDeleteMock.mockResolvedValue({});
     render(<AdminBoardGamePanel />);
     await waitFor(() => screen.getByText("Wingspan"));
-    fireEvent.click(screen.getAllByText("Sup.")[0]);
-    await waitFor(() => screen.getByText("Supprimer"));
-    fireEvent.click(screen.getByText("Supprimer"));
+    fireEvent.click(screen.getAllByText("Supprimer")[0]);
+    await waitFor(() => screen.getByText("Supprimer le jeu"));
+    const confirmBtns = screen.getAllByText("Supprimer");
+    fireEvent.click(confirmBtns[confirmBtns.length - 1]);
     await waitFor(() => expect(apiDeleteMock).toHaveBeenCalledWith("/api/admin/boardgames/g1"));
   });
 
-  it("opens merge modal on Merger click", async () => {
+  it("opens merge modal on Fusionner click", async () => {
     render(<AdminBoardGamePanel />);
     await waitFor(() => screen.getByText("Wingspan"));
-    fireEvent.click(screen.getAllByText("Merger")[0]);
+    fireEvent.click(screen.getAllByText("Fusionner")[0]);
     expect(screen.getByText("Fusionner le jeu")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Chercher le jeu cible...")).toBeInTheDocument();
   });
@@ -166,7 +167,7 @@ describe("AdminBoardGamePanel", () => {
     await waitFor(() => screen.getByText("Wingspan"));
 
     // Open merge for Wingspan
-    fireEvent.click(screen.getByText("Merger"));
+    fireEvent.click(screen.getByText("Fusionner"));
     await waitFor(() => screen.getByText("Fusionner le jeu"));
 
     // Search for target

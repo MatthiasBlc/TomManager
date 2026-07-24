@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import createError from "http-errors";
 import prisma from "../util/db";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -90,38 +91,81 @@ export async function requireTableGMOrAdmin(req: Request, res: Response, next: N
   }
 }
 
-export async function requireEventCreator(req: Request, res: Response, next: NextFunction) {
-  try {
-    const eventId = req.params.eventId;
-    const userId = req.session.userId!;
+// Verifie ADMIN + preference admin.kitchen ; leve un createError sinon (a catcher par l'appelant).
+export async function assertKitchenManager(userId: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+  });
+  if (!user || user.role !== "ADMIN") {
+    throw createError(403, "Admin access required", { code: "ADMIN_REQUIRED" });
+  }
 
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
+  const pref = await prisma.userPreference.findUnique({
+    where: { userId_key: { userId, key: "admin.kitchen" } },
+  });
+  if (!pref?.value) {
+    throw createError(403, "Kitchen manager preference required", {
+      code: "KITCHEN_MANAGER_REQUIRED",
     });
+  }
+}
 
-    if (!event) {
-      res.status(404).json({ error: { message: "Event not found" } });
-      return;
+// Responsable cuisine : ADMIN ayant active la preference admin.kitchen (opt-in profil).
+export async function requireKitchenManager(req: Request, res: Response, next: NextFunction) {
+  try {
+    await assertKitchenManager(req.session.userId!);
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Chef proprietaire du repas ou responsable cuisine.
+export async function requireMealChefOrManager(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.session.userId!;
+    const meal = await prisma.meal.findUnique({ where: { id: req.params.mealId } });
+    if (!meal) {
+      throw createError(404, "Meal not found", { code: "MEAL_NOT_FOUND" });
     }
 
-    if (event.createdBy === userId) {
+    if (meal.chefUserId === userId) {
       next();
       return;
     }
 
-    const user = await prisma.user.findFirst({
-      where: { id: userId, deletedAt: null },
+    await assertKitchenManager(userId);
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Verifie ADMIN + preference admin.events ; leve un createError sinon (a catcher par l'appelant).
+// Etre le createur de l'event ne donne aucun droit particulier : createur ou non, un
+// admin doit avoir active admin.events pour gerer un event (aligne sur assertKitchenManager).
+export async function assertEventManager(userId: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+  });
+  if (!user || user.role !== "ADMIN") {
+    throw createError(403, "Admin access required", { code: "ADMIN_REQUIRED" });
+  }
+
+  const pref = await prisma.userPreference.findUnique({
+    where: { userId_key: { userId, key: "admin.events" } },
+  });
+  if (!pref?.value) {
+    throw createError(403, "Event manager preference required", {
+      code: "EVENT_MANAGER_REQUIRED",
     });
+  }
+}
 
-    if (!user || user.role !== "ADMIN") {
-      res.status(403).json({
-        error: {
-          message: "Only the event creator or an admin can perform this action",
-        },
-      });
-      return;
-    }
-
+// Gestion des events : ADMIN ayant active la preference admin.events (opt-in profil).
+export async function requireEventManager(req: Request, res: Response, next: NextFunction) {
+  try {
+    await assertEventManager(req.session.userId!);
     next();
   } catch (err) {
     next(err);

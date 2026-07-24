@@ -1,7 +1,19 @@
 import { EventContentArg } from "@fullcalendar/core";
 import { formatSeatSummary } from "./computeLayout";
 
+interface MealExtendedProps {
+  kind: "meal";
+  service: string;
+  chefName: string | null;
+  assistantCount: number;
+  maxAssistants: number;
+  currentUserConflict: boolean;
+  showChefConflict: boolean;
+  conflictingCount: number;
+}
+
 interface TableExtendedProps {
+  kind: "table";
   isGM: boolean;
   currentUserStatus: string | null;
   confirmedCount: number;
@@ -17,7 +29,49 @@ interface TableExtendedProps {
   tags: { id: string; name: string }[];
 }
 
+// Creneau cuisine : bloc informatif (lecture seule) rendu a cote des tables
+function MealBlock({ arg }: { arg: EventContentArg }) {
+  const {
+    service,
+    chefName,
+    assistantCount,
+    maxAssistants,
+    currentUserConflict,
+    showChefConflict,
+    conflictingCount,
+  } = arg.event.extendedProps as MealExtendedProps;
+
+  const bgClasses = currentUserConflict
+    ? "bg-error/80 text-error-content"
+    : "bg-warning/70 text-warning-content";
+
+  return (
+    <div
+      className={`h-full w-full overflow-hidden rounded border-l-[3px] border-warning px-1 py-0.5 ${bgClasses}`}
+      style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.35)" }}
+    >
+      <p className="text-xs font-semibold leading-tight break-words">🍽 {arg.event.title}</p>
+      <span className="badge badge-outline badge-xs opacity-80 max-w-full truncate">{service}</span>
+      <p className="text-xs opacity-80 truncate">{arg.timeText}</p>
+      <p className="text-xs opacity-70 truncate">{chefName ? `Chef : ${chefName}` : "Sans chef"}</p>
+      <p className="text-xs opacity-70 truncate">
+        {assistantCount}/{maxAssistants} équipiers
+      </p>
+      {currentUserConflict && <p className="text-xs font-semibold truncate">⚠ Conflit</p>}
+      {showChefConflict && (
+        <p className="text-xs font-semibold truncate">
+          ⚠ {conflictingCount} conflit{conflictingCount > 1 ? "s" : ""}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
+  if ((arg.event.extendedProps as { kind?: string }).kind === "meal") {
+    return <MealBlock arg={arg} />;
+  }
+
   const {
     isGM,
     currentUserStatus,
@@ -60,7 +114,7 @@ export default function CalendarEventBlock({ arg }: { arg: EventContentArg }) {
       <p className="text-xs font-semibold leading-tight break-words">{arg.event.title}</p>
       <span className="badge badge-outline badge-xs opacity-80 max-w-full truncate">{type}</span>
       <p className="text-xs opacity-80 truncate">{arg.timeText}</p>
-      <p className="text-xs opacity-70 truncate">MJ : {gmUsername}</p>
+      {type === "JDR" && <p className="text-xs opacity-70 truncate">MJ : {gmUsername}</p>}
       <p className="text-xs opacity-70">
         <span className="badge badge-warning badge-xs max-w-full truncate">
           {seatSummary.total}

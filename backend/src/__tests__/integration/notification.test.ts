@@ -1,11 +1,20 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import prisma from "../../util/db";
+
+// Spy sur l'emitter socket : verifie les emissions de sync multi-appareils
+// (notification:new / read / read-all / deleted) sans stack Socket.io
+vi.mock("../../socket/emitter", () => ({
+  emitToUser: vi.fn(),
+  emitToEvent: vi.fn(),
+}));
+import { emitToUser } from "../../socket/emitter";
 import {
   request,
   createTestUserDirectly,
   setupAdmin,
   createTestEvent,
   addTestParticipant,
+  enableEventManager,
 } from "../setup/testHelpers";
 import * as notificationService from "../../services/notification";
 
@@ -17,12 +26,20 @@ async function createUser(overrides?: { email?: string; username?: string }) {
   return user;
 }
 
+// createNotification est non-bloquant (retourne null en cas d'echec) ; dans les
+// tests on attend toujours une creation reussie
+async function mustCreate(input: Parameters<typeof notificationService.createNotification>[0]) {
+  const notification = await notificationService.createNotification(input);
+  if (!notification) throw new Error("createNotification failed unexpectedly in test");
+  return notification;
+}
+
 describe("Notification Service", () => {
   describe("createNotification", () => {
     it("should create a notification", async () => {
       const user = await createUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "Table supprimee",
@@ -42,7 +59,7 @@ describe("Notification Service", () => {
     it("should create a notification without metadata", async () => {
       const user = await createUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "Promu",
@@ -95,13 +112,13 @@ describe("Notification Service", () => {
       const user = await createUser();
 
       // Create with slight delay to ensure ordering
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "First",
         message: "First notification",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "Second",
@@ -119,7 +136,7 @@ describe("Notification Service", () => {
       const user = await createUser();
 
       for (let i = 0; i < 5; i++) {
-        await notificationService.createNotification({
+        await mustCreate({
           userId: user.id,
           type: "TABLE_UPDATED",
           title: `Notif ${i}`,
@@ -151,13 +168,13 @@ describe("Notification Service", () => {
     it("should filter unread only", async () => {
       const user = await createUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "Read",
         message: "Will be read",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "Unread",
@@ -191,7 +208,7 @@ describe("Notification Service", () => {
         username: "user2",
       });
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user1.id,
         type: "TABLE_DELETED",
         title: "User1 only",
@@ -207,13 +224,13 @@ describe("Notification Service", () => {
     it("should return count of unread notifications", async () => {
       const user = await createUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      const n2 = await notificationService.createNotification({
+      const n2 = await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "N2",
@@ -230,7 +247,7 @@ describe("Notification Service", () => {
   describe("markAsRead", () => {
     it("should mark a notification as read", async () => {
       const user = await createUser();
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "PLAYER_KICKED",
         title: "Kicked",
@@ -260,7 +277,7 @@ describe("Notification Service", () => {
         username: "user2",
       });
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user1.id,
         type: "TABLE_DELETED",
         title: "Private",
@@ -275,13 +292,13 @@ describe("Notification Service", () => {
     it("should mark all unread notifications as read", async () => {
       const user = await createUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user.id,
         type: "WAITLIST_PROMOTED",
         title: "N2",
@@ -310,13 +327,13 @@ describe("Notification Service", () => {
         username: "user2",
       });
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user1.id,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId: user2.id,
         type: "TABLE_DELETED",
         title: "N2",
@@ -332,7 +349,7 @@ describe("Notification Service", () => {
   describe("deleteNotification", () => {
     it("should delete a notification", async () => {
       const user = await createUser();
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user.id,
         type: "TABLE_DELETED",
         title: "ToDelete",
@@ -364,7 +381,7 @@ describe("Notification Service", () => {
         username: "user2",
       });
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: user1.id,
         type: "TABLE_DELETED",
         title: "Private",
@@ -375,6 +392,106 @@ describe("Notification Service", () => {
         "Forbidden"
       );
     });
+  });
+});
+
+describe("Notification socket sync", () => {
+  beforeEach(() => {
+    vi.mocked(emitToUser).mockClear();
+  });
+
+  it("emits notification:new on creation", async () => {
+    const user = await createUser();
+
+    const notif = await mustCreate({
+      userId: user.id,
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+
+    expect(emitToUser).toHaveBeenCalledWith(user.id, "notification:new", {
+      notification: expect.objectContaining({ id: notif.id }),
+    });
+  });
+
+  it("emits notification:read on markAsRead", async () => {
+    const user = await createUser();
+    const notif = await mustCreate({
+      userId: user.id,
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+
+    await notificationService.markAsRead(notif.id, user.id);
+
+    expect(emitToUser).toHaveBeenCalledWith(user.id, "notification:read", { id: notif.id });
+  });
+
+  it("emits notification:read-all on markAllAsRead", async () => {
+    const user = await createUser();
+
+    await notificationService.markAllAsRead(user.id);
+
+    expect(emitToUser).toHaveBeenCalledWith(user.id, "notification:read-all", {});
+  });
+
+  it("emits notification:deleted on delete", async () => {
+    const user = await createUser();
+    const notif = await mustCreate({
+      userId: user.id,
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+
+    await notificationService.deleteNotification(notif.id, user.id);
+
+    expect(emitToUser).toHaveBeenCalledWith(user.id, "notification:deleted", { id: notif.id });
+  });
+
+  it("does not emit read/deleted when ownership check fails", async () => {
+    const user1 = await createUser({ email: "own1@test.com", username: "own1" });
+    const user2 = await createUser({ email: "own2@test.com", username: "own2" });
+    const notif = await mustCreate({
+      userId: user1.id,
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+    vi.mocked(emitToUser).mockClear();
+
+    await expect(notificationService.markAsRead(notif.id, user2.id)).rejects.toThrow();
+    await expect(notificationService.deleteNotification(notif.id, user2.id)).rejects.toThrow();
+
+    expect(emitToUser).not.toHaveBeenCalled();
+  });
+});
+
+describe("Notification non-blocking creation", () => {
+  it("returns null instead of throwing when the insert fails", async () => {
+    const result = await notificationService.createNotification({
+      userId: "00000000-0000-0000-0000-000000000000", // utilisateur inexistant -> violation FK
+      type: "TABLE_DELETED",
+      title: "T",
+      message: "M",
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("returns an empty array instead of throwing when a bulk insert fails", async () => {
+    const result = await notificationService.createBulkNotifications([
+      {
+        userId: "00000000-0000-0000-0000-000000000000",
+        type: "TABLE_DELETED",
+        title: "T",
+        message: "M",
+      },
+    ]);
+
+    expect(result).toEqual([]);
   });
 });
 
@@ -394,7 +511,7 @@ describe("Notification API", () => {
     it("should return notifications for authenticated user", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "Test",
@@ -418,7 +535,7 @@ describe("Notification API", () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
       for (let i = 0; i < 5; i++) {
-        await notificationService.createNotification({
+        await mustCreate({
           userId,
           type: "TABLE_UPDATED",
           title: `Notif ${i}`,
@@ -449,13 +566,13 @@ describe("Notification API", () => {
     it("should filter unread only", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      const n1 = await notificationService.createNotification({
+      const n1 = await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "Read one",
         message: "Read",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "WAITLIST_PROMOTED",
         title: "Unread one",
@@ -483,13 +600,13 @@ describe("Notification API", () => {
     it("should return unread count", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "WAITLIST_PROMOTED",
         title: "N2",
@@ -515,7 +632,7 @@ describe("Notification API", () => {
     it("should mark notification as read", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId,
         type: "PLAYER_KICKED",
         title: "Kicked",
@@ -549,7 +666,7 @@ describe("Notification API", () => {
         username: "apiuser2",
       });
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: userId1,
         type: "TABLE_DELETED",
         title: "Private",
@@ -566,13 +683,13 @@ describe("Notification API", () => {
     it("should mark all as read", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "N1",
         message: "M1",
       });
-      await notificationService.createNotification({
+      await mustCreate({
         userId,
         type: "WAITLIST_PROMOTED",
         title: "N2",
@@ -594,7 +711,7 @@ describe("Notification API", () => {
     it("should delete a notification", async () => {
       const { cookie, userId } = await setupAuthenticatedUser();
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId,
         type: "TABLE_DELETED",
         title: "ToDelete",
@@ -628,7 +745,7 @@ describe("Notification API", () => {
         username: "apiuser2",
       });
 
-      const notif = await notificationService.createNotification({
+      const notif = await mustCreate({
         userId: userId1,
         type: "TABLE_DELETED",
         title: "Private",
@@ -645,6 +762,7 @@ describe("Notification API", () => {
 // Helper: setup admin + event + participant user
 async function setupEventWithPlayer() {
   const admin = await setupAdmin();
+  await enableEventManager(admin.user.id);
   const event = await createTestEvent(admin.cookie);
   const { user, cookie: playerCookie } = await addTestParticipant(event.id, {
     email: "player@notif.com",
@@ -827,6 +945,216 @@ describe("Notification Triggers", () => {
     });
   });
 
+  describe("GM notifications", () => {
+    async function setupTable(maxPlayers: number, extra: Record<string, unknown> = {}) {
+      const { admin, event, playerCookie, playerId } = await setupEventWithPlayer();
+      const tableRes = await request
+        .post(`/api/events/${event.id}/tables`)
+        .set("Cookie", playerCookie)
+        .send({
+          title: "GM Table",
+          maxPlayers,
+          startDateTime: "2026-06-01T10:00:00Z",
+          endDateTime: "2026-06-01T12:00:00Z",
+          ...extra,
+        });
+      return { admin, event, playerCookie, gmId: playerId, tableId: tableRes.body.data.id };
+    }
+
+    it("should notify the GM when a player joins (confirmed)", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(5);
+
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_PLAYER_JOINED" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain("notifplayer2");
+      expect(notifs[0].message).toContain("GM Table");
+
+      // Table non complete (5 places) : pas de GM_TABLE_FULL
+      const fullNotifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_TABLE_FULL" },
+      });
+      expect(fullNotifs).toHaveLength(0);
+    });
+
+    it("should notify the GM when a player lands on the waitlist", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(1);
+
+      // Player2 prend la derniere place, player3 part en waitlist
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      const { cookie: player3Cookie } = await addTestParticipant(event.id, {
+        email: "player3@notif.com",
+        username: "notifplayer3",
+      });
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player3Cookie);
+
+      const waitlistNotifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_PLAYER_WAITLISTED" },
+      });
+      expect(waitlistNotifs).toHaveLength(1);
+      expect(waitlistNotifs[0].message).toContain("notifplayer3");
+    });
+
+    it("should notify the GM with GM_TABLE_FULL when the last seat is taken", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(1);
+
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+
+      const joined = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_PLAYER_JOINED" },
+      });
+      expect(joined).toHaveLength(1);
+      const full = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_TABLE_FULL" },
+      });
+      expect(full).toHaveLength(1);
+      expect(full[0].message).toContain("GM Table");
+    });
+
+    it("should not notify the GM for their own auto-seat on a JDS table", async () => {
+      // Sur une table JDS le MJ est assis automatiquement a la creation :
+      // sa propre place ne doit generer aucune notification MJ
+      const { gmId } = await setupTable(2, { type: "JDS" });
+
+      const notifs = await prisma.notification.findMany({
+        where: {
+          userId: gmId,
+          type: { in: ["GM_PLAYER_JOINED", "GM_PLAYER_WAITLISTED", "GM_TABLE_FULL"] },
+        },
+      });
+      expect(notifs).toHaveLength(0);
+    });
+
+    it("should notify the GM when a player leaves the table", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(5);
+
+      const player2 = await addSecondPlayer(admin.cookie, event.id);
+      await request
+        .post(`/api/events/${event.id}/tables/${tableId}/join`)
+        .set("Cookie", player2.cookie);
+      await request
+        .delete(`/api/events/${event.id}/tables/${tableId}/leave`)
+        .set("Cookie", player2.cookie);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "GM_PLAYER_LEFT" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain("notifplayer2");
+      expect(notifs[0].message).toContain("GM Table");
+    });
+
+    it("should notify the GM when an admin updates their table", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(5);
+
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", admin.cookie)
+        .send({ title: "Renamed by admin" });
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "TABLE_UPDATED" },
+      });
+      expect(notifs).toHaveLength(1);
+    });
+
+    it("should notify the GM when an admin deletes their table", async () => {
+      const { admin, event, gmId, tableId } = await setupTable(5);
+
+      await request.delete(`/api/events/${event.id}/tables/${tableId}`).set("Cookie", admin.cookie);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "TABLE_DELETED" },
+      });
+      expect(notifs).toHaveLength(1);
+    });
+
+    it("should not notify the GM when they update their own table", async () => {
+      const { event, playerCookie, gmId, tableId } = await setupTable(5);
+
+      await request
+        .patch(`/api/events/${event.id}/tables/${tableId}`)
+        .set("Cookie", playerCookie)
+        .send({ title: "Renamed by GM" });
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: gmId, type: "TABLE_UPDATED" },
+      });
+      expect(notifs).toHaveLength(0);
+    });
+  });
+
+  describe("Event update", () => {
+    it("should notify participants when the event name changes (author excluded)", async () => {
+      const { admin, event, playerId } = await setupEventWithPlayer();
+
+      await request
+        .patch(`/api/events/${event.id}`)
+        .set("Cookie", admin.cookie)
+        .send({ name: "Renamed Event" });
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: playerId, type: "EVENT_UPDATED" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain("Renamed Event");
+
+      const adminNotifs = await prisma.notification.findMany({
+        where: { userId: admin.user.id, type: "EVENT_UPDATED" },
+      });
+      expect(adminNotifs).toHaveLength(0);
+    });
+
+    it("should not notify when nothing significant changes", async () => {
+      const { admin, event, playerId } = await setupEventWithPlayer();
+
+      // Meme nom, memes dates : aucun champ visible ne change
+      await request
+        .patch(`/api/events/${event.id}`)
+        .set("Cookie", admin.cookie)
+        .send({ name: event.name });
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: playerId, type: "EVENT_UPDATED" },
+      });
+      expect(notifs).toHaveLength(0);
+    });
+  });
+
+  describe("Event deletion", () => {
+    it("should notify participants when the event is deleted (author excluded)", async () => {
+      const { admin, event, playerId } = await setupEventWithPlayer();
+
+      await request.delete(`/api/events/${event.id}`).set("Cookie", admin.cookie);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: playerId, type: "EVENT_DELETED" },
+      });
+      expect(notifs).toHaveLength(1);
+      expect(notifs[0].message).toContain(event.name);
+
+      const adminNotifs = await prisma.notification.findMany({
+        where: { userId: admin.user.id, type: "EVENT_DELETED" },
+      });
+      expect(adminNotifs).toHaveLength(0);
+    });
+  });
+
   describe("Remove participant", () => {
     it("should notify removed participant", async () => {
       const { admin, event, playerCookie: _playerCookie, playerId } = await setupEventWithPlayer();
@@ -842,5 +1170,38 @@ describe("Notification Triggers", () => {
       expect(notifs).toHaveLength(1);
       expect(notifs[0].message).toContain("Test Event");
     });
+  });
+});
+
+describe("Notification retention", () => {
+  it("purges read notifications older than 30 days and unread older than 90 days", async () => {
+    const user = await createUser();
+    const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+    const make = (overrides: { read: boolean; createdAt: Date; title: string }) =>
+      prisma.notification.create({
+        data: {
+          userId: user.id,
+          type: "TABLE_UPDATED",
+          message: "retention test",
+          readAt: overrides.read ? overrides.createdAt : null,
+          ...overrides,
+        },
+      });
+
+    await make({ read: true, createdAt: daysAgo(31), title: "read-old" });
+    await make({ read: true, createdAt: daysAgo(10), title: "read-recent" });
+    await make({ read: false, createdAt: daysAgo(91), title: "unread-old" });
+    await make({ read: false, createdAt: daysAgo(40), title: "unread-recent" });
+
+    const result = await notificationService.purgeOldNotifications();
+
+    expect(result.deletedRead).toBe(1);
+    expect(result.deletedUnread).toBe(1);
+
+    const remaining = await prisma.notification.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "asc" },
+    });
+    expect(remaining.map((n) => n.title).sort()).toEqual(["read-recent", "unread-recent"]);
   });
 });

@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { DISCORD_ERROR_MESSAGES } from "../config/discordErrors";
 import DiscordIcon from "../components/common/DiscordIcon";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { CARD } from "../components/common/ui";
 
 export default function LoginPage() {
   usePageTitle("Connexion");
@@ -63,10 +64,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100dvh-3rem)] md:min-h-screen items-center justify-center bg-base-200 px-4">
-      <div className="card w-full bg-base-100 shadow-xl sm:max-w-sm">
-        <div className="card-body">
-          <h2 className="card-title justify-center">Connexion</h2>
+    <div
+      className="relative flex min-h-[calc(100dvh-3rem)] md:min-h-screen items-center justify-center overflow-hidden bg-base-200 px-4"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 50% 35%, oklch(from var(--color-primary) l c h / 0.12), transparent 60%)",
+      }}
+    >
+      <div className={`relative w-full sm:max-w-sm ${CARD}`}>
+        <div className="card-body items-center text-center">
+          <h2 className="font-serif text-xl font-semibold">Connexion</h2>
 
           {discordAvailable ? (
             <button

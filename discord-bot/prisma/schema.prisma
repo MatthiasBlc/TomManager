@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Session storage for express-session
 model Session {
   id        String   @id
   sid       String   @unique
@@ -21,18 +22,41 @@ model User {
   passwordHash    String?
   discordId       String?   @unique
   discordUsername String?
+  displayName     String?
   avatarUrl       String?
   role            Role      @default(USER)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
-  createdEvents           Event[]
-  eventParticipations     EventParticipation[]
-  createdGameTables       GameTable[]
-  gameTableParticipations GameTableParticipant[]
-  eventBoardGames         EventBoardGame[]
-  notifications           Notification[]
+  createdEvents                 Event[]
+  eventParticipations           EventParticipation[]
+  createdGameTables             GameTable[]
+  gameTableParticipations       GameTableParticipant[]
+  eventBoardGames               EventBoardGame[]
+  notifications                 Notification[]
+  preferences                   UserPreference[]
+  kitchenChefRoster             KitchenChef[]
+  kitchenCoursesMemberships     KitchenCoursesMember[]
+  meals                         Meal[]
+  mealAssistances               MealAssistant[]
+  sentSwapRequests              MealSwapRequest[]      @relation("SwapRequester")
+  receivedSwapRequests          MealSwapRequest[]      @relation("SwapTarget")
+  sentAssistantSwapRequests     AssistantSwapRequest[] @relation("AssistantSwapRequester")
+  acceptedAssistantSwapRequests AssistantSwapRequest[] @relation("AssistantSwapAccepter")
+}
+
+// Preferences utilisateur (toggles admin/beta, extensible a d'autres options)
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String
+  key       String
+  value     Boolean
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
 }
 
 model Event {
@@ -49,6 +73,7 @@ model Event {
   participations  EventParticipation[]
   gameTables      GameTable[]
   eventBoardGames EventBoardGame[]
+  kitchen         EventKitchen?
 
   @@index([createdBy])
 }
@@ -79,8 +104,10 @@ model GameTable {
   triggers      String?
   comments      String?
   maxPlayers    Int
+  reservedSeats Int       @default(0)
   startDateTime DateTime
   endDateTime   DateTime
+  boardGameId   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -88,6 +115,7 @@ model GameTable {
   creator      User                   @relation(fields: [createdBy], references: [id])
   tags         GameTableTag[]
   participants GameTableParticipant[]
+  boardGame    BoardGame?             @relation(fields: [boardGameId], references: [id], onDelete: SetNull)
 
   @@index([eventId, startDateTime])
 }
@@ -110,11 +138,12 @@ model GameTableTag {
 }
 
 model GameTableParticipant {
-  id          String                 @id @default(uuid())
-  gameTableId String
-  userId      String
-  status      TableParticipantStatus @default(CONFIRMED)
-  joinedAt    DateTime               @default(now())
+  id               String                 @id @default(uuid())
+  gameTableId      String
+  userId           String
+  status           TableParticipantStatus @default(CONFIRMED)
+  isOnReservedSeat Boolean                @default(false)
+  joinedAt         DateTime               @default(now())
 
   gameTable GameTable @relation(fields: [gameTableId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id])
@@ -138,6 +167,7 @@ model BoardGame {
   createdAt      DateTime @default(now())
 
   eventBoardGames EventBoardGame[]
+  gameTables      GameTable[]
 
   @@unique([externalSource, externalId])
   @@index([name])
@@ -156,22 +186,6 @@ model EventBoardGame {
 
   @@unique([eventId, boardGameId, broughtByUserId])
   @@index([eventId])
-}
-
-model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String
-  metadata  Json?
-  read      Boolean          @default(false)
-  readAt    DateTime?
-  createdAt DateTime         @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([userId, read, createdAt(sort: Desc)])
 }
 
 enum Role {
@@ -194,8 +208,243 @@ enum NotificationType {
   TABLE_UPDATED
   WAITLIST_PROMOTED
   WAITLIST_DEMOTED
+  RESERVED_SEAT_ASSIGNED
   PLAYER_KICKED
   PARTICIPANT_REMOVED
   EVENT_UPDATED
   EVENT_DELETED
+  GM_PLAYER_JOINED
+  GM_PLAYER_WAITLISTED
+  GM_PLAYER_LEFT
+  GM_TABLE_FULL
+  KITCHEN_SWAP_REQUESTED
+  KITCHEN_SWAP_ACCEPTED
+  KITCHEN_SWAP_REJECTED
+  KITCHEN_ASSISTANT_SWAP_REQUESTED
+  KITCHEN_ASSISTANT_SWAP_ACCEPTED
+  KITCHEN_CHEF_ADDED
+  KITCHEN_CHEF_REMOVED
+  KITCHEN_MEAL_CLAIMED
+  KITCHEN_OVERCAPACITY
+  KITCHEN_DIET_SPLIT_UPDATED
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  metadata  Json?
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, read, createdAt(sort: Desc)])
+}
+
+// Module cuisine (CookV1) - voir docs/features/CookV1/SPEC_COOKING.md
+
+model EventKitchen {
+  id                      String   @id @default(uuid())
+  eventId                 String   @unique
+  chefRoleId              String?
+  allergiesNotes          String?
+  equipierPlanningEnabled Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  event                 Event                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  chefs                 KitchenChef[]
+  coursesMembers        KitchenCoursesMember[]
+  meals                 Meal[]
+  assistants            MealAssistant[]
+  mealSwapRequests      MealSwapRequest[]
+  assistantSwapRequests AssistantSwapRequest[]
+}
+
+model KitchenChef {
+  id             String     @id @default(uuid())
+  eventKitchenId String
+  userId         String
+  source         ChefSource
+
+  eventKitchen EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([eventKitchenId, userId])
+}
+
+model KitchenCoursesMember {
+  id             String @id @default(uuid())
+  eventKitchenId String
+  userId         String
+
+  eventKitchen EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([eventKitchenId, userId])
+}
+
+model Meal {
+  id             String      @id @default(uuid())
+  eventKitchenId String
+  chefUserId     String?
+  name           String
+  service        MealService
+  startDateTime  DateTime
+  endDateTime    DateTime
+  maxAssistants  Int         @default(0)
+  vegeCount      Int         @default(0)
+  carneCount     Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  eventKitchen EventKitchen     @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  chef         User?            @relation(fields: [chefUserId], references: [id])
+  ingredients  MealIngredient[]
+  utensils     MealUtensil[]
+  assistants   MealAssistant[]
+
+  swapRequestsAsRequester MealSwapRequest[] @relation("SwapRequesterMeal")
+  swapRequestsAsTarget    MealSwapRequest[] @relation("SwapTargetMeal")
+
+  assistantSwapRequestsAsRequesterMeal AssistantSwapRequest[] @relation("AssistantSwapRequesterMeal")
+  assistantSwapRequestsAsTargetMeal    AssistantSwapRequest[] @relation("AssistantSwapTargetMeal")
+
+  @@unique([eventKitchenId, chefUserId])
+  @@index([eventKitchenId, startDateTime])
+}
+
+model MealIngredient {
+  id        String  @id @default(uuid())
+  mealId    String
+  productId String?
+  name      String
+  quantity  Decimal @db.Decimal(10, 3)
+  unit      Unit
+
+  meal    Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+}
+
+model Product {
+  id   String @id @default(uuid())
+  name String @unique
+
+  mealIngredients MealIngredient[]
+}
+
+model MealUtensil {
+  id        String  @id @default(uuid())
+  mealId    String
+  utensilId String?
+  name      String
+
+  meal    Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  utensil Utensil? @relation(fields: [utensilId], references: [id])
+}
+
+model Utensil {
+  id   String @id @default(uuid())
+  name String @unique
+
+  mealUtensils MealUtensil[]
+}
+
+model MealAssistant {
+  id             String   @id @default(uuid())
+  mealId         String
+  eventKitchenId String
+  userId         String
+  createdAt      DateTime @default(now())
+
+  meal         Meal         @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  eventKitchen EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([mealId, userId])
+  @@unique([eventKitchenId, userId])
+}
+
+// Demande d'echange de creneau entre deux chefs (confirmation mutuelle).
+// A l'acceptation, la recette (name + ingredients + ustensiles) et le chef suivent
+// dans l'echange, mais les equipiers (MealAssistant) et les horaires/service/capacite
+// restent attaches au creneau (slot) d'origine.
+model MealSwapRequest {
+  id              String     @id @default(uuid())
+  eventKitchenId  String
+  requesterMealId String
+  targetMealId    String
+  requesterUserId String
+  targetUserId    String
+  status          SwapStatus @default(PENDING)
+  createdAt       DateTime   @default(now())
+  respondedAt     DateTime?
+
+  eventKitchen  EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  requesterMeal Meal         @relation("SwapRequesterMeal", fields: [requesterMealId], references: [id], onDelete: Cascade)
+  targetMeal    Meal         @relation("SwapTargetMeal", fields: [targetMealId], references: [id], onDelete: Cascade)
+  requester     User         @relation("SwapRequester", fields: [requesterUserId], references: [id])
+  target        User         @relation("SwapTarget", fields: [targetUserId], references: [id])
+
+  @@index([eventKitchenId, status])
+  @@index([targetMealId, status])
+}
+
+// Demande d'echange entre equipiers (point 4, Evolutions.md) : la cible est un
+// REPAS, pas une personne — n'importe quel MealAssistant courant du repas cible
+// peut accepter (premier arrive, premier servi). Echange 1-pour-1 des
+// MealAssistant.mealId (capacite-neutre). accepterUserId n'est renseigne qu'a
+// l'acceptation (inconnu a la creation).
+model AssistantSwapRequest {
+  id              String     @id @default(uuid())
+  eventKitchenId  String
+  requesterMealId String
+  targetMealId    String
+  requesterUserId String
+  accepterUserId  String?
+  status          SwapStatus @default(PENDING)
+  createdAt       DateTime   @default(now())
+  respondedAt     DateTime?
+
+  eventKitchen  EventKitchen @relation(fields: [eventKitchenId], references: [id], onDelete: Cascade)
+  requesterMeal Meal         @relation("AssistantSwapRequesterMeal", fields: [requesterMealId], references: [id], onDelete: Cascade)
+  targetMeal    Meal         @relation("AssistantSwapTargetMeal", fields: [targetMealId], references: [id], onDelete: Cascade)
+  requester     User         @relation("AssistantSwapRequester", fields: [requesterUserId], references: [id])
+  accepter      User?        @relation("AssistantSwapAccepter", fields: [accepterUserId], references: [id])
+
+  @@index([eventKitchenId, status])
+  @@index([targetMealId, status])
+  @@index([requesterUserId, status])
+}
+
+enum SwapStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum ChefSource {
+  ROLE
+  MANUAL
+}
+
+enum MealService {
+  LUNCH
+  DINNER
+}
+
+enum Unit {
+  G
+  KG
+  ML
+  CL
+  L
+  CAS
+  CAC
+  PIECE
 }

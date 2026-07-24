@@ -2,6 +2,9 @@
 import { createContext, useContext, useState, useLayoutEffect, type ReactNode } from "react";
 
 const THEME_KEY = "app_theme";
+// Theme "TomUpdate" (palette maquette Cuisine) conserve et compile dans
+// styles/index.css mais pas actif : repointer DARK_THEME dessus pour le
+// réessayer.
 const DARK_THEME = "ToM";
 // Theme clair : "light" stock de DaisyUI (seul theme clair compile, voir styles/index.css)
 const LIGHT_THEME = "light";

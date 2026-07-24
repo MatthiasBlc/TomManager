@@ -3,7 +3,7 @@ import {
   requireAuth,
   requireAdmin,
   requireEventParticipant,
-  requireEventCreator,
+  requireEventManager,
 } from "../middleware/auth";
 import * as eventController from "../controllers/event";
 
@@ -31,7 +31,7 @@ router.patch(
   "/:eventId",
   requireAuth,
   validateUUID("eventId"),
-  requireEventCreator,
+  requireEventManager,
   validateBody(updateEventSchema),
   eventController.update
 );
@@ -46,7 +46,7 @@ router.delete(
   "/:eventId",
   requireAuth,
   validateUUID("eventId"),
-  requireEventCreator,
+  requireEventManager,
   eventController.remove
 );
 

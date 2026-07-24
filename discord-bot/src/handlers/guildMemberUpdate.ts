@@ -6,6 +6,12 @@ import {
   handleAdminRoleChange,
   buildAvatarUrl,
 } from "../services/syncParticipation";
+import {
+  handleChefRoleAdded,
+  handleChefRoleRemoved,
+  reconcileChefEligibility,
+  reconcileChefOnParticipationLost,
+} from "../services/syncKitchenChef";
 
 export async function onGuildMemberUpdate(
   oldMember: GuildMember | PartialGuildMember,
@@ -28,7 +34,22 @@ export async function onGuildMemberUpdate(
 
   for (const roleId of addedRoles) {
     try {
-      await handleRoleAdded(discordId, discordUsername, avatarUrl, roleId);
+      const participationChange = await handleRoleAdded(
+        discordId,
+        discordUsername,
+        avatarUrl,
+        roleId
+      );
+      await handleChefRoleAdded(discordId, roleId);
+
+      // Le role qui vient d'etre ajoute est celui d'un event (participation gagnee) :
+      // si le membre detient deja le role chef Discord de cet event, le materialiser
+      // immediatement plutot que d'attendre un redemarrage du bot (startupSync).
+      if (participationChange) {
+        await reconcileChefEligibility(participationChange.eventId, participationChange.userId, [
+          ...newRoleIds,
+        ]);
+      }
 
       if (env.DISCORD_ADMIN_ROLE_ID && roleId === env.DISCORD_ADMIN_ROLE_ID) {
         await handleAdminRoleChange(discordId, true);
@@ -40,7 +61,18 @@ export async function onGuildMemberUpdate(
 
   for (const roleId of removedRoles) {
     try {
-      await handleRoleRemoved(discordId, roleId);
+      const participationChange = await handleRoleRemoved(discordId, roleId);
+      await handleChefRoleRemoved(discordId, roleId);
+
+      // Le role qui vient d'etre retire est celui d'un event (participation perdue) :
+      // un chef ROLE doit toujours etre participant (spec 7), donc le retirer du roster
+      // s'il y etait (le repas eventuel devient orphelin).
+      if (participationChange) {
+        await reconcileChefOnParticipationLost(
+          participationChange.eventId,
+          participationChange.userId
+        );
+      }
 
       if (env.DISCORD_ADMIN_ROLE_ID && roleId === env.DISCORD_ADMIN_ROLE_ID) {
         await handleAdminRoleChange(discordId, false);

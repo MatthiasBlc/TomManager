@@ -1,8 +1,14 @@
 # Avancement du projet
 
-## Phase actuelle : Version 1.0 lancee
+## Phase actuelle : Repartition vege/carne par repas (evolution CookV1)
 
-Toutes les phases et features prevues sont terminees et integrees.
+Livre sur `feature/kitchen-diet-split` (lots A a E + e2e, voir
+`docs/features/KitchenDietSplit/ROADMAP.md` / spec
+`docs/features/KitchenDietSplit/SPEC_KITCHEN_DIET_SPLIT.md`), pas encore mergee dans
+`Developement`.
+
+CookV1 (lots A a G) + les 7 points d'evolution post-V1 sont entierement livres, voir
+`docs/features/CookV1/ROADMAP.md`.
 
 Prochaines etapes : `docs/NEXT_STEPS.md`
 Test manuel complet : `docs/MANUAL_TESTING.md`

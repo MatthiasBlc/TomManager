@@ -15,12 +15,25 @@ vi.mock("../../services/syncParticipation", () => ({
   buildAvatarUrl: vi.fn().mockReturnValue("https://default-avatar.png"),
 }));
 
+vi.mock("../../services/syncKitchenChef", () => ({
+  handleChefRoleAdded: vi.fn(),
+  handleChefRoleRemoved: vi.fn(),
+  reconcileChefEligibility: vi.fn(),
+  reconcileChefOnParticipationLost: vi.fn(),
+}));
+
 // ------------------------------------------------------------------ helpers
 import {
   handleRoleAdded,
   handleRoleRemoved,
   handleAdminRoleChange,
 } from "../../services/syncParticipation";
+import {
+  handleChefRoleAdded,
+  handleChefRoleRemoved,
+  reconcileChefEligibility,
+  reconcileChefOnParticipationLost,
+} from "../../services/syncKitchenChef";
 
 function makeMember(roleIds: string[], userId = "user-123", partial = false) {
   const member = {
@@ -129,5 +142,65 @@ describe("onGuildMemberUpdate", () => {
     await expect(onGuildMemberUpdate(old as never, next as never)).resolves.not.toThrow();
 
     expect(handleRoleAdded).toHaveBeenCalledTimes(2);
+  });
+
+  it("appelle handleChefRoleAdded/handleChefRoleRemoved pour chaque role ajoute/supprime", async () => {
+    const old = makeMember(["role-a"]);
+    const next = makeMember(["role-b"]);
+
+    await onGuildMemberUpdate(old as never, next as never);
+
+    expect(handleChefRoleAdded).toHaveBeenCalledWith("user-123", "role-b");
+    expect(handleChefRoleRemoved).toHaveBeenCalledWith("user-123", "role-a");
+  });
+
+  it("reconcilie l'eligibilite chef quand la participation vient d'etre gagnee (role chef deja detenu)", async () => {
+    // Cas du bug remonte : le role chef Discord a ete attribue AVANT que la personne
+    // rejoigne l'event. Sans ce chemin, elle resterait absente du roster jusqu'au
+    // prochain redemarrage du bot (startupSync).
+    vi.mocked(handleRoleAdded).mockResolvedValueOnce({ eventId: "event-1", userId: "user-1" });
+
+    const old = makeMember(["chef-role"]);
+    const next = makeMember(["chef-role", "event-role"]);
+
+    await onGuildMemberUpdate(old as never, next as never);
+
+    expect(reconcileChefEligibility).toHaveBeenCalledWith("event-1", "user-1", [
+      "chef-role",
+      "event-role",
+    ]);
+  });
+
+  it("n'appelle pas reconcileChefEligibility si le role ajoute n'est lie a aucun event", async () => {
+    vi.mocked(handleRoleAdded).mockResolvedValueOnce(null);
+
+    const old = makeMember(["role-a"]);
+    const next = makeMember(["role-a", "role-b"]);
+
+    await onGuildMemberUpdate(old as never, next as never);
+
+    expect(reconcileChefEligibility).not.toHaveBeenCalled();
+  });
+
+  it("reconcilie la perte du roster chef quand la participation vient d'etre perdue", async () => {
+    vi.mocked(handleRoleRemoved).mockResolvedValueOnce({ eventId: "event-1", userId: "user-1" });
+
+    const old = makeMember(["event-role"]);
+    const next = makeMember([]);
+
+    await onGuildMemberUpdate(old as never, next as never);
+
+    expect(reconcileChefOnParticipationLost).toHaveBeenCalledWith("event-1", "user-1");
+  });
+
+  it("n'appelle pas reconcileChefOnParticipationLost si le role retire n'est lie a aucun event", async () => {
+    vi.mocked(handleRoleRemoved).mockResolvedValueOnce(null);
+
+    const old = makeMember(["role-a"]);
+    const next = makeMember([]);
+
+    await onGuildMemberUpdate(old as never, next as never);
+
+    expect(reconcileChefOnParticipationLost).not.toHaveBeenCalled();
   });
 });

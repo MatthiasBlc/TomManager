@@ -44,10 +44,16 @@ export default function HomePage() {
   return (
     /* calc(100dvh - 3rem) : hauteur visible sous le header mobile (dvh evite le
        decalage du 100vh iOS avec la barre d'adresse) */
-    <div className="hero min-h-[calc(100dvh-3rem)] md:min-h-screen bg-base-200">
+    <div
+      className="hero min-h-[calc(100dvh-3rem)] md:min-h-screen bg-base-200"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 50% 35%, oklch(from var(--color-primary) l c h / 0.12), transparent 60%)",
+      }}
+    >
       <div className="hero-content text-center px-4">
         <div className="max-w-md">
-          <h1 className="text-2xl font-bold md:text-5xl">TomManager</h1>
+          <h1 className="font-serif text-2xl font-bold md:text-5xl">TomManager</h1>
           <p className="py-4 text-sm md:py-6 md:text-base">
             Organisez vos soirées jeux : événements, tables de jeu de rôle et de société,
             inscriptions et listes d'attente.

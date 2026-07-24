@@ -13,6 +13,7 @@ export function useAdminRights() {
     canManageEvents: isAdmin && prefs["admin.events"],
     canModerateTables: isAdmin && prefs["admin.tables"],
     canModerateGames: isAdmin && prefs["admin.games"],
+    isKitchenManager: isAdmin && prefs["admin.kitchen"],
     pdfExportEnabled: isAdmin && prefs["beta.pdfExport"],
     gameDbEnabled: isAdmin && prefs["beta.gameDb"],
   };

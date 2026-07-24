@@ -1,0 +1,113 @@
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import MealFicheEditor from "../components/kitchen/MealFicheEditor";
+import type { MealFiche } from "../components/kitchen/MealFichesList";
+
+const apiPatchMock = vi.fn();
+const toastSuccess = vi.fn();
+const toastError = vi.fn();
+
+vi.mock("../config/api", () => ({
+  default: {
+    patch: (...args: unknown[]) => apiPatchMock(...args),
+  },
+}));
+vi.mock("react-hot-toast", () => ({
+  default: {
+    success: (...a: unknown[]) => toastSuccess(...a),
+    error: (...a: unknown[]) => toastError(...a),
+  },
+}));
+
+const MEAL: MealFiche = {
+  id: "meal1",
+  name: "Couscous",
+  service: "DINNER",
+  startDateTime: "2026-06-01T18:00:00.000Z",
+  endDateTime: "2026-06-01T20:00:00.000Z",
+  maxAssistants: 3,
+  remainingSeats: 1,
+  chef: { id: "chef1", username: "Alice" },
+  assistants: [{ id: "u2", username: "Bob" }],
+  ingredients: [],
+  utensils: [],
+};
+
+beforeEach(() => {
+  apiPatchMock.mockReset();
+  toastSuccess.mockReset();
+  toastError.mockReset();
+  vi.useRealTimers();
+});
+
+// MealFicheEditor est reserve a "Mon repas" (le chef n'edite que nom/ingredients/
+// ustensiles de sa propre fiche) depuis que la Gestion (Admin Chef) utilise
+// MealFichesList (liste + modale details), teste separement.
+describe("MealFicheEditor", () => {
+  it("autosaves the name field after a debounce, with no save button anywhere", async () => {
+    vi.useFakeTimers();
+    apiPatchMock.mockResolvedValue({});
+    render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
+
+    expect(screen.queryByRole("button", { name: /enregistrer/i })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Nom du repas"), {
+      target: { value: "Couscous royal" },
+    });
+    expect(apiPatchMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
+      name: "Couscous royal",
+    });
+    vi.useRealTimers();
+  });
+
+  it("shows a read-only schedule/capacity summary, no editable service/capacity controls", () => {
+    render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
+    expect(screen.queryByRole("radio", { name: "Soir" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Augmenter")).not.toBeInTheDocument();
+    expect(screen.getByText(/Soir/)).toBeInTheDocument();
+    expect(screen.getByText(/1\/3/)).toBeInTheDocument();
+  });
+
+  it("shows registered assistants by name and has no way to delete the meal", () => {
+    render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
+    expect(screen.getByText("Bob")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /supprimer/i })).not.toBeInTheDocument();
+  });
+
+  it("shows the vege/carne split read-only, with no note when it matches eventParticipantsCount", () => {
+    const meal: MealFiche = { ...MEAL, vegeCount: 4, carneCount: 6 };
+    render(
+      <MealFicheEditor eventId="ev1" meal={meal} eventParticipantsCount={10} onChanged={vi.fn()} />
+    );
+    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.getByText("6")).toBeInTheDocument();
+    expect(screen.getByText("végé")).toBeInTheDocument();
+    expect(screen.getByText("carné")).toBeInTheDocument();
+    expect(screen.queryByText(/responsable cuisine doit mettre à jour/)).not.toBeInTheDocument();
+  });
+
+  it("shows an informative, non-actionable note when the split no longer matches eventParticipantsCount", () => {
+    const meal: MealFiche = { ...MEAL, vegeCount: 3, carneCount: 7 };
+    render(
+      <MealFicheEditor eventId="ev1" meal={meal} eventParticipantsCount={6} onChanged={vi.fn()} />
+    );
+    expect(screen.getByText(/responsable cuisine doit mettre à jour/)).toBeInTheDocument();
+  });
+
+  it("resets fields when switching to a different meal", () => {
+    const { rerender } = render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("Nom du repas"), {
+      target: { value: "Draft non sauvegarde" },
+    });
+
+    const otherMeal: MealFiche = { ...MEAL, id: "meal2", name: "Raclette" };
+    rerender(<MealFicheEditor eventId="ev1" meal={otherMeal} onChanged={vi.fn()} />);
+
+    expect(screen.getByDisplayValue("Raclette")).toBeInTheDocument();
+  });
+});

@@ -3,6 +3,7 @@ import createError from "http-errors";
 import { findOrCreateTags } from "./tag";
 import { emitToEvent } from "../socket/emitter";
 import { createNotification, createBulkNotifications } from "./notification";
+import { computeEventConflicts } from "./conflicts";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -202,47 +203,19 @@ export async function listTables(eventId: string, currentUserId: string, limit?:
     orderBy: { startDateTime: "asc" },
   });
 
-  const confirmedTablesByUser = new Map<string, number[]>();
-  tables.forEach((t, idx) => {
-    if (!confirmedTablesByUser.has(t.createdBy)) confirmedTablesByUser.set(t.createdBy, []);
-    confirmedTablesByUser.get(t.createdBy)!.push(idx);
+  // Conflits calcules sur le jeu d'intervalles UNIFIE (tables + cuisine, spec 6) :
+  // une occupation cuisine (chef sur son repas, equipier sur son repas) qui chevauche
+  // une table met les deux en conflit. La map est indexee par sourceId (ici tableId).
+  const conflictsBySource = await computeEventConflicts(eventId);
 
-    t.participants
-      .filter((p) => p.status === "CONFIRMED")
-      .forEach((p) => {
-        if (p.userId === t.createdBy) return;
-        if (!confirmedTablesByUser.has(p.userId)) confirmedTablesByUser.set(p.userId, []);
-        confirmedTablesByUser.get(p.userId)!.push(idx);
-      });
-  });
-
-  const conflictedUsersInTable = new Map<number, Set<string>>();
-  for (const [userId, indices] of confirmedTablesByUser) {
-    if (indices.length < 2) continue;
-    for (let i = 0; i < indices.length; i++) {
-      for (let j = i + 1; j < indices.length; j++) {
-        const a = tables[indices[i]];
-        const b = tables[indices[j]];
-        if (a.startDateTime < b.endDateTime && a.endDateTime > b.startDateTime) {
-          if (!conflictedUsersInTable.has(indices[i]))
-            conflictedUsersInTable.set(indices[i], new Set());
-          if (!conflictedUsersInTable.has(indices[j]))
-            conflictedUsersInTable.set(indices[j], new Set());
-          conflictedUsersInTable.get(indices[i])!.add(userId);
-          conflictedUsersInTable.get(indices[j])!.add(userId);
-        }
-      }
-    }
-  }
-
-  return tables.map((t, idx) => {
+  return tables.map((t) => {
     const confirmedCount = t.participants.filter((p) => p.status === "CONFIRMED").length;
     const waitlistCount = t.participants.filter((p) => p.status === "WAITLIST").length;
     const confirmedOnReserved = t.participants.filter(
       (p) => p.status === "CONFIRMED" && p.isOnReservedSeat
     ).length;
     const currentUserParticipant = t.participants.find((p) => p.userId === currentUserId);
-    const conflictedUsers = conflictedUsersInTable.get(idx) ?? new Set<string>();
+    const conflictedUsers = conflictsBySource.get(t.id) ?? new Set<string>();
 
     return {
       id: t.id,
@@ -587,9 +560,9 @@ export async function updateTable(tableId: string, data: UpdateTableData, update
     .map((p) => p.userId)
     .filter((id) => id !== updatedByUserId && !demotedUserIds.includes(id));
 
-  // Le MJ ajoute comme joueur par un admin n'etait pas encore participant :
-  // il doit aussi etre prevenu de la modification
-  if (gmSeatAdded && gmId !== updatedByUserId && !participantUserIds.includes(gmId)) {
+  // Le MJ n'est pas forcement participant (JDR sans gmIsPlayer) : quand la
+  // modification vient de quelqu'un d'autre (admin), il doit etre prevenu
+  if (gmId !== updatedByUserId && !participantUserIds.includes(gmId)) {
     participantUserIds.push(gmId);
   }
 
@@ -632,6 +605,11 @@ export async function deleteTable(tableId: string, deletedByUserId: string) {
   const participantUserIds = existing.participants
     .map((p) => p.userId)
     .filter((id) => id !== deletedByUserId);
+
+  // Suppression par un admin : le MJ (pas forcement participant) doit le savoir
+  if (existing.createdBy !== deletedByUserId && !participantUserIds.includes(existing.createdBy)) {
+    participantUserIds.push(existing.createdBy);
+  }
 
   await prisma.gameTable.delete({ where: { id: tableId } });
 
@@ -687,13 +665,58 @@ export async function joinTable(tableId: string, userId: string) {
       data: { gameTableId: tableId, userId, status },
     });
 
-    return { participant, status, eventId: table.eventId };
+    return {
+      participant,
+      status,
+      eventId: table.eventId,
+      createdBy: table.createdBy,
+      title: table.title,
+      // Ce join occupe la derniere place normale : la table devient complete
+      becameFull: status === "CONFIRMED" && openSeats === 1,
+    };
   });
 
   emitToEvent(result.eventId, "table:player:joined", {
     tableId,
     participant: result.participant,
   });
+
+  // Notifications MJ — jamais pour ses propres actions (MJ-joueur qui s'assoit)
+  if (userId !== result.createdBy) {
+    const joiner = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, displayName: true },
+    });
+    const joinerName = joiner?.displayName ?? joiner?.username ?? "Un joueur";
+
+    if (result.status === "CONFIRMED") {
+      await createNotification({
+        userId: result.createdBy,
+        type: "GM_PLAYER_JOINED",
+        title: "Nouveau joueur",
+        message: `${joinerName} a rejoint ta table "${result.title}"`,
+        metadata: { eventId: result.eventId, tableId },
+      });
+    } else {
+      await createNotification({
+        userId: result.createdBy,
+        type: "GM_PLAYER_WAITLISTED",
+        title: "Joueur en liste d'attente",
+        message: `${joinerName} est en liste d'attente sur "${result.title}"`,
+        metadata: { eventId: result.eventId, tableId },
+      });
+    }
+
+    if (result.becameFull) {
+      await createNotification({
+        userId: result.createdBy,
+        type: "GM_TABLE_FULL",
+        title: "Table complète",
+        message: `Ta table "${result.title}" est complète`,
+        metadata: { eventId: result.eventId, tableId },
+      });
+    }
+  }
 
   return result;
 }
@@ -765,6 +788,21 @@ export async function leaveTable(tableId: string, userId: string) {
   });
 
   emitToEvent(table.eventId, "table:player:left", { tableId, userId });
+
+  // Le MJ est prevenu du depart (cette branche exclut le MJ qui quitte)
+  const leaver = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { username: true, displayName: true },
+  });
+  const leaverName = leaver?.displayName ?? leaver?.username ?? "Un joueur";
+  await createNotification({
+    userId: table.createdBy,
+    type: "GM_PLAYER_LEFT",
+    title: "Un joueur a quitté ta table",
+    message: `${leaverName} a quitté "${table.title}"`,
+    metadata: { eventId: table.eventId, tableId },
+  });
+
   if (promotedUserId) {
     emitToEvent(table.eventId, "table:player:promoted", {
       tableId,

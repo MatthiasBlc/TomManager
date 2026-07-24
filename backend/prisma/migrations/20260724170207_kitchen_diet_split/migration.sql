@@ -1,0 +1,6 @@
+-- AlterEnum
+ALTER TYPE "NotificationType" ADD VALUE 'KITCHEN_DIET_SPLIT_UPDATED';
+
+-- AlterTable
+ALTER TABLE "Meal" ADD COLUMN     "carneCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "vegeCount" INTEGER NOT NULL DEFAULT 0;

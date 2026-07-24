@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../../config/api";
 import ResponsiveModal from "../common/ResponsiveModal";
 import EmptyState from "../common/EmptyState";
+import { PencilIcon, MergeIcon, TrashIcon, CheckIcon } from "../common/icons";
 
 interface BoardGameAdmin {
   id: string;
@@ -333,7 +334,10 @@ export default function AdminBoardGamePanel() {
 
           <div className="space-y-2">
             {result.games.map((game) => (
-              <div key={game.id} className="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
+              <div
+                key={game.id}
+                className="flex items-center gap-2 p-3 bg-base-200 border border-base-300 rounded-lg"
+              >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{game.name}</p>
                   <p className="text-xs opacity-60">
@@ -357,20 +361,23 @@ export default function AdminBoardGamePanel() {
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <button className="btn btn-ghost btn-xs" onClick={() => openEdit(game)}>
+                  <button className="btn btn-ghost btn-xs gap-1" onClick={() => openEdit(game)}>
+                    <PencilIcon className="w-3.5 h-3.5" />
                     Éditer
                   </button>
                   <button
-                    className="btn btn-ghost btn-xs text-info"
+                    className="btn btn-ghost btn-xs gap-1 text-info"
                     onClick={() => openMerge(game)}
                   >
-                    Merger
+                    <MergeIcon className="w-3.5 h-3.5" />
+                    Fusionner
                   </button>
                   <button
-                    className="btn btn-ghost btn-xs text-error"
+                    className="btn btn-ghost btn-xs gap-1 text-error"
                     onClick={() => setDeleteTarget(game)}
                   >
-                    Sup.
+                    <TrashIcon className="w-3.5 h-3.5" />
+                    Supprimer
                   </button>
                 </div>
               </div>
@@ -595,14 +602,19 @@ export default function AdminBoardGamePanel() {
                         type="button"
                         disabled={srcDisabled}
                         onClick={() => togglePick(key, "source")}
-                        className={`rounded p-2 text-sm text-center min-h-[2.5rem] transition-colors ${
+                        className={`relative rounded p-2 text-sm text-center min-h-[2.5rem] transition-colors border ${
                           srcDisabled
-                            ? "bg-base-200 opacity-25 cursor-default"
+                            ? "bg-base-200 border-base-300 opacity-30 cursor-default"
                             : srcPicked
-                              ? "bg-primary/20 ring-1 ring-primary"
-                              : "bg-base-200 opacity-50 hover:opacity-80"
+                              ? "bg-primary/15 border-primary ring-2 ring-primary/40"
+                              : "bg-base-100 border-base-300 hover:bg-base-300"
                         }`}
                       >
+                        {srcPicked && (
+                          <span className="absolute top-1 right-1 text-primary">
+                            <CheckIcon className="w-3 h-3" />
+                          </span>
+                        )}
                         {isImage && src ? (
                           <img
                             src={src}
@@ -618,14 +630,19 @@ export default function AdminBoardGamePanel() {
                         type="button"
                         disabled={tgtDisabled}
                         onClick={() => togglePick(key, "target")}
-                        className={`rounded p-2 text-sm text-center min-h-[2.5rem] transition-colors ${
+                        className={`relative rounded p-2 text-sm text-center min-h-[2.5rem] transition-colors border ${
                           tgtDisabled
-                            ? "bg-base-200 opacity-25 cursor-default"
+                            ? "bg-base-200 border-base-300 opacity-30 cursor-default"
                             : tgtPicked
-                              ? "bg-primary/20 ring-1 ring-primary"
-                              : "bg-base-200 opacity-50 hover:opacity-80"
+                              ? "bg-primary/15 border-primary ring-2 ring-primary/40"
+                              : "bg-base-100 border-base-300 hover:bg-base-300"
                         }`}
                       >
+                        {tgtPicked && (
+                          <span className="absolute top-1 right-1 text-primary">
+                            <CheckIcon className="w-3 h-3" />
+                          </span>
+                        )}
                         {isImage && tgt ? (
                           <img
                             src={tgt}

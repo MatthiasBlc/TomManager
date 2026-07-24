@@ -13,6 +13,12 @@ interface EventSocketCallbacks {
   onParticipantRemoved?: () => void;
   onBoardGameAdded?: () => void;
   onBoardGameRemoved?: () => void;
+  onKitchenConfigUpdated?: () => void;
+  onKitchenMealChanged?: () => void;
+  onKitchenAssistantChanged?: () => void;
+  onKitchenPlanningGenerated?: () => void;
+  onKitchenSwapRequestChanged?: () => void;
+  onKitchenAssistantSwapChanged?: () => void;
   // Appele apres une reconnexion (pas au premier connect) : le join:event
   // precedent est perdu cote serveur, et des evenements ont pu etre manques
   // pendant la coupure — l'appelant doit refetcher les donnees actives.
@@ -51,6 +57,12 @@ export function useEventSocket(eventId: string | undefined, callbacks: EventSock
       ["participant:removed", callbacks.onParticipantRemoved],
       ["boardgame:added", callbacks.onBoardGameAdded],
       ["boardgame:removed", callbacks.onBoardGameRemoved],
+      ["kitchen:config-updated", callbacks.onKitchenConfigUpdated],
+      ["kitchen:meal-changed", callbacks.onKitchenMealChanged],
+      ["kitchen:assistant-changed", callbacks.onKitchenAssistantChanged],
+      ["kitchen:planning-generated", callbacks.onKitchenPlanningGenerated],
+      ["kitchen:swap-request-changed", callbacks.onKitchenSwapRequestChanged],
+      ["kitchen:assistant-swap-changed", callbacks.onKitchenAssistantSwapChanged],
     ];
 
     const handlers: [string, () => void][] = [];

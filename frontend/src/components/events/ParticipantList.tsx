@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
-import { useAuth } from "../../contexts/AuthContext";
 import { useConfirm } from "../../contexts/ConfirmContext";
 import { useAdminRights } from "../../hooks/useAdminRights";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import EmptyState from "../common/EmptyState";
 import { getErrorMessage } from "../../config/apiErrors";
+import { formatParisDate } from "../../utils/dateTime";
 
 interface Participant {
   userId: string;
@@ -27,12 +27,9 @@ type SortKey = "name" | "joined" | "role";
 type FilterKey = "all" | "ADMIN" | "USER";
 
 export default function ParticipantList({ eventId, createdBy, participants, onChanged }: Props) {
-  const { user } = useAuth();
   const confirmDialog = useConfirm();
-  const { canManageEvents } = useAdminRights();
+  const { canManageEvents: canManage } = useAdminRights();
   const isMobile = useIsMobile();
-  const isCreator = user?.id === createdBy;
-  const canManage = isCreator || canManageEvents;
 
   const [sort, setSort] = useState<SortKey>("joined");
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -130,9 +127,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                     >
                       {p.role}
                     </span>
-                    <span className="text-xs opacity-60">
-                      {new Date(p.joinedAt).toLocaleDateString("fr-FR")}
-                    </span>
+                    <span className="text-xs opacity-60">{formatParisDate(p.joinedAt)}</span>
                   </div>
                 </div>
                 {canManage && p.userId !== createdBy && (
@@ -170,7 +165,7 @@ export default function ParticipantList({ eventId, createdBy, participants, onCh
                       {p.role}
                     </span>
                   </td>
-                  <td>{new Date(p.joinedAt).toLocaleDateString("fr-FR")}</td>
+                  <td>{formatParisDate(p.joinedAt)}</td>
                   {canManage && (
                     <td>
                       {p.userId !== createdBy && (
