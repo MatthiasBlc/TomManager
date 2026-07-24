@@ -9,6 +9,7 @@ import KitchenDashboard from "./KitchenDashboard";
 import MealFicheEditor from "./MealFicheEditor";
 import MealClaimSelect from "./MealClaimSelect";
 import MealSwapPanel, { type SwapRequest } from "./MealSwapPanel";
+import ChefRoleSettings from "./ChefRoleSettings";
 
 interface Props {
   eventId: string;
@@ -63,16 +64,19 @@ export default function KitchenTab({
 
   if (isPlainAdmin) {
     return (
-      <KitchenDashboard
-        chefsCount={data.dashboard?.chefsCount ?? 0}
-        coursesCount={data.dashboard?.coursesCount ?? 0}
-        unassignedCount={data.dashboard?.unassignedCount ?? 0}
-        equipierPlanningEnabled={data.equipierPlanningEnabled}
-        meals={data.meals}
-        chefs={data.dashboard?.chefs ?? []}
-        coursesMembers={data.dashboard?.coursesMembers ?? []}
-        unassigned={data.dashboard?.unassigned ?? []}
-      />
+      <div className="space-y-4">
+        <h1 className="font-serif text-2xl font-semibold">Cuisine</h1>
+        <KitchenDashboard
+          chefsCount={data.dashboard?.chefsCount ?? 0}
+          coursesCount={data.dashboard?.coursesCount ?? 0}
+          unassignedCount={data.dashboard?.unassignedCount ?? 0}
+          equipierPlanningEnabled={data.equipierPlanningEnabled}
+          meals={data.meals}
+          chefs={data.dashboard?.chefs ?? []}
+          coursesMembers={data.dashboard?.coursesMembers ?? []}
+          unassigned={data.dashboard?.unassigned ?? []}
+        />
+      </div>
     );
   }
 
@@ -84,22 +88,42 @@ export default function KitchenTab({
 
   return (
     <div className="space-y-6">
-      {isManager && isChefUser && (
-        <div className="tabs tabs-boxed inline-flex">
-          <button
-            className={`tab ${section === "gestion" ? "tab-active" : ""}`}
-            onClick={() => setSection("gestion")}
-          >
-            Gestion
-          </button>
-          <button
-            className={`tab ${section === "mon-repas" ? "tab-active" : ""}`}
-            onClick={() => setSection("mon-repas")}
-          >
-            Mon repas
-          </button>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="font-serif text-2xl font-semibold">Cuisine</h1>
+          {isManager && (
+            <ChefRoleSettings
+              eventId={eventId}
+              chefRoleId={data.chefRoleId}
+              onChanged={fetchKitchen}
+            />
+          )}
         </div>
-      )}
+        {isManager && isChefUser && (
+          <div className="inline-flex gap-0.5 rounded-lg border border-base-300 bg-base-200 p-1">
+            <button
+              className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                section === "gestion"
+                  ? "bg-base-100 font-semibold shadow-sm"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+              onClick={() => setSection("gestion")}
+            >
+              Gestion
+            </button>
+            <button
+              className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+                section === "mon-repas"
+                  ? "bg-base-100 font-semibold shadow-sm"
+                  : "text-base-content/60 hover:text-base-content"
+              }`}
+              onClick={() => setSection("mon-repas")}
+            >
+              Mon repas
+            </button>
+          </div>
+        )}
+      </div>
 
       {showManagement && (
         <KitchenManagementPanel

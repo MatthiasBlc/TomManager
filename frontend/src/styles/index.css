@@ -40,6 +40,45 @@
   --noise: 0;
 }
 
+/* Theme "TomUpdate" (essai) : palette chaude/sombre issue de la maquette Cuisine
+   (artefact) — cf docs/features/kitchen-ui-revamp. Compile a cote de "ToM" sans y
+   toucher : ThemeContext.tsx pointe DARK_THEME dessus, un revert = repointer la
+   constante sur "ToM". */
+@plugin "daisyui/theme" {
+  name: "TomUpdate";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: #15120d;
+  --color-base-200: #1d1811;
+  --color-base-300: #3a3021;
+  --color-base-content: #f4ecdf;
+  --color-primary: #6cb8a3;
+  --color-primary-content: #0e1512;
+  --color-secondary: #e0a83e;
+  --color-secondary-content: #241a06;
+  --color-accent: #6cb8a3;
+  --color-accent-content: #0e1512;
+  --color-neutral: #252017;
+  --color-neutral-content: #f4ecdf;
+  --color-info: #6cb8a3;
+  --color-info-content: #0e1512;
+  --color-success: #7cbb72;
+  --color-success-content: #10240f;
+  --color-warning: #e0a83e;
+  --color-warning-content: #241a06;
+  --color-error: #e57266;
+  --color-error-content: #240a08;
+  --radius-selector: 0.6rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.875rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
 @theme {
   --animate-slide-up: slide-up 250ms ease-out;
   --animate-fade-in: fade-in 200ms ease-out;

@@ -74,7 +74,7 @@ describe("KitchenTab — visibility matrix", () => {
     // Point 6 : "Mon repas" ne montre jamais la liste complete des fiches (Gestion only).
     expect(screen.queryByText("Fiches repas")).not.toBeInTheDocument();
     expect(screen.getByText("Choisir mon créneau")).toBeInTheDocument();
-    expect(screen.queryByText("Configuration")).not.toBeInTheDocument();
+    expect(screen.queryByText("État du planning")).not.toBeInTheDocument();
   });
 
   it("shows the swap panel (not the claim picker) once the chef already has a meal", () => {
@@ -119,7 +119,7 @@ describe("KitchenTab — visibility matrix", () => {
       unassigned: [],
       meals: [],
     });
-    expect(screen.getByText("Configuration")).toBeInTheDocument();
+    expect(screen.getByText("État du planning")).toBeInTheDocument();
     expect(screen.getByText("Fiches repas")).toBeInTheDocument();
   });
 
@@ -153,7 +153,7 @@ describe("KitchenTab — visibility matrix", () => {
       ],
     });
     expect(screen.getByText("Tartiflette")).toBeInTheDocument();
-    expect(screen.queryByText("Configuration")).not.toBeInTheDocument();
+    expect(screen.queryByText("État du planning")).not.toBeInTheDocument();
     expect(screen.queryByText("Fiches repas")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
@@ -174,10 +174,10 @@ describe("KitchenTab — visibility matrix", () => {
 
     // Point 5 : chef + responsable atterrit directement sur "Mon repas", pas "Gestion".
     await waitFor(() => expect(screen.getByText("Choisir mon créneau")).toBeInTheDocument());
-    expect(screen.queryByText("Configuration")).not.toBeInTheDocument();
+    expect(screen.queryByText("État du planning")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Gestion" }));
-    await waitFor(() => expect(screen.getByText("Configuration")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("État du planning")).toBeInTheDocument());
     expect(screen.queryByText("Choisir mon créneau")).not.toBeInTheDocument();
   });
 });

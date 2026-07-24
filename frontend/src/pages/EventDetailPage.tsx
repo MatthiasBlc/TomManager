@@ -38,6 +38,15 @@ type Tab = "info" | "participants" | "planning" | "games" | "kitchen";
 
 const VALID_TABS: Tab[] = ["info", "participants", "planning", "games", "kitchen"];
 
+// Onglets d'evenement en trait souligne (maquette) : filet actif en accent,
+// -mb-px pour que ce trait fusionne avec la bordure du conteneur.
+const eventTabClass = (active: boolean) =>
+  `px-3 pb-2.5 pt-1 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
+    active
+      ? "border-primary font-semibold text-base-content"
+      : "border-transparent text-base-content/60 hover:text-base-content"
+  }`;
+
 export default function EventDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
@@ -117,7 +126,7 @@ export default function EventDetailPage() {
 
   return (
     <div
-      className={`container mx-auto px-4 ${
+      className={`mx-auto w-full px-4 2xl:max-w-[1400px] ${
         tab === "planning" && !isMobile
           ? "pt-4 md:pt-6 h-[calc(100dvh-4rem)] flex flex-col"
           : "py-4 md:py-8"
@@ -150,34 +159,28 @@ export default function EventDetailPage() {
 
       <div className="relative mb-4 md:mb-6 flex-none">
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-          <div className="tabs tabs-boxed inline-flex min-w-max">
-            <button
-              className={`tab ${tab === "info" ? "tab-active" : ""}`}
-              onClick={() => setTab("info")}
-            >
+          <div className="flex gap-1 border-b border-base-300 min-w-max">
+            <button className={eventTabClass(tab === "info")} onClick={() => setTab("info")}>
               Infos
             </button>
             <button
-              className={`tab ${tab === "planning" ? "tab-active" : ""}`}
+              className={eventTabClass(tab === "planning")}
               onClick={() => setTab("planning")}
             >
               Planning
             </button>
-            <button
-              className={`tab ${tab === "games" ? "tab-active" : ""}`}
-              onClick={() => setTab("games")}
-            >
+            <button className={eventTabClass(tab === "games")} onClick={() => setTab("games")}>
               Jeux de société
             </button>
             <button
-              className={`tab ${tab === "participants" ? "tab-active" : ""}`}
+              className={eventTabClass(tab === "participants")}
               onClick={() => setTab("participants")}
             >
               Participants ({event.participants.length})
             </button>
             {canSeeKitchenTab && (
               <button
-                className={`tab ${tab === "kitchen" ? "tab-active" : ""}`}
+                className={eventTabClass(tab === "kitchen")}
                 onClick={() => setTab("kitchen")}
               >
                 Cuisine

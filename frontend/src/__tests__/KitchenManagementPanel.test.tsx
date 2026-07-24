@@ -52,49 +52,6 @@ beforeEach(() => {
 });
 
 describe("KitchenManagementPanel", () => {
-  it("warns before overwriting manual chefs when setting a chefRoleId", async () => {
-    confirmDialogMock.mockResolvedValue(true);
-    apiPatchMock.mockResolvedValue({});
-    render(<KitchenManagementPanel {...baseProps} />);
-
-    fireEvent.change(screen.getByLabelText(/ID du rôle Discord/i), {
-      target: { value: "123456789012345678" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
-
-    await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
-    expect(confirmDialogMock.mock.calls[0][0].title).toMatch(/rôle Discord/i);
-    await waitFor(() =>
-      expect(apiPatchMock).toHaveBeenCalledWith(
-        "/api/events/ev1/kitchen",
-        expect.objectContaining({ chefRoleId: "123456789012345678" })
-      )
-    );
-  });
-
-  it("does not call the API when the chefRoleId overwrite is declined", async () => {
-    confirmDialogMock.mockResolvedValue(false);
-    render(<KitchenManagementPanel {...baseProps} />);
-
-    fireEvent.change(screen.getByLabelText(/ID du rôle Discord/i), {
-      target: { value: "123456789012345678" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
-
-    await waitFor(() => expect(confirmDialogMock).toHaveBeenCalled());
-    expect(apiPatchMock).not.toHaveBeenCalled();
-  });
-
-  it("does not warn when saving config without changing chefRoleId", async () => {
-    apiPatchMock.mockResolvedValue({});
-    render(<KitchenManagementPanel {...baseProps} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
-
-    await waitFor(() => expect(apiPatchMock).toHaveBeenCalled());
-    expect(confirmDialogMock).not.toHaveBeenCalled();
-  });
-
   it("warns before generating the planning", async () => {
     confirmDialogMock.mockResolvedValue(true);
     apiPostMock.mockResolvedValue({ data: { data: { pool: 3, overCapacity: [] } } });
@@ -190,7 +147,7 @@ describe("KitchenManagementPanel", () => {
         capacitySummary={{ allocated: 10, poolTotal: 12 }}
       />
     );
-    expect(screen.getByText(/10\/12/)).toBeInTheDocument();
+    expect(screen.getByTestId("capacity-summary").textContent).toMatch(/10\s*\/\s*12/);
     expect(screen.queryByText(/sur-allocation/i)).not.toBeInTheDocument();
   });
 
@@ -202,7 +159,7 @@ describe("KitchenManagementPanel", () => {
         capacitySummary={{ allocated: 13, poolTotal: 12 }}
       />
     );
-    expect(screen.getByText(/13\/12/)).toBeInTheDocument();
+    expect(screen.getByTestId("capacity-summary").textContent).toMatch(/13\s*\/\s*12/);
     expect(screen.getByText(/sur-allocation/i)).toBeInTheDocument();
   });
 

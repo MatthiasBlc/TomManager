@@ -4,8 +4,16 @@ import api from "../../config/api";
 import { getErrorMessage } from "../../config/apiErrors";
 import EmptyState from "../common/EmptyState";
 import NumberStepper from "../common/NumberStepper";
-import { slotLabel } from "./units";
+import { serviceLabel } from "./units";
+import { formatParisDate } from "../../utils/dateTime";
 import MealFicheDetailModal from "./MealFicheDetailModal";
+import PersonAvatar from "./PersonAvatar";
+import { AlertTriangleIcon, CheckIcon, CloseIcon } from "./icons";
+
+// Label court "jour . service" (ex: "vendredi . Soir"), affiche en petites
+// majuscules au-dessus du nom du plat (cf. maquette Cuisine).
+const whenLabel = (meal: { service: string; startDateTime: string }) =>
+  `${formatParisDate(meal.startDateTime, { weekday: "long" })} · ${serviceLabel(meal.service)}`;
 
 export interface MealFiche {
   id: string;
@@ -138,34 +146,63 @@ export default function MealFichesList({
         {meals.map((meal) => {
           const capacityMax =
             poolRemaining !== undefined ? meal.maxAssistants + poolRemaining : undefined;
+          // Statut prioritaire de la fiche : un chef manquant est l'info la plus
+          // urgente (accent chaud), devant la simple occupation des places.
+          const needsChef = !meal.chef;
+          const isComplete = meal.remainingSeats === 0;
+          const borderClass = needsChef
+            ? "border-l-4 border-l-warning"
+            : isComplete
+              ? "border-l-4 border-l-success"
+              : "border-l-4 border-l-info";
           return (
             <div
               key={meal.id}
-              className="card bg-base-200 shadow-none cursor-pointer hover:bg-base-300 transition-colors"
+              className={`card bg-base-200 border border-base-300 shadow-[0_1px_2px_rgba(0,0,0,.3),0_10px_24px_-12px_rgba(0,0,0,.5)] cursor-pointer hover:bg-base-300 transition-colors ${borderClass}`}
               onClick={() => setDetailMeal(meal)}
             >
               <div className="card-body p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2 flex-wrap">
                   <div>
-                    <p className="font-semibold text-sm capitalize">{slotLabel(meal)}</p>
-                    {meal.name && <p className="text-xs opacity-70">{meal.name}</p>}
+                    <p className="text-[0.7rem] uppercase tracking-wider font-bold opacity-50">
+                      {whenLabel(meal)}
+                    </p>
+                    <p className="font-serif text-lg font-semibold leading-tight mt-0.5">
+                      {meal.name || whenLabel(meal)}
+                    </p>
                   </div>
-                  <span
-                    className={`badge badge-sm shrink-0 ${
-                      meal.remainingSeats > 0 ? "badge-ghost" : "badge-neutral"
-                    }`}
-                  >
-                    {meal.remainingSeats > 0 ? "places libres" : "complet"}
-                  </span>
+                  {needsChef ? (
+                    <span className="badge badge-warning badge-sm shrink-0 gap-1">
+                      <AlertTriangleIcon className="w-3 h-3" />
+                      Chef à assigner
+                    </span>
+                  ) : isComplete ? (
+                    <span className="badge badge-success badge-sm shrink-0 gap-1">
+                      <CheckIcon />
+                      Complet
+                    </span>
+                  ) : (
+                    <span className="badge badge-info badge-sm shrink-0">
+                      {meal.remainingSeats} place{meal.remainingSeats > 1 ? "s" : ""} libre
+                      {meal.remainingSeats > 1 ? "s" : ""}
+                    </span>
+                  )}
                 </div>
+
+                <div className="h-px bg-base-300" />
 
                 <div
                   className="flex items-center gap-2 flex-wrap"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <span className="text-xs opacity-60 w-16 shrink-0">Chef</span>
+                  <span className="text-[0.71rem] uppercase tracking-wide font-bold opacity-50 w-16 shrink-0">
+                    Chef
+                  </span>
                   {meal.chef ? (
-                    <span className="text-sm">{displayedName(meal.chef)}</span>
+                    <span className="flex items-center gap-2 text-sm">
+                      <PersonAvatar name={displayedName(meal.chef)} />
+                      {displayedName(meal.chef)}
+                    </span>
                   ) : (
                     <div className="flex gap-2 flex-1 min-w-[200px]">
                       <select
@@ -195,10 +232,26 @@ export default function MealFichesList({
                 </div>
 
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                  <span className="text-xs opacity-60 w-16 shrink-0">Capacité</span>
-                  <span className="text-sm">
-                    {meal.assistants.length}/{meal.maxAssistants}
+                  <span className="text-[0.71rem] uppercase tracking-wide font-bold opacity-50 w-16 shrink-0">
+                    Places
                   </span>
+                  <div className="flex-1 min-w-[70px]">
+                    <div className="h-1.5 w-full rounded-full bg-base-300 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${isComplete ? "bg-success" : "bg-info"}`}
+                        style={{
+                          width: `${
+                            meal.maxAssistants > 0
+                              ? Math.min(100, (meal.assistants.length / meal.maxAssistants) * 100)
+                              : 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                    <div className="text-xs opacity-50 mt-1 tabular-nums">
+                      {meal.assistants.length} / {meal.maxAssistants} pourvues
+                    </div>
+                  </div>
                   <NumberStepper
                     value={meal.maxAssistants}
                     min={meal.assistants.length}
@@ -208,23 +261,31 @@ export default function MealFichesList({
                 </div>
 
                 <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
-                  <span className="text-xs opacity-60">Équipiers</span>
-                  {meal.assistants.length > 0 && (
+                  <span className="text-[0.71rem] uppercase tracking-wide font-bold opacity-50">
+                    Équipiers
+                  </span>
+                  {meal.assistants.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {meal.assistants.map((a) => (
-                        <span key={a.id} className="badge badge-outline gap-1">
+                        <span key={a.id} className="badge badge-ghost gap-1.5">
                           {displayedName(a)}
                           <button
                             type="button"
-                            className="text-error"
+                            className="opacity-70 hover:opacity-100 hover:text-error transition-colors"
                             disabled={!!pendingAction}
                             onClick={() => handleRemoveAssistant(meal, a.id)}
                             aria-label={`Retirer ${displayedName(a)}`}
                           >
-                            ✕
+                            <CloseIcon />
                           </button>
                         </span>
                       ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      <span className="badge badge-ghost border-dashed opacity-60">
+                        Aucun équipier
+                      </span>
                     </div>
                   )}
                   {meal.remainingSeats > 0 && (
