@@ -69,7 +69,7 @@ src/
 │   ├── boardGame.ts       # BoardGame CRUD, search (local + BGG fallback)
 │   ├── eventBoardGame.ts  # EventBoardGame CRUD (add/list/remove per event)
 │   ├── notification.ts    # Notification CRUD, bulk create, cursor pagination
-│   ├── kitchen.ts         # Config + roster chef (manuel/role, auto-claim orphelin manuel + auto-unassign courses, Evolutions.md point 3) + courses + vue par role (capacitySummary manager, computeRosterLists partage manager/admin-simple), meals enrichis conflits, assertParticipant + computeAvailablePool + cancelStaleAssistantSwapRequests exportes (CookV1)
+│   ├── kitchen.ts         # Config + roster chef (manuel/role, auto-claim orphelin manuel + auto-unassign courses, Evolutions.md point 3) + courses + vue par role (capacitySummary manager, computeRosterLists partage manager/dashboard admin), meals enrichis conflits, assertParticipant + computeAvailablePool + cancelStaleAssistantSwapRequests exportes (CookV1) ; dashboard (hasAdminOverview = isAdmin && !manager) cumulatif avec le role chef, plus exclusif
 │   ├── meal.ts            # Meal PATCH/DELETE, claimMeal, join/move/leave transactionnel (self ou manager sur un tiers, annule les demandes d'echange equipier perimees) ; champs structurants manager-only (CookV1)
 │   ├── mealTransfer.ts    # Helpers partages lockMealRow(s)Sorted/moveRecipeByPk/swapRecipesByPk, extraits de meal.ts+mealSwap.ts (prerequis points 1+4)
 │   ├── mealSwap.ts        # Echange de creneau entre chefs : create/list/accept/reject/cancel + moveToOrphanMeal (deplacement instantane vers un creneau libre, Evolutions.md point 1)
@@ -187,15 +187,19 @@ src/
 │       ├── AddBoardGameModal.tsx      # Modal: search + add or create manually
 │       ├── ManualBoardGameForm.tsx    # Manual creation form
 │       └── PoweredByBGG.tsx           # Attribution BGG
-│   └── kitchen/                       # Module cuisine (CookV1) — onglet "Cuisine" + board dans "Infos"
-│       ├── KitchenTab.tsx             # Racine onglet Cuisine (donnees en props via useKitchenData) : redirige chef+manager sur "Mon repas" ; "Mon repas" = allergies + (claim ou MealFicheEditor de sa seule fiche) + swap, jamais la liste complete (point 6)
-│       ├── KitchenManagementPanel.tsx # Gestion (responsable RW / admin R) : config, roster/courses/sans-affectation en grille responsive (grid-cols-1/md:2/lg:3, Evolutions.md point 6), toggle Generer/Reinitialiser (selon meals.length), compteur equipiers repartis mis en avant + badge sur-allocation (capacitySummary, Evolutions.md point 2), + liste des fiches (MealFichesList, manager only)
-│       ├── KitchenDashboard.tsx       # Dashboard admin simple (lecture seule) : compteurs + listes nominatives chefs/courses/sans-affectation + equipiers par repas (Evolutions.md point 5, reversion assumee de la regle V1 "jamais nominatif" pour ce role) + badge Active/Desactive du planning equipier (point 7)
+│   └── kitchen/                       # Module cuisine (CookV1) — onglet "Cuisine" + board dans "Infos" ; refonte UI/UX Gestion+Dashboard (theme "TomUpdate" en reserve, cf styles/index.css)
+│       ├── KitchenTab.tsx             # Racine onglet Cuisine (donnees en props via useKitchenData) : titre "Cuisine" serif + ChefRoleSettings (manager) ; selecteur Gestion/Vue d'ensemble (selon role) + Mon repas des que l'utilisateur cumule un role chef — admin+chef cumule desormais acces dashboard ET fiche perso (avant : exclusifs) ; landing auto sur "Mon repas" pour manager+chef ou admin+chef (point 5 etendu)
+│       ├── KitchenManagementPanel.tsx # Gestion (responsable RW / admin R) : bloc allergies editable inline (etat vide distinct), etat du planning (badge Publie/Non publie + toggle live + jauge capacite), roster equipe cuisine (avatars, Sans affectation en liste scrollable), + liste des fiches (MealFichesList, manager only) ; reglage chefRoleId deplace dans ChefRoleSettings (plus dans ce panneau)
+│       ├── KitchenDashboard.tsx       # Vue d'ensemble admin (lecture seule, meme habillage visuel que Gestion) : tuiles KPI (chefs/courses/sans-affectation), statut de publication en lecture seule, roster en chips avatar, fiches repas en cartes bordure coloree par statut (Evolutions.md point 5, cumulatif avec le role chef desormais)
+│       ├── ChefRoleSettings.tsx       # Popover reglage "ID du role Discord des chefs" (gear en en-tete de KitchenTab, manager only), extrait de KitchenManagementPanel
+│       ├── PersonAvatar.tsx           # Pastille d'initiales partagee (roster + chef d'une fiche repas)
+│       ├── icons.tsx                  # Pictos trait SVG (maquette Cuisine, ecrans Gestion/Dashboard uniquement — le reste de l'appli reste en emoji)
+│       ├── ui.tsx                     # CARD (bordure+ombre carte) + SectionEyebrow partages entre KitchenManagementPanel/KitchenDashboard
 │       ├── KitchenBoard.tsx           # Board (onglet Infos, donnees en props) : matrice jour x service (desktop table / cartes mobiles), inscription/deplacement/desinscription equipier (jamais propose a un chef/membre courses), banniere "choisis ton creneau", + AssistantSwapPanel si l'equipier a un creneau
 │       ├── MealClaimSelect.tsx        # Chef sans repas : liste deroulante des creneaux (groupes par jour, pris grises) -> claim
 │       ├── MealSwapPanel.tsx          # Chef avec repas : proposer un echange (repas d'un autre chef) OU prendre un creneau libre instantanement (tag "libre", Evolutions.md point 1) + accepter/refuser/annuler (demandes PENDING)
 │       ├── AssistantSwapPanel.tsx     # Equipier avec un creneau complet : propose un echange contre un autre creneau complet (n'importe quel assistant du repas cible peut accepter) + accepter une demande recue + annuler la sienne (Evolutions.md point 4)
-│       ├── MealFichesList.tsx         # Liste Gestion (Admin Chef, manager only) : cartes en grille responsive (point 6), une carte par repas (creneau non-editable, chef/capacite/equipiers actionnables inline), clic -> MealFicheDetailModal ; jamais utilise dans "Mon repas"
+│       ├── MealFichesList.tsx         # Liste Gestion (Admin Chef, manager only) : cartes en grille responsive (point 6), bordure coloree par statut (chef a assigner/complet/places libres), une carte par repas (creneau non-editable, chef/capacite/equipiers actionnables inline), clic -> MealFicheDetailModal ; jamais utilise dans "Mon repas"
 │       ├── MealFicheDetailModal.tsx   # Modale "details" (Admin Chef, ResponsiveModal) : lecture seule (nom du plat + ingredients + ustensiles) -> "Modifier" -> "Valider" (un seul PATCH groupe, ferme la modale)
 │       ├── MealFicheEditor.tsx        # Fiche "Mon repas" (chef, inchangee) : autosave par champ (useDebouncedSave, pas de bouton) nom/ingredients/ustensiles, resume horaires/capacite en lecture seule, suppression
 │       ├── IngredientListInput.tsx    # Lignes ingredient (nom + quantite + unite), autocomplete Product, quantite virgule/point (point 8)
@@ -218,7 +222,7 @@ src/
 ├── contexts/
 │   ├── AuthContext.tsx     # AuthProvider, useAuth hook (login, logout, Discord link/unlink, preferences + updatePreferences optimiste)
 │   ├── ConfirmContext.tsx  # ConfirmProvider + useConfirm : confirmDialog(options) -> Promise<boolean>
-│   └── ThemeContext.tsx    # ThemeProvider, useTheme hook
+│   └── ThemeContext.tsx    # ThemeProvider, useTheme hook — DARK_THEME pointe "ToM" (theme "TomUpdate" compile en reserve dans styles/index.css, non actif)
 ├── types/
 │   └── preferences.ts      # PreferenceKey, Preferences, DEFAULT_PREFERENCES
 ├── pages/
@@ -226,14 +230,14 @@ src/
 │   ├── LoginPage.tsx             # Login form (identifier + password, bouton Discord)
 │   ├── OAuthPopupCallbackPage.tsx # Callback popup OAuth Discord
 │   ├── EventListPage.tsx         # /events — event cards grid (bouton creer si admin)
-│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info(+KitchenBoard)/planning/games/participants/kitchen ; useKitchenData partage, onglet Cuisine masque si ni admin ni chef ni manager
+│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info(+KitchenBoard)/planning/games/participants/kitchen (soulignement, pas tabs-boxed) ; useKitchenData partage, onglet Cuisine masque si ni admin ni chef ni manager ; page plafonnee a 1400px au-dela de 2xl (evite l'etirement plein-largeur sur grand ecran)
 │   ├── PlanningPage.tsx          # /events/:eventId/planning — timeline view + create table
 │   ├── ProfilePage.tsx           # /profile — compte, theme, droits d'administration (toggles + master), Discord
 │   └── NotFoundPage.tsx          # 404
 ├── routes/
 │   └── AppRoutes.tsx      # Route definitions
 ├── styles/
-│   └── index.css          # Tailwind directives
+│   └── index.css          # Tailwind directives + 2 themes DaisyUI custom : "ToM" (dark, actif) et "TomUpdate" (palette maquette Cuisine, compile mais non actif — cf ThemeContext.tsx)
 ├── test/
 │   └── setup.ts           # jest-dom setup (@testing-library/jest-dom)
 └── __tests__/             # Tests composants (BoardGameCard, NotificationBell, LoginPage, ...)

@@ -113,11 +113,14 @@ Cles : admin.events, admin.tables, admin.games, admin.kitchen, beta.pdfExport, b
 Voir `docs/features/CookV1/SPEC_COOKING.md`. `requireKitchenManager` = ADMIN + preference
 `admin.kitchen`. GET est module par role (`currentUserKitchenRole`) : voir 9 de la spec pour
 la matrice exacte de champs exposes (anti-fuite allergies/ingredients pour un equipier ET
-pour un ADMIN sans `admin.kitchen`, qui recoit un bloc `dashboard` en plus au lieu des
-fiches/gestion). La reponse expose aussi `isChef` et `isCoursesMember` (booleens, flags self)
-independamment de `currentUserKitchenRole` : `isChef` distingue un responsable qui est aussi
-chef (cf 4/9 de la spec) ; `isCoursesMember` sert au front a masquer le bouton "S'inscrire"
-du board Infos a un membre de l'equipe courses (role-exclusivite, Evolutions.md point 4).
+pour un ADMIN sans `admin.kitchen`, qui recoit un bloc `dashboard` en plus). Ce bloc `dashboard`
+est cumulatif avec le role chef (`hasAdminOverview = isAdmin && !manager`, independant de
+`isChef`) : un admin qui est aussi chef recoit le `dashboard` ET ses propres allergies/
+ingredients/ustensiles (via `isFullReader`), plus exclusifs comme avant. La reponse expose
+aussi `isChef` et `isCoursesMember` (booleens, flags self) independamment de
+`currentUserKitchenRole` : `isChef` distingue un responsable qui est aussi chef (cf 4/9 de la
+spec) ; `isCoursesMember` sert au front a masquer le bouton "S'inscrire" du board Infos a un
+membre de l'equipe courses (role-exclusivite, Evolutions.md point 4).
 
 | Method | Path               | Auth                                  | Description                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------ | ------------------ | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
