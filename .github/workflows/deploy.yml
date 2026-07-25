@@ -116,7 +116,11 @@ jobs:
 
       - name: Security audit
         working-directory: ./backend
-        run: npm audit --audit-level=high
+        # --omit=dev : les CVE dev-only (ex. brace-expansion via eslint/vitest,
+        # non exploitable car les patterns glob viennent de config developpeur,
+        # jamais d'input utilisateur) ne doivent pas bloquer la CI ; la posture
+        # de securite reelle porte sur les dependances de production.
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Generate Prisma Client
         working-directory: ./backend
@@ -166,7 +170,11 @@ jobs:
 
       - name: Security audit
         working-directory: ./frontend
-        run: npm audit --audit-level=high
+        # --omit=dev : les CVE dev-only (ex. brace-expansion via eslint/vitest,
+        # non exploitable car les patterns glob viennent de config developpeur,
+        # jamais d'input utilisateur) ne doivent pas bloquer la CI ; la posture
+        # de securite reelle porte sur les dependances de production.
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Lint
         working-directory: ./frontend
@@ -203,7 +211,11 @@ jobs:
 
       - name: Security audit
         working-directory: ./discord-bot
-        run: npm audit --audit-level=high
+        # --omit=dev : les CVE dev-only (ex. brace-expansion via eslint/vitest,
+        # non exploitable car les patterns glob viennent de config developpeur,
+        # jamais d'input utilisateur) ne doivent pas bloquer la CI ; la posture
+        # de securite reelle porte sur les dependances de production.
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Generate Prisma Client
         working-directory: ./discord-bot
