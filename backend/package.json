@@ -71,8 +71,5 @@
     "socket.io": "^4.8.3",
     "uuid": "^13.0.0",
     "zod": "^4.3.6"
-  },
-  "overrides": {
-    "brace-expansion": "^5.0.8"
   }
 }
