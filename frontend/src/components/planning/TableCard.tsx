@@ -109,7 +109,7 @@ export default function TableCard({ table, onClick }: Props) {
         {table.pitch && <p className="text-sm opacity-80 line-clamp-2">{table.pitch}</p>}
 
         <div className="flex items-center gap-2">
-          <span className="text-[0.68rem] uppercase tracking-wide font-bold opacity-50 w-9 shrink-0">
+          <span className="text-[0.68rem] uppercase tracking-wide font-bold opacity-50 w-14 shrink-0">
             Places
           </span>
           <div className="flex-1 min-w-0">
