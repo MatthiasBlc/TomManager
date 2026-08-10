@@ -373,6 +373,30 @@ export default function TableDetailModal({
     }
   };
 
+  const handleCopyLink = async () => {
+    if (!table) return;
+    const url = `${window.location.origin}/events/${eventId}/planning?table=${table.id}`;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        // Fallback pour contexte non securise (http) ou API clipboard indisponible
+        const textarea = document.createElement("textarea");
+        textarea.value = url;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      toast.success("Lien copié");
+    } catch {
+      toast.error("Échec de la copie du lien");
+    }
+  };
+
   const displayedName = (p: { username: string; displayName?: string | null }) =>
     p.displayName ?? p.username;
 
@@ -781,6 +805,9 @@ export default function TableDetailModal({
                   {isGM ? "Supprimer la table (quitter)" : "Quitter"}
                 </button>
               )}
+              <button className="btn btn-ghost btn-sm flex-1 md:flex-none" onClick={handleCopyLink}>
+                Copier le lien
+              </button>
               {canEdit && (
                 <>
                   <button

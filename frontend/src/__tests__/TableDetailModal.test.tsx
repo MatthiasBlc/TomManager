@@ -775,4 +775,72 @@ describe("TableDetailModal", () => {
       screen.queryByRole("button", { name: /Passer en place libre/i })
     ).not.toBeInTheDocument();
   });
+
+  describe("Copier le lien", () => {
+    const originalClipboard = navigator.clipboard;
+    const originalIsSecureContext = window.isSecureContext;
+
+    afterEach(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        value: originalClipboard,
+        configurable: true,
+      });
+      Object.defineProperty(window, "isSecureContext", {
+        value: originalIsSecureContext,
+        configurable: true,
+      });
+    });
+
+    it("copies the deep-link URL via navigator.clipboard in a secure context", async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+      });
+      Object.defineProperty(window, "isSecureContext", { value: true, configurable: true });
+
+      renderModal({ user: { id: "u2", role: "USER" } });
+      const copyBtn = await screen.findByRole("button", { name: /Copier le lien/i });
+      fireEvent.click(copyBtn);
+
+      await waitFor(() => {
+        expect(writeText).toHaveBeenCalledWith(
+          `${window.location.origin}/events/ev1/planning?table=t1`
+        );
+      });
+      expect(toastSuccess).toHaveBeenCalledWith("Lien copié");
+    });
+
+    it("falls back to execCommand when the clipboard API is unavailable", async () => {
+      Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+      const execCommand = vi.fn().mockReturnValue(true);
+      document.execCommand = execCommand;
+
+      renderModal({ user: { id: "u2", role: "USER" } });
+      const copyBtn = await screen.findByRole("button", { name: /Copier le lien/i });
+      fireEvent.click(copyBtn);
+
+      await waitFor(() => {
+        expect(execCommand).toHaveBeenCalledWith("copy");
+      });
+      expect(toastSuccess).toHaveBeenCalledWith("Lien copié");
+    });
+
+    it("shows an error toast when copying fails", async () => {
+      const writeText = vi.fn().mockRejectedValue(new Error("denied"));
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+      });
+      Object.defineProperty(window, "isSecureContext", { value: true, configurable: true });
+
+      renderModal({ user: { id: "u2", role: "USER" } });
+      const copyBtn = await screen.findByRole("button", { name: /Copier le lien/i });
+      fireEvent.click(copyBtn);
+
+      await waitFor(() => {
+        expect(toastError).toHaveBeenCalledWith("Échec de la copie du lien");
+      });
+    });
+  });
 });

@@ -78,6 +78,42 @@ test.describe("Planning — tables", () => {
       .click();
     await expect(page.getByRole("button", { name: /rejoindre/i })).toBeVisible();
   });
+
+  test("copier le lien direct d'une table", async ({ page, context, baseURL }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+
+    const admin = await seedAdmin();
+    const event = await seedEvent(admin.cookie);
+
+    const start = new Date();
+    start.setDate(start.getDate() + 1);
+    start.setHours(14, 0, 0, 0);
+    const end = new Date(start);
+    end.setHours(16, 0, 0, 0);
+
+    const tableRes = await fetch(`${API}/api/events/${event.id}/tables`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: admin.cookie },
+      body: JSON.stringify({
+        title: "Table Lien",
+        maxPlayers: 4,
+        startDateTime: start.toISOString(),
+        endDateTime: end.toISOString(),
+      }),
+    });
+    const tableData = await tableRes.json();
+    const tableId = tableData.data.id;
+
+    await loginAs(page, admin.cookie);
+    await page.goto(`/events/${event.id}`);
+    await page.getByRole("button", { name: "Planning", exact: true }).click();
+
+    await page.getByText("Table Lien").click();
+    await page.getByRole("button", { name: /copier le lien/i }).click();
+
+    const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboardText).toBe(`${baseURL}/events/${event.id}/planning?table=${tableId}`);
+  });
 });
 
 test.describe("Planning — creation via clic calendrier", () => {
