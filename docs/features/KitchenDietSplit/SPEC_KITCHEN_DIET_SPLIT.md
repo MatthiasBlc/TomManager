@@ -288,7 +288,7 @@ equipiers (meme pattern, meme probleme) :
   envoyes au lieu d'etre annules. Sans ce filet, le debounce introduirait une
   fenetre de 800ms de perte silencieuse que le PATCH immediat n'avait pas.
   Attention a l'implementation : `draftsRef.current` est reassigne a chaque
-  saisie, il doit etre lu *dans* le cleanup et non capture au montage.
+  saisie, il doit etre lu _dans_ le cleanup et non capture au montage.
 
 ### 10.3 Auto-notification (`services/meal.ts`)
 
