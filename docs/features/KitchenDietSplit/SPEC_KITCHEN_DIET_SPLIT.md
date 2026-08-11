@@ -282,7 +282,13 @@ equipiers (meme pattern, meme probleme) :
   le clignotement vers l'ancienne valeur entre le PATCH et la fin du refetch),
   et immediatement en cas d'erreur (retour a la valeur serveur + toast) ;
 - libelle d'etat "enregistrement..." tant qu'un brouillon est en attente,
-  "a jour" une fois confirme.
+  "a jour" une fois confirme ;
+- **flush au demontage** : si la carte disparait avant l'echeance du debounce
+  (changement d'onglet, sortie de l'evenement), les brouillons en attente sont
+  envoyes au lieu d'etre annules. Sans ce filet, le debounce introduirait une
+  fenetre de 800ms de perte silencieuse que le PATCH immediat n'avait pas.
+  Attention a l'implementation : `draftsRef.current` est reassigne a chaque
+  saisie, il doit etre lu *dans* le cleanup et non capture au montage.
 
 ### 10.3 Auto-notification (`services/meal.ts`)
 

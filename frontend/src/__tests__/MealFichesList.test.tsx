@@ -263,6 +263,31 @@ describe("MealFichesList", () => {
     expect(apiPatchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("flushes a pending draft when the list unmounts before the debounce fires", async () => {
+    apiPatchMock.mockResolvedValue({});
+    const { unmount } = render(
+      <MealFichesList
+        eventId="ev1"
+        meals={[{ ...ASSIGNED_MEAL, vegeCount: 4, carneCount: 22 }]}
+        chefs={CHEFS}
+        unassigned={UNASSIGNED}
+        eventParticipantsCount={26}
+        onChanged={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Augmenter" })[1]);
+    expect(apiPatchMock).not.toHaveBeenCalled();
+
+    // Changement d'onglet avant l'echeance : la saisie ne doit pas etre perdue.
+    unmount();
+
+    expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
+      vegeCount: 5,
+      carneCount: 21,
+    });
+    expect(apiPatchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("supports typing 100% carne directly with the numeric keypad", async () => {
     apiPatchMock.mockResolvedValue({});
     render(

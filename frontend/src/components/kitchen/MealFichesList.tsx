@@ -120,12 +120,26 @@ export default function MealFichesList({
     if (changed) applyDrafts(next);
   }, [meals]);
 
+  // Filet de securite au demontage (changement d'onglet, sortie de l'evenement) : le
+  // debounce ne doit jamais faire perdre une saisie, on envoie donc les brouillons encore
+  // en attente. Pas de onChanged() ici, le composant n'est plus la pour l'exploiter.
   useEffect(() => {
+    // `timersRef.current` n'est jamais reassigne (mutation en place), le capturer est sur.
+    // `draftsRef.current` l'est a chaque saisie : il doit etre lu dans le cleanup, sinon on
+    // n'aurait que l'objet vide du montage.
     const timers = timersRef.current;
     return () => {
-      Object.values(timers).forEach(clearTimeout);
+      for (const [mealId, timer] of Object.entries(timers)) {
+        clearTimeout(timer);
+        const payload = draftsRef.current[mealId];
+        if (payload) {
+          api
+            .patch(`/api/events/${eventId}/kitchen/meals/${mealId}`, payload)
+            .catch(() => undefined);
+        }
+      }
     };
-  }, []);
+  }, [eventId]);
 
   if (meals.length === 0) {
     return (

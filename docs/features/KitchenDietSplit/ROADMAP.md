@@ -116,12 +116,14 @@ participants). Branche `feature/kitchen-diet-split-ux`.
       cuisine.
 - [x] `MealFichesList.tsx` : brouillon optimiste + PATCH debounce 800ms pour
       la repartition ET la capacite equipiers ; suppression du gel des
-      steppers pendant la sauvegarde ; libelle "enregistrement..." / "a jour".
+      steppers pendant la sauvegarde ; libelle "enregistrement..." / "a jour" ;
+      flush des brouillons en attente au demontage (pas de perte silencieuse
+      dans la fenetre de debounce).
 - [x] `services/meal.ts` : plus de notification quand le responsable qui
       edite est lui-meme le chef du repas (`meal.chefUserId !== actingUserId`).
 - [x] Tests frontend : saisie clavier (valeur directe, clamp, champ vide,
       caracteres non numeriques), rafale de clics = 1 PATCH, retour a 0 sans
-      gel, 100% carne au clavier.
+      gel, 100% carne au clavier, flush au demontage.
 - [x] Test integration : pas d'auto-notification pour le responsable-chef.
 - [x] E2E `cuisine.spec.ts` : saisie clavier du 100% carne, vase communicant,
       un seul PATCH.
