@@ -2,14 +2,9 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <script>
-      try {
-        var t = localStorage.getItem("app_theme");
-        document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "ToM");
-      } catch (e) {
-        document.documentElement.setAttribute("data-theme", "ToM");
-      }
-    </script>
+    <!-- Anti-flash de theme : script externe (et non inline) car la CSP de prod
+         interdit l'inline, cf frontend/public/theme-init.js -->
+    <script src="/theme-init.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Gestionnaire d'evenements et de tables de jeu" />
     <meta name="theme-color" content="#232323" />
