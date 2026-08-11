@@ -48,7 +48,9 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@tommanager-dev-postgres:5432/${POSTGRES_DB}?schema=public&connection_limit=20&pool_timeout=30
       - SESSION_SECRET=${SESSION_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN}
-      - TRUST_PROXY=1
+      # 2 hops : Traefik puis nginx (frontend) ajoutent chacun leur maillon a
+      # X-Forwarded-For. Cf backend/src/config/env.ts.
+      - TRUST_PROXY=2
       - NODE_OPTIONS=--max-old-space-size=1024
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}

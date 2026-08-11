@@ -49,9 +49,15 @@ app.use(
   })
 );
 
-// Trust proxy (for Traefik)
-if (env.NODE_ENV === "production") {
-  app.set("trust proxy", 1);
+// Trust proxy (Traefik -> nginx -> backend en prod, cf TRUST_PROXY dans config/env).
+// Plancher de 1 en production, jamais 0 : sans proxy de confiance, req.secure passerait
+// a false derriere le proxy TLS, le cookie de session (secure: true) ne serait plus
+// emis et tous les utilisateurs seraient deconnectes. Ce plancher garantit qu'un
+// TRUST_PROXY absent de l'environnement degrade au comportement precedent (1) au lieu
+// de casser les sessions.
+const trustProxy = env.NODE_ENV === "production" ? Math.max(env.TRUST_PROXY, 1) : env.TRUST_PROXY;
+if (trustProxy > 0) {
+  app.set("trust proxy", trustProxy);
 }
 
 // Sessions
