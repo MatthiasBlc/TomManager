@@ -213,10 +213,17 @@ Voir `docs/features/CookV1/SPEC_COOKING.md` pour le detail fonctionnel. Migratio
 | eventId                 | String   | FK -> Event.id, UNIQUE, onDelete Cascade    |
 | chefRoleId              | String?  | Snowflake role Discord chef ; null = manuel |
 | allergiesNotes          | String?  | Texte libre global (max 5000)               |
+| dislikesNotes           | String?  | Texte libre global (max 5000)               |
 | equipierPlanningEnabled | Boolean  | default false                               |
 | createdAt / updatedAt   | DateTime |                                             |
 
 Relations: event (Event), chefs (KitchenChef[]), coursesMembers (KitchenCoursesMember[]), meals (Meal[]), assistants (MealAssistant[])
+
+`allergiesNotes` (medical, bloquant) et `dislikesNotes` (preference de confort) sont
+deux champs distincts et non deux rubriques d'un meme texte : ils s'affichent en deux
+blocs de couleurs differentes et ne demandent pas la meme attention au chef. Meme
+regle de visibilite pour les deux (`isFullReader` : chef + responsable, jamais
+l'equipier). Migration additive `20260811205217_kitchen_dislikes_notes`.
 
 ### KitchenChef (roster chef materialise)
 

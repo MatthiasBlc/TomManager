@@ -34,6 +34,7 @@ const baseProps = {
   eventId: "ev1",
   chefRoleId: null,
   allergiesNotes: null,
+  dislikesNotes: null,
   equipierPlanningEnabled: false,
   chefs: [{ id: "chef1", username: "Alice", source: "MANUAL" as const }],
   coursesMembers: [{ id: "courses1", username: "Bob" }],
@@ -166,5 +167,50 @@ describe("KitchenManagementPanel", () => {
   it("renders the Chefs/Équipe courses/Sans affectation blocks in a responsive grid", () => {
     const { container } = render(<KitchenManagementPanel {...baseProps} />);
     expect(container.querySelector(".grid.md\\:grid-cols-2.lg\\:grid-cols-3")).not.toBeNull();
+  });
+
+  it("offers two separate note cards, allergies above dislikes", () => {
+    render(<KitchenManagementPanel {...baseProps} />);
+
+    expect(screen.getByText("Notes allergies")).toBeInTheDocument();
+    expect(screen.getByText("Aucune allergie renseignée pour le moment.")).toBeInTheDocument();
+    expect(screen.getByText("N'aime vraiment pas")).toBeInTheDocument();
+    expect(screen.getByText("Aucune aversion renseignée pour le moment.")).toBeInTheDocument();
+
+    // L'ordre a l'ecran compte : le medical avant la preference.
+    const allergiesButton = screen.getByRole("button", { name: "Modifier les notes allergies" });
+    const dislikesButton = screen.getByRole("button", { name: "Modifier les aversions" });
+    expect(
+      allergiesButton.compareDocumentPosition(dislikesButton) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it("saves dislikes without touching allergies, and keeps line breaks", async () => {
+    apiPatchMock.mockResolvedValue({ data: {} });
+    render(<KitchenManagementPanel {...baseProps} allergiesNotes="Vrael : Noix" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Modifier les aversions" }));
+    fireEvent.change(screen.getByLabelText("N'aime vraiment pas"), {
+      target: { value: "  Thory : Oignon\nJojo : Oeufs  " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+
+    await waitFor(() => expect(apiPatchMock).toHaveBeenCalled());
+    // `trim` ne rase que les extremites : le saut de ligne interne survit.
+    expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen", {
+      dislikesNotes: "Thory : Oignon\nJojo : Oeufs",
+    });
+    expect(toastSuccess).toHaveBeenCalledWith("Aversions mises à jour");
+  });
+
+  it("renders saved notes with their line breaks preserved", () => {
+    const { container } = render(
+      <KitchenManagementPanel {...baseProps} allergiesNotes={"Vrael : Noix\nKaroo : Crevettes"} />
+    );
+    const notes = Array.from(container.querySelectorAll("p")).find((p) =>
+      p.textContent?.includes("Karoo : Crevettes")
+    );
+    expect(notes).toBeDefined();
+    expect(notes).toHaveClass("whitespace-pre-line");
   });
 });

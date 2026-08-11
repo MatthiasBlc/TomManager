@@ -16,6 +16,11 @@ vi.mock("react-hot-toast", () => ({
 vi.mock("../contexts/ConfirmContext", () => ({
   useConfirm: () => vi.fn().mockResolvedValue(true),
 }));
+// KitchenNotesPanels (fiches allergies/aversions) tire useIsMobile ->
+// window.matchMedia, absent en jsdom.
+vi.mock("../hooks/useIsMobile", () => ({
+  useIsMobile: () => false,
+}));
 vi.mock("../components/common/ResponsiveModal", () => ({
   default: ({
     open,
@@ -75,6 +80,23 @@ describe("KitchenTab — visibility matrix", () => {
     expect(screen.queryByText("Fiches repas")).not.toBeInTheDocument();
     expect(screen.getByText("Choisir mon créneau")).toBeInTheDocument();
     expect(screen.queryByText("État du planning")).not.toBeInTheDocument();
+  });
+
+  it("shows allergies and dislikes as two distinct blocks at the top of 'Mon repas'", () => {
+    mockAuth({ id: "chef1", role: "USER" });
+    renderTab({
+      currentUserKitchenRole: "chef",
+      isChef: true,
+      equipierPlanningEnabled: false,
+      meals: [],
+      chefRoleId: null,
+      allergiesNotes: "Vrael : Noix",
+      dislikesNotes: "Thory : Oignon",
+    });
+    expect(screen.getByText("Allergies")).toBeInTheDocument();
+    expect(screen.getByText("Vrael : Noix")).toBeInTheDocument();
+    expect(screen.getByText("N'aime vraiment pas")).toBeInTheDocument();
+    expect(screen.getByText("Thory : Oignon")).toBeInTheDocument();
   });
 
   it("shows the swap panel (not the claim picker) once the chef already has a meal", () => {

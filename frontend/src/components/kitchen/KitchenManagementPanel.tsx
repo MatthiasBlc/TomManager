@@ -31,6 +31,7 @@ interface Props {
   eventId: string;
   chefRoleId: string | null;
   allergiesNotes: string | null;
+  dislikesNotes: string | null;
   equipierPlanningEnabled: boolean;
   chefs: ChefEntry[];
   coursesMembers: Person[];
@@ -43,39 +44,93 @@ interface Props {
 
 const displayedName = (u: Person) => u.displayName ?? u.username;
 
-// Bloc allergies : editable directement ici (bouton crayon) plutot que noye
-// dans un formulaire de config generique. Etat vide distinct (gris, non
-// alarmant) tant qu'aucune note n'est renseignee.
-function AllergyNotesCard({
+// Fiches de notes cuisine (allergies, aversions) : editables directement ici
+// (bouton crayon) plutot que noyees dans un formulaire de config generique.
+// Etat vide distinct (gris, non alarmant) tant qu'aucune note n'est renseignee.
+// Deux champs distincts et non deux rubriques dans un meme texte : une allergie
+// est medicale et bloquante, une aversion est une preference de confort — elles
+// ne meritent ni le meme niveau d'alerte ni la meme place a l'ecran.
+interface NotesCardConfig {
+  field: "allergiesNotes" | "dislikesNotes";
+  inputId: string;
+  formLabel: string;
+  filledTitle: string;
+  emptyTitle: string;
+  emptyText: string;
+  placeholder: string;
+  successToast: string;
+  errorToast: string;
+  editAriaLabel: string;
+  // "alert" = rouge (medical, bloquant) ; "neutral" = gris (preference).
+  tone: "alert" | "neutral";
+  Icon: typeof AlertTriangleIcon;
+}
+
+const ALLERGIES_CARD: NotesCardConfig = {
+  field: "allergiesNotes",
+  inputId: "km-allergies-input",
+  formLabel: "Notes allergies",
+  filledTitle: "Allergies à signaler aux équipes",
+  emptyTitle: "Notes allergies",
+  emptyText: "Aucune allergie renseignée pour le moment.",
+  placeholder: "Une ligne par convive. Ex :\nVrael : Noix, Fruits de mer",
+  successToast: "Notes allergies mises à jour",
+  errorToast: "Échec de la mise à jour des notes allergies",
+  editAriaLabel: "Modifier les notes allergies",
+  tone: "alert",
+  Icon: AlertTriangleIcon,
+};
+
+const DISLIKES_CARD: NotesCardConfig = {
+  field: "dislikesNotes",
+  inputId: "km-dislikes-input",
+  formLabel: "N'aime vraiment pas",
+  filledTitle: "N'aime vraiment pas",
+  emptyTitle: "N'aime vraiment pas",
+  emptyText: "Aucune aversion renseignée pour le moment.",
+  placeholder: "Une ligne par convive. Ex :\nThory : Oignon",
+  successToast: "Aversions mises à jour",
+  errorToast: "Échec de la mise à jour des aversions",
+  editAriaLabel: "Modifier les aversions",
+  tone: "neutral",
+  Icon: UtensilsIcon,
+};
+
+function NotesCard({
   eventId,
-  allergiesNotes,
+  config,
+  value,
   onChanged,
 }: {
   eventId: string;
-  allergiesNotes: string | null;
+  config: NotesCardConfig;
+  value: string | null;
   onChanged: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(allergiesNotes ?? "");
+  const [draft, setDraft] = useState(value ?? "");
   const [saving, setSaving] = useState(false);
-  const hasNotes = !!allergiesNotes?.trim();
+  const hasNotes = !!value?.trim();
+  const { Icon } = config;
 
   const startEditing = () => {
-    setDraft(allergiesNotes ?? "");
+    setDraft(value ?? "");
     setEditing(true);
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      // `trim` ne rase que les extremites : les sauts de ligne internes, qui
+      // portent toute la lisibilite de la fiche, sont conserves tels quels.
       await api.patch(`/api/events/${eventId}/kitchen`, {
-        allergiesNotes: draft.trim() || null,
+        [config.field]: draft.trim() || null,
       });
-      toast.success("Notes allergies mises à jour");
+      toast.success(config.successToast);
       setEditing(false);
       onChanged();
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Échec de la mise à jour des notes allergies"));
+      toast.error(getErrorMessage(err, config.errorToast));
     } finally {
       setSaving(false);
     }
@@ -85,18 +140,18 @@ function AllergyNotesCard({
     return (
       <div className={`${CARD} border-dashed`}>
         <div className="card-body p-3 space-y-2">
-          <label className="label-text text-sm font-medium" htmlFor="km-allergies-input">
-            Notes allergies
+          <label className="label-text text-sm font-medium" htmlFor={config.inputId}>
+            {config.formLabel}
           </label>
           <textarea
-            id="km-allergies-input"
+            id={config.inputId}
             className="textarea textarea-bordered w-full text-sm"
-            rows={3}
+            rows={8}
             maxLength={5000}
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ex : une convive est allergique aux fruits à coque"
+            placeholder={config.placeholder}
           />
           <div className="flex justify-end gap-2">
             <button
@@ -122,29 +177,41 @@ function AllergyNotesCard({
     );
   }
 
+  const filledSurface =
+    config.tone === "alert" ? "bg-error/10 border-error/30" : "bg-base-200 border-base-300";
+
   return (
     <div
       className={`card shadow-[0_1px_2px_rgba(0,0,0,.3),0_10px_24px_-12px_rgba(0,0,0,.5)] border ${
-        hasNotes ? "bg-error/10 border-error/30" : "bg-base-200 border-dashed border-base-300"
+        hasNotes ? filledSurface : "bg-base-200 border-dashed border-base-300"
       }`}
     >
       <div className="card-body p-3 flex-row items-start gap-3">
-        <AlertTriangleIcon
-          className={`w-5 h-5 shrink-0 mt-0.5 ${hasNotes ? "text-error" : "opacity-40"}`}
+        <Icon
+          className={`w-5 h-5 shrink-0 mt-0.5 ${
+            hasNotes && config.tone === "alert" ? "text-error" : "opacity-40"
+          }`}
         />
         <div className="flex-1 min-w-0">
-          <p className={`font-semibold text-sm ${hasNotes ? "text-error" : "opacity-60"}`}>
-            {hasNotes ? "Allergie à signaler aux équipes" : "Notes allergies"}
+          <p
+            className={`font-semibold text-sm ${
+              !hasNotes ? "opacity-60" : config.tone === "alert" ? "text-error" : ""
+            }`}
+          >
+            {hasNotes ? config.filledTitle : config.emptyTitle}
           </p>
-          <p className={`text-sm ${hasNotes ? "" : "opacity-50 italic"}`}>
-            {hasNotes ? allergiesNotes : "Aucune allergie renseignée pour le moment."}
+          {/* whitespace-pre-line : sans lui, les retours a la ligne saisis par
+              le responsable sont avales par le HTML et la fiche se recolle en
+              un seul pave illisible. */}
+          <p className={`text-sm ${hasNotes ? "whitespace-pre-line" : "opacity-50 italic"}`}>
+            {hasNotes ? value : config.emptyText}
           </p>
         </div>
         <button
           type="button"
           className="btn btn-ghost btn-square btn-sm"
           onClick={startEditing}
-          aria-label="Modifier les notes allergies"
+          aria-label={config.editAriaLabel}
           title="Modifier"
         >
           <PencilIcon />
@@ -158,6 +225,7 @@ export default function KitchenManagementPanel({
   eventId,
   chefRoleId,
   allergiesNotes,
+  dislikesNotes,
   equipierPlanningEnabled,
   chefs,
   coursesMembers,
@@ -305,7 +373,18 @@ export default function KitchenManagementPanel({
 
   return (
     <div className="space-y-4">
-      <AllergyNotesCard eventId={eventId} allergiesNotes={allergiesNotes} onChanged={onChanged} />
+      <NotesCard
+        eventId={eventId}
+        config={ALLERGIES_CARD}
+        value={allergiesNotes}
+        onChanged={onChanged}
+      />
+      <NotesCard
+        eventId={eventId}
+        config={DISLIKES_CARD}
+        value={dislikesNotes}
+        onChanged={onChanged}
+      />
 
       <div>
         <SectionEyebrow icon={<CalendarIcon />}>État du planning</SectionEyebrow>

@@ -17,7 +17,10 @@ export interface KitchenViewData {
   // Cible du total vege+carne (participants confirmes de l'evenement entier) : absent
   // si l'utilisateur ne voit pas la repartition (equipier).
   eventParticipantsCount?: number;
+  // Notes nominatives sur les convives : absentes de la reponse si l'utilisateur
+  // n'y a pas droit (equipier), au meme titre que les ingredients.
   allergiesNotes?: string | null;
+  dislikesNotes?: string | null;
   chefs?: {
     id: string;
     username: string;

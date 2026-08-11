@@ -14,6 +14,7 @@ type KitchenRole = "manager" | "chef" | "equipier" | "none";
 interface UpdateConfigInput {
   chefRoleId?: string | null;
   allergiesNotes?: string | null;
+  dislikesNotes?: string | null;
   equipierPlanningEnabled?: boolean;
 }
 
@@ -162,6 +163,7 @@ export async function updateConfig(eventId: string, userId: string, data: Update
       data: {
         ...(data.chefRoleId !== undefined ? { chefRoleId: data.chefRoleId } : {}),
         ...(data.allergiesNotes !== undefined ? { allergiesNotes: data.allergiesNotes } : {}),
+        ...(data.dislikesNotes !== undefined ? { dislikesNotes: data.dislikesNotes } : {}),
         ...(data.equipierPlanningEnabled !== undefined
           ? { equipierPlanningEnabled: data.equipierPlanningEnabled }
           : {}),
@@ -531,7 +533,11 @@ export async function getKitchenView(eventId: string, userId: string | undefined
   const result: Record<string, unknown> = { ...base, meals: mealsView };
 
   if (isFullReader) {
+    // Les aversions suivent exactement la meme regle de visibilite que les
+    // allergies : c'est une info nominative sur les convives, jamais exposee
+    // a l'equipier.
     result.allergiesNotes = eventKitchen.allergiesNotes;
+    result.dislikesNotes = eventKitchen.dislikesNotes;
   }
 
   if (canSeeDietSplit) {
