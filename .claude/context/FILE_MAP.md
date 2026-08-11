@@ -30,7 +30,7 @@ src/
 ├── middleware/
 │   ├── auth.ts            # requireAuth, requireAdmin, requireEventParticipant, requireEventCreator, requireTableGMOrAdmin, requireKitchenManager, requireMealChefOrManager
 │   ├── errorHandler.ts    # Global error handler
-│   ├── rateLimiter.ts     # authRateLimiter (15min window, 10 req, skipped in test)
+│   ├── rateLimiter.ts     # authRateLimiter (15min/10 req) + globalRateLimiter (1min/300) + writeRateLimiter (1min/120, POST-PATCH-DELETE), skipped in test — comptage par IP, depend de TRUST_PROXY (2 en prod)
 │   └── validateBody.ts    # validateBody(zodSchema), validateUUID(param)
 ├── routes/
 │   ├── index.ts           # Main router
@@ -126,6 +126,11 @@ src/
 ```
 
 ## Frontend (frontend/src/)
+
+Hors `src/` : `frontend/public/theme-init.js` — applique le theme enregistre avant le
+premier rendu (anti-flash). Doit rester un fichier externe charge en bloquant depuis
+`index.html` : la CSP de prod (`script-src 'self'`, cf `frontend/Dockerfile`) bloque
+tout script inline.
 
 ```
 src/

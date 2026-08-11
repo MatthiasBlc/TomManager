@@ -40,11 +40,14 @@ function FieldStatus({ status }: { status: SaveStatus }) {
   return null;
 }
 
+const LIST_SAVE_DEBOUNCE_MS = 1200;
+
 const toIngredientRows = (ingredients: MealFiche["ingredients"]): IngredientRow[] =>
   (ingredients ?? []).map((i) => ({
     name: i.name,
     quantity: Number(i.quantity),
     unit: i.unit as IngredientRow["unit"],
+    note: i.note ?? "",
   }));
 
 // Fiche repas editable "a la volee" (Evolutions.md point 1) : chaque champ
@@ -86,15 +89,29 @@ export default function MealFicheEditor({
   };
 
   const nameStatus = useDebouncedSave(name, (v) => patchMeal({ name: v }));
-  const ingredientsStatus = useDebouncedSave(ingredients, (v) =>
-    patchMeal({
-      ingredients: v
-        .filter((i) => i.name.trim())
-        .map((i) => ({ name: i.name.trim(), quantity: Number(i.quantity), unit: i.unit })),
-    })
+  // Les listes se saisissent par rafales (une ligne apres l'autre) et chaque PATCH
+  // reecrit la liste entiere : un debounce plus long qu'un champ texte simple evite
+  // d'emettre une ecriture par mot tape (retour prod : rafale de 429). Le filet de
+  // securite au demontage de useDebouncedSave garantit qu'aucune saisie n'est perdue.
+  const ingredientsStatus = useDebouncedSave(
+    ingredients,
+    (v) =>
+      patchMeal({
+        ingredients: v
+          .filter((i) => i.name.trim())
+          .map((i) => ({
+            name: i.name.trim(),
+            quantity: Number(i.quantity),
+            unit: i.unit,
+            note: i.note?.trim() || null,
+          })),
+      }),
+    LIST_SAVE_DEBOUNCE_MS
   );
-  const utensilsStatus = useDebouncedSave(utensils, (v) =>
-    patchMeal({ utensils: v.map((n) => ({ name: n })) })
+  const utensilsStatus = useDebouncedSave(
+    utensils,
+    (v) => patchMeal({ utensils: v.map((n) => ({ name: n })) }),
+    LIST_SAVE_DEBOUNCE_MS
   );
 
   const isFull = meal.assistants.length >= meal.maxAssistants;

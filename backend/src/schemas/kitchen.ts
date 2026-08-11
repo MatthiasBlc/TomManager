@@ -34,6 +34,9 @@ const ingredientSchema = z.object({
   // normalise deja virgule/point avant envoi, cf IngredientListInput point 8).
   quantity: z.coerce.number().positive("Quantity must be positive").max(100000),
   unit: z.enum(["G", "KG", "ML", "CL", "L", "CAS", "CAC", "PIECE"]),
+  // Commentaire libre destine a l'equipe courses. Facultatif ; le frontend envoie
+  // null quand le champ est vide, jamais une chaine vide.
+  note: z.string().max(300, "Note must be at most 300 characters").nullable().optional(),
 });
 
 const utensilSchema = z.object({
