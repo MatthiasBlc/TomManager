@@ -266,14 +266,15 @@ base, juste un warning cote front. Migration `20260724170207_kitchen_diet_split`
 
 ### MealIngredient
 
-| Field     | Type    | Notes                               |
-| --------- | ------- | ----------------------------------- | --- | --- | --- | --- | --- | --- | ----- |
-| id        | String  | UUID PK                             |
-| mealId    | String  | FK -> Meal.id, onDelete Cascade     |
-| productId | String? | FK -> Product.id (onDelete SetNull) |
-| name      | String  | Denormalise (cache d'affichage)     |
-| quantity  | Decimal | @db.Decimal(10,3)                   |
-| unit      | Unit    | G                                   | KG  | ML  | CL  | L   | CAS | CAC | PIECE |
+| Field     | Type    | Notes                                                                   |
+| --------- | ------- | ----------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | ----- |
+| id        | String  | UUID PK                                                                 |
+| mealId    | String  | FK -> Meal.id, onDelete Cascade                                         |
+| productId | String? | FK -> Product.id (onDelete SetNull)                                     |
+| name      | String  | Denormalise (cache d'affichage)                                         |
+| quantity  | Decimal | @db.Decimal(10,3)                                                       |
+| unit      | Unit    | G                                                                       | KG  | ML  | CL  | L   | CAS | CAC | PIECE |
+| note      | String? | Commentaire libre du chef sur la ligne (max 300), pour l'equipe courses |
 
 ### Product (catalogue, pattern Tag)
 

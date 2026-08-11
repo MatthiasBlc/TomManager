@@ -29,7 +29,7 @@ export interface MealFiche {
   chef: { id: string; username: string; displayName?: string | null } | null;
   assistants: { id: string; username: string; displayName?: string | null }[];
   remainingSeats: number;
-  ingredients?: { name: string; quantity: number; unit: string }[];
+  ingredients?: { name: string; quantity: number; unit: string; note?: string | null }[];
   utensils?: { name: string }[];
 }
 

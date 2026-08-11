@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../config/api";
 import { useEventSocket } from "./useEventSocket";
@@ -42,6 +42,15 @@ export interface KitchenViewData {
   capacitySummary?: { allocated: number; poolTotal: number };
 }
 
+// Coalescence des refetch (retour prod : rafale de 429). Une seule action de chef
+// declenche plusieurs demandes de rafraichissement quasi simultanees : la reponse du
+// PATCH (onChanged) ET l'evenement socket diffuse a toute la room — et un echange de
+// creneaux emet meme deux `kitchen:meal-changed` d'affilee. Sans regroupement, chaque
+// client connecte multipliait donc les GET pour une seule modification. Ce delai
+// fusionne les demandes rapprochees en un seul appel, sans changer la reactivite
+// percue (30 ms est sous le seuil de perception).
+const REFETCH_COALESCE_MS = 30;
+
 // Fetch + temps reel partages entre l'onglet Infos (KitchenBoard) et l'onglet
 // Cuisine (KitchenTab) : un seul GET /kitchen par page evenement, un seul wiring
 // socket kitchen:*, et la donnee est disponible des le montage de la page (utile
@@ -53,7 +62,7 @@ export function useKitchenData(eventId: string | undefined) {
   const [assistantSwaps, setAssistantSwaps] = useState<AssistantSwapRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchKitchen = useCallback(async () => {
+  const fetchKitchenNow = useCallback(async () => {
     try {
       const res = await api.get(`/api/events/${eventId}/kitchen`);
       setData(res.data.data);
@@ -64,7 +73,7 @@ export function useKitchenData(eventId: string | undefined) {
     }
   }, [eventId]);
 
-  const fetchSwaps = useCallback(async () => {
+  const fetchSwapsNow = useCallback(async () => {
     try {
       const res = await api.get(`/api/events/${eventId}/kitchen/swaps`);
       setSwaps(Array.isArray(res.data.data) ? res.data.data : []);
@@ -73,7 +82,7 @@ export function useKitchenData(eventId: string | undefined) {
     }
   }, [eventId]);
 
-  const fetchAssistantSwaps = useCallback(async () => {
+  const fetchAssistantSwapsNow = useCallback(async () => {
     try {
       const res = await api.get(`/api/events/${eventId}/kitchen/assistant-swaps`);
       setAssistantSwaps(Array.isArray(res.data.data) ? res.data.data : []);
@@ -82,6 +91,27 @@ export function useKitchenData(eventId: string | undefined) {
     }
   }, [eventId]);
 
+  // Un timer par ressource : deux demandes rapprochees sur la meme ressource ne font
+  // qu'un GET, mais une demande "kitchen" ne retarde pas une demande "swaps".
+  const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const schedule = useCallback((key: string, run: () => void) => {
+    clearTimeout(timersRef.current[key]);
+    timersRef.current[key] = setTimeout(() => {
+      delete timersRef.current[key];
+      run();
+    }, REFETCH_COALESCE_MS);
+  }, []);
+
+  const fetchKitchen = useCallback(
+    () => schedule("kitchen", fetchKitchenNow),
+    [schedule, fetchKitchenNow]
+  );
+  const fetchSwaps = useCallback(() => schedule("swaps", fetchSwapsNow), [schedule, fetchSwapsNow]);
+  const fetchAssistantSwaps = useCallback(
+    () => schedule("assistantSwaps", fetchAssistantSwapsNow),
+    [schedule, fetchAssistantSwapsNow]
+  );
+
   const refetchAll = useCallback(() => {
     fetchKitchen();
     fetchSwaps();
@@ -89,14 +119,26 @@ export function useKitchenData(eventId: string | undefined) {
   }, [fetchKitchen, fetchSwaps, fetchAssistantSwaps]);
 
   useEffect(() => {
-    fetchKitchen();
-    fetchSwaps();
-    fetchAssistantSwaps();
-  }, [fetchKitchen, fetchSwaps, fetchAssistantSwaps]);
+    fetchKitchenNow();
+    fetchSwapsNow();
+    fetchAssistantSwapsNow();
+  }, [fetchKitchenNow, fetchSwapsNow, fetchAssistantSwapsNow]);
+
+  // Nettoyage des timers en attente au demontage (changement d'evenement, sortie de
+  // page) : un refetch programme ne doit pas partir pour un composant disparu.
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      for (const timer of Object.values(timers)) clearTimeout(timer);
+    };
+  }, []);
 
   useEventSocket(eventId, {
     onKitchenConfigUpdated: fetchKitchen,
-    onKitchenMealChanged: refetchAll,
+    // Pas de refetchAll ici : une modification de repas ne change pas les listes
+    // d'echanges, et les operations qui touchent les deux (accepter/refuser un
+    // echange) emettent toujours `kitchen:swap-request-changed` en plus.
+    onKitchenMealChanged: fetchKitchen,
     onKitchenAssistantChanged: fetchKitchen,
     onKitchenPlanningGenerated: fetchKitchen,
     onKitchenSwapRequestChanged: fetchSwaps,

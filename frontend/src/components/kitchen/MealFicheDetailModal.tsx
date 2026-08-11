@@ -23,6 +23,7 @@ const toIngredientRows = (ingredients: MealFiche["ingredients"]): IngredientRow[
     name: i.name,
     quantity: Number(i.quantity),
     unit: i.unit as IngredientRow["unit"],
+    note: i.note ?? "",
   }));
 
 // Modale "details" de la fiche (spec CookV1 5) : lecture seule par defaut, ne porte
@@ -54,7 +55,12 @@ export default function MealFicheDetailModal({ eventId, meal, onClose, onChanged
         name,
         ingredients: ingredients
           .filter((i) => i.name.trim())
-          .map((i) => ({ name: i.name.trim(), quantity: Number(i.quantity), unit: i.unit })),
+          .map((i) => ({
+            name: i.name.trim(),
+            quantity: Number(i.quantity),
+            unit: i.unit,
+            note: i.note?.trim() || null,
+          })),
         utensils: utensils.map((n) => ({ name: n })),
       });
       toast.success("Fiche mise à jour");
@@ -137,10 +143,16 @@ export default function MealFicheDetailModal({ eventId, meal, onClose, onChanged
             <div>
               <h4 className="font-semibold text-sm">Ingrédients</h4>
               {meal.ingredients && meal.ingredients.length > 0 ? (
-                <ul className="text-sm list-disc list-inside">
+                <ul className="text-sm list-disc list-inside space-y-0.5">
                   {meal.ingredients.map((i, idx) => (
                     <li key={idx}>
                       {i.quantity} {unitLabel(i.unit)} {i.name}
+                      {/* Le commentaire est destine a l'equipe courses : affiche sous
+                          la ligne, jamais tronque (les precisions du chef peuvent
+                          etre longues, ex. une alternative de format ou de variete). */}
+                      {i.note && (
+                        <span className="block pl-5 text-xs italic opacity-70">{i.note}</span>
+                      )}
                     </li>
                   ))}
                 </ul>

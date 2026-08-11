@@ -579,6 +579,14 @@ Ouvrir 2 navigateurs/onglets avec 2 users differents sur le meme event.
 - [ ] POST `/api/auth/signup` : 10 tentatives max en 15 min
 - [ ] 11eme tentative → 429 Too Many Requests
 - [ ] Headers `RateLimit-*` presents dans les reponses
+- [ ] **Comptage par IP reelle** (regression prod) : depuis deux appareils sur des
+      connexions differentes, epuiser le quota sur l'un ne doit PAS bloquer l'autre.
+      Si les deux tombent en 429 ensemble, `TRUST_PROXY` ne correspond pas au nombre
+      de proxys devant le backend (2 en prod : Traefik + nginx) et tout le monde
+      partage un seul compteur.
+- [ ] **Saisie d'une recette complete** (~15 ingredients, avec commentaires) dans
+      "Mon repas" puis dans la modale details : aucun 429, aucune perte de saisie en
+      fermant l'onglet juste apres la derniere frappe
 
 ### 12.3 Parametre `?limit=`
 

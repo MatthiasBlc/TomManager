@@ -22,6 +22,7 @@ interface IngredientInput {
   name: string;
   quantity: number;
   unit: "G" | "KG" | "ML" | "CL" | "L" | "CAS" | "CAC" | "PIECE";
+  note?: string | null;
 }
 
 interface UtensilInput {
@@ -131,6 +132,7 @@ async function replaceIngredientsAndUtensils(
           name: i.name,
           quantity: i.quantity,
           unit: i.unit,
+          note: i.note?.trim() || null,
         })),
       });
     }

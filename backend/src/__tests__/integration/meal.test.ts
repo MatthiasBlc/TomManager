@@ -294,6 +294,60 @@ describe("Meal API", () => {
       expect(utensilRow.utensilId).toBe(utensil!.id);
     });
 
+    // Commentaire par ligne de recette : precision du chef pour l'equipe courses,
+    // portee par la ligne et non par le Product du catalogue.
+    it("persists a per-ingredient note and leaves it null when absent or blank", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "chefNote@example.com",
+        username: "chefNote",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({
+          ingredients: [
+            { name: "Miel", quantity: 250, unit: "G", note: "Liquide, de préférence agrume" },
+            { name: "Beurre", quantity: 130, unit: "G", note: "   " },
+            { name: "Riz basmati", quantity: 1.5, unit: "KG" },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      const byName = new Map(
+        res.body.data.ingredients.map((i: { name: string; note: string | null }) => [
+          i.name,
+          i.note,
+        ])
+      );
+      expect(byName.get("Miel")).toBe("Liquide, de préférence agrume");
+      // Un commentaire vide ou blanc n'est pas stocke comme chaine vide.
+      expect(byName.get("Beurre")).toBeNull();
+      expect(byName.get("Riz basmati")).toBeNull();
+    });
+
+    it("rejects an ingredient note longer than 300 characters", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "chefNote2@example.com",
+        username: "chefNote2",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({
+          ingredients: [{ name: "Miel", quantity: 250, unit: "G", note: "a".repeat(301) }],
+        });
+
+      expect(res.status).toBe(400);
+    });
+
     it("rejects a chef trying to change the schedule or service (manager only)", async () => {
       const { cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
