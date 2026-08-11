@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import IngredientListInput, { type IngredientRow } from "../components/kitchen/IngredientListInput";
 
 const apiGetMock = vi.fn();
@@ -49,5 +49,65 @@ describe("IngredientListInput — quantite virgule/point (point 8)", () => {
     fireEvent.change(qty, { target: { value: "," } });
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.getByDisplayValue(",")).toBeInTheDocument();
+  });
+});
+
+// Commentaire par ligne d'ingredient : precision du chef a destination de l'equipe
+// courses (ex. "de preference agrume ou acacia").
+describe("IngredientListInput — commentaire par ingredient", () => {
+  const noteLabel = "Commentaire sur Farine";
+
+  it("hides the comment field until it is requested", () => {
+    render(<IngredientListInput value={[ROW]} onChange={vi.fn()} />);
+    expect(screen.queryByLabelText(noteLabel)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Ajouter un commentaire sur Farine")).toBeInTheDocument();
+  });
+
+  it("opens the comment field on demand and reports what is typed", () => {
+    const onChange = vi.fn();
+    render(<IngredientListInput value={[ROW]} onChange={onChange} />);
+    fireEvent.click(screen.getByLabelText("Ajouter un commentaire sur Farine"));
+    fireEvent.change(screen.getByLabelText(noteLabel), { target: { value: "T65 de préférence" } });
+    expect(onChange).toHaveBeenCalledWith([{ ...ROW, note: "T65 de préférence" }]);
+  });
+
+  it("shows an existing comment without having to reopen it", () => {
+    render(<IngredientListInput value={[{ ...ROW, note: "T65" }]} onChange={vi.fn()} />);
+    expect(screen.getByLabelText(noteLabel)).toHaveValue("T65");
+    // Le bouton d'ajout disparait : le champ est deja la.
+    expect(screen.queryByLabelText("Ajouter un commentaire sur Farine")).not.toBeInTheDocument();
+  });
+});
+
+// Retour prod : la recherche partait des le 1er caractere avec 200 ms de debounce,
+// donc une requete par syllabe tapee (cascade de 429 cote serveur).
+describe("IngredientListInput — debit de l'autocompletion", () => {
+  beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
+  afterEach(() => vi.useRealTimers());
+
+  const flush = async (ms: number) => {
+    await act(async () => {
+      vi.advanceTimersByTime(ms);
+    });
+  };
+
+  it("does not search on a single character", async () => {
+    render(<IngredientListInput value={[{ ...ROW, name: "c" }]} onChange={vi.fn()} />);
+    await flush(1000);
+    expect(apiGetMock).not.toHaveBeenCalled();
+  });
+
+  it("issues a single search for a name typed continuously", async () => {
+    apiGetMock.mockResolvedValue({ data: { data: [] } });
+    const { rerender } = render(
+      <IngredientListInput value={[{ ...ROW, name: "co" }]} onChange={vi.fn()} />
+    );
+    for (const name of ["con", "conc", "conco", "concombre"]) {
+      await flush(100);
+      rerender(<IngredientListInput value={[{ ...ROW, name }]} onChange={vi.fn()} />);
+    }
+    await flush(400);
+    await waitFor(() => expect(apiGetMock).toHaveBeenCalledTimes(1));
+    expect(apiGetMock).toHaveBeenCalledWith("/api/kitchen/products?q=concombre");
   });
 });

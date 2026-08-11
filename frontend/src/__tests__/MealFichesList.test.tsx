@@ -175,7 +175,7 @@ describe("MealFichesList", () => {
     await waitFor(() =>
       expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
         name: "Couscous royal",
-        ingredients: [{ name: "Semoule", quantity: 1, unit: "KG" }],
+        ingredients: [{ name: "Semoule", quantity: 1, unit: "KG", note: null }],
         utensils: [{ name: "Couscoussier" }],
       })
     );

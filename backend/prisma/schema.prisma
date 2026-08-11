@@ -325,6 +325,11 @@ model MealIngredient {
   name      String
   quantity  Decimal @db.Decimal(10, 3)
   unit      Unit
+  // Commentaire libre du chef sur CETTE ligne de recette, a destination de l'equipe
+  // courses (ex. "de preference agrume ou acacia", "si 300 ml n'est pas plus cher").
+  // Porte par la ligne et non par le Product : la meme denree peut demander une
+  // precision differente d'une recette a l'autre.
+  note      String?
 
   meal    Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
