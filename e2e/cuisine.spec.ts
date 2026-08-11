@@ -114,6 +114,19 @@ test.describe("Cuisine — configuration, repas, conflit planning, purge", () =>
     expect(dietNotif?.message).toContain("0 végé / 0 carné");
     expect(dietNotif?.message).toContain(`1 végé / ${participantsTarget - 1} carné`);
 
+    // Saisie clavier directe (pave numerique) : 100% carne en une frappe au lieu d'un clic
+    // par unite, le vase communicant remet l'autre champ a 0, et un seul PATCH part.
+    const keyboardPatch = page.waitForResponse(
+      (res) =>
+        res.url().includes(`/kitchen/meals/${meal.id}`) &&
+        res.request().method() === "PATCH" &&
+        JSON.stringify(res.request().postDataJSON()).includes("vegeCount")
+    );
+    await dietCard.getByLabel("Nombre de repas carné").fill(String(participantsTarget));
+    const keyboardReq = (await keyboardPatch).request().postDataJSON();
+    expect(keyboardReq).toMatchObject({ vegeCount: 0, carneCount: participantsTarget });
+    await expect(dietCard.getByText(`0 végé / ${participantsTarget} carné — à jour`)).toBeVisible();
+
     // --- Une table de jeu chevauchante (nichee 30min a l'interieur du creneau repas),
     // creee via API comme les autres specs planning ---
     const tableStart = new Date(new Date(meal.startDateTime).getTime() + 30 * 60_000);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../../config/api";
 import { getErrorMessage } from "../../config/apiErrors";
@@ -55,6 +55,18 @@ interface Props {
 
 const displayedName = (u: Person) => u.displayName ?? u.username;
 
+// Champs edites "en direct" sur la carte (capacite equipiers + repartition vege/carne) :
+// un PATCH par clic gelait l'UI (le temps de 2 refetch : reponse + socket) et generait
+// une notification chef par increment. On accumule donc un brouillon local envoye une
+// seule fois, une fois la saisie stabilisee.
+const SAVE_DEBOUNCE_MS = 800;
+
+interface MealDraft {
+  maxAssistants?: number;
+  vegeCount?: number;
+  carneCount?: number;
+}
+
 // Liste des fiches repas, section Gestion (Admin Chef, spec CookV1 5) : creneau non
 // editable/non supprimable, chef/capacite/equipiers actionnables directement sur la
 // ligne. Le detail (nom du plat, ingredients, ustensiles) s'edite dans la modale
@@ -72,6 +84,48 @@ export default function MealFichesList({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [chefChoices, setChefChoices] = useState<Record<string, string>>({});
   const [equipierChoices, setEquipierChoices] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, MealDraft>>({});
+  const draftsRef = useRef<Record<string, MealDraft>>({});
+  const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const applyDrafts = (next: Record<string, MealDraft>) => {
+    draftsRef.current = next;
+    setDrafts(next);
+  };
+
+  const dropDraft = (mealId: string) => {
+    const rest = { ...draftsRef.current };
+    delete rest[mealId];
+    applyDrafts(rest);
+  };
+
+  // Le brouillon s'efface quand les donnees serveur l'ont rattrape, jamais des la reponse
+  // du PATCH : sinon la carte re-affiche brievement l'ancienne valeur en attendant le
+  // refetch (clignotement).
+  useEffect(() => {
+    let changed = false;
+    const next = { ...draftsRef.current };
+    for (const meal of meals) {
+      const draft = next[meal.id];
+      if (!draft) continue;
+      const settled =
+        (draft.maxAssistants === undefined || draft.maxAssistants === meal.maxAssistants) &&
+        (draft.vegeCount === undefined || draft.vegeCount === (meal.vegeCount ?? 0)) &&
+        (draft.carneCount === undefined || draft.carneCount === (meal.carneCount ?? 0));
+      if (settled) {
+        delete next[meal.id];
+        changed = true;
+      }
+    }
+    if (changed) applyDrafts(next);
+  }, [meals]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      Object.values(timers).forEach(clearTimeout);
+    };
+  }, []);
 
   if (meals.length === 0) {
     return (
@@ -106,39 +160,47 @@ export default function MealFichesList({
     }
   };
 
-  const handleCapacityChange = async (meal: MealFiche, value: number) => {
-    setPendingAction(`capacity:${meal.id}`);
+  // Envoi differe du brouillon accumule pour une carte : un seul PATCH groupe une fois la
+  // saisie stabilisee, quel que soit le nombre de clics ou de frappes.
+  const flushDraft = async (mealId: string) => {
+    delete timersRef.current[mealId];
+    const payload = draftsRef.current[mealId];
+    if (!payload) return;
     try {
-      await api.patch(`/api/events/${eventId}/kitchen/meals/${meal.id}`, { maxAssistants: value });
+      await api.patch(`/api/events/${eventId}/kitchen/meals/${mealId}`, payload);
       onChanged();
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Échec de la mise à jour de la capacité"));
-    } finally {
-      setPendingAction(null);
+      toast.error(getErrorMessage(err, "Échec de la mise à jour de la fiche repas"));
+      // Retour a la valeur serveur : le brouillon refuse ne doit pas rester affiche.
+      dropDraft(mealId);
+      onChanged();
     }
+  };
+
+  const scheduleDraft = (mealId: string, patch: MealDraft) => {
+    applyDrafts({
+      ...draftsRef.current,
+      [mealId]: { ...draftsRef.current[mealId], ...patch },
+    });
+    clearTimeout(timersRef.current[mealId]);
+    timersRef.current[mealId] = setTimeout(() => flushDraft(mealId), SAVE_DEBOUNCE_MS);
+  };
+
+  const handleCapacityChange = (meal: MealFiche, value: number) => {
+    scheduleDraft(meal.id, { maxAssistants: value });
   };
 
   // Auto-equilibrage (spec KitchenDietSplit) : editer un des deux champs recalcule
   // l'autre pour que la somme colle toujours a eventParticipantsCount au moment de
-  // l'edition. Un seul PATCH groupe pour garder les deux valeurs coherentes (et une
-  // seule notification chef avec le bon old/new, cf backend updateMeal).
-  const handleDietSplitChange = async (meal: MealFiche, field: "vege" | "carne", value: number) => {
+  // l'edition. Les deux valeurs partent dans le meme PATCH pour rester coherentes (et
+  // ne produire qu'une notification chef avec le bon old/new, cf backend updateMeal).
+  const handleDietSplitChange = (meal: MealFiche, field: "vege" | "carne", value: number) => {
     const target = eventParticipantsCount ?? 0;
     const clamped = Math.max(0, Math.min(target, value));
-    const vegeCount = field === "vege" ? clamped : target - clamped;
-    const carneCount = field === "carne" ? clamped : target - clamped;
-    setPendingAction(`diet:${meal.id}`);
-    try {
-      await api.patch(`/api/events/${eventId}/kitchen/meals/${meal.id}`, {
-        vegeCount,
-        carneCount,
-      });
-      onChanged();
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Échec de la mise à jour de la répartition"));
-    } finally {
-      setPendingAction(null);
-    }
+    scheduleDraft(meal.id, {
+      vegeCount: field === "vege" ? clamped : target - clamped,
+      carneCount: field === "carne" ? clamped : target - clamped,
+    });
   };
 
   const handleAddAssistant = async (meal: MealFiche) => {
@@ -173,6 +235,10 @@ export default function MealFichesList({
     <>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         {meals.map((meal) => {
+          // Valeurs affichees = brouillon local en cours de saisie, sinon donnee serveur.
+          const draft = drafts[meal.id];
+          const maxAssistants = draft?.maxAssistants ?? meal.maxAssistants;
+          const isDraftPending = draft !== undefined;
           const capacityMax =
             poolRemaining !== undefined ? meal.maxAssistants + poolRemaining : undefined;
           // Statut prioritaire de la fiche : un chef manquant est l'info la plus
@@ -270,28 +336,29 @@ export default function MealFichesList({
                         className={`h-full rounded-full ${isComplete ? "bg-success" : "bg-info"}`}
                         style={{
                           width: `${
-                            meal.maxAssistants > 0
-                              ? Math.min(100, (meal.assistants.length / meal.maxAssistants) * 100)
+                            maxAssistants > 0
+                              ? Math.min(100, (meal.assistants.length / maxAssistants) * 100)
                               : 0
                           }%`,
                         }}
                       />
                     </div>
                     <div className="text-xs opacity-50 mt-1 tabular-nums">
-                      {meal.assistants.length} / {meal.maxAssistants} pourvues
+                      {meal.assistants.length} / {maxAssistants} pourvues
                     </div>
                   </div>
                   <NumberStepper
-                    value={meal.maxAssistants}
+                    value={maxAssistants}
                     min={meal.assistants.length}
                     max={capacityMax}
+                    aria-label="Nombre de places équipiers"
                     onChange={(v) => handleCapacityChange(meal, v)}
                   />
                 </div>
 
                 {(() => {
-                  const vege = meal.vegeCount ?? 0;
-                  const carne = meal.carneCount ?? 0;
+                  const vege = draft?.vegeCount ?? meal.vegeCount ?? 0;
+                  const carne = draft?.carneCount ?? meal.carneCount ?? 0;
                   const target = eventParticipantsCount ?? 0;
                   const sum = vege + carne;
                   const mismatch = sum !== target;
@@ -307,8 +374,8 @@ export default function MealFichesList({
                           <NumberStepper
                             value={vege}
                             max={target}
+                            aria-label="Nombre de repas végé"
                             onChange={(v) => handleDietSplitChange(meal, "vege", v)}
-                            disabled={!!pendingAction}
                           />
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -316,8 +383,8 @@ export default function MealFichesList({
                           <NumberStepper
                             value={carne}
                             max={target}
+                            aria-label="Nombre de repas carné"
                             onChange={(v) => handleDietSplitChange(meal, "carne", v)}
-                            disabled={!!pendingAction}
                           />
                         </div>
                       </div>
@@ -333,7 +400,8 @@ export default function MealFichesList({
                         </p>
                       ) : (
                         <p className="text-xs opacity-50 tabular-nums">
-                          {vege} végé / {carne} carné — à jour
+                          {vege} végé / {carne} carné —{" "}
+                          {isDraftPending ? "enregistrement…" : "à jour"}
                         </p>
                       )}
                     </div>
