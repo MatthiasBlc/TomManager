@@ -471,8 +471,8 @@ describe("Kitchen API", () => {
       const { cookie } = await setupManager();
       const event = await createTestEvent(cookie);
 
-      const allergies = "Vrael : Noix, Tofu\nKaroo : Crevettes";
-      const dislikes = "Thory : Oignon\nJojo : Oeufs";
+      const allergies = "Alice : Noix, Tofu\nBob : Crevettes";
+      const dislikes = "Thory : Oignon\nBob : Oeufs";
 
       const first = await request
         .patch(`/api/events/${event.id}/kitchen`)

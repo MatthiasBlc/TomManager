@@ -90,11 +90,11 @@ describe("KitchenTab — visibility matrix", () => {
       equipierPlanningEnabled: false,
       meals: [],
       chefRoleId: null,
-      allergiesNotes: "Vrael : Noix",
+      allergiesNotes: "Alice : Noix",
       dislikesNotes: "Thory : Oignon",
     });
     expect(screen.getByText("Allergies")).toBeInTheDocument();
-    expect(screen.getByText("Vrael : Noix")).toBeInTheDocument();
+    expect(screen.getByText("Alice : Noix")).toBeInTheDocument();
     expect(screen.getByText("N'aime vraiment pas")).toBeInTheDocument();
     expect(screen.getByText("Thory : Oignon")).toBeInTheDocument();
   });

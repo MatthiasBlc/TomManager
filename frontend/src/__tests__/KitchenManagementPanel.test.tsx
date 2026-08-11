@@ -187,28 +187,28 @@ describe("KitchenManagementPanel", () => {
 
   it("saves dislikes without touching allergies, and keeps line breaks", async () => {
     apiPatchMock.mockResolvedValue({ data: {} });
-    render(<KitchenManagementPanel {...baseProps} allergiesNotes="Vrael : Noix" />);
+    render(<KitchenManagementPanel {...baseProps} allergiesNotes="Alice : Noix" />);
 
     fireEvent.click(screen.getByRole("button", { name: "Modifier les aversions" }));
     fireEvent.change(screen.getByLabelText("N'aime vraiment pas"), {
-      target: { value: "  Thory : Oignon\nJojo : Oeufs  " },
+      target: { value: "  Thory : Oignon\nBob : Oeufs  " },
     });
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
 
     await waitFor(() => expect(apiPatchMock).toHaveBeenCalled());
     // `trim` ne rase que les extremites : le saut de ligne interne survit.
     expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen", {
-      dislikesNotes: "Thory : Oignon\nJojo : Oeufs",
+      dislikesNotes: "Thory : Oignon\nBob : Oeufs",
     });
     expect(toastSuccess).toHaveBeenCalledWith("Aversions mises à jour");
   });
 
   it("renders saved notes with their line breaks preserved", () => {
     const { container } = render(
-      <KitchenManagementPanel {...baseProps} allergiesNotes={"Vrael : Noix\nKaroo : Crevettes"} />
+      <KitchenManagementPanel {...baseProps} allergiesNotes={"Alice : Noix\nBob : Crevettes"} />
     );
     const notes = Array.from(container.querySelectorAll("p")).find((p) =>
-      p.textContent?.includes("Karoo : Crevettes")
+      p.textContent?.includes("Bob : Crevettes")
     );
     expect(notes).toBeDefined();
     expect(notes).toHaveClass("whitespace-pre-line");

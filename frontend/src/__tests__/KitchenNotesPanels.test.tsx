@@ -7,8 +7,8 @@ vi.mock("../hooks/useIsMobile", () => ({
   useIsMobile: () => isMobileMock(),
 }));
 
-const ALLERGIES = "Vrael : Noix, Tofu\nKaroo : Crevettes";
-const DISLIKES = "Thory : Oignon\nJojo : Oeufs";
+const ALLERGIES = "Alice : Noix, Tofu\nBob : Crevettes";
+const DISLIKES = "Thory : Oignon\nBob : Oeufs";
 
 beforeEach(() => {
   isMobileMock.mockReturnValue(false);
@@ -36,7 +36,7 @@ describe("KitchenNotesPanels", () => {
   it("keeps the line breaks entered by the manager", () => {
     const { container } = render(<KitchenNotesPanels allergiesNotes={ALLERGIES} />);
     const notes = Array.from(container.querySelectorAll("p")).find((p) =>
-      p.textContent?.includes("Karoo : Crevettes")
+      p.textContent?.includes("Bob : Crevettes")
     );
     expect(notes).toHaveClass("whitespace-pre-line");
     expect(notes?.textContent).toBe(ALLERGIES);
@@ -56,7 +56,7 @@ describe("KitchenNotesPanels", () => {
 
     // Les allergies restent toujours depliees.
     expect(screen.getByText("Allergies")).toBeInTheDocument();
-    expect(screen.getByText(/Karoo : Crevettes/)).toBeInTheDocument();
+    expect(screen.getByText(/Bob : Crevettes/)).toBeInTheDocument();
 
     const details = container.querySelectorAll("details");
     expect(details).toHaveLength(1);
