@@ -6,6 +6,6 @@
 try {
   var t = localStorage.getItem("app_theme");
   document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "ToM");
-} catch (e) {
+} catch {
   document.documentElement.setAttribute("data-theme", "ToM");
 }
