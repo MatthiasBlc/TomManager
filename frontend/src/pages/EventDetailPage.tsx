@@ -11,6 +11,7 @@ import PlanningTab from "../components/planning/PlanningTab";
 import MyPlanningSection from "../components/planning/MyPlanningSection";
 import KitchenTab from "../components/kitchen/KitchenTab";
 import KitchenBoard from "../components/kitchen/KitchenBoard";
+import CoursesTab from "../components/courses/CoursesTab";
 import ResponsiveModal from "../components/common/ResponsiveModal";
 import AdminBoardGamePanel from "../components/admin/AdminBoardGamePanel";
 import { useAdminRights } from "../hooks/useAdminRights";
@@ -27,6 +28,7 @@ import {
   DiceIcon,
   UsersIcon,
   UtensilsIcon,
+  ShoppingCartIcon,
 } from "../components/common/icons";
 
 interface EventDetail {
@@ -44,9 +46,9 @@ interface EventDetail {
   }[];
 }
 
-type Tab = "info" | "participants" | "planning" | "games" | "kitchen";
+type Tab = "info" | "participants" | "planning" | "games" | "kitchen" | "courses";
 
-const VALID_TABS: Tab[] = ["info", "participants", "planning", "games", "kitchen"];
+const VALID_TABS: Tab[] = ["info", "participants", "planning", "games", "kitchen", "courses"];
 
 // Onglets d'evenement en trait souligne (maquette) : filet actif en accent,
 // -mb-px pour que ce trait fusionne avec la bordure du conteneur.
@@ -75,7 +77,7 @@ export default function EventDetailPage() {
   usePageTitle(event?.name);
 
   const isMobile = useIsMobile();
-  const { isAdmin, canManageEvents, gameDbEnabled } = useAdminRights();
+  const { isAdmin, canManageEvents, gameDbEnabled, canManageCourses } = useAdminRights();
 
   // Fetch + temps reel cuisine partages entre l'onglet Infos et l'onglet Cuisine
   // (evite un double GET /kitchen) ; sert aussi a decider si l'onglet "Cuisine"
@@ -84,6 +86,10 @@ export default function EventDetailPage() {
   const kitchen = useKitchenData(eventId);
   const canSeeKitchenTab =
     isAdmin || kitchen.data?.currentUserKitchenRole === "manager" || !!kitchen.data?.isChef;
+  // Onglet Courses : droit admin opt-in "Gestion courses" OU appartenance a
+  // l'equipe courses de cet event. `admin.kitchen` ne donne rien ici (regle unique,
+  // cf docs/features/KitchenCourses).
+  const canSeeCoursesTab = canManageCourses || !!kitchen.data?.isCoursesMember;
 
   const fetchEvent = useCallback(async () => {
     try {
@@ -207,6 +213,15 @@ export default function EventDetailPage() {
                 Cuisine
               </button>
             )}
+            {canSeeCoursesTab && (
+              <button
+                className={eventTabClass(tab === "courses")}
+                onClick={() => setTab("courses")}
+              >
+                <ShoppingCartIcon className="w-3.5 h-3.5" />
+                Courses
+              </button>
+            )}
           </div>
         </div>
         {/* Affordance de scroll : degrade sur le bord droit, mobile uniquement */}
@@ -241,6 +256,8 @@ export default function EventDetailPage() {
         {tab === "planning" && <PlanningTab eventId={event.id} />}
 
         {tab === "games" && <BoardGameTab eventId={event.id} />}
+
+        {tab === "courses" && canSeeCoursesTab && <CoursesTab eventId={event.id} />}
 
         {tab === "kitchen" && (
           <KitchenTab

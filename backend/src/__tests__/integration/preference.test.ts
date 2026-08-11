@@ -14,6 +14,7 @@ describe("Preferences API", () => {
         "admin.tables": false,
         "admin.games": false,
         "admin.kitchen": false,
+        "admin.courses": false,
         "beta.pdfExport": false,
         "beta.gameDb": false,
       });
@@ -40,6 +41,7 @@ describe("Preferences API", () => {
         "admin.tables": false,
         "admin.games": false,
         "admin.kitchen": false,
+        "admin.courses": false,
         "beta.pdfExport": true,
         "beta.gameDb": false,
       });
@@ -73,6 +75,30 @@ describe("Preferences API", () => {
         .send({ "admin.events": true });
 
       expect(res.status).toBe(403);
+    });
+
+    it("rejects admin.courses for a non-admin user", async () => {
+      await createTestUserDirectly();
+      const { cookie } = await loginTestUser();
+
+      const res = await request
+        .patch("/api/me/preferences")
+        .set("Cookie", cookie)
+        .send({ "admin.courses": true });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("accepts admin.courses for an admin", async () => {
+      const { cookie } = await setupAdmin();
+
+      const res = await request
+        .patch("/api/me/preferences")
+        .set("Cookie", cookie)
+        .send({ "admin.courses": true });
+
+      expect(res.status).toBe(200);
+      expect(res.body.preferences["admin.courses"]).toBe(true);
     });
 
     it("rejects unknown preference keys", async () => {

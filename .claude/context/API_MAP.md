@@ -106,7 +106,8 @@ le bot Discord (`discord-bot/src/services/syncKitchenChef.ts`) ecrit directement
 | ------ | -------------- | ----------- | ------------------------------------------------------------------------------------------------ |
 | PATCH  | `/preferences` | requireAuth | Update bulk `{ cle: bool }` — liste blanche, cles `admin.*`/`beta.*` reservees ADMIN (403 sinon) |
 
-Cles : admin.events, admin.tables, admin.games, admin.kitchen, beta.pdfExport, beta.gameDb. Retourne la map complete.
+Cles : admin.events, admin.tables, admin.games, admin.kitchen, admin.courses, beta.pdfExport,
+beta.gameDb. Retourne la map complete.
 
 ## Kitchen (`/api/events/:eventId/kitchen`) — module cuisine (CookV1)
 
@@ -198,6 +199,35 @@ aussi duplique cote discord-bot (`syncKitchenChef.ts::materializeRoleChef`).
 | POST   | `/assistant-swaps`                                | requireAuth + requireEventParticipant | Propose un echange `{ targetMealId }` — 404 `NOT_MEAL_ASSISTANT`/`MEAL_NOT_FOUND`, 400 `ASSISTANT_SWAP_SAME_MEAL`, 409 `TARGET_MEAL_HAS_SEATS`/`ASSISTANT_SWAP_ALREADY_PENDING`                                                   |
 | POST   | `/assistant-swaps/:assistantSwapRequestId/accept` | requireAuth + requireEventParticipant | N'importe quel equipier actuellement sur le repas cible accepte : echange 1-pour-1 des `MealAssistant.mealId`, capacite-neutre. 403 `FORBIDDEN` (pas sur le repas cible), 409 `ASSISTANT_SWAP_STALE`/`ASSISTANT_SWAP_NOT_PENDING` |
 | POST   | `/assistant-swaps/:assistantSwapRequestId/cancel` | requireAuth + requireEventParticipant | Demandeur annule (statut CANCELLED)                                                                                                                                                                                               |
+
+## Courses / liste de courses (`/api/events/:eventId/kitchen/shopping`)
+
+Voir `docs/features/KitchenCourses/SPEC_KITCHEN_COURSES.md`. Module **lecture seule**,
+sans migration : il relit `Meal` + `MealIngredient`. `requireCoursesAccess` = ADMIN avec
+la preference `admin.courses` **OU** membre `KitchenCoursesMember` de cet event — jamais
+derive de `admin.kitchen` (regle unique, sans exception). Endpoint distinct de
+`GET /kitchen` a dessein : elargir ce dernier exposerait aussi `allergiesNotes` a
+l'equipe courses.
+
+Les trois vues sont calculees cote backend (`services/shoppingList.ts`) et l'export
+consomme les memes structures : l'ecran et le fichier ne peuvent pas diverger.
+
+| Method | Path            | Auth                                                         | Description                                                                             |
+| ------ | --------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| GET    | `/`             | requireAuth + requireEventParticipant + requireCoursesAccess | `{ byMeal, flat, aggregated }` — trois tableaux, jamais null                            |
+| GET    | `/export?view=` | idem                                                         | Fichier `.xlsx` (exceljs), `view` ∈ `by-meal`\|`flat`\|`aggregated`, 1 ligne/ingredient |
+
+- `byMeal` : groupes chronologiques, ingredients dans l'ordre naturel de la table
+  (comme `GET /kitchen`) ; **un repas sans ingredient est conserve**.
+- `flat` : toutes les lignes a plat, triees par nom (`Intl.Collator` fr, insensible
+  casse/accents) ; les repas sans ingredient n'y figurent pas.
+- `aggregated` : fusion par `(nom normalise, dimension)`. Masse g/kg et volume
+  ml/cl/L convertis (canonique g / ml, sortie kg ou L au-dela de 1000) ; CAS, CAC et
+  PIECE sont chacun leur propre dimension et ne se convertissent jamais. Conserve
+  `mealNames` + `notes: [{ mealName, note }]` (exigence de `KitchenRecipeNotes` :
+  ne pas perdre les commentaires a l'agregation).
+
+Codes d'erreur : `COURSES_ACCESS_REQUIRED` (403), `INVALID_EXPORT_VIEW` (400).
 
 ## Kitchen Products (`/api/kitchen/products`) — autocomplete ingredients (CookV1)
 

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
 import { useConfirm } from "../contexts/ConfirmContext";
-import type { PreferenceKey } from "../types/preferences";
+import type { PreferenceKey, Preferences } from "../types/preferences";
 import { useTheme } from "../contexts/ThemeContext";
 import InfoTooltip from "../components/common/InfoTooltip";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -32,6 +32,11 @@ const ADMIN_RIGHT_ROWS: { key: PreferenceKey; label: string; tip: string }[] = [
     key: "admin.kitchen",
     label: "Gestion cuisine",
     tip: "Devenir responsable cuisine : lecture et écriture sur toutes les parties cuisine de tous les événements.",
+  },
+  {
+    key: "admin.courses",
+    label: "Gestion courses",
+    tip: "Accéder à l'onglet Courses : la liste des ingrédients de tous les repas, avec export Excel.",
   },
 ];
 
@@ -95,12 +100,13 @@ export default function ProfilePage() {
       if (!ok) return;
     }
     try {
-      await updatePreferences({
-        "admin.events": enabling,
-        "admin.tables": enabling,
-        "admin.games": enabling,
-        "admin.kitchen": enabling,
-      });
+      // Derive de ADMIN_RIGHT_ROWS : ajouter un droit admin suffit, le bouton
+      // maitre le couvre sans edition supplementaire (les cles beta restent hors).
+      await updatePreferences(
+        Object.fromEntries(
+          ADMIN_RIGHT_ROWS.map((row) => [row.key, enabling])
+        ) as Partial<Preferences>
+      );
     } catch {
       toast.error("Échec de la mise à jour des options");
     }

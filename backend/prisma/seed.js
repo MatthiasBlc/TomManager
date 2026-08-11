@@ -72,6 +72,33 @@ async function findOrCreateMeal(
   });
 }
 
+// Ajoute les lignes d'ingredient manquantes d'un repas, ligne par ligne.
+//
+// Volontairement PAS un garde "si le repas n'a aucun ingredient" : la preprod
+// rejoue `node prisma/seed.js` a chaque demarrage sans SEED_RESET_KITCHEN, donc un
+// repas deja seede n'aurait jamais recu les lignes ajoutees apres coup. La cle
+// d'unicite retenue est (nom, unite) : c'est ce qui distingue deux lignes du meme
+// produit dans une meme recette (ex. "Tomates 1 kg" et "Tomates 200 g").
+async function ensureIngredients(mealId, rows) {
+  const existing = await prisma.mealIngredient.findMany({
+    where: { mealId },
+    select: { name: true, unit: true },
+  });
+  const seen = new Set(existing.map((i) => `${i.name.toLowerCase()} ${i.unit}`));
+
+  const missing = rows.filter((r) => !seen.has(`${r.name.toLowerCase()} ${r.unit}`));
+  if (missing.length > 0) {
+    await prisma.mealIngredient.createMany({
+      data: missing.map((r) => ({ mealId, ...r, note: r.note ?? null })),
+    });
+  }
+}
+
+async function ensureUtensil(mealId, name) {
+  const existing = await prisma.mealUtensil.findFirst({ where: { mealId, name } });
+  if (!existing) await prisma.mealUtensil.create({ data: { mealId, name } });
+}
+
 async function addAssistant(eventKitchenId, mealId, userId) {
   await prisma.mealAssistant.upsert({
     where: { mealId_userId: { mealId, userId } },
@@ -185,15 +212,21 @@ async function seedKitchenDemo(event, fillerParticipants) {
     endDateTime: new Date("2026-08-15T19:00:00.000Z"),
     maxAssistants: 3,
   });
-  if ((await prisma.mealIngredient.count({ where: { mealId: couscous.id } })) === 0) {
-    await prisma.mealIngredient.createMany({
-      data: [
-        { mealId: couscous.id, name: "Semoule", quantity: 2, unit: "KG" },
-        { mealId: couscous.id, name: "Merguez", quantity: 1.5, unit: "KG" },
-      ],
-    });
-    await prisma.mealUtensil.create({ data: { mealId: couscous.id, name: "Couscoussier" } });
-  }
+  await ensureIngredients(couscous.id, [
+    { name: "Semoule", quantity: 2, unit: "KG" },
+    { name: "Merguez", quantity: 1.5, unit: "KG" },
+    // Collision de nom + conversion de masse avec la Salade Nicoise (1 kg + 200 g)
+    { name: "Tomates", quantity: 200, unit: "G" },
+    // Collision de nom + conversion de volume avec la Raclette (25 cl + 300 ml)
+    { name: "Huile d'olive", quantity: 25, unit: "CL", note: "vierge extra si possible" },
+    // Meme denree que la Raclette, mais dimension non convertible : doit rester une
+    // ligne distincte de "Ail 3 pièce(s)" dans la vue regroupee
+    { name: "Ail", quantity: 2, unit: "CAC" },
+    // Deux commentaires differents sur la MEME denree selon la recette : c'est le
+    // cas que la vue regroupee doit rendre lisible (chaque note prefixee du repas)
+    { name: "Miel", quantity: 250, unit: "G", note: "liquide, de préférence acacia" },
+  ]);
+  await ensureUtensil(couscous.id, "Couscoussier");
   await addAssistant(eventKitchen.id, couscous.id, user.id);
 
   // Creneau 4 (jour 16, dejeuner) : repas COMPLET (capacite pleine, 1/1).
@@ -205,14 +238,14 @@ async function seedKitchenDemo(event, fillerParticipants) {
     endDateTime: new Date("2026-08-16T11:00:00.000Z"),
     maxAssistants: 1,
   });
-  if ((await prisma.mealIngredient.count({ where: { mealId: saladeNicoise.id } })) === 0) {
-    await prisma.mealIngredient.createMany({
-      data: [
-        { mealId: saladeNicoise.id, name: "Thon", quantity: 500, unit: "G" },
-        { mealId: saladeNicoise.id, name: "Tomates", quantity: 1, unit: "KG" },
-      ],
-    });
-  }
+  await ensureIngredients(saladeNicoise.id, [
+    { name: "Thon", quantity: 500, unit: "G" },
+    { name: "Tomates", quantity: 1, unit: "KG" },
+    // Casse et espaces differents du Couscous ("Huile d'olive") : la vue regroupee
+    // doit fusionner les deux et afficher la premiere graphie rencontree
+    { name: "huile d'olive", quantity: 5, unit: "CL" },
+    { name: "Oeufs", quantity: 12, unit: "PIECE", note: "bio, calibre moyen" },
+  ]);
   await addAssistant(eventKitchen.id, saladeNicoise.id, assistant2.id);
 
   // Creneau 5 (jour 16, diner) : orphelin.
@@ -245,12 +278,23 @@ async function seedKitchenDemo(event, fillerParticipants) {
     endDateTime: new Date("2026-08-17T19:00:00.000Z"),
     maxAssistants: 1,
   });
-  if ((await prisma.mealIngredient.count({ where: { mealId: raclette.id } })) === 0) {
-    await prisma.mealIngredient.createMany({
-      data: [{ mealId: raclette.id, name: "Fromage à raclette", quantity: 2, unit: "KG" }],
-    });
-    await prisma.mealUtensil.create({ data: { mealId: raclette.id, name: "Appareil à raclette" } });
-  }
+  await ensureIngredients(raclette.id, [
+    { name: "Fromage à raclette", quantity: 2, unit: "KG" },
+    // Complete la conversion de volume : 25 cl + 5 cl + 300 ml = 55 cl -> 550 ml
+    { name: "Huile d'olive", quantity: 300, unit: "ML" },
+    // Meme nom que le "Ail 2 càc" du Couscous, dimension differente : deux lignes
+    { name: "Ail", quantity: 3, unit: "PIECE" },
+    // Second commentaire sur le Miel, contradictoire avec celui du Couscous : sans
+    // attribution au repas, impossible de savoir laquelle des deux consignes suivre
+    {
+      name: "Miel",
+      quantity: 300,
+      unit: "G",
+      note: "si 300 g n'est pas beaucoup plus cher que 250 g, prenez-en 300",
+    },
+    { name: "Pommes de terre", quantity: 4, unit: "KG", note: "à chair ferme" },
+  ]);
+  await ensureUtensil(raclette.id, "Appareil à raclette");
   await addAssistant(eventKitchen.id, raclette.id, assistant3.id);
   await addAssistant(eventKitchen.id, raclette.id, assistant4.id);
 
@@ -280,6 +324,16 @@ async function seedKitchenDemo(event, fillerParticipants) {
     "Cuisine (demo) : 9 creneaux (grille complete 14-19 aout), 5 chefs " +
       "(adminchef sans repas, chef/chef2/chef3/chef4 assignes), 4 creneaux orphelins, " +
       "1 repas complet, 1 en sur-occupation, 1 fiche minimale, equipe courses peuplee (participant1)"
+  );
+  console.log(
+    "Courses (demo) : 15 lignes d'ingredient sur 3 recettes, choisies pour exercer " +
+      "les 3 vues — Tomates 1 kg + 200 g -> 1,2 kg ; Huile d'olive 25 cl + 5 cl + 300 ml " +
+      "-> 600 ml (dont une graphie en minuscules, fusionnee) ; Ail en cac ET en piece " +
+      "-> 2 lignes distinctes ; Miel 250 g + 300 g avec un commentaire different par " +
+      "recette ; Buffet froid sans aucun ingredient. Onglet Courses visible par " +
+      "participant1@local.dev (equipe courses) ; pour le tester en admin, cocher " +
+      '"Gestion courses" dans le profil — volontairement decoche au seed pour que ' +
+      "admin@local.dev et adminchef@local.dev servent de cas negatifs."
   );
 }
 

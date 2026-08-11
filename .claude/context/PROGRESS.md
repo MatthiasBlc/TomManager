@@ -1,6 +1,15 @@
 # Avancement du projet
 
-## Phase actuelle : Commentaire par ingredient + correctif des 429 (retour prod)
+## Phase actuelle : Onglet Courses (liste de courses)
+
+Voir `docs/features/KitchenCourses/ROADMAP.md` / spec
+`docs/features/KitchenCourses/SPEC_KITCHEN_COURSES.md`.
+
+Module lecture seule, **sans migration** (le modele `KitchenCoursesMember` et les
+champs `MealIngredient` existaient deja). Nouvelle preference admin `admin.courses`,
+nouvelle dependance backend `exceljs`.
+
+## Phase precedente : Commentaire par ingredient + correctif des 429 (retour prod)
 
 Voir `docs/features/KitchenRecipeNotes/ROADMAP.md` / spec
 `docs/features/KitchenRecipeNotes/SPEC_KITCHEN_RECIPE_NOTES.md`.
@@ -9,7 +18,7 @@ Voir `docs/features/KitchenRecipeNotes/ROADMAP.md` / spec
 principale etait `TRUST_PROXY=1` pour une chaine de 2 proxys (Traefik + nginx), qui
 faisait compter tous les utilisateurs dans un seul quota au lieu d'un quota par IP.
 
-## Phase precedente : Repartition vege/carne par repas (evolution CookV1)
+## Phase anterieure : Repartition vege/carne par repas (evolution CookV1)
 
 Lots A a F livres, voir `docs/features/KitchenDietSplit/ROADMAP.md` / spec
 `docs/features/KitchenDietSplit/SPEC_KITCHEN_DIET_SPLIT.md` (section 10).

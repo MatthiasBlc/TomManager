@@ -42,6 +42,45 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   return { data: data as T };
 }
 
+// Telechargement d'un fichier binaire (export Excel). `request` ci-dessus force
+// `res.json()` et ne convient donc pas. Le passage par un Blob + ancre `download`
+// est prefere a une navigation directe : il fonctionne aussi en dev, ou le backend
+// est sur un autre port, et remonte les erreurs API au lieu d'afficher une page
+// blanche.
+export async function downloadFile(url: string, fallbackName: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}${url}`, { credentials: "include" });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new ApiError(res.status, data);
+  }
+
+  // Nom propose par le serveur (Content-Disposition), sinon repli fourni par l'appelant.
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  const asciiMatch = disposition.match(/filename="([^"]+)"/i);
+  let filename = fallbackName;
+  if (utf8Match) {
+    try {
+      filename = decodeURIComponent(utf8Match[1]);
+    } catch {
+      filename = asciiMatch?.[1] ?? fallbackName;
+    }
+  } else if (asciiMatch) {
+    filename = asciiMatch[1];
+  }
+
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
 const api = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get: <T = any>(url: string) => request<T>("GET", url),
