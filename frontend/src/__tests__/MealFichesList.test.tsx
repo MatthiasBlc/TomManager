@@ -196,16 +196,122 @@ describe("MealFichesList", () => {
         onChanged={vi.fn()}
       />
     );
-    // Steppers dans l'ordre de rendu : Places, puis Vege, puis Carne.
-    const incrementButtons = screen.getAllByRole("button", { name: "Augmenter" });
-    fireEvent.click(incrementButtons[1]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Augmenter" })[1]);
 
-    await waitFor(() =>
-      expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
-        vegeCount: 5,
-        carneCount: 5,
-      })
+    await waitFor(
+      () =>
+        expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
+          vegeCount: 5,
+          carneCount: 5,
+        }),
+      { timeout: 3000 }
     );
+  });
+
+  it("shows the rebalanced counterpart immediately, before the debounced PATCH fires", () => {
+    apiPatchMock.mockResolvedValue({});
+    render(
+      <MealFichesList
+        eventId="ev1"
+        meals={[{ ...ASSIGNED_MEAL, vegeCount: 4, carneCount: 6 }]}
+        chefs={CHEFS}
+        unassigned={UNASSIGNED}
+        eventParticipantsCount={10}
+        onChanged={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Augmenter" })[1]);
+
+    // Vase communicant visible sans attendre le serveur, et rien n'est encore parti.
+    expect(screen.getByLabelText("Nombre de repas végé")).toHaveValue("5");
+    expect(screen.getByLabelText("Nombre de repas carné")).toHaveValue("5");
+    expect(screen.getByText(/5 végé \/ 5 carné — enregistrement/)).toBeInTheDocument();
+    expect(apiPatchMock).not.toHaveBeenCalled();
+  });
+
+  it("groups a burst of clicks into a single PATCH and never freezes the steppers", async () => {
+    apiPatchMock.mockResolvedValue({});
+    render(
+      <MealFichesList
+        eventId="ev1"
+        meals={[{ ...ASSIGNED_MEAL, vegeCount: 4, carneCount: 22 }]}
+        chefs={CHEFS}
+        unassigned={UNASSIGNED}
+        eventParticipantsCount={26}
+        onChanged={vi.fn()}
+      />
+    );
+    const vegeInput = screen.getByLabelText("Nombre de repas végé");
+    const decrement = () => screen.getAllByRole("button", { name: "Diminuer" })[1];
+
+    // Retour a 0 en enchainant les clics : aucun bouton ne se desactive entre-temps.
+    for (let i = 0; i < 4; i += 1) {
+      expect(decrement()).toBeEnabled();
+      fireEvent.click(decrement());
+    }
+
+    expect(vegeInput).toHaveValue("0");
+    expect(screen.getByLabelText("Nombre de repas carné")).toHaveValue("26");
+    await waitFor(
+      () =>
+        expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
+          vegeCount: 0,
+          carneCount: 26,
+        }),
+      { timeout: 3000 }
+    );
+    expect(apiPatchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("flushes a pending draft when the list unmounts before the debounce fires", async () => {
+    apiPatchMock.mockResolvedValue({});
+    const { unmount } = render(
+      <MealFichesList
+        eventId="ev1"
+        meals={[{ ...ASSIGNED_MEAL, vegeCount: 4, carneCount: 22 }]}
+        chefs={CHEFS}
+        unassigned={UNASSIGNED}
+        eventParticipantsCount={26}
+        onChanged={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Augmenter" })[1]);
+    expect(apiPatchMock).not.toHaveBeenCalled();
+
+    // Changement d'onglet avant l'echeance : la saisie ne doit pas etre perdue.
+    unmount();
+
+    expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
+      vegeCount: 5,
+      carneCount: 21,
+    });
+    expect(apiPatchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("supports typing 100% carne directly with the numeric keypad", async () => {
+    apiPatchMock.mockResolvedValue({});
+    render(
+      <MealFichesList
+        eventId="ev1"
+        meals={[{ ...ASSIGNED_MEAL, vegeCount: 4, carneCount: 22 }]}
+        chefs={CHEFS}
+        unassigned={UNASSIGNED}
+        eventParticipantsCount={26}
+        onChanged={vi.fn()}
+      />
+    );
+    fireEvent.change(screen.getByLabelText("Nombre de repas carné"), { target: { value: "26" } });
+
+    expect(screen.getByLabelText("Nombre de repas végé")).toHaveValue("0");
+    await waitFor(
+      () =>
+        expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
+          vegeCount: 0,
+          carneCount: 26,
+        }),
+      { timeout: 3000 }
+    );
+    expect(apiPatchMock).toHaveBeenCalledTimes(1);
   });
 
   it("shows a warning when vege+carne does not match eventParticipantsCount", () => {

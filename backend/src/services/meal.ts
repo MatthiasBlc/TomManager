@@ -254,13 +254,15 @@ export async function updateMeal(
 
   // Notif au chef du repas quand la repartition vege/carne change reellement (y compris
   // depuis la valeur par defaut 0/0) : le responsable est seul a pouvoir l'editer, le
-  // chef doit savoir combien preparer. Aucune notif sur un repas orphelin (pas de chef).
+  // chef doit savoir combien preparer. Aucune notif sur un repas orphelin (pas de chef),
+  // ni quand le responsable qui edite est lui-meme le chef du repas : il connait deja la
+  // valeur qu'il vient de saisir (meme regle que KITCHEN_OVERCAPACITY).
   const newVegeCount = data.vegeCount !== undefined ? data.vegeCount : meal.vegeCount;
   const newCarneCount = data.carneCount !== undefined ? data.carneCount : meal.carneCount;
   const dietSplitChanged =
     (data.vegeCount !== undefined && data.vegeCount !== meal.vegeCount) ||
     (data.carneCount !== undefined && data.carneCount !== meal.carneCount);
-  if (dietSplitChanged && meal.chefUserId) {
+  if (dietSplitChanged && meal.chefUserId && meal.chefUserId !== actingUserId) {
     await createNotification({
       userId: meal.chefUserId,
       type: "KITCHEN_DIET_SPLIT_UPDATED",

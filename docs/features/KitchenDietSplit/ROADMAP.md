@@ -104,6 +104,30 @@ meme commit (regle CookV1, seuils CI 50%/50% a maintenir).
       ajuste vege/carne sur un repas -> warning disparait -> chef voit la
       fiche a jour et recoit la notification avec le bon contenu.
 
+## Lot F - Correctif UX post-production (spec section 10)
+
+Retour utilisateur en prod (admin responsable cuisine + chef, event a 26
+participants). Branche `feature/kitchen-diet-split-ux`.
+
+- [x] `NumberStepper.tsx` : input editable au clavier / pave numerique
+      (brouillon local, filtrage des non-chiffres, clamp aux bornes,
+      selection au focus, Entree = valider, blur = resynchro). Beneficie a
+      tous les appelants : planning (Create/EditTableModal), jeux manuels,
+      cuisine.
+- [x] `MealFichesList.tsx` : brouillon optimiste + PATCH debounce 800ms pour
+      la repartition ET la capacite equipiers ; suppression du gel des
+      steppers pendant la sauvegarde ; libelle "enregistrement..." / "a jour" ;
+      flush des brouillons en attente au demontage (pas de perte silencieuse
+      dans la fenetre de debounce).
+- [x] `services/meal.ts` : plus de notification quand le responsable qui
+      edite est lui-meme le chef du repas (`meal.chefUserId !== actingUserId`).
+- [x] Tests frontend : saisie clavier (valeur directe, clamp, champ vide,
+      caracteres non numeriques), rafale de clics = 1 PATCH, retour a 0 sans
+      gel, 100% carne au clavier, flush au demontage.
+- [x] Test integration : pas d'auto-notification pour le responsable-chef.
+- [x] E2E `cuisine.spec.ts` : saisie clavier du 100% carne, vase communicant,
+      un seul PATCH.
+
 ## Doc a mettre a jour en fin de feature
 
 - [x] `.claude/context/PROGRESS.md` : pointer vers cette roadmap tant que

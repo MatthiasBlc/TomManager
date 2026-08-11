@@ -27,6 +27,7 @@ Reporter automatiquement la liste
 "Fonctionne uniquement en local avec la base seedée
 
 Le plus rapide sans toucher au code : ouvre http://localhost:3000, ouvre la console du navigateur (F12) et colle ceci pour te connecter avec un des comptes seedés :
+Remplace juste identifier/password pour changer de compte (adminchef@local.dev/admin123, chef@local.dev/chef123, user@local.dev/user123). Le cookie de session est posé sur localhost donc il fonctionne normalement ensuite dans l'appli sur le port 3000.
 
 fetch("http://localhost:3001/api/auth/login", {
 method: "POST",
@@ -35,7 +36,6 @@ headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ identifier: "admin@local.dev", password: "admin123" }),
 }).then(() => location.href = "/events");
 
-Remplace juste identifier/password pour changer de compte (adminchef@local.dev/admin123, chef@local.dev/chef123, user@local.dev/user123). Le cookie de session est posé sur localhost donc il fonctionne normalement ensuite dans l'appli sur le port 3000.
 ------------------ADMINCHEF---------------------
 fetch("http://localhost:3001/api/auth/login", {
 method: "POST",

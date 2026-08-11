@@ -2,10 +2,11 @@
 
 ## Phase actuelle : Repartition vege/carne par repas (evolution CookV1)
 
-Livre sur `feature/kitchen-diet-split` (lots A a E + e2e, voir
+Lots A a E + e2e mergees dans `Developement`. Lot F (correctif UX suite au retour
+d'un responsable cuisine en prod : saisie clavier, enregistrement differe, plus
+d'auto-notification) sur `feature/kitchen-diet-split-ux`. Voir
 `docs/features/KitchenDietSplit/ROADMAP.md` / spec
-`docs/features/KitchenDietSplit/SPEC_KITCHEN_DIET_SPLIT.md`), pas encore mergee dans
-`Developement`.
+`docs/features/KitchenDietSplit/SPEC_KITCHEN_DIET_SPLIT.md` (section 10).
 
 CookV1 (lots A a G) + les 7 points d'evolution post-V1 sont entierement livres, voir
 `docs/features/CookV1/ROADMAP.md`.
