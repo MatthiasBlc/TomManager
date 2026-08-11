@@ -455,6 +455,44 @@ describe("Meal API", () => {
       );
     });
 
+    it("does not notify the manager when they edit the diet split of their own meal", async () => {
+      // Cas reel remonte en prod : un admin responsable cuisine qui est aussi chef d'un
+      // creneau recevait une notification pour chacune de ses propres saisies.
+      const { cookie: managerCookie, user: managerUser } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const eventKitchen = await prisma.eventKitchen.upsert({
+        where: { eventId: event.id },
+        create: { eventId: event.id },
+        update: {},
+      });
+      const ownMeal = await prisma.meal.create({
+        data: {
+          eventKitchenId: eventKitchen.id,
+          chefUserId: managerUser.id,
+          name: "Repas du responsable",
+          service: "DINNER",
+          startDateTime: new Date("2026-06-01T18:30:00Z"),
+          endDateTime: new Date("2026-06-01T21:00:00Z"),
+          maxAssistants: 0,
+        },
+      });
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${ownMeal.id}`)
+        .set("Cookie", managerCookie)
+        .send({ vegeCount: 4, carneCount: 22 });
+      expect(res.status).toBe(200);
+      expect(res.body.data.vegeCount).toBe(4);
+      expect(res.body.data.carneCount).toBe(22);
+
+      const notifs = await prisma.notification.findMany({
+        where: { userId: managerUser.id, type: "KITCHEN_DIET_SPLIT_UPDATED" },
+      });
+      expect(notifs.some((n) => (n.metadata as { mealId?: string })?.mealId === ownMeal.id)).toBe(
+        false
+      );
+    });
+
     it("does not notify anyone when the diet split is edited on an orphan meal", async () => {
       const { cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);

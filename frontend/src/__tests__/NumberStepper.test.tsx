@@ -46,4 +46,44 @@ describe("NumberStepper", () => {
     fireEvent.click(screen.getByRole("button", { name: "Augmenter" }));
     expect(onChange).toHaveBeenCalledWith(100);
   });
+
+  it("accepts direct keyboard entry", () => {
+    const onChange = vi.fn();
+    render(<NumberStepper value={3} onChange={onChange} max={26} aria-label="Places" />);
+    fireEvent.change(screen.getByLabelText("Places"), { target: { value: "26" } });
+    expect(onChange).toHaveBeenCalledWith(26);
+  });
+
+  it("clamps a typed value above max", () => {
+    const onChange = vi.fn();
+    render(<NumberStepper value={3} onChange={onChange} max={26} aria-label="Places" />);
+    fireEvent.change(screen.getByLabelText("Places"), { target: { value: "99" } });
+    expect(onChange).toHaveBeenCalledWith(26);
+  });
+
+  it("allows typing 0", () => {
+    const onChange = vi.fn();
+    render(<NumberStepper value={12} onChange={onChange} max={26} aria-label="Places" />);
+    fireEvent.change(screen.getByLabelText("Places"), { target: { value: "0" } });
+    expect(onChange).toHaveBeenCalledWith(0);
+  });
+
+  it("tolerates an empty field while typing without emitting a value", () => {
+    const onChange = vi.fn();
+    render(<NumberStepper value={12} onChange={onChange} aria-label="Places" />);
+    const input = screen.getByLabelText("Places");
+    fireEvent.change(input, { target: { value: "" } });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(input).toHaveValue("");
+    // Au blur, l'affichage revient a la derniere valeur retenue (rien n'est perdu).
+    fireEvent.blur(input);
+    expect(input).toHaveValue("12");
+  });
+
+  it("ignores non-numeric characters", () => {
+    const onChange = vi.fn();
+    render(<NumberStepper value={3} onChange={onChange} aria-label="Places" />);
+    fireEvent.change(screen.getByLabelText("Places"), { target: { value: "1a2" } });
+    expect(onChange).toHaveBeenCalledWith(12);
+  });
 });

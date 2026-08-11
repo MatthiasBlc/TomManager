@@ -164,8 +164,8 @@ equipe cuisine qui reste juste au-dessus :
 - Deux compteurs `NumberStepper` (reutilise `frontend/src/components/common/NumberStepper.tsx`,
   deja utilise pour `maxAssistants`) : Vege / Carne. Editer l'un recalcule
   l'autre = `eventParticipantsCount - valeur_editee` (auto-equilibrage cote
-  front, pas de bouton "Enregistrer" - PATCH immediat comme le reste de la
-  ligne "Places").
+  front, pas de bouton "Enregistrer" - voir section 10 pour la strategie
+  d'enregistrement).
 - Barre de proportion (vege/carne) sous les steppers, purement visuelle.
 - Warning (badge + bandeau, ton "warning" DaisyUI) si
   `vegeCount + carneCount !== eventParticipantsCount`, y compris a l'etat
@@ -241,3 +241,62 @@ jamais d'ingredients/ustensiles/allergies ici (regle deja en place).
 - **E2E** (`e2e/cuisine.spec.ts` ou nouveau spec dedie) : responsable ajuste
   la repartition d'un repas -> chef voit la fiche mise a jour + recoit la
   notification.
+
+---
+
+## 10. Correctif UX post-production (retour utilisateur, 26 participants)
+
+Retour d'un admin responsable cuisine (qui est aussi chef d'un creneau) apres
+la mise en prod : pave numerique inutilisable, retour a 0 impossible en
+pratique, donc 100% vege / 100% carne inatteignable, et une notification par
+increment. Quatre causes, quatre correctifs.
+
+### 10.1 Saisie clavier (`NumberStepper.tsx`)
+
+L'input etait `readOnly` : seuls les boutons +/- fonctionnaient, soit jusqu'a
+26 clics pour traverser la plage. Il devient editable pour **tous** les
+appelants (planning, jeux de societe, cuisine) :
+
+- brouillon de texte local pendant la frappe (tolere le champ vide et les
+  etats intermediaires), le parent ne recoit que des entiers clampes ;
+- caracteres non numeriques filtres, `inputMode="numeric"` conserve pour le
+  pave numerique mobile ;
+- selection du contenu au focus, `Entree` = validation, blur = resynchro sur
+  la valeur reellement retenue (rien n'est perdu si le champ est laisse vide).
+
+### 10.2 Enregistrement differe (`MealFichesList.tsx`)
+
+Un PATCH par clic gelait les deux steppers (`disabled={!!pendingAction}`) le
+temps de **deux** refetch complets (la reponse `onChanged` puis le socket
+`kitchen:meal-changed`), soit 6 GET par clic : les clics rapides etaient
+avales, d'ou le "je ne peux pas revenir a 0".
+
+Remplace par un brouillon local optimiste + envoi debounce
+(`SAVE_DEBOUNCE_MS = 800`), applique a la repartition **et** a la capacite
+equipiers (meme pattern, meme probleme) :
+
+- le vase communicant vege/carne s'affiche immediatement, sans aller-retour ;
+- les steppers ne sont plus jamais desactives pendant une sauvegarde ;
+- une rafale de clics ou une frappe = **un seul** PATCH groupe ;
+- le brouillon n'est efface que lorsque la donnee serveur l'a rattrape (evite
+  le clignotement vers l'ancienne valeur entre le PATCH et la fin du refetch),
+  et immediatement en cas d'erreur (retour a la valeur serveur + toast) ;
+- libelle d'etat "enregistrement..." tant qu'un brouillon est en attente,
+  "a jour" une fois confirme.
+
+### 10.3 Auto-notification (`services/meal.ts`)
+
+La condition ne verifiait que `meal.chefUserId !== null`. Un responsable qui
+est aussi chef de son propre creneau se notifiait donc lui-meme a chaque
+saisie. Ajout de `meal.chefUserId !== actingUserId`, conforme a la regle deja
+posee en section 5 ("pas le responsable qui vient de faire la modif") et au
+comportement de `KITCHEN_OVERCAPACITY`.
+
+Combine au debounce : un ajustement termine = au plus une notification, avec
+le bon old -> new.
+
+### 10.4 100% vege / 100% carne
+
+Aucun correctif dedie : c'etait une consequence des points 10.1 et 10.2.
+L'auto-equilibrage autorisait deja `0 / target`, la valeur etait simplement
+inatteignable a la main.
