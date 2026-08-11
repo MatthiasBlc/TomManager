@@ -41,6 +41,9 @@ vi.mock("../components/kitchen/KitchenTab", () => ({
 vi.mock("../components/kitchen/KitchenBoard", () => ({
   default: () => <div>KitchenBoard</div>,
 }));
+vi.mock("../components/courses/CoursesTab", () => ({
+  default: () => <div>CoursesTab</div>,
+}));
 vi.mock("../components/planning/MyPlanningSection", () => ({
   default: () => <div>MyPlanningSection</div>,
 }));
@@ -126,5 +129,54 @@ describe("EventDetailPage", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Cuisine" })).toBeInTheDocument()
     );
+  });
+
+  describe("onglet Courses", () => {
+    it("reste masque pour un participant ordinaire", async () => {
+      mockApiGet({ currentUserKitchenRole: "equipier", isChef: false, meals: [] });
+      useAuthMock.mockReturnValue({ user: { id: "u1", role: "USER" } });
+      renderWithRouter(<EventDetailPage />, { route: "/events/ev1" });
+      await waitFor(() => expect(screen.getAllByText("Festival JDR").length).toBeGreaterThan(0));
+      expect(screen.queryByRole("button", { name: "Courses" })).not.toBeInTheDocument();
+    });
+
+    it("reste masque pour un admin qui n'a pas coche Gestion courses", async () => {
+      mockApiGet({ currentUserKitchenRole: "none", isChef: false, meals: [] });
+      useAuthMock.mockReturnValue({
+        user: { id: "admin1", role: "ADMIN" },
+        preferences: { "admin.kitchen": true },
+      });
+      renderWithRouter(<EventDetailPage />, { route: "/events/ev1" });
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Cuisine" })).toBeInTheDocument()
+      );
+      expect(screen.queryByRole("button", { name: "Courses" })).not.toBeInTheDocument();
+    });
+
+    it("apparait pour un admin ayant coche Gestion courses", async () => {
+      mockApiGet({ currentUserKitchenRole: "none", isChef: false, meals: [] });
+      useAuthMock.mockReturnValue({
+        user: { id: "admin1", role: "ADMIN" },
+        preferences: { "admin.courses": true },
+      });
+      renderWithRouter(<EventDetailPage />, { route: "/events/ev1" });
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Courses" })).toBeInTheDocument()
+      );
+    });
+
+    it("apparait pour un membre de l'equipe courses sans droit admin", async () => {
+      mockApiGet({
+        currentUserKitchenRole: "equipier",
+        isChef: false,
+        isCoursesMember: true,
+        meals: [],
+      });
+      useAuthMock.mockReturnValue({ user: { id: "u2", role: "USER" } });
+      renderWithRouter(<EventDetailPage />, { route: "/events/ev1" });
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Courses" })).toBeInTheDocument()
+      );
+    });
   });
 });

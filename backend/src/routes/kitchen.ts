@@ -1,11 +1,13 @@
 import { Router } from "express";
 import {
   requireAuth,
+  requireCoursesAccess,
   requireEventParticipant,
   requireKitchenManager,
   requireMealChefOrManager,
 } from "../middleware/auth";
 import * as kitchenController from "../controllers/kitchen";
+import * as shoppingListController from "../controllers/shoppingList";
 import * as mealController from "../controllers/meal";
 import * as mealSwapController from "../controllers/mealSwap";
 import * as assistantSwapController from "../controllers/assistantSwap";
@@ -87,6 +89,27 @@ router.post(
   validateUUID("eventId"),
   requireKitchenManager,
   kitchenController.reset
+);
+
+// Module Courses (lecture seule) : ingredients de tous les repas, pour l'equipe
+// courses et les admins ayant coche "Gestion courses". Endpoint distinct de
+// GET /kitchen a dessein — elargir ce dernier exposerait aussi les allergies.
+router.get(
+  "/:eventId/kitchen/shopping",
+  requireAuth,
+  validateUUID("eventId"),
+  requireEventParticipant,
+  requireCoursesAccess,
+  shoppingListController.getShoppingList
+);
+
+router.get(
+  "/:eventId/kitchen/shopping/export",
+  requireAuth,
+  validateUUID("eventId"),
+  requireEventParticipant,
+  requireCoursesAccess,
+  shoppingListController.exportShoppingList
 );
 
 router.patch(

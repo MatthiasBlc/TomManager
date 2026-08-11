@@ -40,7 +40,8 @@ Relations: createdEvents, eventParticipations, createdGameTables, gameTableParti
 | updatedAt | DateTime | Auto                                 |
 
 Contrainte unique: (userId, key)
-Liste blanche des cles (backend `schemas/preference.ts`) : admin.events, admin.tables, admin.games, admin.kitchen, beta.pdfExport, beta.gameDb.
+Liste blanche des cles (backend `schemas/preference.ts`) : admin.events, admin.tables, admin.games, admin.kitchen, admin.courses, beta.pdfExport, beta.gameDb.
+`admin.courses` ("Gestion courses") ouvre l'onglet Courses ; elle ne se derive jamais de `admin.kitchen` (cf `docs/features/KitchenCourses/`).
 Les cles `admin.*` et `beta.*` ne sont modifiables que par un ADMIN. Cle absente = false.
 Droits admin opt-in : le front ne montre les actions admin que si le toggle correspondant est actif (le backend reste protege par requireAdmin & co independamment).
 
@@ -212,10 +213,17 @@ Voir `docs/features/CookV1/SPEC_COOKING.md` pour le detail fonctionnel. Migratio
 | eventId                 | String   | FK -> Event.id, UNIQUE, onDelete Cascade    |
 | chefRoleId              | String?  | Snowflake role Discord chef ; null = manuel |
 | allergiesNotes          | String?  | Texte libre global (max 5000)               |
+| dislikesNotes           | String?  | Texte libre global (max 5000)               |
 | equipierPlanningEnabled | Boolean  | default false                               |
 | createdAt / updatedAt   | DateTime |                                             |
 
 Relations: event (Event), chefs (KitchenChef[]), coursesMembers (KitchenCoursesMember[]), meals (Meal[]), assistants (MealAssistant[])
+
+`allergiesNotes` (medical, bloquant) et `dislikesNotes` (preference de confort) sont
+deux champs distincts et non deux rubriques d'un meme texte : ils s'affichent en deux
+blocs de couleurs differentes et ne demandent pas la meme attention au chef. Meme
+regle de visibilite pour les deux (`isFullReader` : chef + responsable, jamais
+l'equipier). Migration additive `20260811205217_kitchen_dislikes_notes`.
 
 ### KitchenChef (roster chef materialise)
 
@@ -228,7 +236,7 @@ Relations: event (Event), chefs (KitchenChef[]), coursesMembers (KitchenCoursesM
 
 Unique: (eventKitchenId, userId)
 
-### KitchenCoursesMember (equipe courses)
+### KitchenCoursesMember (equipe courses — donne aussi l'acces a l'onglet Courses)
 
 | Field          | Type   | Notes                                   |
 | -------------- | ------ | --------------------------------------- |

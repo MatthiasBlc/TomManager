@@ -64,14 +64,15 @@ describe("Kitchen API", () => {
       expect(res.status).toBe(403);
     });
 
-    it("does not leak allergies or ingredients to a plain equipier (anti-leak)", async () => {
+    it("does not leak allergies, dislikes or ingredients to a plain equipier (anti-leak)", async () => {
       const { cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie);
 
-      await request
-        .patch(`/api/events/${event.id}/kitchen`)
-        .set("Cookie", managerCookie)
-        .send({ allergiesNotes: "Allergie noix", equipierPlanningEnabled: true });
+      await request.patch(`/api/events/${event.id}/kitchen`).set("Cookie", managerCookie).send({
+        allergiesNotes: "Allergie noix",
+        dislikesNotes: "Thory : Oignon",
+        equipierPlanningEnabled: true,
+      });
 
       const { user: chefUser, cookie: chefCookie } = await addTestParticipant(event.id, {
         email: "chef@example.com",
@@ -111,6 +112,7 @@ describe("Kitchen API", () => {
       expect(res.status).toBe(200);
       expect(res.body.data.currentUserKitchenRole).toBe("equipier");
       expect(res.body.data.allergiesNotes).toBeUndefined();
+      expect(res.body.data.dislikesNotes).toBeUndefined();
       expect(res.body.data.chefs).toBeUndefined();
       expect(res.body.data.coursesMembers).toBeUndefined();
       expect(res.body.data.unassigned).toBeUndefined();
@@ -125,6 +127,7 @@ describe("Kitchen API", () => {
         .set("Cookie", chefCookie);
       expect(chefRes.body.data.currentUserKitchenRole).toBe("chef");
       expect(chefRes.body.data.allergiesNotes).toBe("Allergie noix");
+      expect(chefRes.body.data.dislikesNotes).toBe("Thory : Oignon");
       expect(chefRes.body.data.meals[0].ingredients).toHaveLength(1);
       expect(chefRes.body.data.chefs).toBeUndefined();
       expect(chefRes.body.data.unassigned).toBeUndefined();
@@ -448,6 +451,52 @@ describe("Kitchen API", () => {
         .set("Cookie", cookie)
         .send({ allergiesNotes: "a".repeat(5001) });
       expect(res.status).toBe(400);
+    });
+
+    it("rejects dislikesNotes longer than 5000 characters", async () => {
+      const { cookie } = await setupManager();
+      const event = await createTestEvent(cookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", cookie)
+        .send({ dislikesNotes: "a".repeat(5001) });
+      expect(res.status).toBe(400);
+    });
+
+    // Les deux fiches sont independantes : ecrire l'une ne doit jamais effacer
+    // l'autre, et les sauts de ligne (une ligne par convive) doivent survivre
+    // a l'aller-retour.
+    it("updates allergies and dislikes independently and keeps line breaks", async () => {
+      const { cookie } = await setupManager();
+      const event = await createTestEvent(cookie);
+
+      const allergies = "Alice : Noix, Tofu\nBob : Crevettes";
+      const dislikes = "Thory : Oignon\nBob : Oeufs";
+
+      const first = await request
+        .patch(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", cookie)
+        .send({ allergiesNotes: allergies });
+      expect(first.status).toBe(200);
+      expect(first.body.data.allergiesNotes).toBe(allergies);
+      expect(first.body.data.dislikesNotes).toBeNull();
+
+      const second = await request
+        .patch(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", cookie)
+        .send({ dislikesNotes: dislikes });
+      expect(second.status).toBe(200);
+      expect(second.body.data.allergiesNotes).toBe(allergies);
+      expect(second.body.data.dislikesNotes).toBe(dislikes);
+
+      const cleared = await request
+        .patch(`/api/events/${event.id}/kitchen`)
+        .set("Cookie", cookie)
+        .send({ dislikesNotes: null });
+      expect(cleared.status).toBe(200);
+      expect(cleared.body.data.allergiesNotes).toBe(allergies);
+      expect(cleared.body.data.dislikesNotes).toBeNull();
     });
 
     it("overwrites MANUAL chefs and orphans their meal when a chefRoleId is set", async () => {

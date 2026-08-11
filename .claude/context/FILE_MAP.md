@@ -22,13 +22,14 @@ src/
 │   ├── eventBoardGame.ts  # add, list, remove event board games
 │   ├── notification.ts    # list, unreadCount, markAsRead, markAllAsRead, delete
 │   ├── kitchen.ts         # module cuisine (CookV1) : GET config, PATCH config, chefs, courses, generate, reset
+│   ├── shoppingList.ts    # module Courses : GET des trois vues + export .xlsx (KitchenCourses)
 │   ├── meal.ts            # PATCH/DELETE repas + claim + inscriptions equipier (self ou manager-assign/remove tiers) (CookV1) — pas de creation manuelle (tous les repas naissent de generate)
 │   ├── mealSwap.ts        # echange de creneau chefs : create/list/accept/reject/cancel + moveToOrphan (deplacement instantane, Evolutions.md point 1) (CookV1)
 │   ├── assistantSwap.ts   # echange entre equipiers : create/list/accept/cancel (cible un repas, pas une personne, Evolutions.md point 4)
 │   ├── product.ts         # autocomplete produits ingredients (CookV1)
 │   └── utensil.ts         # autocomplete ustensiles (CookV1, Evolutions.md point 7)
 ├── middleware/
-│   ├── auth.ts            # requireAuth, requireAdmin, requireEventParticipant, requireEventCreator, requireTableGMOrAdmin, requireKitchenManager, requireMealChefOrManager
+│   ├── auth.ts            # requireAuth, requireAdmin, requireEventParticipant, requireEventCreator, requireTableGMOrAdmin, requireKitchenManager, requireMealChefOrManager, requireCoursesAccess (admin.courses OU membre equipe courses)
 │   ├── errorHandler.ts    # Global error handler
 │   ├── rateLimiter.ts     # authRateLimiter (15min/10 req) + globalRateLimiter (1min/300) + writeRateLimiter (1min/120, POST-PATCH-DELETE), skipped in test — comptage par IP, depend de TRUST_PROXY (2 en prod)
 │   └── validateBody.ts    # validateBody(zodSchema), validateUUID(param)
@@ -44,7 +45,7 @@ src/
 │   ├── boardGame.ts       # BoardGame routes (search, detail, create, from-bgg)
 │   ├── eventBoardGame.ts  # EventBoardGame routes (add, list, remove)
 │   ├── notification.ts    # Notification routes (list, count, read, readAll, delete)
-│   ├── kitchen.ts         # Kitchen + meal routes (config, chefs, courses, generate/reset, meals PATCH/DELETE/move, assistants self+manager, swaps, assistant-swaps)
+│   ├── kitchen.ts         # Kitchen + meal routes (config, chefs, courses, generate/reset, meals PATCH/DELETE/move, assistants self+manager, swaps, assistant-swaps) + shopping/shopping-export (module Courses)
 │   ├── product.ts         # GET /api/kitchen/products (autocomplete)
 │   ├── utensil.ts         # GET /api/kitchen/utensils (autocomplete, CookV1)
 │   └── test.ts            # Seed E2E (seed-admin, seed-participant) — test/dev only
@@ -76,6 +77,8 @@ src/
 │   ├── assistantSwap.ts   # Echange entre equipiers : create/list/accept/cancel — cible un repas (n'importe quel assistant du repas cible peut accepter), echange 1-pour-1 MealAssistant.mealId (Evolutions.md point 4)
 │   ├── product.ts         # Product find-or-create + search, pattern Tag (CookV1)
 │   ├── utensil.ts         # Utensil find-or-create + search, pattern Product/Tag (CookV1, Evolutions.md point 7)
+│   ├── shoppingList.ts    # Module Courses : buildShoppingViews (PURE : dimensions/conversion/agregation/tri) + getShoppingList (lecture Prisma). N'importe PAS services/kitchen (chaine socket->app->env) pour garder les tests unitaires purs
+│   ├── shoppingExport.ts  # Classeur .xlsx (exceljs) des trois vues : 1 ligne/ingredient, quantite en cellule NUMERIQUE, en-tetes figes
 │   ├── kitchenPlanning.ts # Generation/reset planning : computeExpectedSlots (grille Paris) + computeMealCapacities + generatePlanning idempotent + resetPlanning (supprime tous les repas, garde rosters) + slotKey (CookV1)
 │   └── conflicts.ts       # Moteur de conflits UNIFIE tables+cuisine : getEventOccupations + computeConflicts (CookV1 Lot F), partage par gameTable.ts et kitchen.ts
 ├── socket/
@@ -97,10 +100,11 @@ src/
         ├── socket.test.ts, notification.test.ts, validation.test.ts, preference.test.ts
         ├── kitchen.test.ts (dont dashboard nominatif admin simple, auto-unassign courses, auto-claim chef manuel), meal.test.ts (claim + manager assign/remove assistant), mealSwap.test.ts (dont moveToOrphanMeal), kitchenPlanning.test.ts (grille + idempotence + reset)
         ├── assistantSwap.test.ts (create/accept/cancel, staleness, auto-cancel cascade sur leave/move/role-grant)
+        ├── shoppingList.test.ts (module Courses : matrice de droits — USER/chef/admin nu/admin.kitchen refuses, admin.courses et membre courses autorises — + 3 vues + export xlsx)
         └── kitchenConflicts.test.ts (conflits cross-domaine tables<->cuisine), kitchenPurge.test.ts (purge etendue, sync ROLE mockee, cascade AssistantSwapRequest)
 ```
 
-Unitaires purs (`src/__tests__/unit/`) : `kitchenPlanning.test.ts` (computeMealCapacities + computeExpectedSlots), `conflicts.test.ts` (computeConflicts), `timezone.test.ts` (cas aux bornes DST 2026, ParisTimezone).
+Unitaires purs (`src/__tests__/unit/`) : `kitchenPlanning.test.ts` (computeMealCapacities + computeExpectedSlots), `conflicts.test.ts` (computeConflicts), `timezone.test.ts` (cas aux bornes DST 2026, ParisTimezone), `shoppingList.test.ts` (buildShoppingViews : conversion masse/volume, non-conversion cas/cac/piece, normalisation des noms, tri fr insensible aux accents, attribution des commentaires).
 
 ## Discord Bot (discord-bot/src/)
 
@@ -138,7 +142,7 @@ src/
 ├── App.tsx                # Router + AuthProvider + Toaster + offline banner
 ├── vite-env.d.ts          # Vite types
 ├── config/
-│   ├── api.ts             # Axios instance
+│   ├── api.ts             # Client fetch (get/post/put/patch/delete) + downloadFile() pour les reponses binaires (export Excel), que `request` ne gere pas (il force res.json())
 │   └── apiErrors.ts       # Mapping code erreur backend -> message francais + getErrorMessage
 ├── components/
 │   ├── admin/
@@ -186,6 +190,12 @@ src/
 │   │   ├── MealSlotCard.tsx       # Carte creneau cuisine (vue liste Planning), surbrillance conflit personne/chef (CookV1 Lot F)
 │   │   ├── kitchenSlots.ts        # Type MealSlot partage (donnees GET /kitchen affichees dans le Planning)
 │   │   └── computeLayout.ts       # Layout helpers timeline/calendar
+│   ├── courses/                       # Module Courses (KitchenCourses) — onglet "Courses", lecture seule
+│   │   ├── CoursesTab.tsx             # Racine : selecteur 3 vues (meme habillage que le toggle Planning, memorise en localStorage `courses_view_preference`) + bouton "Exporter en Excel" (exporte la vue affichee) + EmptyState
+│   │   ├── CoursesByMealView.tsx      # Vue 1 : un bloc par repas, ordre de la recette du chef, repas sans ingredient conserve
+│   │   ├── CoursesFlatView.tsx        # Vue 2 : toutes les lignes a plat, triees A-Z, repas d'origine par ligne
+│   │   ├── CoursesAggregatedView.tsx  # Vue 3 : lignes fusionnees, quantites sommees, commentaires attribues a leur repas
+│   │   └── format.ts                  # formatQuantity (virgule decimale fr) + quantityWithUnit
 │   ├── boardgames/
 │       ├── BoardGameTab.tsx           # Onglets All (lecture seule) / My List (avec bouton Remove)
 │       ├── BoardGameSearchInput.tsx   # Autocomplete search (local + BGG)
@@ -197,7 +207,8 @@ src/
 │       └── PoweredByBGG.tsx           # Attribution BGG
 │   └── kitchen/                       # Module cuisine (CookV1) — onglet "Cuisine" + board dans "Infos" ; refonte UI/UX Gestion+Dashboard (theme "TomUpdate" en reserve, cf styles/index.css) ; CARD/SectionEyebrow/icons/PersonAvatar deplaces dans common/ (tour UX)
 │       ├── KitchenTab.tsx             # Racine onglet Cuisine (donnees en props via useKitchenData) : titre "Cuisine" serif + ChefRoleSettings (manager) ; selecteur Gestion/Vue d'ensemble (selon role) + Mon repas des que l'utilisateur cumule un role chef — admin+chef cumule desormais acces dashboard ET fiche perso (avant : exclusifs) ; landing auto sur "Mon repas" pour manager+chef ou admin+chef (point 5 etendu)
-│       ├── KitchenManagementPanel.tsx # Gestion (responsable RW / admin R) : bloc allergies editable inline (etat vide distinct), etat du planning (badge Publie/Non publie + toggle live + jauge capacite), roster equipe cuisine (avatars, Sans affectation en liste scrollable), + liste des fiches (MealFichesList, manager only) ; reglage chefRoleId deplace dans ChefRoleSettings (plus dans ce panneau)
+│       ├── KitchenNotesPanels.tsx     # Fiches allergies + "n'aime vraiment pas" telles que le chef les lit (haut de "Mon repas") : deux blocs cote a cote au-dela de md, empiles en dessous avec les aversions repliees en accordeon (useIsMobile) ; whitespace-pre-line pour conserver les sauts de ligne saisis par le responsable ; un bloc vide disparait et l'autre prend toute la largeur
+│       ├── KitchenManagementPanel.tsx # Gestion (responsable RW / admin R) : deux fiches de notes editables inline l'une sous l'autre (allergies en rouge, aversions en neutre ; meme composant NotesCard parametre, etat vide distinct), etat du planning (badge Publie/Non publie + toggle live + jauge capacite), roster equipe cuisine (avatars, Sans affectation en liste scrollable), + liste des fiches (MealFichesList, manager only) ; reglage chefRoleId deplace dans ChefRoleSettings (plus dans ce panneau)
 │       ├── KitchenDashboard.tsx       # Vue d'ensemble admin (lecture seule, meme habillage visuel que Gestion) : tuiles KPI (chefs/courses/sans-affectation), statut de publication en lecture seule, roster en chips avatar, fiches repas en cartes bordure coloree par statut (Evolutions.md point 5, cumulatif avec le role chef desormais)
 │       ├── ChefRoleSettings.tsx       # Popover reglage "ID du role Discord des chefs" (gear en en-tete de KitchenTab, manager only), extrait de KitchenManagementPanel
 │       ├── KitchenBoard.tsx           # Board (onglet Infos, donnees en props) : matrice jour x service (desktop table / cartes mobiles), inscription/deplacement/desinscription equipier (jamais propose a un chef/membre courses), banniere "choisis ton creneau", + AssistantSwapPanel si l'equipier a un creneau
@@ -219,7 +230,8 @@ src/
 │   ├── useTheme.ts              # Dark/light mode, localStorage, data-theme sur <html>
 │   ├── useModalA11y.ts          # A11y modales : Echap, focus trap, auto-focus, restore focus (pile de modales)
 │   ├── usePageTitle.ts          # document.title par page ("<titre> - TomManager")
-│   ├── useAdminRights.ts        # Droits admin opt-in derives des preferences (canManageEvents, canModerateTables, canModerateGames, isKitchenManager, pdfExportEnabled, gameDbEnabled)
+│   ├── useAdminRights.ts        # Droits admin opt-in derives des preferences (canManageEvents, canModerateTables, canModerateGames, isKitchenManager, canManageCourses, pdfExportEnabled, gameDbEnabled)
+│   ├── useShoppingList.ts       # GET /kitchen/shopping + wiring socket kitchen:meal-changed/planning-generated/config-updated (module Courses)
 │   ├── useKitchenData.ts        # GET /kitchen + /kitchen/swaps + /kitchen/assistant-swaps + wiring socket kitchen:*, partage entre EventDetailPage (visibilite onglet) / KitchenBoard / KitchenTab (evite les doubles fetch, CookV1)
 │   └── useDebouncedSave.ts      # Sauvegarde a la volee generique (debounce + statut idle/saving/saved/error), utilise par MealFicheEditor (CookV1)
 ├── utils/
@@ -235,7 +247,7 @@ src/
 │   ├── LoginPage.tsx             # Login form (identifier + password, bouton Discord)
 │   ├── OAuthPopupCallbackPage.tsx # Callback popup OAuth Discord
 │   ├── EventListPage.tsx         # /events — event cards grid (bouton creer si admin)
-│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info(+KitchenBoard)/planning/games/participants/kitchen (soulignement, pas tabs-boxed) ; useKitchenData partage, onglet Cuisine masque si ni admin ni chef ni manager ; page plafonnee a 1400px au-dela de 2xl (evite l'etirement plein-largeur sur grand ecran)
+│   ├── EventDetailPage.tsx       # /events/:eventId — tabs info(+KitchenBoard)/planning/games/participants/kitchen/courses (soulignement, pas tabs-boxed) ; useKitchenData partage, onglet Cuisine masque si ni admin ni chef ni manager ; onglet Courses (dernier) visible si `admin.courses` OU `isCoursesMember` ; page plafonnee a 1400px au-dela de 2xl (evite l'etirement plein-largeur sur grand ecran)
 │   ├── PlanningPage.tsx          # /events/:eventId/planning — timeline view + create table
 │   ├── ProfilePage.tsx           # /profile — compte, theme, droits d'administration (toggles + master), Discord
 │   └── NotFoundPage.tsx          # 404

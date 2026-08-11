@@ -11,11 +11,13 @@ Revoir l'interface admin + responsablecuisine
 
 V2 ?
 
-- admin rôle responsable courses ?
-- Liste de course ?
-- onglet courses pour la team course et son admin ? le même ? différent ? visible des autres admins (version simplifiée comme la cuisine ? )
-- _Récupère les occurrences d'un même produits et calcules le poids pour chaque produits_
-- extract final ?
+- ~~admin rôle responsable courses ?~~ -> livré : préférence `admin.courses` ("Gestion courses"), opt-in, jamais dérivée de `admin.kitchen`
+- ~~Liste de course ?~~ -> livré : onglet Courses, 3 vues (par repas / A-Z / regroupée)
+- ~~onglet courses pour la team course et son admin ? le même ? différent ? visible des autres admins ?~~ -> livré : **le même** onglet pour l'équipe courses et l'admin `admin.courses` ; invisible pour tous les autres admins (pas de version simplifiée à la cuisine)
+- ~~_Récupère les occurrences d'un même produits et calcules le poids pour chaque produits_~~ -> livré : vue 3, agrégation par (nom, dimension) avec conversion g/kg et ml/L
+- ~~extract final ?~~ -> livré : export `.xlsx` de la vue affichée, un ingrédient par ligne
+
+Voir `docs/features/KitchenCourses/`.
 
 ATTENTION au fonctionnement de l'app s'il n'y a pas de réseau VS un drive !!!
 

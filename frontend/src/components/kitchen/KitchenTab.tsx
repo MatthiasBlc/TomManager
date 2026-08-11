@@ -5,6 +5,7 @@ import type { KitchenViewData } from "../../hooks/useKitchenData";
 import { SkeletonCardGrid } from "../common/Skeleton";
 import EmptyState from "../common/EmptyState";
 import KitchenManagementPanel from "./KitchenManagementPanel";
+import KitchenNotesPanels from "./KitchenNotesPanels";
 import KitchenDashboard from "./KitchenDashboard";
 import MealFicheEditor from "./MealFicheEditor";
 import MealClaimSelect from "./MealClaimSelect";
@@ -149,6 +150,7 @@ export default function KitchenTab({
           eventId={eventId}
           chefRoleId={data.chefRoleId}
           allergiesNotes={data.allergiesNotes ?? null}
+          dislikesNotes={data.dislikesNotes ?? null}
           equipierPlanningEnabled={data.equipierPlanningEnabled}
           chefs={data.chefs ?? []}
           coursesMembers={data.coursesMembers ?? []}
@@ -176,12 +178,12 @@ export default function KitchenTab({
 
       {showChefTools && (
         <div className="space-y-4">
-          {/* Point 1 : allergies toujours visibles en haut de "Mon repas". */}
-          {data.allergiesNotes && (
-            <div className="alert alert-warning text-sm py-2">
-              <span>Allergies : {data.allergiesNotes}</span>
-            </div>
-          )}
+          {/* Point 1 : allergies et aversions toujours visibles en haut de
+              "Mon repas". */}
+          <KitchenNotesPanels
+            allergiesNotes={data.allergiesNotes}
+            dislikesNotes={data.dislikesNotes}
+          />
 
           {!myMeal && (
             <MealClaimSelect eventId={eventId} meals={data.meals} onClaimed={fetchKitchen} />
