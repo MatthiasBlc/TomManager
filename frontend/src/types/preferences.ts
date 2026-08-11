@@ -4,6 +4,7 @@ export type PreferenceKey =
   | "admin.tables"
   | "admin.games"
   | "admin.kitchen"
+  | "admin.courses"
   | "beta.pdfExport"
   | "beta.gameDb";
 
@@ -14,6 +15,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   "admin.tables": false,
   "admin.games": false,
   "admin.kitchen": false,
+  "admin.courses": false,
   "beta.pdfExport": false,
   "beta.gameDb": false,
 };

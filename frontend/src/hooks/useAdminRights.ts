@@ -14,6 +14,9 @@ export function useAdminRights() {
     canModerateTables: isAdmin && prefs["admin.tables"],
     canModerateGames: isAdmin && prefs["admin.games"],
     isKitchenManager: isAdmin && prefs["admin.kitchen"],
+    // Onglet Courses : droit autonome, jamais derive de admin.kitchen (cf spec
+    // KitchenCourses 2.2). Un membre de l'equipe courses y accede sans etre admin.
+    canManageCourses: isAdmin && prefs["admin.courses"],
     pdfExportEnabled: isAdmin && prefs["beta.pdfExport"],
     gameDbEnabled: isAdmin && prefs["beta.gameDb"],
   };

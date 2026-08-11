@@ -88,6 +88,10 @@ export const API_ERROR_MESSAGES: Record<string, string> = {
   ASSISTANT_SWAP_NOT_FOUND: "Demande d'échange introuvable",
   ASSISTANT_SWAP_NOT_PENDING: "Cette demande d'échange n'est plus en attente",
   ASSISTANT_SWAP_STALE: "La situation a changé depuis la demande, réessaie",
+
+  // Module courses
+  COURSES_ACCESS_REQUIRED: "Accès à la liste de courses requis",
+  INVALID_EXPORT_VIEW: "Vue d'export inconnue",
 };
 
 interface ApiErrorShape {

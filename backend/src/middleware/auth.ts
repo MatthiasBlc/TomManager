@@ -141,6 +141,42 @@ export async function requireMealChefOrManager(req: Request, res: Response, next
   }
 }
 
+// Acces a l'onglet Courses : ADMIN ayant active `admin.courses`, OU membre de
+// l'equipe courses de CET event. Regle unique, sans derivation depuis
+// `admin.kitchen` (cf docs/features/KitchenCourses, section 2.2) : un responsable
+// cuisine qui veut la vue courses coche la case comme tout le monde.
+export async function assertCoursesAccess(userId: string, eventId: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+  });
+
+  if (user?.role === "ADMIN") {
+    const pref = await prisma.userPreference.findUnique({
+      where: { userId_key: { userId, key: "admin.courses" } },
+    });
+    if (pref?.value) return;
+  }
+
+  const eventKitchen = await prisma.eventKitchen.findUnique({ where: { eventId } });
+  if (eventKitchen) {
+    const member = await prisma.kitchenCoursesMember.findUnique({
+      where: { eventKitchenId_userId: { eventKitchenId: eventKitchen.id, userId } },
+    });
+    if (member) return;
+  }
+
+  throw createError(403, "Courses access required", { code: "COURSES_ACCESS_REQUIRED" });
+}
+
+export async function requireCoursesAccess(req: Request, res: Response, next: NextFunction) {
+  try {
+    await assertCoursesAccess(req.session.userId!, req.params.eventId);
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Verifie ADMIN + preference admin.events ; leve un createError sinon (a catcher par l'appelant).
 // Etre le createur de l'event ne donne aucun droit particulier : createur ou non, un
 // admin doit avoir active admin.events pour gerer un event (aligne sur assertKitchenManager).

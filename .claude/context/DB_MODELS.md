@@ -40,7 +40,8 @@ Relations: createdEvents, eventParticipations, createdGameTables, gameTableParti
 | updatedAt | DateTime | Auto                                 |
 
 Contrainte unique: (userId, key)
-Liste blanche des cles (backend `schemas/preference.ts`) : admin.events, admin.tables, admin.games, admin.kitchen, beta.pdfExport, beta.gameDb.
+Liste blanche des cles (backend `schemas/preference.ts`) : admin.events, admin.tables, admin.games, admin.kitchen, admin.courses, beta.pdfExport, beta.gameDb.
+`admin.courses` ("Gestion courses") ouvre l'onglet Courses ; elle ne se derive jamais de `admin.kitchen` (cf `docs/features/KitchenCourses/`).
 Les cles `admin.*` et `beta.*` ne sont modifiables que par un ADMIN. Cle absente = false.
 Droits admin opt-in : le front ne montre les actions admin que si le toggle correspondant est actif (le backend reste protege par requireAdmin & co independamment).
 
@@ -228,7 +229,7 @@ Relations: event (Event), chefs (KitchenChef[]), coursesMembers (KitchenCoursesM
 
 Unique: (eventKitchenId, userId)
 
-### KitchenCoursesMember (equipe courses)
+### KitchenCoursesMember (equipe courses — donne aussi l'acces a l'onglet Courses)
 
 | Field          | Type   | Notes                                   |
 | -------------- | ------ | --------------------------------------- |

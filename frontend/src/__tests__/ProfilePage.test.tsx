@@ -19,6 +19,7 @@ const defaultPreferences = {
   "admin.tables": false,
   "admin.games": false,
   "admin.kitchen": false,
+  "admin.courses": false,
   "beta.pdfExport": false,
   "beta.gameDb": false,
 };
@@ -316,6 +317,7 @@ describe("ProfilePage", () => {
           "admin.tables": true,
           "admin.games": true,
           "admin.kitchen": true,
+          "admin.courses": true,
         })
       );
     });
@@ -336,6 +338,7 @@ describe("ProfilePage", () => {
           "admin.tables": true,
           "admin.games": true,
           "admin.kitchen": true,
+          "admin.courses": true,
         })
       );
       renderWithRouter(<ProfilePage />);
@@ -346,6 +349,7 @@ describe("ProfilePage", () => {
         "admin.tables": false,
         "admin.games": false,
         "admin.kitchen": false,
+        "admin.courses": false,
       });
     });
   });
