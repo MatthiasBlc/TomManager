@@ -31,6 +31,9 @@ export interface MealFiche {
   remainingSeats: number;
   ingredients?: { name: string; quantity: number; unit: string; note?: string | null }[];
   utensils?: { name: string }[];
+  // Bloc-notes libre du chef (recette collee, deroule, remarques). Meme perimetre de
+  // lecture que les ingredients : absent pour un equipier.
+  recipe?: string | null;
 }
 
 interface Person {

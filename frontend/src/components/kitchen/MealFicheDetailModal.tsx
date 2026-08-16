@@ -18,6 +18,9 @@ interface Props {
 const displayedName = (u: { username: string; displayName?: string | null }) =>
   u.displayName ?? u.username;
 
+// Aligne sur la validation backend (updateMealSchema.recipe).
+const RECIPE_MAX_LENGTH = 10000;
+
 const toIngredientRows = (ingredients: MealFiche["ingredients"]): IngredientRow[] =>
   (ingredients ?? []).map((i) => ({
     name: i.name,
@@ -37,6 +40,7 @@ export default function MealFicheDetailModal({ eventId, meal, onClose, onChanged
   const [name, setName] = useState("");
   const [ingredients, setIngredients] = useState<IngredientRow[]>([]);
   const [utensils, setUtensils] = useState<string[]>([]);
+  const [recipe, setRecipe] = useState("");
 
   useEffect(() => {
     if (!meal) return;
@@ -44,6 +48,7 @@ export default function MealFicheDetailModal({ eventId, meal, onClose, onChanged
     setName(meal.name);
     setIngredients(toIngredientRows(meal.ingredients));
     setUtensils((meal.utensils ?? []).map((u) => u.name));
+    setRecipe(meal.recipe ?? "");
   }, [meal]);
 
   if (!meal) return null;
@@ -62,6 +67,7 @@ export default function MealFicheDetailModal({ eventId, meal, onClose, onChanged
             note: i.note?.trim() || null,
           })),
         utensils: utensils.map((n) => ({ name: n })),
+        recipe: recipe.trim() || null,
       });
       toast.success("Fiche mise à jour");
       onChanged();
@@ -90,17 +96,36 @@ export default function MealFicheDetailModal({ eventId, meal, onClose, onChanged
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
-            <div className="form-control">
-              <label className="label py-1">
-                <span className="label-text">Ingrédients</span>
-              </label>
-              <IngredientListInput value={ingredients} onChange={setIngredients} />
-            </div>
-            <div className="form-control">
-              <label className="label py-1">
-                <span className="label-text">Ustensiles spécifiques</span>
-              </label>
-              <UtensilListInput value={utensils} onChange={setUtensils} />
+            {/* Meme disposition que la fiche du chef : listes a gauche, bloc-notes
+                recette a droite des lg, empile en dessous. */}
+            <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+              <div className="space-y-4">
+                <div className="form-control">
+                  <label className="label py-1">
+                    <span className="label-text">Ingrédients</span>
+                  </label>
+                  <IngredientListInput value={ingredients} onChange={setIngredients} />
+                </div>
+                <div className="form-control">
+                  <label className="label py-1">
+                    <span className="label-text">Ustensiles spécifiques</span>
+                  </label>
+                  <UtensilListInput value={utensils} onChange={setUtensils} />
+                </div>
+              </div>
+              <div className="form-control">
+                <label className="label py-1" htmlFor={`mfd-recipe-${meal.id}`}>
+                  <span className="label-text">Recette et instructions</span>
+                </label>
+                <textarea
+                  id={`mfd-recipe-${meal.id}`}
+                  className="textarea textarea-bordered w-full min-h-[12rem] lg:min-h-[18rem] leading-relaxed"
+                  maxLength={RECIPE_MAX_LENGTH}
+                  placeholder="Recette, déroulé de la préparation, remarques pour l'équipe..."
+                  value={recipe}
+                  onChange={(e) => setRecipe(e.target.value)}
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button
@@ -166,6 +191,16 @@ export default function MealFicheDetailModal({ eventId, meal, onClose, onChanged
                 <p className="text-sm">{meal.utensils.map((u) => u.name).join(", ")}</p>
               ) : (
                 <p className="text-sm opacity-60">Aucun</p>
+              )}
+            </div>
+            <div>
+              <h4 className="font-semibold text-sm">Recette et instructions</h4>
+              {meal.recipe ? (
+                // `whitespace-pre-wrap` : le texte est colle tel quel par le chef,
+                // ses sauts de ligne et sa mise en forme font partie de l'info.
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{meal.recipe}</p>
+              ) : (
+                <p className="text-sm opacity-60">Aucune</p>
               )}
             </div>
             <div className="flex justify-end pt-2">

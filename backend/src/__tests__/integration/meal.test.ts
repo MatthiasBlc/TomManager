@@ -329,6 +329,104 @@ describe("Meal API", () => {
       expect(byName.get("Riz basmati")).toBeNull();
     });
 
+    // L'ordre des lignes est une information a part entiere (ordre de preparation,
+    // rangement par rayon) : il est stocke et relu, jamais laisse a l'ordre physique.
+    it("persists the ingredient order and returns it as sent", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "chefOrder@example.com",
+        username: "chefOrder",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+      const names = ["Farine", "Sucre", "Beurre", "Oeufs"];
+
+      const created = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({
+          ingredients: names.map((name) => ({ name, quantity: 1, unit: "PIECE" })),
+        });
+
+      expect(created.status).toBe(200);
+      expect(created.body.data.ingredients.map((i: { name: string }) => i.name)).toEqual(names);
+      const positions = await prisma.mealIngredient.findMany({
+        where: { mealId: meal.id },
+        orderBy: { position: "asc" },
+        select: { name: true, position: true },
+      });
+      expect(positions.map((p) => p.position)).toEqual([0, 1, 2, 3]);
+
+      // Reorganisation (le chef remonte "Oeufs" en tete) : l'ordre du tableau recu
+      // fait foi, y compris quand les lignes sont identiques par ailleurs.
+      const reordered = ["Oeufs", "Farine", "Sucre", "Beurre"];
+      const moved = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({
+          ingredients: reordered.map((name) => ({ name, quantity: 1, unit: "PIECE" })),
+        });
+
+      expect(moved.status).toBe(200);
+      expect(moved.body.data.ingredients.map((i: { name: string }) => i.name)).toEqual(reordered);
+
+      // Meme ordre par la lecture du tableau de bord cuisine (source de la fiche).
+      const board = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", chefCookie);
+      const boardMeal = board.body.data.meals.find((m: { id: string }) => m.id === meal.id);
+      expect(boardMeal.ingredients.map((i: { name: string }) => i.name)).toEqual(reordered);
+    });
+
+    // Bloc-notes libre du chef : recette collee, deroule, remarques pour l'equipe.
+    it("stores the free-text recipe and clears it when blanked", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "chefRecipe@example.com",
+        username: "chefRecipe",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+      const recipe = "1. Préchauffer le four\n2. Mélanger\n\nAstuce : goûter avant de saler.";
+
+      const saved = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({ recipe });
+
+      expect(saved.status).toBe(200);
+      // Les sauts de ligne sont conserves tels quels : c'est un bloc-notes.
+      expect(saved.body.data.recipe).toBe(recipe);
+
+      const board = await request.get(`/api/events/${event.id}/kitchen`).set("Cookie", chefCookie);
+      const boardMeal = board.body.data.meals.find((m: { id: string }) => m.id === meal.id);
+      expect(boardMeal.recipe).toBe(recipe);
+
+      // Champ vide (le chef efface tout) : une seule representation en base, null.
+      const cleared = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({ recipe: "   " });
+
+      expect(cleared.status).toBe(200);
+      expect(cleared.body.data.recipe).toBeNull();
+    });
+
+    it("rejects a recipe longer than 10000 characters", async () => {
+      const { cookie: managerCookie } = await setupManager();
+      const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);
+      const { cookie: chefCookie } = await setupChef(event.id, managerCookie, {
+        email: "chefRecipe2@example.com",
+        username: "chefRecipe2",
+      });
+      const meal = await createMealForChef(event.id, managerCookie, chefCookie);
+
+      const res = await request
+        .patch(`/api/events/${event.id}/kitchen/meals/${meal.id}`)
+        .set("Cookie", chefCookie)
+        .send({ recipe: "a".repeat(10001) });
+
+      expect(res.status).toBe(400);
+    });
+
     it("rejects an ingredient note longer than 300 characters", async () => {
       const { cookie: managerCookie } = await setupManager();
       const event = await createTestEvent(managerCookie, KITCHEN_WIDE_EVENT_BOUNDS);

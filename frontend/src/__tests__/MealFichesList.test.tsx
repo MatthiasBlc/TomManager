@@ -177,6 +177,8 @@ describe("MealFichesList", () => {
         name: "Couscous royal",
         ingredients: [{ name: "Semoule", quantity: 1, unit: "KG", note: null }],
         utensils: [{ name: "Couscoussier" }],
+        // Bloc-notes recette laisse vide dans ce scenario : envoye a null, jamais "".
+        recipe: null,
       })
     );
     expect(apiPatchMock).toHaveBeenCalledTimes(1);

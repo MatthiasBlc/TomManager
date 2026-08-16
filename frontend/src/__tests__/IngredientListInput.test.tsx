@@ -77,6 +77,88 @@ describe("IngredientListInput — commentaire par ingredient", () => {
     // Le bouton d'ajout disparait : le champ est deja la.
     expect(screen.queryByLabelText("Ajouter un commentaire sur Farine")).not.toBeInTheDocument();
   });
+
+  it("clears the comment when it is removed", () => {
+    const onChange = vi.fn();
+    render(<IngredientListInput value={[{ ...ROW, note: "T65" }]} onChange={onChange} />);
+    fireEvent.click(screen.getByLabelText("Retirer le commentaire sur Farine"));
+    expect(onChange).toHaveBeenCalledWith([{ ...ROW, note: "" }]);
+  });
+
+  it("folds the comment field back after removal, offering to add one again", () => {
+    // Le parent est la source de verite : on rerend avec la valeur videe, comme il
+    // le ferait. Le champ ne doit pas rester ouvert sur du vide.
+    const { rerender } = render(
+      <IngredientListInput value={[{ ...ROW, note: "T65" }]} onChange={vi.fn()} />
+    );
+    fireEvent.click(screen.getByLabelText("Retirer le commentaire sur Farine"));
+    rerender(<IngredientListInput value={[{ ...ROW, note: "" }]} onChange={vi.fn()} />);
+    expect(screen.queryByLabelText(noteLabel)).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Ajouter un commentaire sur Farine")).toBeInTheDocument();
+  });
+});
+
+// L'ordre des lignes est porte jusqu'a la liste de courses (MealIngredient.position) :
+// le chef range sa recette dans son ordre de preparation ou par rayon.
+describe("IngredientListInput — reorganisation des lignes", () => {
+  const ROWS: IngredientRow[] = [
+    { name: "Farine", quantity: 1, unit: "KG" },
+    { name: "Sucre", quantity: 200, unit: "G" },
+    { name: "Beurre", quantity: 250, unit: "G" },
+  ];
+
+  it("moves a row up with the arrow button", () => {
+    const onChange = vi.fn();
+    render(<IngredientListInput value={ROWS} onChange={onChange} />);
+    fireEvent.click(screen.getByLabelText("Monter Beurre"));
+    expect(onChange).toHaveBeenCalledWith([ROWS[0], ROWS[2], ROWS[1]]);
+  });
+
+  it("moves a row down with the arrow button", () => {
+    const onChange = vi.fn();
+    render(<IngredientListInput value={ROWS} onChange={onChange} />);
+    fireEvent.click(screen.getByLabelText("Descendre Farine"));
+    expect(onChange).toHaveBeenCalledWith([ROWS[1], ROWS[0], ROWS[2]]);
+  });
+
+  it("disables the arrows that would move a row out of the list", () => {
+    render(<IngredientListInput value={ROWS} onChange={vi.fn()} />);
+    expect(screen.getByLabelText("Monter Farine")).toBeDisabled();
+    expect(screen.getByLabelText("Descendre Beurre")).toBeDisabled();
+    expect(screen.getByLabelText("Descendre Farine")).toBeEnabled();
+  });
+
+  it("keeps the comment attached to its row after a move", () => {
+    // Les commentaires deplies sont suivis par rang de ligne : sans reindexation,
+    // deplacer une ligne ouvrirait le commentaire de la voisine.
+    const onChange = vi.fn();
+    const rows = [ROWS[0], { ...ROWS[1], note: "en poudre" }];
+    const { rerender } = render(<IngredientListInput value={rows} onChange={onChange} />);
+    fireEvent.click(screen.getByLabelText("Monter Sucre"));
+    const moved = onChange.mock.calls[0][0] as IngredientRow[];
+    expect(moved.map((r) => r.name)).toEqual(["Sucre", "Farine"]);
+    rerender(<IngredientListInput value={moved} onChange={onChange} />);
+    expect(screen.getByLabelText("Commentaire sur Sucre")).toHaveValue("en poudre");
+    expect(screen.queryByLabelText("Commentaire sur Farine")).not.toBeInTheDocument();
+  });
+
+  it("reorders on drop when a row is dragged onto another", () => {
+    const onChange = vi.fn();
+    const { container } = render(<IngredientListInput value={ROWS} onChange={onChange} />);
+    const rows = container.querySelectorAll<HTMLElement>(":scope > div > div[draggable]");
+    // 3 lignes rendues, chacune porte les handlers de glisser-deposer.
+    expect(rows).toHaveLength(3);
+    const dataTransfer = {
+      effectAllowed: "",
+      dropEffect: "",
+      setData: vi.fn(),
+      getData: () => "2",
+    };
+    fireEvent.dragStart(rows[2], { dataTransfer });
+    fireEvent.dragOver(rows[0], { dataTransfer });
+    fireEvent.drop(rows[0], { dataTransfer });
+    expect(onChange).toHaveBeenCalledWith([ROWS[2], ROWS[0], ROWS[1]]);
+  });
 });
 
 // Retour prod : la recherche partait des le 1er caractere avec 200 ms de debounce,

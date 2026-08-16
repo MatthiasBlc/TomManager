@@ -260,6 +260,7 @@ Unique: (eventKitchenId, userId)
 | maxAssistants         | Int         | default 0                                          |
 | vegeCount             | Int         | default 0 (KitchenDietSplit)                       |
 | carneCount            | Int         | default 0 (KitchenDietSplit)                       |
+| recipe                | String?     | Bloc-notes libre du chef (max 10000), null si vide |
 | createdAt / updatedAt | DateTime    |                                                    |
 
 Unique: (eventKitchenId, chefUserId) — NULLs distincts sous PostgreSQL
@@ -272,6 +273,12 @@ a chef/responsable/admin simple, jamais a l'equipier) — coherence non contrain
 base, juste un warning cote front. Migration `20260724170207_kitchen_diet_split`
 (additive). Voir `docs/features/KitchenDietSplit/SPEC_KITCHEN_DIET_SPLIT.md`.
 
+recipe : texte libre saisi par le chef (recette collee, deroule, remarques). Aucune
+structure imposee, les sauts de ligne sont conserves a l'affichage
+(`whitespace-pre-wrap`). Editable par le chef proprietaire ET le responsable (meme
+statut que name/ingredients/ustensiles), lisible par chef + responsable uniquement
+(`isFullReader`). Migration `20260816113124_meal_recipe_and_ingredient_position`.
+
 ### MealIngredient
 
 | Field     | Type    | Notes                                                                   |
@@ -283,6 +290,18 @@ base, juste un warning cote front. Migration `20260724170207_kitchen_diet_split`
 | quantity  | Decimal | @db.Decimal(10,3)                                                       |
 | unit      | Unit    | G                                                                       | KG  | ML  | CL  | L   | CAS | CAC | PIECE |
 | note      | String? | Commentaire libre du chef sur la ligne (max 300), pour l'equipe courses |
+| position  | Int     | default 0 — rang dans la recette (0 = premiere ligne)                   |
+
+Index: (mealId, position)
+
+position : l'ordre des ingredients est reorganisable par le chef (glisser-deposer sur
+desktop, fleches partout) et reecrit en bloc a chaque PATCH (l'ordre du tableau recu
+fait foi). Toutes les lectures trient dessus : `meal.ts` (MEAL_INCLUDE), `kitchen.ts`
+(GET /kitchen) et `shoppingList.ts` (vues Courses + export Excel), pour que l'equipe
+courses lise exactement l'ordre compose par le chef. Migrations
+`20260816113124_meal_recipe_and_ingredient_position` (colonne + index) puis
+`20260816120000_meal_ingredient_position_backfill` (backfill des lignes existantes par
+`ctid`, c.-a-d. l'ordre physique = celui rendu avant l'ajout de la colonne).
 
 ### Product (catalogue, pattern Tag)
 
