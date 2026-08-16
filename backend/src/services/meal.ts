@@ -38,13 +38,16 @@ interface UpdateMealInput {
   maxAssistants?: number;
   vegeCount?: number;
   carneCount?: number;
+  recipe?: string | null;
   ingredients?: IngredientInput[];
   utensils?: UtensilInput[];
 }
 
 const MEAL_INCLUDE = {
   chef: { select: USER_SELECT },
-  ingredients: true,
+  // L'ordre des ingredients est celui voulu par le chef (MealIngredient.position),
+  // jamais l'ordre physique des lignes.
+  ingredients: { orderBy: { position: "asc" } },
   utensils: true,
   assistants: { include: { user: { select: USER_SELECT } } },
 } as const;
@@ -58,6 +61,7 @@ function serializeMeal(meal: {
   maxAssistants: number;
   vegeCount: number;
   carneCount: number;
+  recipe: string | null;
   chef: unknown;
   ingredients: unknown[];
   utensils: unknown[];
@@ -72,6 +76,7 @@ function serializeMeal(meal: {
     maxAssistants: meal.maxAssistants,
     vegeCount: meal.vegeCount,
     carneCount: meal.carneCount,
+    recipe: meal.recipe,
     chef: meal.chef,
     ingredients: meal.ingredients,
     utensils: meal.utensils,
@@ -126,13 +131,16 @@ async function replaceIngredientsAndUtensils(
       );
       const productByName = new Map(products.map((p) => [p.name, p]));
       await tx.mealIngredient.createMany({
-        data: ingredients.map((i) => ({
+        data: ingredients.map((i, index) => ({
           mealId,
           productId: productByName.get(i.name.trim().toLowerCase())?.id ?? null,
           name: i.name,
           quantity: i.quantity,
           unit: i.unit,
           note: i.note?.trim() || null,
+          // L'ordre du tableau recu EST l'ordre voulu par le chef (il le reorganise
+          // a la souris ou aux fleches dans la fiche).
+          position: index,
         })),
       });
     }
@@ -246,6 +254,9 @@ export async function updateMeal(
         ...(data.maxAssistants !== undefined ? { maxAssistants: data.maxAssistants } : {}),
         ...(data.vegeCount !== undefined ? { vegeCount: data.vegeCount } : {}),
         ...(data.carneCount !== undefined ? { carneCount: data.carneCount } : {}),
+        // Bloc-notes recette : chaine vide = le chef a tout efface, on stocke null
+        // pour que "pas de recette" ait une seule representation en base.
+        ...(data.recipe !== undefined ? { recipe: data.recipe?.trim() || null } : {}),
         ...(targetChefUserId !== undefined ? { chefUserId: targetChefUserId } : {}),
       },
     });

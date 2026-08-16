@@ -94,6 +94,17 @@ function ProductNameField({
   );
 }
 
+// Reindexe un etat local indexe par rang de ligne (brouillons de quantite,
+// commentaires deplies) apres un deplacement ou une suppression. `order[nouveau] =
+// ancien` ; un ancien rang absent de `order` a disparu de la liste.
+function remapByIndex<T>(map: Record<number, T>, order: number[]): Record<number, T> {
+  const next: Record<number, T> = {};
+  order.forEach((oldIndex, newIndex) => {
+    if (map[oldIndex] !== undefined) next[newIndex] = map[oldIndex];
+  });
+  return next;
+}
+
 export default function IngredientListInput({ value, onChange }: Props) {
   // Saisie brute par ligne (point 8, virgule ET point acceptes) : affiche le texte
   // tape tel quel tant qu'il ne parse pas encore en nombre valide (ex. "1," en
@@ -102,6 +113,14 @@ export default function IngredientListInput({ value, onChange }: Props) {
   // Lignes dont le champ commentaire est deplie alors qu'il est encore vide : une
   // ligne avec commentaire l'affiche toujours, sans avoir a le rouvrir.
   const [openNotes, setOpenNotes] = useState<Record<number, boolean>>({});
+  // Glisser-deposer (pointeur fin uniquement, cf poignee) : ligne saisie et ligne
+  // actuellement survolee, pour le retour visuel pendant le deplacement.
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  // `draggable` n'est arme que sur la ligne dont la poignee est enfoncee : sinon le
+  // navigateur capture le glissement DANS les champs texte (plus moyen de selectionner
+  // du texte a la souris).
+  const [armedIndex, setArmedIndex] = useState<number | null>(null);
 
   const updateRow = (index: number, patch: Partial<IngredientRow>) => {
     onChange(value.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -124,9 +143,10 @@ export default function IngredientListInput({ value, onChange }: Props) {
   };
 
   const removeRow = (index: number) => {
+    const order = value.map((_, i) => i).filter((i) => i !== index);
     onChange(value.filter((_, i) => i !== index));
-    setQuantityDrafts({});
-    setOpenNotes({});
+    setQuantityDrafts((prev) => remapByIndex(prev, order));
+    setOpenNotes((prev) => remapByIndex(prev, order));
   };
 
   const addRow = () => {
@@ -134,14 +154,100 @@ export default function IngredientListInput({ value, onChange }: Props) {
     setQuantityDrafts({});
   };
 
+  // Deplacement d'une ligne : l'ordre des ingredients est porte jusqu'a la liste de
+  // courses (MealIngredient.position), donc un chef peut ranger sa recette dans son
+  // ordre de preparation ou par rayon.
+  const moveRow = (from: number, to: number) => {
+    if (from === to || to < 0 || to >= value.length) return;
+    const order = value.map((_, i) => i);
+    const [moved] = order.splice(from, 1);
+    order.splice(to, 0, moved);
+    onChange(order.map((oldIndex) => value[oldIndex]));
+    setQuantityDrafts((prev) => remapByIndex(prev, order));
+    setOpenNotes((prev) => remapByIndex(prev, order));
+  };
+
+  const endDrag = () => {
+    setDragIndex(null);
+    setOverIndex(null);
+    setArmedIndex(null);
+  };
+
+  const removeNote = (index: number) => {
+    updateRow(index, { note: "" });
+    setOpenNotes((prev) => ({ ...prev, [index]: false }));
+  };
+
   return (
     <div className="space-y-2">
       {value.map((row, i) => {
         const note = row.note ?? "";
         const showNote = note.length > 0 || openNotes[i];
+        const label = row.name || "cet ingrédient";
+        const isDragged = dragIndex === i;
+        const isDropTarget = dragIndex !== null && overIndex === i && dragIndex !== i;
         return (
-          <div key={i} className="space-y-1">
+          <div
+            key={i}
+            // Le glisser-deposer ne s'arme que depuis la poignee (pointeur fin) ;
+            // sur mobile ce sont les fleches qui font foi, elles restent visibles
+            // partout et fonctionnent aussi au clavier.
+            draggable={armedIndex === i}
+            onDragStart={(e) => {
+              setDragIndex(i);
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", String(i));
+            }}
+            onDragOver={(e) => {
+              if (dragIndex === null) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              if (overIndex !== i) setOverIndex(i);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragIndex !== null) moveRow(dragIndex, i);
+              endDrag();
+            }}
+            onDragEnd={endDrag}
+            className={`space-y-1 rounded-lg transition-colors ${
+              isDragged ? "opacity-50" : ""
+            } ${isDropTarget ? "ring-2 ring-primary/60" : ""}`}
+          >
             <div className="flex flex-wrap items-center gap-2">
+              {/* Colonne de reorganisation : fleches (tactile + clavier) et, sur
+                  ecran avec souris, poignee de glisser-deposer. */}
+              <div className="flex shrink-0 items-center gap-1">
+                <span
+                  className="hidden sm:block cursor-grab select-none px-1 text-base opacity-40 hover:opacity-80 active:cursor-grabbing"
+                  aria-hidden="true"
+                  title="Glisser pour réorganiser"
+                  onPointerDown={() => setArmedIndex(i)}
+                  onPointerUp={endDrag}
+                >
+                  ⠿
+                </span>
+                <div className="flex flex-col">
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs h-5 min-h-0 px-1 leading-none"
+                    disabled={i === 0}
+                    onClick={() => moveRow(i, i - 1)}
+                    aria-label={`Monter ${label}`}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs h-5 min-h-0 px-1 leading-none"
+                    disabled={i === value.length - 1}
+                    onClick={() => moveRow(i, i + 1)}
+                    aria-label={`Descendre ${label}`}
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
               <ProductNameField value={row.name} onChange={(name) => updateRow(i, { name })} />
               <input
                 type="text"
@@ -167,7 +273,7 @@ export default function IngredientListInput({ value, onChange }: Props) {
                   type="button"
                   className="btn btn-ghost btn-sm btn-square"
                   onClick={() => setOpenNotes((prev) => ({ ...prev, [i]: true }))}
-                  aria-label={`Ajouter un commentaire sur ${row.name || "cet ingrédient"}`}
+                  aria-label={`Ajouter un commentaire sur ${label}`}
                   title="Ajouter un commentaire"
                 >
                   💬
@@ -192,10 +298,21 @@ export default function IngredientListInput({ value, onChange }: Props) {
                   rows={2}
                   maxLength={NOTE_MAX_LENGTH}
                   placeholder="Commentaire pour l'équipe courses (ex : de préférence agrume ou acacia)"
-                  aria-label={`Commentaire sur ${row.name || "cet ingrédient"}`}
+                  aria-label={`Commentaire sur ${label}`}
                   value={note}
                   onChange={(e) => updateRow(i, { note: e.target.value })}
                 />
+                {/* Retirer le commentaire : vide le texte ET replie le champ, sinon
+                    une ligne sans commentaire garderait une zone de saisie ouverte. */}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm btn-square"
+                  onClick={() => removeNote(i)}
+                  aria-label={`Retirer le commentaire sur ${label}`}
+                  title="Retirer le commentaire"
+                >
+                  ✕
+                </button>
               </div>
             )}
           </div>

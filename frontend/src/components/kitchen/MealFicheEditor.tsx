@@ -41,6 +41,8 @@ function FieldStatus({ status }: { status: SaveStatus }) {
 }
 
 const LIST_SAVE_DEBOUNCE_MS = 1200;
+// Aligne sur la validation backend (updateMealSchema.recipe).
+const RECIPE_MAX_LENGTH = 10000;
 
 const toIngredientRows = (ingredients: MealFiche["ingredients"]): IngredientRow[] =>
   (ingredients ?? []).map((i) => ({
@@ -68,6 +70,7 @@ export default function MealFicheEditor({
     toIngredientRows(meal.ingredients)
   );
   const [utensils, setUtensils] = useState<string[]>((meal.utensils ?? []).map((u) => u.name));
+  const [recipe, setRecipe] = useState(meal.recipe ?? "");
 
   // Reinitialise les champs uniquement quand on change de repas (pas a chaque
   // refetch du meme repas) : ne jamais ecraser une saisie en cours.
@@ -75,6 +78,7 @@ export default function MealFicheEditor({
     setName(meal.name);
     setIngredients(toIngredientRows(meal.ingredients));
     setUtensils((meal.utensils ?? []).map((u) => u.name));
+    setRecipe(meal.recipe ?? "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meal.id]);
 
@@ -111,6 +115,13 @@ export default function MealFicheEditor({
   const utensilsStatus = useDebouncedSave(
     utensils,
     (v) => patchMeal({ utensils: v.map((n) => ({ name: n })) }),
+    LIST_SAVE_DEBOUNCE_MS
+  );
+  // Bloc-notes recette : saisie longue et continue, meme debounce que les listes pour
+  // ne pas emettre un PATCH par phrase tapee. Vide = null (pas de recette).
+  const recipeStatus = useDebouncedSave(
+    recipe,
+    (v) => patchMeal({ recipe: v.trim() || null }),
     LIST_SAVE_DEBOUNCE_MS
   );
 
@@ -199,20 +210,45 @@ export default function MealFicheEditor({
           />
         </div>
 
-        <div className="form-control max-w-md">
-          <label className="label py-1">
-            <span className="label-text">Ingrédients</span>
-            <FieldStatus status={ingredientsStatus} />
-          </label>
-          <IngredientListInput value={ingredients} onChange={setIngredients} />
-        </div>
+        {/* Deux colonnes des lg : listes a gauche, bloc-notes recette a droite (il se
+            lit en meme temps qu'on saisit les ingredients). En dessous, une seule
+            colonne, la recette passant sous les ustensiles. */}
+        <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
+          <div className="space-y-3">
+            <div className="form-control">
+              <label className="label py-1">
+                <span className="label-text">Ingrédients</span>
+                <FieldStatus status={ingredientsStatus} />
+              </label>
+              <IngredientListInput value={ingredients} onChange={setIngredients} />
+            </div>
 
-        <div className="form-control max-w-md">
-          <label className="label py-1">
-            <span className="label-text">Ustensiles spécifiques</span>
-            <FieldStatus status={utensilsStatus} />
-          </label>
-          <UtensilListInput value={utensils} onChange={setUtensils} />
+            <div className="form-control">
+              <label className="label py-1">
+                <span className="label-text">Ustensiles spécifiques</span>
+                <FieldStatus status={utensilsStatus} />
+              </label>
+              <UtensilListInput value={utensils} onChange={setUtensils} />
+            </div>
+          </div>
+
+          <div className="form-control">
+            <label className="label py-1" htmlFor={`mfe-recipe-${meal.id}`}>
+              <span className="label-text">Recette et instructions</span>
+              <FieldStatus status={recipeStatus} />
+            </label>
+            <textarea
+              id={`mfe-recipe-${meal.id}`}
+              className="textarea textarea-bordered w-full min-h-[12rem] lg:min-h-[20rem] leading-relaxed"
+              maxLength={RECIPE_MAX_LENGTH}
+              placeholder="Colle ta recette, le déroulé de la préparation, des remarques pour ton équipe..."
+              value={recipe}
+              onChange={(e) => setRecipe(e.target.value)}
+            />
+            <span className="label-text-alt opacity-60 pt-1">
+              Visible par ton équipe et le responsable cuisine.
+            </span>
+          </div>
         </div>
       </div>
     </div>

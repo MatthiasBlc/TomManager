@@ -491,7 +491,8 @@ export async function getKitchenView(eventId: string, userId: string | undefined
     include: {
       chef: { select: USER_SELECT },
       assistants: { include: { user: { select: USER_SELECT } } },
-      ingredients: true,
+      // Ordre voulu par le chef (MealIngredient.position), pas l'ordre physique.
+      ingredients: { orderBy: { position: "asc" } },
       utensils: true,
     },
     orderBy: { startDateTime: "asc" },
@@ -525,7 +526,11 @@ export async function getKitchenView(eventId: string, userId: string | undefined
       remainingSeats: Math.max(0, meal.maxAssistants - meal.assistants.length),
       currentUserConflict: userId ? conflictedUsers.has(userId) : false,
       conflictingCount: conflictedUsers.size,
-      ...(isFullReader ? { ingredients: meal.ingredients, utensils: meal.utensils } : {}),
+      // La recette libre suit le meme perimetre que les ingredients/ustensiles :
+      // chef + responsable, jamais l'equipier ni l'admin simple.
+      ...(isFullReader
+        ? { ingredients: meal.ingredients, utensils: meal.utensils, recipe: meal.recipe }
+        : {}),
       ...(canSeeDietSplit ? { vegeCount: meal.vegeCount, carneCount: meal.carneCount } : {}),
     };
   });
