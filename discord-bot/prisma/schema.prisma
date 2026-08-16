@@ -300,6 +300,9 @@ model Meal {
   maxAssistants  Int         @default(0)
   vegeCount      Int         @default(0)
   carneCount     Int         @default(0)
+  // Bloc-notes libre du chef (recette collee, instructions, remarques).
+  // Cf backend/prisma/schema.prisma (meme base, schemas dupliques).
+  recipe         String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
@@ -329,9 +332,14 @@ model MealIngredient {
   // Commentaire libre du chef sur CETTE ligne de recette, a destination de l'equipe
   // courses. Cf backend/prisma/schema.prisma (meme base, schemas dupliques).
   note      String?
+  // Rang de la ligne dans la recette (0 = premiere), reorganisable par le chef.
+  // Cf backend/prisma/schema.prisma (meme base, schemas dupliques).
+  position  Int     @default(0)
 
   meal    Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
+
+  @@index([mealId, position])
 }
 
 model Product {

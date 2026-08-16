@@ -62,6 +62,10 @@ export const updateMealSchema = z
     maxAssistants: z.number().int().min(0).optional(),
     vegeCount: z.number().int().min(0).optional(),
     carneCount: z.number().int().min(0).optional(),
+    // Bloc-notes libre du chef (recette collee, deroule, remarques). Plafond large :
+    // une recette complete copiee depuis un site tient largement dedans, et le champ
+    // reste un seul TEXT relu tel quel par l'equipe.
+    recipe: z.string().max(10000, "Recipe must be at most 10000 characters").nullable().optional(),
     ingredients: z.array(ingredientSchema).max(50).optional(),
     utensils: z.array(utensilSchema).max(50).optional(),
   })

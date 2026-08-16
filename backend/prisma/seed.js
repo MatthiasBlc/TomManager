@@ -86,7 +86,12 @@ async function ensureIngredients(mealId, rows) {
   });
   const seen = new Set(existing.map((i) => `${i.name.toLowerCase()} ${i.unit}`));
 
-  const missing = rows.filter((r) => !seen.has(`${r.name.toLowerCase()} ${r.unit}`));
+  // Position = rang dans `rows` (l'ordre du tableau seede est l'ordre affiche).
+  // Un repas deja seede complete par des lignes ajoutees apres coup garde le meme
+  // rang pour ses lignes existantes : `rows` est la reference d'ordre.
+  const missing = rows
+    .map((r, position) => ({ ...r, position }))
+    .filter((r) => !seen.has(`${r.name.toLowerCase()} ${r.unit}`));
   if (missing.length > 0) {
     await prisma.mealIngredient.createMany({
       data: missing.map((r) => ({ mealId, ...r, note: r.note ?? null })),

@@ -99,6 +99,49 @@ describe("MealFicheEditor", () => {
     expect(screen.getByText(/responsable cuisine doit mettre à jour/)).toBeInTheDocument();
   });
 
+  // Bloc-notes libre : recette collee, deroule, remarques pour l'equipe.
+  it("autosaves the free-text recipe after the list debounce", async () => {
+    vi.useFakeTimers();
+    apiPatchMock.mockResolvedValue({});
+    render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText("Recette et instructions"), {
+      target: { value: "1. Faire revenir les oignons\n2. Ajouter la semoule" },
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(1200);
+    });
+
+    expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
+      recipe: "1. Faire revenir les oignons\n2. Ajouter la semoule",
+    });
+    vi.useRealTimers();
+  });
+
+  it("sends null rather than an empty string when the recipe is blanked", async () => {
+    vi.useFakeTimers();
+    apiPatchMock.mockResolvedValue({});
+    render(
+      <MealFicheEditor
+        eventId="ev1"
+        meal={{ ...MEAL, recipe: "Ancienne recette" }}
+        onChanged={vi.fn()}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText("Recette et instructions"), { target: { value: "  " } });
+
+    await act(async () => {
+      vi.advanceTimersByTime(1200);
+    });
+
+    expect(apiPatchMock).toHaveBeenCalledWith("/api/events/ev1/kitchen/meals/meal1", {
+      recipe: null,
+    });
+    vi.useRealTimers();
+  });
+
   it("resets fields when switching to a different meal", () => {
     const { rerender } = render(<MealFicheEditor eventId="ev1" meal={MEAL} onChanged={vi.fn()} />);
     fireEvent.change(screen.getByLabelText("Nom du repas"), {

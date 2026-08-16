@@ -37,8 +37,10 @@ async function setupEventWithMeals() {
   });
   await prisma.mealIngredient.createMany({
     data: [
-      { mealId: dinner.id, name: "farine", quantity: 500, unit: "G", note: "type 55" },
-      { mealId: dinner.id, name: "miel", quantity: 250, unit: "G", note: null },
+      // `position` explicite : la vue "par repas" rend la recette dans l'ordre
+      // compose par le chef, pas dans l'ordre d'insertion en base.
+      { mealId: dinner.id, name: "farine", quantity: 500, unit: "G", note: "type 55", position: 0 },
+      { mealId: dinner.id, name: "miel", quantity: 250, unit: "G", note: null, position: 1 },
     ],
   });
 
@@ -172,6 +174,12 @@ describe("Shopping list API", () => {
         "Dîner du mardi",
       ]);
       expect(byMeal[2].ingredients).toEqual([]);
+      // ... et chaque recette dans l'ordre compose par le chef (position), pas
+      // trie par nom : l'equipe courses lit la fiche telle qu'elle a ete ecrite.
+      expect(byMeal[0].ingredients.map((i: { name: string }) => i.name)).toEqual([
+        "farine",
+        "miel",
+      ]);
 
       // Vue 2 : 3 lignes (le repas vide n'en produit aucune), triees par nom
       expect(flat).toHaveLength(3);

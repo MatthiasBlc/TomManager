@@ -300,6 +300,10 @@ model Meal {
   maxAssistants  Int         @default(0)
   vegeCount      Int         @default(0)
   carneCount     Int         @default(0)
+  // Zone de texte libre du chef : recette collee, deroule, instructions, remarques.
+  // Aucune structure imposee (ni markdown ni etapes) : c'est un bloc-notes, les sauts
+  // de ligne saisis sont conserves tels quels a l'affichage.
+  recipe         String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
@@ -331,9 +335,16 @@ model MealIngredient {
   // Porte par la ligne et non par le Product : la meme denree peut demander une
   // precision differente d'une recette a l'autre.
   note      String?
+  // Rang de la ligne dans la recette du chef (0 = premiere). L'ordre des ingredients
+  // est une information a part entiere (ordre de preparation, regroupement par rayon) :
+  // sans colonne dediee, l'ordre rendu dependait de l'ordre physique des lignes en
+  // base, non garanti par PostgreSQL. Reecrit en bloc a chaque PATCH de la recette.
+  position  Int     @default(0)
 
   meal    Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
+
+  @@index([mealId, position])
 }
 
 model Product {
